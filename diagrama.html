@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SGP – Diagrama de Flujo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d0f1a;font-family:'Segoe UI',sans-serif;min-height:100vh;overflow-x:auto}
+h1{text-align:center;color:#fff;padding:28px 0 8px;font-size:1.3rem;letter-spacing:2px;text-transform:uppercase;opacity:.8}
+#canvas-wrap{display:flex;justify-content:center;padding:20px}
+svg{overflow:visible}
+
+/* Node base */
+.node{cursor:pointer;transition:filter .2s}
+.node:hover{filter:drop-shadow(0 0 14px #5eead4)}
+
+/* Shapes */
+.pill{fill:#1e2235;stroke:#5eead4;stroke-width:1.5;rx:20}
+.diamond{fill:#1e2235;stroke:#f59e0b;stroke-width:1.5}
+.rect{fill:#1e2235;stroke:#818cf8;stroke-width:1.5;rx:8}
+.oval-start{fill:#5eead4;stroke:none}
+.oval-end{fill:#f87171;stroke:none}
+
+/* Text */
+.lbl{fill:#e2e8f0;font-size:10px;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.lbl-start{fill:#0d0f1a;font-weight:700;font-size:11px;text-anchor:middle;dominant-baseline:middle}
+
+/* Lines */
+.arrow{stroke:#475569;stroke-width:1.5;fill:none;marker-end:url(#arrowhead)}
+.arrow-yes{stroke:#4ade80;stroke-width:1.5;fill:none;marker-end:url(#arrowhead-yes)}
+.arrow-no{stroke:#f87171;stroke-width:1.5;fill:none;marker-end:url(#arrowhead-no)}
+
+/* Tooltip */
+#tip{position:fixed;background:#1e2235;border:1px solid #5eead4;color:#e2e8f0;padding:8px 14px;border-radius:10px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:99}
+
+/* Legend */
+.legend{display:flex;gap:18px;justify-content:center;padding-bottom:20px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:6px;color:#94a3b8;font-size:12px}
+.leg span{width:14px;height:14px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<h1>Sistema de Gestión – Diagrama de Flujo</h1>
+<div class="legend">
+  <div class="leg"><span style="background:#5eead4"></span>Proceso / Pantalla</div>
+  <div class="leg"><span style="background:#f59e0b"></span>Decisión</div>
+  <div class="leg"><span style="background:#818cf8"></span>Acción/Sub-proceso</div>
+  <div class="leg"><span style="background:#4ade80"></span>Sí</div>
+  <div class="leg"><span style="background:#f87171"></span>No / Fin</div>
+</div>
+<div id="canvas-wrap">
+<svg id="flow" width="1100" height="1600" viewBox="0 0 1100 1600">
+<defs>
+  <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0,8 3,0 6" fill="#475569"/>
+  </marker>
+  <marker id="arrowhead-yes" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0,8 3,0 6" fill="#4ade80"/>
+  </marker>
+  <marker id="arrowhead-no" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0,8 3,0 6" fill="#f87171"/>
+  </marker>
+</defs>
+
+<!-- ══════════ ARROWS ══════════ -->
+<!-- Start → Decision usuario -->
+<line class="arrow" x1="550" y1="55" x2="550" y2="88"/>
+<!-- Decision → Cliente -->
+<line class="arrow" x1="630" y1="110" x2="780" y2="110"/>
+<!-- Decision → Entrenador -->
+<line class="arrow" x1="550" y1="132" x2="550" y2="168"/>
+
+<!-- ENTRENADOR branch -->
+<line class="arrow" x1="180" y1="110" x2="180" y2="168" />
+<line class="arrow" x1="550" y1="132" x2="180" y2="132"/>
+<line class="arrow" x1="180" y1="132" x2="180" y2="168"/>
+<!-- Dashboard Ent → Decision Accion -->
+<line class="arrow" x1="180" y1="208" x2="180" y2="248"/>
+<!-- Accion Ent → Ver Lista -->
+<line class="arrow" x1="100" y1="270" x2="100" y2="318"/>
+<!-- Accion Ent → Ver Perfil -->
+<line class="arrow-yes" x1="180" y1="292" x2="180" y2="318"/>
+<!-- Lista Clientes → Muestra Lista -->
+<line class="arrow" x1="100" y1="358" x2="100" y2="398"/>
+<!-- Muestra lista → Decision volver -->
+<line class="arrow" x1="100" y1="428" x2="100" y2="468"/>
+<!-- volver → Sí → Ver Perfil Cliente -->
+<line class="arrow-yes" x1="100" y1="490" x2="100" y2="528"/>
+<!-- Perfil → Mostrar Datos -->
+<line class="arrow" x1="100" y1="568" x2="100" y2="598"/>
+<!-- Datos → Decision Accion Ent -->
+<line class="arrow" x1="100" y1="638" x2="100" y2="678"/>
+<!-- Accion: Asignar Rutina -->
+<line class="arrow-yes" x1="100" y1="700" x2="100" y2="738"/>
+<!-- Accion: Actualizar Datos -->
+<line class="arrow" x1="180" y1="690" x2="240" y2="690"/>
+<line class="arrow" x1="240" y1="690" x2="240" y2="738"/>
+<!-- Crear Rutina → Guardar -->
+<line class="arrow" x1="100" y1="778" x2="100" y2="818"/>
+<!-- Actualizar → (end branch) -->
+<line class="arrow" x1="240" y1="778" x2="240" y2="818"/>
+
+<!-- CLIENTE branch (x=780) -->
+<line class="arrow" x1="780" y1="140" x2="780" y2="168"/>
+<!-- Dashboard Cliente → Decision Accion -->
+<line class="arrow" x1="780" y1="208" x2="780" y2="248"/>
+<!-- Accion → Ver Rutina Día -->
+<line class="arrow" x1="700" y1="270" x2="700" y2="318"/>
+<!-- Accion → Registrar Cliente -->
+<line class="arrow" x1="780" y1="292" x2="780" y2="318"/>
+<!-- Accion → Notificaciones -->
+<line class="arrow" x1="860" y1="270" x2="860" y2="318"/>
+<!-- Accion → Cerrar Sesión -->
+<line class="arrow" x1="940" y1="270" x2="940" y2="318"/>
+<!-- Accion → Ver Perfil -->
+<line class="arrow" x1="1020" y1="270" x2="1020" y2="318"/>
+
+<!-- Rutina Día → Lista Ejercicios -->
+<line class="arrow" x1="700" y1="358" x2="700" y2="398"/>
+<!-- Lista → Anotar Sesiones? -->
+<line class="arrow" x1="700" y1="438" x2="700" y2="468"/>
+<!-- Anotar Sí → Ingresar Reps -->
+<line class="arrow-yes" x1="740" y1="490" x2="800" y2="490"/>
+<line class="arrow" x1="800" y1="490" x2="800" y2="528"/>
+<!-- Anotar No → Marcar Rutina? -->
+<line class="arrow-no" x1="700" y1="510" x2="700" y2="548"/>
+<!-- Marcar Sí → Marcar Completada -->
+<line class="arrow-yes" x1="700" y1="570" x2="700" y2="608"/>
+<!-- Guardar Reps -->
+<line class="arrow" x1="800" y1="568" x2="800" y2="608"/>
+<!-- Marcar Completada → Actualizar Estado -->
+<line class="arrow" x1="700" y1="648" x2="700" y2="688"/>
+<!-- Guardar Reps → Actualizar Estado -->
+<line class="arrow" x1="800" y1="648" x2="750" y2="688"/>
+
+<!-- Notificaciones → Ver Pagos -->
+<line class="arrow" x1="860" y1="358" x2="860" y2="398"/>
+<!-- Pagos? -->
+<line class="arrow" x1="860" y1="438" x2="860" y2="468"/>
+<!-- Si pago → Detalles -->
+<line class="arrow-yes" x1="860" y1="490" x2="860" y2="528"/>
+<!-- No pago → Sin pagos -->
+<line class="arrow-no" x1="900" y1="480" x2="940" y2="480"/>
+<line class="arrow" x1="940" y1="480" x2="940" y2="528"/>
+
+<!-- Registrar Cliente → Formulario -->
+<line class="arrow" x1="780" y1="358" x2="780" y2="398"/>
+<!-- Formulario → Guardar -->
+<line class="arrow" x1="780" y1="438" x2="780" y2="478"/>
+
+<!-- Ver Perfil → Mostrar Perfil -->
+<line class="arrow" x1="1020" y1="358" x2="1020" y2="398"/>
+<!-- Perfil → Rutinas Pendientes -->
+<line class="arrow" x1="1020" y1="438" x2="1020" y2="478"/>
+
+<!-- Cerrar Sesión → Fin -->
+<line class="arrow" x1="940" y1="358" x2="940" y2="398"/>
+
+<!-- ══════════ NODES ══════════ -->
+<!-- START -->
+<g class="node" data-tip="Punto de entrada al sistema">
+  <ellipse cx="550" cy="35" rx="40" ry="18" class="oval-start"/>
+  <text class="lbl-start" x="550" y="35">INICIO</text>
+</g>
+
+<!-- DECISION: Tipo de Usuario -->
+<g class="node" data-tip="¿Quién inicia sesión?">
+  <polygon class="diamond" points="550,88 620,110 550,132 480,110"/>
+  <text class="lbl" x="550" y="110" font-size="9">¿Tipo de</text>
+  <text class="lbl" x="550" y="121" font-size="9">Usuario?</text>
+  <text class="lbl" x="640" y="100" font-size="9" fill="#5eead4">Cliente</text>
+  <text class="lbl" x="460" y="100" font-size="9" fill="#5eead4">Entrenador</text>
+</g>
+
+<!-- ── ENTRENADOR ── -->
+<g class="node" data-tip="Panel principal del Entrenador">
+  <rect class="pill" x="120" y="168" width="120" height="40"/>
+  <text class="lbl" x="180" y="188">Dashboard</text>
+  <text class="lbl" x="180" y="199">Entrenador</text>
+</g>
+<g class="node" data-tip="El entrenador elige qué hacer">
+  <polygon class="diamond" points="180,248 240,270 180,292 120,270"/>
+  <text class="lbl" x="180" y="270" font-size="9">Selección</text>
+  <text class="lbl" x="180" y="281" font-size="9">Acción</text>
+</g>
+<g class="node" data-tip="Listado de todos los clientes asignados">
+  <rect class="rect" x="50" y="318" width="100" height="40"/>
+  <text class="lbl" x="100" y="338">Ver Lista</text>
+  <text class="lbl" x="100" y="349">de Clientes</text>
+</g>
+<g class="node" data-tip="Renderiza tabla de clientes">
+  <rect class="pill" x="50" y="398" width="100" height="30"/>
+  <text class="lbl" x="100" y="413">Mostrar Lista</text>
+</g>
+<g class="node" data-tip="¿El entrenador selecciona un cliente?">
+  <polygon class="diamond" points="100,468 155,490 100,512 45,490"/>
+  <text class="lbl" x="100" y="483" font-size="9">¿Selecciona</text>
+  <text class="lbl" x="100" y="494" font-size="9">uno?</text>
+</g>
+<g class="node" data-tip="Ficha completa del cliente seleccionado">
+  <rect class="pill" x="50" y="528" width="100" height="40"/>
+  <text class="lbl" x="100" y="548">Ver Perfil</text>
+  <text class="lbl" x="100" y="559">del Cliente</text>
+</g>
+<g class="node" data-tip="Peso, altura, historial de rutinas">
+  <rect class="rect" x="50" y="598" width="100" height="40"/>
+  <text class="lbl" x="100" y="614">Mostrar Datos</text>
+  <text class="lbl" x="100" y="625">Peso/Altura/Hist.</text>
+</g>
+<g class="node" data-tip="¿Qué hace el entrenador ahora?">
+  <polygon class="diamond" points="100,678 165,700 100,722 35,700"/>
+  <text class="lbl" x="100" y="693" font-size="9">¿Acción</text>
+  <text class="lbl" x="100" y="704" font-size="9">Entrenador?</text>
+</g>
+<g class="node" data-tip="Crea y asigna una rutina al cliente">
+  <rect class="rect" x="50" y="738" width="100" height="40"/>
+  <text class="lbl" x="100" y="754">Crear/Asignar</text>
+  <text class="lbl" x="100" y="765">Rutina</text>
+</g>
+<g class="node" data-tip="Persiste la rutina en BD">
+  <rect class="pill" x="50" y="818" width="100" height="30"/>
+  <text class="lbl" x="100" y="833">Guardar Rutina</text>
+</g>
+<g class="node" data-tip="Modifica peso y altura del cliente">
+  <rect class="rect" x="190" y="738" width="100" height="40"/>
+  <text class="lbl" x="240" y="754">Actualizar</text>
+  <text class="lbl" x="240" y="765">Peso/Altura</text>
+</g>
+<g class="node" data-tip="Cambios persistidos en BD">
+  <rect class="pill" x="190" y="818" width="100" height="30"/>
+  <text class="lbl" x="240" y="833">Datos Guardados</text>
+</g>
+
+<!-- ── CLIENTE ── -->
+<g class="node" data-tip="Panel principal del Cliente">
+  <rect class="pill" x="720" y="168" width="120" height="40"/>
+  <text class="lbl" x="780" y="188">Dashboard</text>
+  <text class="lbl" x="780" y="199">Cliente</text>
+</g>
+<g class="node" data-tip="El cliente elige su próxima acción">
+  <polygon class="diamond" points="780,248 850,270 780,292 710,270"/>
+  <text class="lbl" x="780" y="263" font-size="9">Selección</text>
+  <text class="lbl" x="780" y="274" font-size="9">Acción</text>
+</g>
+
+<!-- Rutina del Día -->
+<g class="node" data-tip="Muestra la rutina programada para hoy">
+  <rect class="rect" x="650" y="318" width="100" height="40"/>
+  <text class="lbl" x="700" y="334">Ver Rutina</text>
+  <text class="lbl" x="700" y="345">del Día</text>
+</g>
+<g class="node" data-tip="Lista ejercicios con series y reps">
+  <rect class="pill" x="650" y="398" width="100" height="40"/>
+  <text class="lbl" x="700" y="414">Lista Ejercicios</text>
+  <text class="lbl" x="700" y="425">c/Repeticiones</text>
+</g>
+<g class="node" data-tip="¿El cliente quiere anotar sus series?">
+  <polygon class="diamond" points="700,468 755,490 700,512 645,490"/>
+  <text class="lbl" x="700" y="483" font-size="9">¿Anotar</text>
+  <text class="lbl" x="700" y="494" font-size="9">Sesiones?</text>
+</g>
+<g class="node" data-tip="Campo para registrar reps realizadas">
+  <rect class="rect" x="755" y="528" width="100" height="40"/>
+  <text class="lbl" x="805" y="544">Ingresar Reps</text>
+  <text class="lbl" x="805" y="555">Realizadas</text>
+</g>
+<g class="node" data-tip="¿Marcar la rutina entera como completada?">
+  <polygon class="diamond" points="700,548 755,570 700,592 645,570"/>
+  <text class="lbl" x="700" y="563" font-size="9">¿Marcar</text>
+  <text class="lbl" x="700" y="574" font-size="9">Rutina?</text>
+</g>
+<g class="node" data-tip="Marca la rutina como completada">
+  <rect class="pill" x="650" y="608" width="100" height="40"/>
+  <text class="lbl" x="700" y="624">Marcar Rutina</text>
+  <text class="lbl" x="700" y="635">Completada</text>
+</g>
+<g class="node" data-tip="Persiste las repeticiones en BD">
+  <rect class="pill" x="755" y="608" width="100" height="40"/>
+  <text class="lbl" x="805" y="624">Guardar</text>
+  <text class="lbl" x="805" y="635">Repeticiones</text>
+</g>
+<g class="node" data-tip="Actualiza el estado en la base de datos">
+  <rect class="rect" x="668" y="688" width="120" height="40"/>
+  <text class="lbl" x="728" y="708">Actualizar Estado</text>
+</g>
+
+<!-- Registrar Cliente -->
+<g class="node" data-tip="Alta de nuevo cliente en el sistema">
+  <rect class="rect" x="730" y="318" width="100" height="40"/>
+  <text class="lbl" x="780" y="334">Registrar</text>
+  <text class="lbl" x="780" y="345">Cliente</text>
+</g>
+<g class="node" data-tip="Nombre, email, peso, altura...">
+  <rect class="pill" x="730" y="398" width="100" height="40"/>
+  <text class="lbl" x="780" y="414">Formulario</text>
+  <text class="lbl" x="780" y="425">Registro</text>
+</g>
+<g class="node" data-tip="Datos del cliente persistidos">
+  <rect class="rect" x="730" y="478" width="100" height="40"/>
+  <text class="lbl" x="780" y="494">Guardar Datos</text>
+  <text class="lbl" x="780" y="505">del Cliente</text>
+</g>
+
+<!-- Notificaciones -->
+<g class="node" data-tip="Centro de notificaciones de pagos">
+  <rect class="rect" x="810" y="318" width="100" height="40"/>
+  <text class="lbl" x="860" y="334">Ver</text>
+  <text class="lbl" x="860" y="345">Notificaciones</text>
+</g>
+<g class="node" data-tip="Ver el estado de los pagos">
+  <rect class="pill" x="810" y="398" width="100" height="40"/>
+  <text class="lbl" x="860" y="414">Ver Notif.</text>
+  <text class="lbl" x="860" y="425">de Pagos</text>
+</g>
+<g class="node" data-tip="¿El cliente tiene algún pago pendiente?">
+  <polygon class="diamond" points="860,468 920,490 860,512 800,490"/>
+  <text class="lbl" x="860" y="483" font-size="9">¿Pago</text>
+  <text class="lbl" x="860" y="494" font-size="9">Pendiente?</text>
+</g>
+<g class="node" data-tip="Muestra monto y fecha del pago">
+  <rect class="rect" x="810" y="528" width="100" height="40"/>
+  <text class="lbl" x="860" y="544">Detalle Pago</text>
+  <text class="lbl" x="860" y="555">Monto/Fecha</text>
+</g>
+<g class="node" data-tip="No hay pagos pendientes">
+  <rect class="pill" x="895" y="508" width="95" height="40"/>
+  <text class="lbl" x="942" y="524">Sin Pagos</text>
+  <text class="lbl" x="942" y="535">Pendientes</text>
+</g>
+
+<!-- Cerrar Sesión -->
+<g class="node" data-tip="Cierra la sesión y redirige al login">
+  <rect class="rect" x="890" y="318" width="100" height="40"/>
+  <text class="lbl" x="940" y="334">Cerrar</text>
+  <text class="lbl" x="940" y="345">Sesión</text>
+</g>
+
+<!-- Ver Perfil -->
+<g class="node" data-tip="Datos personales del cliente logueado">
+  <rect class="rect" x="970" y="318" width="100" height="40"/>
+  <text class="lbl" x="1020" y="334">Ver Mi</text>
+  <text class="lbl" x="1020" y="345">Perfil</text>
+</g>
+<g class="node" data-tip="Nombre, email, peso actual">
+  <rect class="pill" x="970" y="398" width="100" height="40"/>
+  <text class="lbl" x="1020" y="414">Mostrar Mi</text>
+  <text class="lbl" x="1020" y="425">Perfil</text>
+</g>
+<g class="node" data-tip="Rutinas aún no completadas">
+  <rect class="rect" x="970" y="478" width="100" height="40"/>
+  <text class="lbl" x="1020" y="494">Rutinas</text>
+  <text class="lbl" x="1020" y="505">Pendientes</text>
+</g>
+
+<!-- FIN -->
+<g class="node" data-tip="Fin del flujo">
+  <ellipse cx="940" cy="358" rx="40" ry="18" class="oval-end"/>
+  <text class="lbl-start" x="940" y="358">FIN</text>
+</g>
+
+</svg>
+</div>
+<div id="tip"></div>
+
+<script>
+// ── Anime.js entrance animation ──
+const nodes = document.querySelectorAll('.node');
+anime({
+  targets: nodes,
+  opacity:[0,1],
+  translateY:[20,0],
+  delay: anime.stagger(30),
+  duration:600,
+  easing:'easeOutExpo'
+});
+
+// ── Line draw animation ──
+const lines = document.querySelectorAll('line,path');
+lines.forEach(l=>{
+  const len = l.getTotalLength ? l.getTotalLength() : 100;
+  l.style.strokeDasharray = len;
+  l.style.strokeDashoffset = len;
+});
+anime({
+  targets:'line,path',
+  strokeDashoffset:[anime.stagger([600,0], {from:'last'}), 0],
+  duration:1200,
+  delay:200,
+  easing:'easeInOutQuart'
+});
+
+// ── Hover glow pulse ──
+nodes.forEach(n=>{
+  n.addEventListener('mouseenter',()=>{
+    anime({targets:n,scale:1.06,duration:200,easing:'easeOutQuad'});
+    showTip(event, n.dataset.tip);
+  });
+  n.addEventListener('mousemove', e=>moveTip(e));
+  n.addEventListener('mouseleave',()=>{
+    anime({targets:n,scale:1,duration:200,easing:'easeOutQuad'});
+    hideTip();
+  });
+});
+
+// ── Tooltip ──
+const tip = document.getElementById('tip');
+function showTip(e,t){if(!t)return;tip.textContent=t;tip.style.opacity=1}
+function moveTip(e){tip.style.left=e.clientX+14+'px';tip.style.top=e.clientY-30+'px'}
+function hideTip(){tip.style.opacity=0}
+</script>
+</body>
+</html>
