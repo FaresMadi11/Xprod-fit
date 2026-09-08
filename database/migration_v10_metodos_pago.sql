@@ -1,0 +1,2 @@
+ALTER TABLE metodos_pago ADD COLUMN monto_bs DECIMAL(10,2) DEFAULT NULL;
+ALTER TABLE metodos_pago ADD COLUMN correo_binance VARCHAR(150) DEFAULT NULL;

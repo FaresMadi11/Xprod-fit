@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { background: #111; color: #fff; font-family: sans-serif; text-align: center; }
+        svg { width: 500px; height: auto; border: 1px solid #333; margin-top: 20px; }
+        path { fill: #2a3a55; stroke: #5eead4; stroke-width: 5; cursor: pointer; transition: fill 0.2s; }
+        path:hover { fill: #00ffff !important; }
+        #info { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 20px; font-size: 20px; text-align: left; }
+        .label-text { font-size: 80px; fill: red; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="info">Hover over a muscle</div>
+    <div id="svg-container"></div>
+    <script>
+        fetch('new_svg.txt').then(r => r.text()).then(svgRaw => {
+            document.getElementById('svg-container').innerHTML = svgRaw;
+            const svg = document.querySelector('svg');
+            const paths = document.querySelectorAll('path');
+            paths.forEach((p, i) => {
+                p.dataset.index = i;
+                
+                // Add text label at the center of the bounding box
+                const bbox = p.getBBox();
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', bbox.x + bbox.width / 2);
+                text.setAttribute('y', bbox.y + bbox.height / 2);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('alignment-baseline', 'middle');
+                text.setAttribute('class', 'label-text');
+                text.textContent = i;
+                p.parentNode.appendChild(text);
+
+                p.addEventListener('mouseenter', () => {
+                    document.getElementById('info').innerHTML = `Path Index: ` + i;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

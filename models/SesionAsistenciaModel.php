@@ -19,7 +19,7 @@ class SesionAsistenciaModel {
 
     public function getActiva(int $clienteId): ?array {
         $s = $this->db->prepare(
-            "SELECT sa.id, sa.inicio_en, r.nombre AS rutina_nombre
+            "SELECT sa.id, sa.inicio_en, r.descripcion AS rutina_nombre
              FROM sesiones_asistencia sa JOIN rutinas r ON sa.rutina_id=r.id
              WHERE sa.cliente_id=? AND sa.estado='iniciada' ORDER BY sa.inicio_en DESC LIMIT 1"
         );

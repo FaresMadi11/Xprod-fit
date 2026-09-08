@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 session_start();
 
-define('APP_URL',  rtrim('http://' . $_SERVER['HTTP_HOST'] . '/Xprod Fit', '/'));
+define('APP_URL',  rtrim('http://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '/Xprod%20Fit', '/'));
 define('BASE_DIR', __DIR__);
 
 require BASE_DIR . '/config/database.php';
@@ -24,6 +24,7 @@ try {
         'auth'       => (require BASE_DIR . '/controllers/AuthController.php'),
         'entrenador' => (require BASE_DIR . '/controllers/EntrenadorController.php'),
         'cliente'    => (require BASE_DIR . '/controllers/ClienteController.php'),
+        'public'     => (require BASE_DIR . '/controllers/PublicController.php'),
         default      => http_response_code(404) && require BASE_DIR . '/views/errors/404.php',
     };
 } catch (Throwable $e) {

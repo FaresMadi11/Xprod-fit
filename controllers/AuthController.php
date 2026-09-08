@@ -1,107 +1,108 @@
 <?php
 // controllers/AuthController.php
-// Maneja: login, logout, registro de cliente
+declare(strict_types=1);
+
+require_once BASE_DIR . '/models/UsuarioModel.php';
 
 $action = $segment[1] ?? 'login';
 
 match($action) {
-    'login'      => authLogin(),
-    'do-login'   => authDoLogin(),
-    'logout'     => authLogout(),
-    'registro'   => authRegistro(),
-    'do-registro'=> authDoRegistro(),
-    'recuperar'  => authRecuperar(),
-    default      => redirect('auth/login'),
+    'login'       => authLogin(),
+    'do-login'    => authDoLogin(),
+    'registro'    => authRegistro(),
+    'do-registro' => authDoRegistro(),
+    'logout'      => authLogout(),
+    default       => authLogin(),
 };
 
-/* ── Mostrar formulario login ── */
 function authLogin(): void {
     if (!empty($_SESSION['user_id'])) {
-        redirect($_SESSION['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard');
+        redirect(($_SESSION['rol'] ?? '') === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard');
     }
-    $pageTitle = 'Iniciar Sesión';
+    // We mock missing csrf helpers that the view requires if not defined
+    if (!function_exists('csrfToken')) {
+        function csrfToken() { return csrfGenerate(); }
+    }
+    if (!function_exists('csrfField')) {
+        function csrfField() { return '<input type="hidden" name="csrf_token" value="'.csrfGenerate().'">'; }
+    }
+    
+    $flash = getFlash();
     require BASE_DIR . '/views/auth/login.php';
 }
 
-/* ── Procesar login vía fetch/JSON ── */
 function authDoLogin(): void {
     csrfCheck();
-    $email    = trim($_POST['email']    ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $usuario = trim((string)($_POST['usuario'] ?? $_POST['email'] ?? ''));
+    $pass    = (string)($_POST['password'] ?? '');
 
-    if (!$email || !$password) jsonOut(false, 'Completa todos los campos.');
-
-    $db   = getDB();
-    $stmt = $db->prepare("SELECT id, nombre, password_hash, rol, activo FROM usuarios WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
-
-    if (!$user || !password_verify($password, $user['password_hash'])) {
-        jsonOut(false, 'Credenciales incorrectas.');
-    }
-    if (!$user['activo']) {
-        jsonOut(false, 'Cuenta desactivada. Contacta a tu entrenador.');
+    if (empty($usuario) || empty($pass)) {
+        jsonOut(false, 'Por favor completa todos los campos.', ['success' => false, 'mensaje' => 'Por favor completa todos los campos.']);
     }
 
-    session_regenerate_id(true);
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['nombre']  = $user['nombre'];
-    $_SESSION['rol']     = $user['rol'];
-
-    // Si es cliente, guardar su cliente_id
-    if ($user['rol'] === 'cliente') {
-        $cStmt = $db->prepare("SELECT id FROM clientes WHERE usuario_id = ?");
-        $cStmt->execute([$user['id']]);
-        $cliente = $cStmt->fetch();
-        if ($cliente) $_SESSION['cliente_id'] = $cliente['id'];
+    try {
+        $um = new UsuarioModel();
+        $user = $um->findByEmail($usuario);
+        if (!$user || !password_verify($pass, $user['password_hash'])) {
+            jsonOut(false, 'Credenciales incorrectas.', ['success' => false, 'mensaje' => 'Credenciales incorrectas.']);
+        }
+        
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['nombre']  = $user['nombre'];
+        $_SESSION['email']   = $user['email'];
+        $_SESSION['rol']     = $user['rol'];
+        
+        $dest = $user['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard';
+        
+        // Match the expected response for login view
+        jsonOut(true, 'Login exitoso', [
+            'success' => true,
+            'redirect' => APP_URL . '/' . $dest
+        ]);
+    } catch (\Throwable $e) {
+        jsonOut(false, 'Error interno. Intente luego.', ['success' => false, 'mensaje' => 'Error interno. Intente luego.']);
     }
-
-    $redirect = $user['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard';
-    jsonOut(true, 'Bienvenido, ' . $user['nombre'], ['redirect' => APP_URL . '/' . $redirect]);
 }
 
-/* ── Logout ── */
-function authLogout(): void {
-    session_destroy();
-    redirect('auth/login');
-}
-
-/* ── Mostrar formulario de registro ── */
 function authRegistro(): void {
-    $pageTitle = 'Crear Cuenta';
+    if (!function_exists('csrfToken')) {
+        function csrfToken() { return csrfGenerate(); }
+    }
+    if (!function_exists('csrfField')) {
+        function csrfField() { return '<input type="hidden" name="csrf_token" value="'.csrfGenerate().'">'; }
+    }
+    $flash = getFlash();
     require BASE_DIR . '/views/auth/registro.php';
 }
 
-/* ── Procesar registro vía fetch/JSON ── */
 function authDoRegistro(): void {
     csrfCheck();
-    $nombre   = trim($_POST['nombre']   ?? '');
-    $email    = trim($_POST['email']    ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $nombre = trim($_POST['nombre'] ?? '');
+    $email  = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?? '';
+    $pass   = $_POST['password'] ?? '';
 
-    if (!$nombre || !$email || !$password) jsonOut(false, 'Completa todos los campos.');
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonOut(false, 'Email inválido.');
-    if (strlen($password) < 6) jsonOut(false, 'La contraseña debe tener al menos 6 caracteres.');
+    if (strlen($nombre) < 2 || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($pass) < 6) {
+        jsonOut(false, 'Datos inválidos. Verifica los campos.');
+    }
 
-    $db   = getDB();
-    $chk  = $db->prepare("SELECT id FROM usuarios WHERE email = ?");
-    $chk->execute([$email]);
-    if ($chk->fetch()) jsonOut(false, 'Ese email ya está registrado.');
-
-    $hash = password_hash($password, PASSWORD_BCRYPT);
-    $ins  = $db->prepare("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (?, ?, ?, 'cliente')");
-    $ins->execute([$nombre, $email, $hash]);
-    $userId = (int)$db->lastInsertId();
-
-    // Crear perfil cliente
-    $ins2 = $db->prepare("INSERT INTO clientes (usuario_id) VALUES (?)");
-    $ins2->execute([$userId]);
-
-    jsonOut(true, 'Cuenta creada exitosamente.', ['redirect' => APP_URL . '/auth/login']);
+    try {
+        $um = new UsuarioModel();
+        $uid = $um->create($nombre, $email, password_hash($pass, PASSWORD_BCRYPT), 'cliente');
+        
+        // Assign to first available trainer
+        $db = getDB();
+        $tr = $db->query("SELECT id FROM usuarios WHERE rol='entrenador' LIMIT 1")->fetchColumn();
+        if ($tr) {
+            $db->prepare('INSERT INTO clientes (usuario_id, entrenador_id) VALUES (?,?)')->execute([$uid, $tr]);
+        }
+        jsonOut(true, 'Cuenta creada', ['redirect' => APP_URL . '/auth/login']);
+    } catch (\Throwable $e) {
+        $msg = str_contains($e->getMessage(), 'Duplicate') ? 'El email ya está registrado.' : 'Error al registrar.';
+        jsonOut(false, $msg);
+    }
 }
 
-/* ── Recuperar contraseña (pantalla simple) ── */
-function authRecuperar(): void {
-    $pageTitle = 'Recuperar Contraseña';
-    require BASE_DIR . '/views/auth/recuperar.php';
+function authLogout(): void {
+    session_destroy();
+    redirect('auth/login');
 }

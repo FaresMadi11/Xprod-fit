@@ -3,9 +3,22 @@ class UsuarioModel {
     private PDO $db;
     public function __construct() { $this->db = getDB(); }
 
-    public function findByEmail(string $email): ?array {
-        $s = $this->db->prepare("SELECT * FROM usuarios WHERE email = ?");
-        $s->execute([$email]);
+    public function findByEmail(string $identifier): ?array {
+        $clean = trim($identifier);
+        if ($clean === '') return null;
+        
+        $s = $this->db->prepare(
+            "SELECT * FROM usuarios 
+             WHERE LOWER(TRIM(email)) = LOWER(?) 
+                OR LOWER(TRIM(nombre)) = LOWER(?) 
+                OR REPLACE(LOWER(email), '@', '') = LOWER(?)
+                OR SUBSTRING_INDEX(LOWER(email), '@', 1) = LOWER(?)
+                OR LOWER(nombre) LIKE CONCAT(LOWER(?), '%')
+             ORDER BY (LOWER(TRIM(email)) = LOWER(?)) DESC,
+                      (LOWER(TRIM(nombre)) = LOWER(?)) DESC
+             LIMIT 1"
+        );
+        $s->execute([$clean, $clean, $clean, $clean, $clean, $clean, $clean]);
         return $s->fetch() ?: null;
     }
 

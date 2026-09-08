@@ -1,0 +1,23 @@
+<?php
+$f = file_get_contents('c:\xampp\htdocs\Xprod Fit\views\entrenador\perfil_cliente.php');
+$f = str_replace('Estadí­sticas', 'Estadísticas', $f);
+$f = str_replace('aú­n', 'aún', $f);
+$f = str_replace('aÃºn', 'aún', $f);
+$f = str_replace('EstadÃsticas', 'Estadísticas', $f);
+$f = str_replace('dÃas', 'días', $f);
+$f = str_replace('todavÃa', 'todavía', $f);
+$f = str_replace('SesiÃ³n', 'Sesión', $f);
+$f = str_replace('sÃ³lo', 'sólo', $f);
+$f = str_replace('¿Terminar sesiÃ³n?', '¿Terminar sesión?', $f);
+$f = str_replace('Se marcarÃ¡', 'Se marcará', $f);
+$f = str_replace('dí­as', 'días', $f);
+$f = str_replace('todaví­a', 'todavía', $f);
+$f = str_replace('rápida', 'rápida', $f);
+$f = str_replace('räpida', 'rápida', $f);
+$f = str_replace('rÃ¡pidas', 'rápidas', $f);
+$f = str_replace('aÃ±os', 'años', $f);
+$f = str_replace('AÃ±adir', 'Añadir', $f);
+$f = str_replace('Ã·', '·', $f);
+$f = str_replace('Â·', '·', $f);
+file_put_contents('c:\xampp\htdocs\Xprod Fit\views\entrenador\perfil_cliente.php', $f);
+echo 'OK';

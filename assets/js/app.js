@@ -3,12 +3,43 @@
 
 /* ─── Entrance animation for all cards ─────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  // Animación normal de aparición (fade-in)
+  // Animación escalonada (staggered) de aparición para tarjetas y paneles
   anime({
-    targets: '.card-bento, .stat-card, .exercise-item, .auth-card, #mainNav',
+    targets: '.dash-stat-card, .card-bento, .stat-card, .exercise-item, .auth-card',
     opacity: [0, 1],
+    translateY: [20, 0],
+    delay: anime.stagger(100),
     duration: 800,
-    easing: 'linear'
+    easing: 'easeOutExpo'
+  });
+
+  // Animación del header principal
+  anime({
+    targets: '.sys-top-header > div',
+    opacity: [0, 1],
+    translateX: [-20, 0],
+    delay: anime.stagger(150),
+    duration: 800,
+    easing: 'easeOutExpo'
+  });
+
+  // Efecto burbuja 'pop' para las acciones rápidas
+  anime({
+    targets: '.dash-meta-bubble',
+    opacity: [0, 1],
+    scale: [0.5, 1],
+    delay: anime.stagger(80, {start: 300}),
+    duration: 800,
+    easing: 'easeOutElastic(1, .6)'
+  });
+
+  // Animación del nav (fade in from bottom)
+  anime({
+    targets: '#mainNav',
+    opacity: [0, 1],
+    translateY: [30, 0],
+    duration: 800,
+    easing: 'easeOutExpo'
   });
 
   // Flash message auto-dismiss
@@ -45,7 +76,9 @@ const Xp = {
     const body = new FormData();
     body.append('csrf_token', CSRF);
     Object.entries(data).forEach(([k, v]) => body.append(k, v));
-    const res = await fetch(APP + '/' + url, { method: 'POST', body });
+    const cleanBase = (typeof APP !== 'undefined' && APP ? APP : window.location.origin).replace(/\/+$/, '');
+    const cleanUrl = encodeURI(decodeURI(cleanBase) + '/' + url.replace(/^\/+/, ''));
+    const res = await fetch(cleanUrl, { method: 'POST', body });
     return res.json();
   },
 
@@ -106,13 +139,16 @@ if (regForm) {
 /* ─── GUARDAR sesión de ejercicio ───────────────────────── */
 window.guardarSesion = async (ejercicioId, btn) => {
   const input = document.querySelector(`#reps_${ejercicioId}`);
+  const inputPeso = document.querySelector(`#peso_${ejercicioId}`);
   const reps = parseInt(input?.value ?? 0);
+  const peso = inputPeso ? (inputPeso.value || '') : '';
   if (!reps || reps < 0) return Xp.toast('warning', 'Ingresa repeticiones válidas.');
   btn.disabled = true;
-  const r = await Xp.post('cliente/guardar-sesion', { ejercicio_id: ejercicioId, reps }).catch(() => ({ ok: false, msg: 'Error' }));
+  const r = await Xp.post('cliente/guardar-sesion', { ejercicio_id: ejercicioId, reps, peso }).catch(() => ({ ok: false, msg: 'Error' }));
   if (r.ok) {
     Xp.toast('success', '¡Guardado!');
     anime({ targets: btn.closest('.exercise-item'), borderColor: '#4ade80', duration: 600 });
+    setTimeout(() => location.reload(), 800);
   } else Xp.toast('error', r.msg);
   btn.disabled = false;
 };
@@ -169,3 +205,69 @@ document.querySelectorAll('.xp-nav-links a').forEach(a => {
   a.addEventListener('mouseenter', () => anime({ targets: a, scale: 1.04, duration: 150 }));
   a.addEventListener('mouseleave', () => anime({ targets: a, scale: 1, duration: 150 }));
 });
+
+// ── Añadir Nuevo Peso (Global) ─────────────────────────────
+async function promptNuevoPeso() {
+  const htmlContent = `
+    <div style="padding-top:0;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:12px;">
+        <i class="ti ti-scale" style="font-size:1.8rem; color:#fb923c; opacity:0.9"></i>
+        <h3 style="color:#fff; font-weight:800; font-size:1.15rem; margin:0; letter-spacing:-0.3px;">Peso de Hoy</h3>
+      </div>
+      
+      <div style="position:relative; width:160px; margin:0 auto;">
+        <input id="swal-peso" type="number" step="0.01" placeholder="00.00" 
+               style="width:100%; background:rgba(251,146,60,0.06); border:1.5px solid rgba(251,146,60,0.25); border-radius:12px; 
+                      padding:10px 38px 10px 10px; color:#fff; font-size:1.5rem; font-weight:900; text-align:center; outline:none; transition:all 0.2s;
+                      -moz-appearance:textfield;"
+               onfocus="this.style.borderColor='#fb923c'; this.style.background='rgba(251,146,60,0.1)'; this.style.boxShadow='0 0 0 3px rgba(251,146,60,0.15)'"
+               onblur="this.style.borderColor='rgba(251,146,60,0.25)'; this.style.background='rgba(251,146,60,0.06)'; this.style.boxShadow='none'">
+        <span style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:#fb923c; font-weight:800; font-size:.9rem; pointer-events:none;">kg</span>
+      </div>
+    </div>
+  `;
+
+  const { value: formValues } = await Swal.fire({
+    html: htmlContent,
+    showCloseButton: false,
+    showCancelButton: true,
+    focusConfirm: false,
+    confirmButtonText: 'Guardar',
+    cancelButtonText: 'Cancelar',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'xp-swal-minimal',
+      actions: 'xp-swal-actions',
+      confirmButton: 'xp-swal-btn xp-swal-btn-confirm',
+      cancelButton: 'xp-swal-btn xp-swal-btn-cancel'
+    },
+    preConfirm: () => {
+      const peso = document.getElementById('swal-peso').value;
+      if (!peso || peso < 10 || peso > 400) {
+        Swal.showValidationMessage('Ingresa un peso válido (10-400 kg)');
+        return false;
+      }
+      return { peso };
+    }
+  });
+
+  if (formValues) {
+    const fd = new FormData();
+    fd.append('peso', formValues.peso);
+    fd.append('csrf_token', typeof CSRF !== 'undefined' ? CSRF : document.querySelector('meta[name="csrf-token"]')?.content);
+
+    try {
+      const baseApp = (typeof APP !== 'undefined' && APP ? APP : window.location.origin).replace(/\/+$/, '');
+      const res = await fetch(baseApp + '/cliente/api-nuevo-peso', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.ok) {
+        Xp.toast('success', 'Peso registrado correctamente');
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        Xp.toast('error', data.msg || 'Error al guardar el peso');
+      }
+    } catch(e) {
+      Xp.toast('error', 'Error de conexión');
+    }
+  }
+}

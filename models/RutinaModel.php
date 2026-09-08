@@ -5,7 +5,7 @@ class RutinaModel {
 
     public function getByCliente(int $clienteId): array {
         $s = $this->db->prepare(
-            "SELECT r.id, r.nombre, r.fecha_inicio, r.estado, r.descripcion
+            "SELECT r.id, r.dias_semana, r.estado, r.descripcion, r.creado_en
              FROM rutinas r WHERE r.cliente_id = ? ORDER BY r.creado_en DESC"
         );
         $s->execute([$clienteId]);
@@ -14,7 +14,7 @@ class RutinaModel {
 
     public function getWithEjercicios(int $rutinaId, int $clienteId): ?array {
         $s = $this->db->prepare(
-            "SELECT r.id, r.nombre, r.descripcion, r.estado, r.fecha_inicio, u.nombre AS entrenador
+            "SELECT r.id, r.dias_semana, r.descripcion, r.estado, u.nombre AS entrenador
              FROM rutinas r JOIN usuarios u ON r.entrenador_id = u.id
              WHERE r.id = ? AND r.cliente_id = ?"
         );

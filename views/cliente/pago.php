@@ -1,7 +1,12 @@
 <?php $pageTitle = 'Mis Pagos'; require __DIR__ . '/../layout/header.php'; ?>
-<div class="page-header">
-  <h2><i class="ti ti-credit-card" style="color:var(--warn)"></i> Mis Pagos</h2>
-  <p>Historial y métodos de pago disponibles</p>
+<div class="page-header d-flex align-items-center gap-3">
+  <button onclick="history.back()" class="btn-xp btn-secondary" style="padding:8px 12px;flex-shrink:0">
+    <i class="ti ti-arrow-left"></i>
+  </button>
+  <div class="flex-fill">
+    <h2><i class="ti ti-credit-card" style="color:var(--warn)"></i> Mis Pagos</h2>
+    <p>Historial y métodos de pago disponibles</p>
+  </div>
 </div>
 
 <!-- Métodos de pago -->
