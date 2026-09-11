@@ -26,6 +26,10 @@ match($action) {
     'api-editar-peso'         => cliApiEditarPeso(),
     'api-nuevo-peso'          => cliApiNuevoPeso(),
     'api-tienda-get'          => cliApiTiendaGet(),
+    'api-cambiar-password'    => cliApiCambiarPassword(),
+    'api-subir-foto'          => cliApiSubirFoto(),
+    'api-editar-perfil'       => cliApiEditarPerfil(),
+    'api-guardar-pregunta'    => cliApiGuardarPregunta(),
     'perfil'                  => cliPerfil(),
     'guardar-medidas'         => cliGuardarMedidas(),
     'pago'                    => cliPago(),
@@ -477,6 +481,166 @@ function cliEstadisticas(): void {
 
 
 /*─────────────────────────────────────────────────────────────
+  API: CAMBIAR CONTRASEÑA DEL CLIENTE
+─────────────────────────────────────────────────────────────*/
+function cliApiCambiarPassword(): void {
+    header('Content-Type: application/json');
+
+    $body = json_decode(file_get_contents('php://input'), true);
+    $actual = $body['actual'] ?? '';
+    $nueva  = $body['nueva']  ?? '';
+
+    if (empty($actual) || strlen($nueva) < 8) {
+        echo json_encode(['ok' => false, 'msg' => 'Datos incompletos o contraseña muy corta.']);
+        exit;
+    }
+
+    $db     = getDB();
+    $userId = $_SESSION['user_id'] ?? null;
+
+    if (!$userId) {
+        echo json_encode(['ok' => false, 'msg' => 'Sesión inválida.']);
+        exit;
+    }
+
+    // Obtener hash actual
+    $st = $db->prepare("SELECT password FROM usuarios WHERE id = ?");
+    $st->execute([$userId]);
+    $usuario = $st->fetch();
+
+    if (!$usuario || !password_verify($actual, $usuario['password'])) {
+        echo json_encode(['ok' => false, 'msg' => 'La contraseña actual es incorrecta.']);
+        exit;
+    }
+
+    // Actualizar con nuevo hash
+    $nuevoHash = password_hash($nueva, PASSWORD_DEFAULT);
+    $db->prepare("UPDATE usuarios SET password = ? WHERE id = ?")->execute([$nuevoHash, $userId]);
+
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/*─────────────────────────────────────────────────────────────
+  API: SUBIR FOTO DE PERFIL (base64 → JPEG)
+─────────────────────────────────────────────────────────────*/
+function cliApiSubirFoto(): void {
+    header('Content-Type: application/json');
+    $body     = json_decode(file_get_contents('php://input'), true);
+    $dataUrl  = $body['imagen'] ?? '';
+
+    if (!preg_match('/^data:image\/(jpeg|png|webp);base64,/', $dataUrl, $m)) {
+        echo json_encode(['ok' => false, 'msg' => 'Formato inválido.']); exit;
+    }
+
+    $base64  = preg_replace('/^data:image\/[a-z]+;base64,/', '', $dataUrl);
+    $imgData = base64_decode($base64);
+    if (!$imgData) {
+        echo json_encode(['ok' => false, 'msg' => 'Error al decodificar imagen.']); exit;
+    }
+
+    $clienteId = $_SESSION['cliente_id'];
+    $filename  = 'uploads/fotos/cli_' . $clienteId . '_' . time() . '.jpg';
+    $path      = BASE_DIR . '/' . $filename;
+
+    // Save the decoded image directly (JS already cropped and resized it)
+    if (file_put_contents($path, $imgData) === false) {
+        echo json_encode(['ok' => false, 'msg' => 'Error al guardar la imagen.']); exit;
+    }
+
+    // Delete old photo if any
+    $db  = getDB();
+    $old = $db->prepare("SELECT foto FROM clientes WHERE id = ?")->execute([$clienteId]);
+    $st  = $db->prepare("SELECT foto FROM clientes WHERE id = ?");
+    $st->execute([$clienteId]);
+    $oldFoto = $st->fetchColumn();
+    if ($oldFoto && file_exists(BASE_DIR . '/' . $oldFoto)) @unlink(BASE_DIR . '/' . $oldFoto);
+
+    $db->prepare("UPDATE clientes SET foto = ? WHERE id = ?")->execute([$filename, $clienteId]);
+
+    echo json_encode(['ok' => true, 'url' => APP_URL . '/' . $filename]);
+    exit;
+}
+
+/*─────────────────────────────────────────────────────────────
+  API: EDITAR DATOS DEL PERFIL
+─────────────────────────────────────────────────────────────*/
+function cliApiEditarPerfil(): void {
+    header('Content-Type: application/json');
+    $body      = json_decode(file_get_contents('php://input'), true);
+    $clienteId = $_SESSION['cliente_id'];
+    $userId    = $_SESSION['user_id'] ?? null;
+    $db        = getDB();
+
+    // Sanitize
+    $nombre   = trim($body['nombre'] ?? '');
+    $fechaNac = $body['fecha_nac'] ?? '';
+    $peso     = (float)str_replace(',', '.', $body['peso_kg']   ?? '0');
+    $altura   = (float)str_replace(',', '.', $body['altura_cm'] ?? '0');
+    $dias     = (int)($body['dias_entrenamiento'] ?? 0);
+
+    if (empty($nombre)) {
+        echo json_encode(['ok' => false, 'msg' => 'El nombre es obligatorio.']); exit;
+    }
+    if ($peso > 0 && ($peso < 10 || $peso > 400)) {
+        echo json_encode(['ok' => false, 'msg' => 'Peso fuera de rango.']); exit;
+    }
+    if ($altura > 0 && ($altura < 50 || $altura > 250)) {
+        echo json_encode(['ok' => false, 'msg' => 'Altura fuera de rango.']); exit;
+    }
+
+    if ($userId) {
+        $db->prepare("UPDATE usuarios SET nombre = ? WHERE id = ?")->execute([$nombre, $userId]);
+    }
+    $db->prepare(
+        "UPDATE clientes SET peso_kg=?, altura_cm=?, fecha_nac=?, dias_entrenamiento=? WHERE id=?"
+    )->execute([
+        $peso   ?: null,
+        $altura ?: null,
+        $fechaNac ?: null,
+        $dias   ?: null,
+        $clienteId
+    ]);
+
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/*─────────────────────────────────────────────────────────────
+  API: GUARDAR PREGUNTA DE SEGURIDAD
+─────────────────────────────────────────────────────────────*/
+function cliApiGuardarPregunta(): void {
+    header('Content-Type: application/json');
+    $body      = json_decode(file_get_contents('php://input'), true);
+    $userId    = $_SESSION['user_id'] ?? null;
+    $pregunta  = $body['pregunta']  ?? '';
+    $respuesta = trim($body['respuesta'] ?? '');
+    $password  = $body['password']  ?? '';
+
+    if (!$userId || empty($respuesta) || empty($password)) {
+        echo json_encode(['ok' => false, 'msg' => 'Datos incompletos.']); exit;
+    }
+
+    $db = getDB();
+    $st = $db->prepare("SELECT password FROM usuarios WHERE id = ?");
+    $st->execute([$userId]);
+    $hash = $st->fetchColumn();
+
+    if (!$hash || !password_verify($password, $hash)) {
+        echo json_encode(['ok' => false, 'msg' => 'Contraseña incorrecta.']); exit;
+    }
+
+    // Store as hashed answer for security
+    $respuestaHash = password_hash(strtolower($respuesta), PASSWORD_DEFAULT);
+    // Use users table meta or a dedicated column — store as JSON meta for now
+    $db->prepare("UPDATE usuarios SET pregunta_seguridad=?, respuesta_seguridad=? WHERE id=?")
+       ->execute([$pregunta, $respuestaHash, $userId]);
+
+    echo json_encode(['ok' => true]);
+    exit;
+}
+
+/*─────────────────────────────────────────────────────────────
   PERFIL DEL CLIENTE
 ─────────────────────────────────────────────────────────────*/
 function cliPerfil(): void {
@@ -484,7 +648,7 @@ function cliPerfil(): void {
     $clienteId = $_SESSION['cliente_id'];
 
     $stmt = $db->prepare(
-        "SELECT u.nombre, u.email, c.peso_kg, c.altura_cm, c.objetivo, c.fecha_nac, c.dias_entrenamiento
+        "SELECT u.nombre, u.email, c.foto, c.peso_kg, c.altura_cm, c.objetivo, c.fecha_nac, c.dias_entrenamiento
          FROM clientes c JOIN usuarios u ON c.usuario_id = u.id
          WHERE c.id = ?"
     );
