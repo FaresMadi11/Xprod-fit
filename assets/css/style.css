@@ -304,6 +304,11 @@ html[data-theme="dark"] .btn-primary{color:#0b0e1a}
 }
 .xp-form input::placeholder,.xp-form textarea::placeholder{color:var(--muted)}
 
+select option {
+  background: var(--bg2);
+  color: var(--text);
+}
+
 /* ── AUTH ─────────────────────────────────────────────── */
 .auth-wrap{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -751,217 +756,320 @@ html[data-theme="light"] .dash-metas-section{background:#fff;}
 
 /* ── TIENDA CSS ── */
 /* ── TIENDA DE CONSUMIBLES ─────────────────────────────── */
+/* ── TIENDA DE CONSUMIBLES ─────────────────────────────── */
 .tienda-section {
   margin: 0 16px 20px;
-  background: #0e1117;
-  border-radius: 20px;
+  background: #181a20;
+  border-radius: 24px;
   border: 1px solid rgba(255,255,255,0.07);
   overflow: hidden;
 }
+
+/* ── Cabecera de la tienda ── */
 .tienda-toggle {
   width: 100%;
   display: flex; align-items: center; justify-content: space-between;
   background: transparent;
   border: none;
   border-radius: 0;
-  padding: 16px 20px;
+  padding: 18px 20px 16px;
   cursor: pointer;
   color: #fff;
   transition: background .2s;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.tienda-toggle:hover { background: rgba(255,255,255,0.03); }
-.tienda-toggle-left { display: flex; align-items: center; gap: 10px; }
-.tienda-icon { font-size: 1.3rem; color: #a3e635; }
-.tienda-toggle-title { font-size: 1rem; font-weight: 800; letter-spacing: -0.2px; }
+.tienda-toggle:hover { background: rgba(255,255,255,0.02); }
+.tienda-toggle-left { display: flex; align-items: center; gap: 12px; }
+.tienda-icon {
+  font-size: 1.5rem;
+  color: #fff;
+  background: rgba(255,255,255,0.09);
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tienda-toggle-title {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #fff;
+}
 .tienda-toggle-chevron { color: #6b7280; font-size: 1.1rem; transition: transform .3s ease; }
 .tienda-toggle-chevron.open { transform: rotate(180deg); }
 
+/* ── Carrito con badge (esquina derecha header) ── */
+.tienda-cart-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.3rem;
+  color: #fff;
+}
+.tienda-cart-badge .cart-count {
+  position: absolute;
+  top: -6px; right: -10px;
+  background: var(--accent, #5eead4);
+  color: #0b0e1a;
+  font-size: .62rem;
+  font-weight: 800;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+/* ── Cuerpo de la tienda ── */
 .tienda-body {
   overflow: hidden;
   max-height: 0;
-  background: #0e1117;
+  background: #181a20;
   transition: max-height .45s cubic-bezier(.4,0,.2,1), opacity .3s;
   opacity: 0;
 }
-.tienda-body.open { max-height: 650px; opacity: 1; overflow-y: auto; padding-bottom: 30px; }
+.tienda-body.open { max-height: 700px; opacity: 1; overflow-y: auto; padding-bottom: 24px; }
 .tienda-body::-webkit-scrollbar { width: 6px; }
 .tienda-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
+/* ── Grid de productos (2 cols) ── */
 .tienda-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 16px 0 4px;
+  gap: 14px;
+  padding: 14px 16px 8px;
 }
 
 
 
-/* ── Shop Card Animation (Vertical Expansion) ── */
+
+/* ══════════════════════════════════════════════════════════
+   SHOP CARD — Diseño flat E-commerce
+   (mantiene colores del sistema: var(--accent), #0e1117, etc.)
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Tarjeta base ── */
 .shop-card {
   position: relative;
-  background: transparent;
-  width: 100%;
-  aspect-ratio: 1;
-  border: none;
-}
-
-/* ESTADO INICIAL: Círculo */
-.shop-card .container-image {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #e7e7e7;
-  width: 80%;
-  height: 80%;
-  cursor: pointer;
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 0 3px 1px #1818183d, 2px 2px 3px #18181865, inset 2px 2px 2px #ffffff;
-  transition: all .3s ease-in-out, opacity .3s;
-  transition-delay: .4s, 0s;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  z-index: 2;
-}
-
-.shop-card:hover .container-image {
-  opacity: 0;
-  transition-delay: 0s;
-  pointer-events: none;
-}
-
-.shop-card .container-image .image-circle {
-  width: 70%;
-  height: auto;
-  object-fit: contain;
-  mix-blend-mode: multiply;
-}
-
-/* ESTADO EXPANDIDO: Escenario 3D */
-.shop-card .content {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%; height: 80%;
-  border-radius: 50%;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  visibility: hidden;
-  opacity: 0;
-  transition: all .4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  z-index: 1;
-  pointer-events: none;
-  perspective: 1000px; /* Habilita el espacio 3D */
-}
-
-.shop-card:hover .content {
-  visibility: visible;
-  opacity: 1;
-  width: 95%; 
-  height: 195px; 
-  border-radius: 16px;
-  pointer-events: all;
-  z-index: 50;
-}
-
-/* Contenedor Giratorio */
-.shop-card .content .flipper {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
-}
-
-/* Clase que activa el giro */
-.shop-card .content.flipped .flipper {
-  transform: rotateY(180deg);
-}
-
-/* Caras de la Tarjeta */
-.shop-card .content .face {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
+  background: #23262e;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.07);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 16px;
-  background: #1a1d24;
-  border: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+  /* Quitar aspect-ratio fijo para que la altura sea natural */
+  aspect-ratio: unset;
+  min-height: 0;
+}
+.shop-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+  border-color: rgba(255,255,255,0.13);
 }
 
-/* ====== CARA FRONTAL ====== */
-.shop-card .content .face.front {
-  transform: rotateY(0deg);
-}
-
-.shop-card .content .card-image-area {
-  background: #f3f4f6;
+/* ── Área de imagen (recuadro blanco/claro) ── */
+.shop-card .container-image {
+  /* Reset del estilo circular anterior */
+  position: static;
+  transform: none;
+  top: auto; left: auto;
   width: 100%;
-  height: 85px;
+  height: 130px;
+  background: #f2f3f5;
+  border-radius: 0;
+  box-shadow: none;
+  -webkit-mask-image: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px;
-  opacity: 0;
-  transition: opacity .2s .1s;
-}
-
-.shop-card:hover .content .card-image-area {
+  padding: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: opacity .2s;
+  z-index: auto;
   opacity: 1;
+  cursor: default;
+}
+/* Quitar el efecto de desaparecer al hacer hover */
+.shop-card:hover .container-image {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.shop-card .container-image .image-circle {
+  width: auto;
+  height: 100%;
+  max-height: 100px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  transition: transform .25s ease;
+}
+.shop-card:hover .container-image .image-circle {
+  transform: scale(1.06);
 }
 
-.shop-card .content .card-image-area .img-product {
+/* ── Información del producto (zona inferior) ── */
+.shop-card .content {
+  /* Reset del estilo expandible anterior */
+  position: static;
+  top: auto; left: auto;
+  transform: none;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  box-shadow: none;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: all;
+  perspective: none;
+  z-index: auto;
+  padding: 12px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  transition: none;
+}
+/* Deshabilitar efecto hover de expansión */
+.shop-card:hover .content {
+  visibility: visible;
+  opacity: 1;
+  width: 100%;
+  height: auto;
+  border-radius: 0;
+  pointer-events: all;
+  z-index: auto;
+}
+
+/* ── Flipper (desactivado en el nuevo diseño, solo usamos front) ── */
+.shop-card .content .flipper {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  mix-blend-mode: multiply; 
-}
-
-.shop-card .content .card-info-area {
-  padding: 12px;
+  position: static;
+  transform: none;
+  transform-style: flat;
+  transition: none;
   display: flex;
   flex-direction: column;
   flex: 1;
-  opacity: 0;
-  transition: opacity .2s .1s;
+}
+.shop-card .content.flipped .flipper {
+  transform: none; /* Deshabilitar giro */
 }
 
-.shop-card:hover .content .card-info-area {
+/* ── Cara frontal (siempre visible) ── */
+.shop-card .content .face {
+  position: static;
+  width: 100%;
+  height: auto;
+  backface-visibility: visible;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  flex: 1;
+}
+.shop-card .content .face.front {
+  transform: none;
+}
+
+/* ── Área de imagen dentro del content (oculta en nuevo diseño — usamos container-image) ── */
+.shop-card .content .card-image-area {
+  display: none; /* La imagen ya está en .container-image */
+}
+.shop-card:hover .content .card-image-area { opacity: 0; }
+.shop-card .content .card-image-area .img-product { display: none; }
+
+/* ── Info area (marca + nombre + precio + botón) ── */
+.shop-card .content .card-info-area {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   opacity: 1;
+  transition: none;
+  gap: 4px;
+}
+.shop-card:hover .content .card-info-area { opacity: 1; }
+
+/* Marca / categoría (texto pequeño gris) */
+.shop-card .content .product-brand {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.38);
+  margin: 0;
 }
 
+/* Nombre del producto */
 .shop-card .content .product-title {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #f3f4f6;
-  margin: 0 0 4px 0;
-  line-height: 1.1;
+  margin: 0 0 6px 0;
+  line-height: 1.25;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.shop-card .content .product-price {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--accent);
-  margin: auto 0 8px 0;
+/* Fila precio + botón */
+.shop-card .content .product-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
 }
 
-/* ====== CARA TRASERA ====== */
+/* Precio */
+.shop-card .content .product-price {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+/* Botón «Añadir al Carrito» */
+.shop-card .content .btn-add-cart {
+  flex-shrink: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.75);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 50px;
+  padding: 5px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .2s, border-color .2s, color .2s;
+}
+.shop-card .content .btn-add-cart:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
+}
+
+/* ── Cara trasera (detalles) ── */
 .shop-card .content .face.back {
-  transform: rotateY(180deg);
-  padding: 15px;
+  transform: none;
+  display: none; /* Oculta por defecto */
+  padding: 14px;
   background: #1f232b;
-  display: flex;
+  border-radius: 0;
   flex-direction: column;
   justify-content: space-between;
 }
+.shop-card .content.flipped .face.front { display: none; }
+.shop-card .content.flipped .face.back  { display: flex; }
 
 .shop-card .content .back-title {
   font-size: 0.9rem;
@@ -969,11 +1077,10 @@ html[data-theme="light"] .dash-metas-section{background:#fff;}
   color: var(--accent);
   margin-bottom: 5px;
 }
-
 .shop-card .content .back-description {
   font-size: 0.75rem;
   color: #d1d5db;
-  line-height: 1.3;
+  line-height: 1.4;
   overflow-y: auto;
   flex: 1;
   margin-bottom: 10px;
@@ -982,14 +1089,13 @@ html[data-theme="light"] .dash-metas-section{background:#fff;}
 .shop-card .content .back-description::-webkit-scrollbar { width: 4px; }
 .shop-card .content .back-description::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
 
-/* Botones Universales de la Tarjeta */
+/* ── Botones universales ── */
 .shop-card .content .card-actions {
   display: flex;
   gap: 6px;
   width: 100%;
-  margin-top: auto;
+  margin-top: 8px;
 }
-
 .shop-card .content .btn-card {
   flex: 1;
   padding: 8px 0;
@@ -1000,79 +1106,68 @@ html[data-theme="light"] .dash-metas-section{background:#fff;}
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
+  font-family: inherit;
 }
-
 .shop-card .content .btn-volver {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255,255,255,0.1);
   color: #fff;
   flex: 0 0 auto;
   padding: 8px 12px;
 }
-.shop-card .content .btn-volver:hover { background: rgba(255, 255, 255, 0.2); }
-
+.shop-card .content .btn-volver:hover { background: rgba(255,255,255,0.2); }
 .shop-card .content .btn-adquirir {
   background: #b8854b;
   color: #fff;
 }
 .shop-card .content .btn-adquirir:hover { background: #a3723b; }
-
 .shop-card .content .btn-detalles {
-  background: rgba(94, 234, 212, 0.15);
+  background: rgba(94,234,212,0.15);
   color: var(--accent);
   width: 100%;
 }
-.shop-card .content .btn-detalles:hover { background: rgba(94, 234, 212, 0.25); }
+.shop-card .content .btn-detalles:hover { background: rgba(94,234,212,0.25); }
 
-/* ====== MODO EDICIÓN (Entrenador) ====== */
+/* ── MODO EDICIÓN (Entrenador) ── */
 .tienda-grid .card-edit-actions {
-  display: none; /* Oculto por defecto */
+  display: none;
   gap: 6px;
   width: 100%;
   margin-top: auto;
 }
-
-.tienda-grid.edit-mode .card-edit-actions {
-  display: flex; /* Visible en modo edición */
-}
-
-.tienda-grid.edit-mode .btn-detalles {
-  display: none !important; /* Ocultar "Ver Detalles" en modo edición */
-}
+.tienda-grid.edit-mode .card-edit-actions { display: flex; }
+.tienda-grid.edit-mode .btn-detalles { display: none !important; }
 
 .shop-card .content .btn-editar {
-  background: rgba(94, 234, 212, 0.1);
+  background: rgba(94,234,212,0.1);
   color: var(--accent);
-  border: 1px solid rgba(94, 234, 212, 0.3);
+  border: 1px solid rgba(94,234,212,0.3);
 }
-.shop-card .content .btn-editar:hover { background: rgba(94, 234, 212, 0.2); }
-
+.shop-card .content .btn-editar:hover { background: rgba(94,234,212,0.2); }
 .shop-card .content .btn-borrar {
-  background: rgba(248, 113, 113, 0.1);
+  background: rgba(248,113,113,0.1);
   color: #f87171;
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  border: 1px solid rgba(248,113,113,0.3);
 }
-.shop-card .content .btn-borrar:hover { background: rgba(248, 113, 113, 0.2); }
+.shop-card .content .btn-borrar:hover { background: rgba(248,113,113,0.2); }
 
 .fil-shoes1, .fil-shoes2 { fill: #333333; }
-/* ====== MODO EDICIÓN OVERLAY (Entrenador) ====== */
+
+/* ── MODO EDICIÓN OVERLAY (Entrenador) ── */
 .tienda-grid .edit-overlay-btns {
   display: none;
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,0.7);
-  border-radius: 50%;
+  border-radius: 18px;
   z-index: 60;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
-.tienda-grid.edit-mode .edit-overlay-btns {
-  display: flex;
-}
-.tienda-grid.edit-mode .shop-card:hover .content {
-  display: none !important; /* Prevenir expansión de la tarjeta */
-}
+.tienda-grid.edit-mode .edit-overlay-btns { display: flex; }
+.tienda-grid.edit-mode .shop-card:hover .content { opacity: 1; } /* no ocultar en modo edición */
+
 .btn-circular-edit, .btn-circular-delete {
   background: var(--accent);
   color: #0b0e1a;
@@ -1084,13 +1179,8 @@ html[data-theme="light"] .dash-metas-section{background:#fff;}
   cursor: pointer;
   transition: transform 0.2s;
 }
-.btn-circular-edit:hover, .btn-circular-delete:hover {
-  transform: scale(1.1);
-}
-.btn-circular-delete {
-  background: #f87171;
-  color: #fff;
-}
+.btn-circular-edit:hover, .btn-circular-delete:hover { transform: scale(1.1); }
+.btn-circular-delete { background: #f87171; color: #fff; }
 
 /* Header Tienda Actions */
 .tienda-toggle.open .tienda-actions {
@@ -1203,3 +1293,49 @@ html[data-theme="light"] .dash-metas-section{background:#fff;}
   outline: none;
   border-color: #e81cff;
 }
+
+/* ── Notificaciones Dropdown ── */
+.db-notif-dropdown {
+  position: absolute; top: 75px; right: 20px;
+  width: 320px; max-height: 400px;
+  background: #1a2032; /* Fondo sólido oscuro para asegurar contraste */
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  overflow-y: auto; 
+  z-index: 1000;
+  
+  /* Animación de desglose (Slide down) */
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bounce suave */
+}
+.db-notif-dropdown.open {
+  visibility: visible;
+  opacity: 1; 
+  transform: translateY(0);
+}
+.db-notif-header {
+  padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 1.05rem; font-weight: 800; color: #fff;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.db-notif-close {
+  background: rgba(255,255,255,0.05); border: none; color: #94a3b8;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.2rem; transition: background 0.2s, color 0.2s;
+}
+.db-notif-close:hover {
+  background: rgba(255,255,255,0.1); color: #fff;
+}
+.db-notif-item {
+  padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background .2s;
+}
+.db-notif-item:hover { background: rgba(255,255,255,0.03); }
+.db-notif-item:last-child { border-bottom: none; }
+.db-notif-msg { font-size: 0.88rem; color: #e2e8f0; line-height: 1.5; margin-bottom: 6px; }
+.db-notif-date { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+.db-notif-empty { padding: 30px 20px; text-align: center; color: #64748b; font-size: 0.9rem; font-weight: 500; }

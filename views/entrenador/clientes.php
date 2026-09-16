@@ -232,8 +232,16 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  padding: 4px 0 20px;
+  padding: 4px 4px 20px 4px;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+/* Scrollbar para el grid */
+.atletas-grid::-webkit-scrollbar { width: 6px; }
+.atletas-grid::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 4px; }
+.atletas-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
 @media (min-width: 600px)  { .atletas-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 900px)  { .atletas-grid { grid-template-columns: repeat(4, 1fr); } }
 @media (min-width: 1200px) { .atletas-grid { grid-template-columns: repeat(5, 1fr); } }
@@ -245,10 +253,10 @@
   /* dimensiones */
   width: 100%;
   aspect-ratio: 3 / 4;
-  border-radius: 22px;
+  border-radius: 20px;
   overflow: hidden;
 
-  /* layout: ambos hijos (svg + textBox) van al mismo lugar */
+  /* layout */
   position: relative;
   display: grid;
   place-items: center;
@@ -256,29 +264,16 @@
   color: #fff;
   cursor: pointer;
 
-  /* fondo glassmorphism idéntico al ejemplo */
-  background:
-    radial-gradient(
-      120% 120% at 20% 0%,
-      rgba(255,255,255,0.08),
-      transparent 55%
-    ),
-    linear-gradient(
-      180deg,
-      rgba(255,255,255,0.06),
-      rgba(255,255,255,0.02)
-    );
-  border: 1px solid rgba(255,255,255,0.10);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  /* Igual que dash-stat-card pero con fondo sólido para que no transparente */
+  background: var(--bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
 
-  transition: transform .3s cubic-bezier(.4,0,.2,1),
-              box-shadow .3s ease,
-              border-color .3s ease;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
 }
 .at-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 28px 60px rgba(0,0,0,0.5);
-  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 .at-card.has-mod {
   border-color: rgba(251,191,36,.35);

@@ -5,33 +5,50 @@ $flash   = getFlash();
 $rolUser = $_SESSION['rol'] ?? '';
 $nomUser = $_SESSION['nombre'] ?? '';
 $route   = $route ?? (($segment[0] ?? '') . '/' . ($segment[1] ?? ''));
-?><!DOCTYPE html>
+
+// Añadir security headers (antes de cualquier output HTML)
+addSecurityHeaders();
+?><?php // No añadir salto de línea antes del DOCTYPE ?><!DOCTYPE html>
 <html lang="es" data-theme="dark" id="htmlRoot">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?= e($pageTitle ?? 'Xprod Fit') ?> | Xprod Fit</title>
   <meta name="description" content="Xprod Fit – Sistema de gestión para entrenadores y atletas.">
+  <meta name="theme-color" content="#02040a">
+
+  <!-- ── Preconnect a CDNs críticos (mejora LCP) ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+  <!-- ── Google Fonts (display=swap para no bloquear render) ── -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- ── CSS crítico: cargado de forma síncrona (necesario para render) ── -->
   <!-- Tabler Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- Bootstrap 5 (JS only, for Modal) -->
+  <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-  <!-- App CSS -->
-  <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=<?= time() ?>">
-  <!-- SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+  <!-- App CSS (versionado para cache busting) -->
+  <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css?v=1.3">
+
+  <!-- ── JavaScript no crítico: diferido para no bloquear render ── -->
   <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js" defer></script>
   <!-- Anime.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" defer></script>
+
+  <!-- ── Variables globales JS (inline, no bloquea render) ── -->
   <script>
+    // Constantes globales disponibles para todos los scripts
     const APP  = '<?= APP_URL ?>';
     const CSRF = '<?= $csrf ?>';
-    // Apply saved theme immediately to avoid flash
-    (function(){
+
+    // Aplicar tema guardado ANTES de que se pinte el DOM (evita flash)
+    (function() {
       const t = localStorage.getItem('xp_theme') || 'dark';
       document.getElementById('htmlRoot').setAttribute('data-theme', t);
     })();

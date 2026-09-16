@@ -54,3 +54,34 @@ function getFlash(): ?array {
     }
     return null;
 }
+
+/** Envía un correo usando PHPMailer */
+function sendEmail(string $to, string $subject, string $body): bool {
+    require_once BASE_DIR . '/libs/PHPMailer/Exception.php';
+    require_once BASE_DIR . '/libs/PHPMailer/PHPMailer.php';
+    require_once BASE_DIR . '/libs/PHPMailer/SMTP.php';
+    
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host = env('MAIL_HOST', 'smtp.gmail.com');
+        $mail->SMTPAuth = true;
+        $mail->Username = env('MAIL_USER', '');
+        $mail->Password = env('MAIL_PASS', '');
+        $mail->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = env('MAIL_PORT', '587');
+        
+        $mail->setFrom(env('MAIL_FROM', 'noreply@xprodfit.com'), 'Xprod Fit');
+        $mail->addAddress($to);
+        
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body = $body;
+        $mail->CharSet = 'UTF-8';
+        
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log('[Xprod Fit] Mail Error: ' . $mail->ErrorInfo);
+        return false;
+    }
+}

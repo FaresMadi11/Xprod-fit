@@ -68,8 +68,19 @@ main#mainContent{position:relative;z-index:2;width:100%;display:flex;justify-con
 }
 .field:focus-within{border-color:rgba(49, 70, 139, 0.55);background:rgba(0,0,0,0.65);}
 .field label{display:block;font-size:0.75rem;color:rgba(255,255,255,.5);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;} 
-.field input{width:100%;background:transparent;border:none;color:#fff;font-size:1rem;font-weight:500;outline:none;font-family:'Inter',sans-serif;} 
+.field input{
+  width:100%;background:transparent;border:none;color:#fff;font-size:1rem;font-weight:500;outline:none;font-family:'Inter',sans-serif;
+} 
 .field input::placeholder{color:rgba(255,255,255,.18);}
+/* Prevent white autofill background */
+.field input:-webkit-autofill,
+.field input:-webkit-autofill:hover, 
+.field input:-webkit-autofill:focus, 
+.field input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+    -webkit-text-fill-color: #fff !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
 .pass-row{display:flex;align-items:center;}
 .pass-row input{flex:1;}
 .btn-eye{background:none;border:none;color:rgba(255,255,255,.28);cursor:pointer;font-size:1.1rem;padding:4px;transition:color .2s;}
@@ -92,6 +103,32 @@ main#mainContent{position:relative;z-index:2;width:100%;display:flex;justify-con
 .link-sm{display:flex;justify-content:space-between;margin-bottom:16px;font-size:.875rem;}
 .link-sm a{color:#F9F6EE;text-decoration:none;font-weight:600;}
 .link-sm a:hover{text-decoration:underline;color:#ffffff;}
+
+/* ── Divisor ── */
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0 16px;}
+.divider span{color:rgba(255,255,255,.25);font-size:.78rem;white-space:nowrap;text-transform:uppercase;letter-spacing:.8px;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08);}
+
+/* ── Botón Google ── */
+.btn-google{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:50px;color:#fff;
+  font-size:.95rem;font-weight:600;
+  font-family:'Inter',sans-serif;
+  cursor:pointer;text-decoration:none;
+  transition:background .2s,border-color .2s,transform .15s;
+}
+.btn-google:hover{
+  background:rgba(255,255,255,0.12);
+  border-color:rgba(255,255,255,0.25);
+  transform:translateY(-1px);
+  color:#fff;
+}
+.btn-google:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-google svg{flex-shrink:0;width:20px;height:20px;}
 
 /* ── Spinner ── */
 .spin{display:inline-block;width:14px;height:14px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;animation:rot .6s linear infinite;vertical-align:middle;margin-right:6px;}
@@ -131,7 +168,7 @@ main#mainContent{position:relative;z-index:2;width:100%;display:flex;justify-con
 
 <main id="mainContent">
 <div class="auth-box" id="authBox" role="region" aria-label="Portal de autenticación">
-  <form id="loginForm" novalidate aria-label="Formulario de inicio de sesión">
+  <form id="loginForm" method="POST" action="<?= APP_URL ?>/auth/do-login" novalidate aria-label="Formulario de inicio de sesión">
     <?= csrfField() ?>
     <div class="field">
       <label for="login_usuario">Usuario o Correo</label>
@@ -145,13 +182,56 @@ main#mainContent{position:relative;z-index:2;width:100%;display:flex;justify-con
       </div>
     </div>
     <div class="link-sm">
-      <a href="#" aria-label="¿Olvidaste tu contraseña?">¿Olvidaste tu contraseña?</a>
+      <a href="<?= APP_URL ?>/auth/recuperar" aria-label="¿Olvidaste tu contraseña?">¿Olvidaste tu contraseña?</a>
       <a href="<?= APP_URL ?>/auth/registro">Crear cuenta</a>
     </div>
     <button type="submit" id="btnLogin" class="btn-submit">Iniciar Sesión</button>
   </form>
+
+  <!-- ── Divisor y botón Google ── -->
+  <div class="divider"><span>o continúa con</span></div>
+
+  <a href="<?= APP_URL ?>/auth/google"
+     id="btnGoogle"
+     class="btn-google"
+     role="button"
+     aria-label="Iniciar sesión con Google">
+    <!-- Google G logo SVG -->
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+    Continuar con Google
+  </a>
+
+  <!-- Links legales -->
+  <p style="text-align:center;font-size:.75rem;color:rgba(255,255,255,.3);margin-top:28px;line-height:1.5;">
+    Al ingresar aceptas nuestros
+    <a href="<?= APP_URL ?>/legal/terminos" style="color:rgba(255,255,255,.5);text-decoration:underline;">Términos</a>
+    y
+    <a href="<?= APP_URL ?>/legal/privacidad" style="color:rgba(255,255,255,.5);text-decoration:underline;">Política de Privacidad</a>.
+  </p>
 </div>
 </main>
+
+<?php if (!empty($flash['error'])): ?>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Atención',
+            text: '<?= addslashes($flash['error']) ?>',
+            background: '#111827',
+            color: '#fff',
+            confirmButtonColor: '#4f46e5'
+        });
+    }
+});
+</script>
+<?php endif; ?>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -211,13 +291,22 @@ async function postApi(endpoint, body) {
 const origLogin = 'Iniciar Sesión';
 document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
+  
+  const userInp = document.getElementById('login_usuario').value.trim();
+  const passInp = document.getElementById('login_pass').value.trim();
+  
+  if (!userInp || !passInp) {
+    Toast.fire({icon: 'warning', title: 'Por favor, llena ambos campos.'});
+    return;
+  }
+
   const btn = document.getElementById('btnLogin');
   setBtn(btn, true, origLogin);
   try {
     const data = await postApi('auth/do-login', {
       csrf_token: typeof CSRF !== 'undefined' ? CSRF : '',
-      usuario:  document.getElementById('login_usuario').value,
-      password: document.getElementById('login_pass').value,
+      usuario: userInp,
+      password: passInp,
     });
     if (data.ok || data.success) {
       Toast.fire({icon:'success', title:'¡Bienvenido!'});

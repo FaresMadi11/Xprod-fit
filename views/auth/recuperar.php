@@ -260,17 +260,17 @@
     <div class="card-header">
         <i class="ti ti-shield-lock main-icon"></i>
         <h2>Recuperación</h2>
-        <p class="text-muted" id="stepDescription">Ingresa tu cédula de identidad.</p>
+        <p class="text-muted" id="stepDescription">Ingresa tu correo electrónico.</p>
     </div>
 
     <!-- PASO 1 -->
     <div id="step1" class="form-step active">
         <form id="formPaso1" onsubmit="event.preventDefault(); procesarPaso1();">
             <div class="form-group">
-                <label class="form-label" for="cedula">Cédula de Identidad</label>
+                <label class="form-label" for="email">Correo Electrónico</label>
                 <div class="input-group">
-                    <i class="ti ti-id input-icon"></i>
-                    <input type="text" id="cedula" name="cedula" class="form-control" placeholder="Ej: 12345678" required pattern="[0-9]{6,10}" title="Debe contener entre 6 y 10 dígitos numéricos">
+                    <i class="ti ti-mail input-icon"></i>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="tu@correo.com" required>
                 </div>
             </div>
             <button type="submit" class="btn-primary" id="btnPaso1">
@@ -301,9 +301,31 @@
         </form>
     </div>
 
+    
     <!-- PASO 3 -->
     <div id="step3" class="form-step">
         <form id="formPaso3" onsubmit="event.preventDefault(); procesarPaso3();">
+            <div class="form-group">
+                <label class="form-label" for="codigo_correo">Código de Verificación</label>
+                <div class="input-group">
+                    <i class="ti ti-key input-icon"></i>
+                    <input type="text" id="codigo_correo" name="codigo_correo" class="form-control" placeholder="Código de 6 dígitos" maxlength="6" required>
+                </div>
+                <p class="text-muted" style="margin-top: 5px; font-size: 0.8rem;">Revisa tu bandeja de entrada o spam.</p>
+            </div>
+            <button type="submit" class="btn-primary" id="btnPaso3">
+                <span>Verificar Código</span>
+                <div class="spinner" id="spinner3"></div>
+            </button>
+            <button type="button" class="btn-secondary" onclick="volverPaso(2)">
+                <i class="ti ti-arrow-left"></i> Volver atrás
+            </button>
+        </form>
+    </div>
+
+    <!-- PASO 4 -->
+    <div id="step4" class="form-step">
+        <form id="formPaso4" onsubmit="event.preventDefault(); procesarPaso4();">
             <div class="form-group">
                 <label class="form-label" for="nueva_password">Nueva Contraseña</label>
                 <div class="input-group">
@@ -324,9 +346,9 @@
                     </button>
                 </div>
             </div>
-            <button type="submit" class="btn-primary" id="btnPaso3">
+            <button type="submit" class="btn-primary" id="btnPaso4">
                 <span>Cambiar Contraseña</span>
-                <div class="spinner" id="spinner3"></div>
+                <div class="spinner" id="spinner4"></div>
             </button>
         </form>
     </div>
@@ -339,12 +361,13 @@
 <script>
     // Variables globales gestionadas
     let recoveryToken = "";
-    let userCedula = "";
+    let userEmail = "";
 
     // Endpoints (Ajusta la ruta según la ubicación real en Xprod Fit)
     // Asumimos que este archivo está en /views/auth/ y las api en /api/
-    const endpointVerificar = '../../api/recuperar_password.php';
-    const endpointCambiar = '../../api/cambiar_password_recovery.php';
+    const APP_URL = '<?= APP_URL ?? "" ?>';
+    const endpointVerificar = APP_URL + '/api/recuperar_password.php';
+    const endpointCambiar = APP_URL + '/api/cambiar_password_recovery.php';
 
     // Función de Transición
     const animateTransition = (hideId, showId, description) => {
@@ -450,60 +473,64 @@
     };
 
 
-    // ── PASO 1 ──
+    // Proceso Paso 1: Obtener pregunta
     const procesarPaso1 = async () => {
-        const cedula = document.getElementById('cedula').value.trim();
-        if (!cedula) return;
+        const inputEmail = document.getElementById('email').value.trim();
+        if (!inputEmail) {
+            showAlert('warning', '¡Atención!', 'Ingresa tu correo electrónico.');
+            return;
+        }
 
         setButtonLoading('btnPaso1', 'spinner1', true);
+        const fd = new FormData();
+        fd.append('accion', 'obtener_pregunta');
+        fd.append('email', inputEmail);
 
         try {
-            const formData = new FormData();
-            formData.append('accion', 'obtener_pregunta');
-            formData.append('cedula', cedula);
-
-            const response = await fetch(endpointVerificar, { method: 'POST', body: formData });
-            const data = await response.json();
+            const r = await fetch(endpointVerificar, { method: 'POST', body: fd });
+            const data = await r.json();
 
             if (data.success) {
-                userCedula = cedula;
-                document.getElementById('pregunta-texto').textContent = data.pregunta;
-                animateTransition('step1', 'step2', 'Responde a tu pregunta de seguridad.');
-                // Foco al input
+                userEmail = inputEmail;
+                document.getElementById('pregunta-texto').textContent = "¿" + data.pregunta + "?";
+                animateTransition('step1', 'step2', 'Responde tu pregunta de seguridad');
                 setTimeout(() => document.getElementById('respuesta').focus(), 400);
             } else {
-                showAlert('error', 'Error', data.message || 'Usuario no encontrado o inactivo.');
+                showAlert('error', 'Error', data.message);
             }
-        } catch (error) {
-            showAlert('error', 'Error de Conexión', 'No se pudo contactar con el servidor.');
+        } catch (e) {
+            showAlert('error', 'Error de conexión', 'No se pudo comunicar con el servidor.');
         } finally {
             setButtonLoading('btnPaso1', 'spinner1', false);
         }
     };
 
-    // ── PASO 2 ──
+    // Proceso Paso 2: Verificar Respuesta
     const procesarPaso2 = async () => {
         const respuesta = document.getElementById('respuesta').value.trim();
-        if (!respuesta) return;
+        if (!respuesta) {
+            showAlert('warning', 'Falta respuesta', 'Ingresa tu respuesta de seguridad.');
+            return;
+        }
 
         setButtonLoading('btnPaso2', 'spinner2', true);
+        const fd = new FormData();
+        fd.append('accion', 'verificar_respuesta');
+        fd.append('email', userEmail);
+        fd.append('respuesta', respuesta);
 
         try {
-            const formData = new FormData();
-            formData.append('accion', 'verificar_respuesta');
-            formData.append('cedula', userCedula);
-            formData.append('respuesta', respuesta);
-
-            const response = await fetch(endpointVerificar, { method: 'POST', body: formData });
+            const response = await fetch(endpointVerificar, { method: 'POST', body: fd });
             const data = await response.json();
 
             if (data.success) {
                 recoveryToken = data.token; // Guardar token en variable global
                 document.getElementById('respuesta').value = '';
-                animateTransition('step2', 'step3', 'Ingresa una nueva contraseña segura.');
-                setTimeout(() => document.getElementById('nueva_password').focus(), 400);
+                animateTransition('step2', 'step3', 'Ingresa el código que te enviamos.');
+                setTimeout(() => document.getElementById('codigo_correo').focus(), 400);
             } else {
-                showAlert('error', 'Respuesta Incorrecta', data.message || 'La respuesta no es válida.');
+                let errorTitle = data.message && data.message.includes('correo') ? 'Error de Envío' : 'Respuesta Incorrecta';
+                showAlert('error', errorTitle, data.message || 'La respuesta no es válida.');
             }
         } catch (error) {
             showAlert('error', 'Error de Conexión', 'No se pudo contactar con el servidor.');
@@ -512,8 +539,41 @@
         }
     };
 
-    // ── PASO 3 ──
+    // ── PASO 3: Verificar Código ──
     const procesarPaso3 = async () => {
+        const codigo = document.getElementById('codigo_correo').value.trim();
+        if (!codigo || codigo.length !== 6) {
+            showAlert('warning', 'Código Inválido', 'Ingresa el código de 6 dígitos que enviamos a tu correo.');
+            return;
+        }
+
+        setButtonLoading('btnPaso3', 'spinner3', true);
+        const fd = new FormData();
+        fd.append('accion', 'verificar_codigo');
+        fd.append('email', userEmail);
+        fd.append('codigo', codigo);
+
+        try {
+            const response = await fetch(endpointVerificar, { method: 'POST', body: fd });
+            const data = await response.json();
+
+            if (data.success) {
+                recoveryToken = data.token; // El token final para cambiar la contraseña
+                document.getElementById('codigo_correo').value = '';
+                animateTransition('step3', 'step4', 'Ingresa una nueva contraseña segura.');
+                setTimeout(() => document.getElementById('nueva_password').focus(), 400);
+            } else {
+                showAlert('error', 'Código Incorrecto', data.message || 'El código es inválido o ha expirado.');
+            }
+        } catch (error) {
+            showAlert('error', 'Error de Conexión', 'No se pudo contactar con el servidor.');
+        } finally {
+            setButtonLoading('btnPaso3', 'spinner3', false);
+        }
+    };
+
+    // ── PASO 4 ──
+    const procesarPaso4 = async () => {
         const nueva = document.getElementById('nueva_password').value;
         const confirmar = document.getElementById('confirmar_password').value;
 
@@ -527,7 +587,7 @@
             return;
         }
 
-        setButtonLoading('btnPaso3', 'spinner3', true);
+        setButtonLoading('btnPaso4', 'spinner4', true);
 
         try {
             const formData = new FormData();
@@ -559,7 +619,7 @@
         } catch (error) {
             showAlert('error', 'Error de Conexión', 'No se pudo contactar con el servidor.');
         } finally {
-            setButtonLoading('btnPaso3', 'spinner3', false);
+            setButtonLoading('btnPaso4', 'spinner4', false);
         }
     };
 
@@ -567,7 +627,7 @@
     const volverPaso = (step) => {
         if (step === 1) {
             document.getElementById('respuesta').value = '';
-            animateTransition('step2', 'step1', 'Ingresa tu cédula de identidad.');
+            animateTransition('step2', 'step1', 'Ingresa tu correo electrónico.');
         }
     };
 

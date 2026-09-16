@@ -1,0 +1,341 @@
+/* assets/css/cookies.css — Banner de Cookies GDPR/LOPD
+   Diseño glassmorphism coherente con el estilo oscuro de Xprod Fit */
+
+/* ── Variables ── */
+:root {
+    --ck-bg: rgba(10, 12, 20, 0.97);
+    --ck-border: rgba(255, 255, 255, 0.08);
+    --ck-accent: #4b9b54;
+    --ck-accent-hover: #5db366;
+    --ck-text: rgba(255, 255, 255, 0.85);
+    --ck-text-muted: rgba(255, 255, 255, 0.45);
+    --ck-radius: 20px;
+    --ck-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05);
+    --ck-z: 99999;
+}
+
+/* ══════════════════════════════════════════
+   BANNER PRINCIPAL (bottom bar)
+══════════════════════════════════════════ */
+#xp-cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: var(--ck-z);
+    background: var(--ck-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--ck-border);
+    box-shadow: var(--ck-shadow);
+    padding: 20px 24px;
+    font-family: 'Inter', -apple-system, sans-serif;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#xp-cookie-banner.visible {
+    transform: translateY(0);
+}
+
+.ck-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.ck-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.ck-text-area {
+    flex: 1;
+    min-width: 260px;
+}
+
+.ck-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.ck-desc {
+    font-size: .82rem;
+    color: var(--ck-text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.ck-desc a {
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ck-desc a:hover {
+    color: #fff;
+}
+
+.ck-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ── Botones del banner ── */
+.ck-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 50px;
+    font-size: .85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.ck-btn-accept {
+    background: var(--ck-accent);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(75, 155, 84, 0.35);
+}
+.ck-btn-accept:hover {
+    background: var(--ck-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(75, 155, 84, 0.45);
+}
+
+.ck-btn-essential {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.ck-btn-essential:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.ck-btn-config {
+    background: transparent;
+    color: var(--ck-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    padding: 9px 10px;
+    font-size: .8rem;
+}
+.ck-btn-config:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ══════════════════════════════════════════
+   MODAL DE CONFIGURACIÓN
+══════════════════════════════════════════ */
+#xp-cookie-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--ck-z) + 1);
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#xp-cookie-modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+}
+
+#xp-cookie-modal {
+    background: rgba(15, 18, 30, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--ck-radius);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    font-family: 'Inter', -apple-system, sans-serif;
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#xp-cookie-modal-overlay.open #xp-cookie-modal {
+    transform: scale(1) translateY(0);
+}
+
+.ck-modal-header {
+    padding: 24px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ck-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.ck-modal-close {
+    background: rgba(255,255,255,.06);
+    border: none;
+    color: rgba(255,255,255,.5);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, color .2s;
+}
+.ck-modal-close:hover {
+    background: rgba(255,255,255,.12);
+    color: #fff;
+}
+
+.ck-modal-body {
+    padding: 16px 24px 24px;
+}
+
+.ck-modal-desc {
+    font-size: .83rem;
+    color: var(--ck-text-muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* ── Categorías de cookies ── */
+.ck-category {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.ck-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.ck-cat-name {
+    font-size: .9rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.ck-cat-badge {
+    font-size: .7rem;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.ck-cat-badge.required {
+    background: rgba(75, 155, 84, 0.2);
+    color: #6ecf76;
+}
+
+.ck-cat-desc {
+    font-size: .78rem;
+    color: var(--ck-text-muted);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ── Toggle switch ── */
+.ck-toggle {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.ck-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.ck-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,.12);
+    border-radius: 22px;
+    cursor: pointer;
+    transition: background .25s;
+}
+
+.ck-toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background: rgba(255,255,255,.6);
+    border-radius: 50%;
+    transition: transform .25s, background .25s;
+}
+
+.ck-toggle input:checked + .ck-toggle-slider {
+    background: var(--ck-accent);
+}
+
+.ck-toggle input:checked + .ck-toggle-slider::before {
+    transform: translateX(18px);
+    background: #fff;
+}
+
+.ck-toggle input:disabled + .ck-toggle-slider {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Acciones del modal ── */
+.ck-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.ck-modal-actions .ck-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 130px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+    #xp-cookie-banner { padding: 16px; }
+    .ck-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .ck-actions { width: 100%; }
+    .ck-btn { flex: 1; justify-content: center; }
+}

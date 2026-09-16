@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS notificaciones (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  cliente_id INT UNSIGNED NOT NULL,
+  entrenador_id INT UNSIGNED,
+  mensaje VARCHAR(255) NOT NULL,
+  fecha DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  leida TINYINT(1) NOT NULL DEFAULT 0,
+  FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
+  FOREIGN KEY (entrenador_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX idx_cliente (cliente_id),
+  INDEX idx_fecha (fecha)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

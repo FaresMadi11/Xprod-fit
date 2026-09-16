@@ -136,6 +136,11 @@ function cliDashboard(): void {
     $ajustesGlobales = [];
     while($r = $stAj->fetch()) $ajustesGlobales[$r['clave']] = $r['valor'];
     
+    // Obtener notificaciones
+    $stNotif = $db->prepare("SELECT * FROM notificaciones WHERE cliente_id = ? ORDER BY fecha DESC LIMIT 20");
+    $stNotif->execute([$clienteId]);
+    $notificaciones = $stNotif->fetchAll();
+    
     require BASE_DIR . '/views/cliente/dashboard.php';
 }
 

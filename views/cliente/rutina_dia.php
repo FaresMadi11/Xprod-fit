@@ -3,7 +3,9 @@ $pageTitle = 'Entrenamiento';
 require __DIR__ . '/../layout/header.php';
 
 $diasNombre = [1=>'Lun',2=>'Mar',3=>'Mié',4=>'Jue',5=>'Vie',6=>'Sáb',7=>'Dom'];
-$diaHoyNum  = (int)date('N');
+$diaHoyNumRaw = (int)date('N');
+// Igual que el controller: si es fin de semana, tratar como viernes (día 5)
+$diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
 ?>
 
 <style>
@@ -50,17 +52,17 @@ $diaHoyNum  = (int)date('N');
 }
 .wd-progress-fill {
   height: 100%; border-radius: 99px;
-  background: linear-gradient(90deg, #a3e635, #65a30d);
+  background: linear-gradient(90deg, #38bdf8, #0ea5e9);
   transition: width .5s ease;
 }
 .wd-progress-label {
-  font-size: .7rem; font-weight: 700; color: #a3e635; white-space: nowrap;
+  font-size: .7rem; font-weight: 700; color: #38bdf8; white-space: nowrap;
 }
 
 /* ── Descripción ── */
 .wd-desc {
   margin: 14px 16px;
-  background: rgba(163,230,53,.07); border-left: 3px solid #a3e635;
+  background: rgba(125,211,252,.07); border-left: 3px solid #7dd3fc;
   border-radius: 0 12px 12px 0; padding: 10px 14px;
   font-size: .82rem; color: #cbd5e1; display: flex; gap: 8px; align-items: flex-start;
 }
@@ -76,7 +78,7 @@ $diaHoyNum  = (int)date('N');
   transition: border-color .25s;
 }
 .wd-ex-card.done   { border-color: rgba(74,222,128,.25); }
-.wd-ex-card.active { border-color: rgba(163,230,53,.35); }
+.wd-ex-card.active { border-color: rgba(125,211,252,.35); }
 
 /* Header del acordeón */
 .wd-ex-header {
@@ -93,12 +95,12 @@ $diaHoyNum  = (int)date('N');
   transition: all .25s;
 }
 .wd-ex-card.done   .wd-ex-num { background: linear-gradient(135deg,#4ade80,#22c55e); color:#000; }
-.wd-ex-card.active .wd-ex-num { background: linear-gradient(135deg,#a3e635,#65a30d); color:#000; }
+.wd-ex-card.active .wd-ex-num { background: linear-gradient(135deg,#38bdf8,#0ea5e9); color:#fff; }
 
 .wd-ex-info   { flex: 1; min-width: 0; }
 .wd-ex-name   { font-size: .95rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wd-ex-meta   { font-size: .72rem; color: #6b7280; margin-top: 2px; }
-.wd-ex-meta span { color: #a3e635; }
+.wd-ex-meta span { color: #7dd3fc; }
 
 /* Progreso de series (right) */
 .wd-ex-progress {
@@ -110,7 +112,7 @@ $diaHoyNum  = (int)date('N');
   background: rgba(255,255,255,.1); transition: background .3s;
 }
 .wd-pip.done { background: #4ade80; }
-.wd-pip.partial { background: #a3e635; }
+.wd-pip.partial { background: #7dd3fc; }
 .wd-chevron {
   font-size: .85rem; color: #4b5563; transition: transform .25s;
 }
@@ -176,8 +178,8 @@ $diaHoyNum  = (int)date('N');
 .wd-input-reps:focus,
 .wd-input-kg:focus {
   outline: none;
-  border-color: rgba(163,230,53,.5);
-  background: rgba(163,230,53,.07);
+  border-color: rgba(125,211,252,.45);
+  background: rgba(125,211,252,.05);
 }
 .wd-input-kg { width: 76px; }
 .wd-serie-row.completada .wd-input-reps,
@@ -195,7 +197,7 @@ $diaHoyNum  = (int)date('N');
   font-size: .9rem; cursor: pointer; transition: all .2s;
   margin-left: auto; display: block;
 }
-.wd-btn-serie:hover { background: rgba(163,230,53,.15); color: #a3e635; }
+.wd-btn-serie:hover { background: rgba(125,211,252,.12); color: #7dd3fc; }
 .wd-btn-serie.saved { background: rgba(74,222,128,.2); color: #4ade80; }
 .wd-btn-serie:disabled { opacity: .4; cursor: not-allowed; }
 
@@ -214,14 +216,14 @@ $diaHoyNum  = (int)date('N');
 }
 .wd-btn-finish {
   width: 100%; padding: 16px;
-  background: linear-gradient(135deg, #a3e635, #65a30d);
-  color: #000; font-size: 1rem; font-weight: 900;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: #fff; font-size: 1rem; font-weight: 900;
   border: none; border-radius: 16px; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 10px;
-  box-shadow: 0 4px 24px rgba(163,230,53,.3);
+  box-shadow: 0 4px 24px rgba(56,189,248,.2);
   transition: all .2s;
 }
-.wd-btn-finish:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(163,230,53,.4); }
+.wd-btn-finish:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(56,189,248,.3); }
 .wd-btn-finish:disabled { opacity: .5; transform: none; cursor: not-allowed; }
 .wd-btn-modificar {
   width: 100%; padding: 13px;
@@ -247,8 +249,8 @@ $diaHoyNum  = (int)date('N');
   min-width: 50px; text-decoration: none; display: inline-block;
 }
 .rl-tab.active {
-  background: rgba(163,230,53,.15); color: #a3e635;
-  border-color: rgba(163,230,53,.3);
+  background: rgba(125,211,252,.12); color: #7dd3fc;
+  border-color: rgba(125,211,252,.3);
 }
 /* ── Modal reproductor de media ── */
 .wd-media-btn {
@@ -259,7 +261,7 @@ $diaHoyNum  = (int)date('N');
   position: relative; display: grid; place-items: center;
   transition: border-color .2s;
 }
-.wd-media-btn:hover { border-color: rgba(163,230,53,.4); }
+.wd-media-btn:hover { border-color: rgba(125,211,252,.4); }
 .wd-media-btn img {
   width: 100%; height: 100%; object-fit: cover;
 }
@@ -268,8 +270,8 @@ $diaHoyNum  = (int)date('N');
   display: grid; place-items: center; font-size: .9rem; color: #fff;
 }
 .wd-media-btn-only {
-  width: 100%; height: 100%; background: rgba(163,230,53,.1);
-  display: grid; place-items: center; font-size: 1.1rem; color: #a3e635;
+  width: 100%; height: 100%; background: rgba(125,211,252,.1);
+  display: grid; place-items: center; font-size: 1.1rem; color: #7dd3fc;
 }
 
 /* Modal */
@@ -332,7 +334,7 @@ $diaHoyNum  = (int)date('N');
 
 <!-- ── Header ── -->
 <div class="rl-header" style="padding: 24px 20px 12px; display: flex; align-items: center; gap: 14px;">
-  <div class="rl-header-icon" style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #a3e635, #65a30d); display: grid; place-items: center; font-size: 1.3rem; color: #000; flex-shrink: 0;"><i class="ti ti-dumbbell"></i></div>
+  <div class="rl-header-icon" style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #38bdf8, #0ea5e9); display: grid; place-items: center; font-size: 1.3rem; color: #fff; flex-shrink: 0;"><i class="ti ti-dumbbell"></i></div>
   <div class="rl-header-text">
     <h1 style="font-size: 1.4rem; font-weight: 900; color: #fff; margin: 0;">Agenda Semanal</h1>
     <p style="font-size: .78rem; color: #6b7280; margin: 2px 0 0;"><?= date('l, d \d\e F', strtotime('today')) ?></p>
@@ -341,12 +343,21 @@ $diaHoyNum  = (int)date('N');
 
 <!-- Tabs de días -->
 <div class="rl-tabs">
-  <?php for($i=1; $i<=5; $i++): 
+  <?php 
+  // Rutina de fallback: la primera rutina disponible del cliente
+  $primeraRutina = !empty($todasRutinas) ? (int)$todasRutinas[0]['id'] : 0;
+  for($i=1; $i<=5; $i++): 
     $rId = $rutinaPorDia[$i] ?? 0;
+    // Si es el día de hoy y no tiene rutina asignada, usar cualquier rutina disponible
+    if (!$rId && $i === $diaHoy && $primeraRutina) $rId = $primeraRutina;
     $url = APP_URL . '/cliente/rutina-dia?dia=' . $i . ($rId ? '&rutina=' . $rId : '');
+    $esDiaHoy = ($i === $diaHoy);
+    $tieneRutina = !empty($rutinaPorDia[$i]);
   ?>
-    <a href="<?= $url ?>" class="rl-tab <?= $i === $diaActivo ? 'active' : '' ?>">
+    <a href="<?= $url ?>" class="rl-tab <?= $i === $diaActivo ? 'active' : '' ?>" 
+       style="<?= $esDiaHoy ? 'border-color:rgba(56,189,248,.35);' : '' ?>">
       <?= $diasNombre[$i] ?>
+      <?php if ($esDiaHoy): ?><span style="display:block;width:4px;height:4px;border-radius:50%;background:#38bdf8;margin:2px auto 0;"></span><?php endif; ?>
     </a>
   <?php endfor; ?>
 </div>
@@ -390,12 +401,7 @@ $diaHoyNum  = (int)date('N');
   </div>
 </div>
 
-<?php if ($rutina['descripcion']): ?>
-<div class="wd-desc">
-  <i class="ti ti-info-circle" style="color:#a3e635;flex-shrink:0;margin-top:1px"></i>
-  <?= e($rutina['descripcion']) ?>
-</div>
-<?php endif; ?>
+
 
 <!-- ── Lista de ejercicios ── -->
 <div class="wd-exercise-list" id="ejerciciosList">
@@ -604,7 +610,7 @@ async function guardarSerie(ejId, numSerie, btn) {
       text: 'Debes ingresar las repeticiones y el peso para guardar la serie.',
       background: '#111',
       color: '#fff',
-      confirmButtonColor: '#a3e635'
+      confirmButtonColor: '#38bdf8'
     });
     return;
   }
@@ -708,7 +714,7 @@ async function marcarRutina(rutinaId) {
     confirmButtonText: '¡Sí, completé!',
     cancelButtonText: 'Cancelar',
     background: '#111', color: '#fff',
-    confirmButtonColor: '#a3e635',
+    confirmButtonColor: '#38bdf8',
   });
   if (!confirm.isConfirmed) return;
 

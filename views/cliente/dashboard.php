@@ -59,7 +59,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   padding: 20px 20px 14px;
   display: flex; justify-content: space-between; align-items: flex-start;
 }
-.db-greeting { font-size: .82rem; color: #a3e635; font-weight: 500; margin-bottom: 2px; }
+.db-greeting { font-size: .82rem; color: #38bdf8; font-weight: 500; margin-bottom: 2px; }
 .db-welcome  { font-size: 1.6rem; font-weight: 900; color: #fff; line-height: 1.2; }
 .db-actions  { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
 .db-icon-btn {
@@ -95,12 +95,12 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 .db-edit-weight-btn {
   display: inline-flex; align-items: center; gap: 4px;
   padding: 4px 10px; border-radius: 20px;
-  background: rgba(163,230,53,0.12); border: 1px solid rgba(163,230,53,0.3);
-  color: #a3e635; font-size: 0.72rem; font-weight: 700;
+  background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3);
+  color: #38bdf8; font-size: 0.72rem; font-weight: 700;
   text-decoration: none; transition: all 0.2s ease;
 }
 .db-edit-weight-btn:hover {
-  background: #a3e635; color: #000; transform: translateY(-1px);
+  background: #38bdf8; color: #000; transform: translateY(-1px);
 }
 .db-stat-label { font-size: .72rem; color: #6b7280; margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
 .db-stat-value {
@@ -118,7 +118,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 }
 .db-quote-tag {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.68rem; font-weight: 800; color: #a3e635;
+  font-size: 0.68rem; font-weight: 800; color: #38bdf8;
   text-transform: uppercase; letter-spacing: 0.5px;
 }
 .db-quote-shuffle {
@@ -126,7 +126,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   cursor: pointer; padding: 2px 4px; font-size: 0.9rem;
   border-radius: 6px; transition: all 0.2s ease;
 }
-.db-quote-shuffle:hover { color: #a3e635; transform: rotate(45deg); }
+.db-quote-shuffle:hover { color: #38bdf8; transform: rotate(45deg); }
 .db-quote-body { margin-top: auto; }
 .db-quote-text {
   font-size: 0.77rem; font-weight: 500; color: #e2e8f0;
@@ -135,7 +135,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .db-quote-author {
-  font-size: 0.65rem; font-weight: 700; color: #84cc16;
+  font-size: 0.65rem; font-weight: 700; color: #7dd3fc;
   margin-top: 5px; letter-spacing: 0.3px; text-transform: uppercase;
 }
 
@@ -150,7 +150,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 }
 .db-metas-title { font-size: 1.3rem; font-weight: 800; color: #fff; }
 .db-metas-link  { font-size: .82rem; color: #9ca3af; text-decoration: none; white-space: nowrap; }
-.db-metas-link:hover { color: #a3e635; }
+.db-metas-link:hover { color: #38bdf8; }
 .db-metas-sub   { font-size: .78rem; color: #6b7280; margin-bottom: 16px; }
 .db-metas-bubbles { display: flex; gap: 12px; flex-wrap: wrap; }
 .db-meta-bubble {
@@ -159,9 +159,9 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   display: grid; place-items: center;
   font-size: 1.3rem; cursor: pointer;
   transition: transform .18s, background .18s;
-  color: var(--meta-color, #a3e635);
+  color: var(--meta-color, #38bdf8);
 }
-.db-meta-bubble:hover { transform: scale(1.12); background: rgba(163,230,53,0.12); }
+.db-meta-bubble:hover { transform: scale(1.12); background: rgba(56,189,248,0.12); }
 .db-meta-empty {
   font-size: .8rem; color: #6b7280; padding: 10px 0;
 }
@@ -239,6 +239,8 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   gap: 8px; transition: background .2s;
 }
 .meta-delete-btn:hover { background: rgba(239,68,68,0.25); }
+
+.meta-delete-btn:hover { background: rgba(239,68,68,0.25); }
 </style>
 <!-- ── HEADER ── -->
 <div class="db-header">
@@ -247,17 +249,31 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
     <div class="db-welcome">Bienvenido de<br>vuelta</div>
   </div>
   <div class="db-actions">
-    <a href="<?= APP_URL ?>/cliente/notificaciones" class="db-icon-btn" title="Notificaciones">
+    <button onclick="toggleNotifDropdown()" class="db-icon-btn" title="Notificaciones" style="border:none; cursor:pointer;">
       <i class="ti ti-bell"></i>
-      <?php if($proximoPago): ?><span class="db-notif-dot"></span><?php endif; ?>
-    </a>
-    <a href="<?= APP_URL ?>/cliente/perfil" class="db-icon-btn" title="Configuracion">
-      <i class="ti ti-settings"></i>
-    </a>
+    </button>
     <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Salir">
       <i class="ti ti-logout"></i>
     </a>
   </div>
+</div>
+
+<!-- ── NOTIFICACIONES DROPDOWN ── -->
+<div class="db-notif-dropdown" id="notifDropdown">
+  <div class="db-notif-header">
+    <span>Notificaciones</span>
+    <button onclick="toggleNotifDropdown()" class="db-notif-close">&times;</button>
+  </div>
+  <?php if(empty($notificaciones)): ?>
+    <div class="db-notif-empty">No hay novedades recientes.</div>
+  <?php else: ?>
+    <?php foreach($notificaciones as $n): ?>
+      <div class="db-notif-item">
+        <div class="db-notif-msg"><?= e($n['mensaje']) ?></div>
+        <div class="db-notif-date"><?= date('d/m/Y H:i', strtotime($n['fecha'])) ?></div>
+      </div>
+    <?php endforeach; ?>
+  <?php endif; ?>
 </div>
 
 <!-- ── STAT CARDS ── -->
@@ -329,115 +345,217 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 </div>
 
 <!-- ── TIENDA DE CONSUMIBLES ── -->
-<div class="tienda-section" id="tiendaSection">
-  <button class="tienda-toggle" id="tiendaToggle" onclick="toggleTienda()">
-    <span class="tienda-toggle-left">
-      <i class="ti ti-shopping-cart tienda-icon"></i>
-      <span class="tienda-toggle-title">Tienda de Consumibles</span>
-    </span>
-    <span class="tienda-toggle-chevron" id="tiendaChevron">
-      <i class="ti ti-chevron-down"></i>
-    </span>
-  </button>
+<style>
+/* Estilos Tienda Cliente */
+#tiendaSection {
+  background: #1e1e1e;
+  border-radius: 20px;
+  padding: 20px 16px;
+  margin: 16px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
 
-  <div class="tienda-body" id="tiendaBody">
-    <!-- Filtros por seccion -->
-    <div class="tienda-filters-container">
-      <div class="tienda-wrapper" id="tiendaFilters">
-        <div class="tienda-option">
-          <input checked value="todos" name="tienda-btn" type="radio" class="tienda-input" onchange="filtrarTienda('todos')">
-          <div class="tienda-btn">
-            <span class="tienda-span">Todos</span>
-          </div>
-        </div>
-        <?php foreach($tiendaSecciones as $sec): ?>
-        <div class="tienda-option">
-          <input value="<?= $sec['id'] ?>" name="tienda-btn" type="radio" class="tienda-input" onchange="filtrarTienda(<?= $sec['id'] ?>)">
-          <div class="tienda-btn">
-            <span class="tienda-span"><?= e($sec['nombre']) ?></span>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
+.t-header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.t-header-left {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 1.05rem; font-weight: 500; color: #fff; letter-spacing: 0.5px;
+}
+.t-header-left i { font-size: 1.4rem; color: #fff; }
+.t-header-right { position: relative; }
+.t-header-right i { font-size: 1.4rem; color: #9ca3af; }
+.t-cart-badge {
+  position: absolute; top: -6px; right: -8px;
+  background: #e2e8f0; color: #000;
+  font-size: 0.65rem; font-weight: 800;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.t-filters {
+  display: flex; background: #3f3f46; border-radius: 30px;
+  padding: 4px; gap: 4px; margin-bottom: 20px;
+}
+.t-filter-btn {
+  flex: 1; text-align: center; padding: 10px 4px;
+  border-radius: 30px; color: #a1a1aa; font-size: 0.72rem; font-weight: 500;
+  text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  border: none; background: transparent; letter-spacing: 0.5px;
+}
+.t-filter-btn.active {
+  background: #e2e8f0; color: #000; font-weight: 600;
+}
+
+.t-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+}
+
+.t-card {
+  background: #27272a; border-radius: 14px; padding: 10px;
+  display: flex; flex-direction: column; gap: 10px;
+  position: relative; overflow: hidden;
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid transparent;
+}
+
+.t-card-img {
+  background: #f8fafc; border-radius: 10px; height: 130px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.t-card-img img { 
+  max-width: 80%; max-height: 80%; object-fit: contain; mix-blend-mode: multiply; 
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.t-card-info-base { display: flex; flex-direction: column; gap: 4px; flex: 1; transition: opacity 0.3s; }
+.t-card-brand { font-size: 0.65rem; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin:0;}
+.t-card-title { font-size: 0.85rem; color: #fff; font-weight: 400; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin:0; }
+.t-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; }
+.t-card-price { font-size: 1.05rem; color: #fff; font-weight: 700; }
+
+/* ── OVERLAY DE CRISTAL (HOVER) ── */
+.t-card-glass {
+  position: absolute; inset: 0; z-index: 10;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 12px; padding: 20px;
+  opacity: 0; pointer-events: none;
+  transform: translateY(15px);
+  transition: opacity 250ms ease, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 14px;
+}
+.t-card-glass::before {
+  content: ""; position: absolute; inset: -60px; z-index: -1;
+  background: radial-gradient(circle at 30% 20%, rgba(120, 170, 255, 0.3), transparent 45%),
+              radial-gradient(circle at 70% 80%, rgba(160, 90, 255, 0.25), transparent 50%);
+  filter: blur(18px); opacity: 0; transition: opacity 250ms ease;
+}
+@media (hover: hover) {
+  .t-card:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .t-card:hover .t-card-glass { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .t-card:hover .t-card-glass::before { opacity: 0.85; }
+  .t-card:hover .t-card-img img { transform: scale(1.05); filter: blur(4px); opacity: 0.6; }
+}
+
+/* Clases para móviles (vía JavaScript) */
+.t-card.active { 
+  transform: translateY(-2px); 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border-color: rgba(255,255,255,0.1);
+}
+.t-card.active .t-card-glass { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.t-card.active .t-card-glass::before { opacity: 0.85; }
+.t-card.active .t-card-img img { transform: scale(1.05); filter: blur(4px); opacity: 0.6; }
+
+.t-card-glass-desc { font-size: 0.75rem; color: #e2e8f0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+.t-card-glass-btn {
+  position: relative;
+  display: inline-block;
+  padding: 10px 20px;
+  border: 2px solid #fefefe;
+  text-transform: uppercase;
+  color: #fefefe;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: 0.3s;
+  background-color: transparent;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  margin-top: 5px;
+}
+.t-card-glass-btn::before {
+  content: ""; position: absolute; top: -2px; left: -2px;
+  width: calc(100% + 4px); height: calc(100% + 2px);
+  background-color: #141414; transition: 0.3s ease-out; transform: scaleY(1);
+}
+.t-card-glass-btn::after {
+  content: ""; position: absolute; top: -2px; left: -2px;
+  width: calc(100% + 4px); height: calc(100% - 24px); 
+  background-color: #141414; transition: 0.3s ease-out; transform: scaleY(1);
+}
+.t-card-glass-btn:hover::before { transform: translateY(-15px); height: 0; }
+.t-card-glass-btn:hover::after { transform: scaleX(0); transition-delay: 0.15s; }
+.t-card-glass-btn:hover { border: 2px solid #fefefe; }
+.t-card-glass-btn span { position: relative; z-index: 3; text-decoration: none; border: none; background-color: transparent; color: #fff; }
+</style>
+
+<div id="tiendaSection">
+  <div class="t-header">
+    <div class="t-header-left">
+      <i class="ti ti-shopping-cart"></i>
+      TIENDA DE CONSUMIBLES
     </div>
+  </div>
 
-    <div class="tienda-grid" id="tiendaGrid">
-      <?php
-      $hayProductos = false;
-      foreach($tiendaSecciones as $sec):
-        $productos = $tiendaProductos[$sec['id']] ?? [];
-        if(!empty($productos)) $hayProductos = true;
-        foreach($productos as $prod):
-          $img = $prod['imagen_path'] ? APP_URL . '/' . $prod['imagen_path'] : '';
-          $desc = $prod['descripcion'] ?: 'Sin descripción disponible.';
-          $waNum = $ajustesGlobales['whatsapp_numero'] ?? '';
-          
-          $baseMsg = str_replace('{producto}', $prod['nombre'], $ajustesGlobales['whatsapp_mensaje'] ?? 'Hola, me interesa: {producto}');
-          
-          // Agregamos el link público del producto para que WhatsApp lea el OpenGraph
-          $publicUrl = APP_URL . "/public/producto?id=" . $prod['id'];
-          $baseMsg .= "\n\n" . $publicUrl;
-          
-          $waMsg = urlencode($baseMsg);
-          
-          $waLink = "https://wa.me/{$waNum}?text={$waMsg}";
-      ?>
-      <div class="shop-card" data-seccion="<?= $sec['id'] ?>" data-nombre="<?= e($prod['nombre']) ?>" data-precio="<?= $prod['precio'] ?>">
+  <!-- Filters -->
+  <div class="t-filters">
+    <button class="t-filter-btn active" onclick="filtrarTienda('todos', this)">Todos</button>
+    <?php foreach($tiendaSecciones as $sec): ?>
+    <button class="t-filter-btn" onclick="filtrarTienda(<?= $sec['id'] ?>, this)"><?= e($sec['nombre']) ?></button>
+    <?php endforeach; ?>
+  </div>
+
+  <!-- Grid -->
+  <div class="t-grid" id="tiendaGrid">
+    <?php
+    $hayProductos = false;
+    foreach($tiendaSecciones as $sec):
+      $productos = $tiendaProductos[$sec['id']] ?? [];
+      if(!empty($productos)) $hayProductos = true;
+      foreach($productos as $prod):
+        $img = $prod['imagen_path'] ? APP_URL . '/' . $prod['imagen_path'] : '';
+        $desc = $prod['descripcion'] ?: 'Sin descripción disponible.';
+        $waNum = $ajustesGlobales['whatsapp_numero'] ?? '';
         
-        <!-- Estado inicial: Círculo -->
-        <div class="container-image">
-          <?php if($img): ?>
-            <img src="<?= $img ?>" class="image-circle">
-          <?php else: ?>
-            <div style="color:#9ca3af;font-size:2.5rem;"><i class="ti ti-package"></i></div>
-          <?php endif; ?>
-        </div>
-
-        <!-- Estado expandido: Tarjeta 3D -->
-        <div class="content">
-          <div class="flipper">
-            <!-- FRENTE -->
-            <div class="face front">
-              <div class="card-image-area">
-                <?php if($img): ?>
-                  <img src="<?= $img ?>" class="img-product">
-                <?php else: ?>
-                  <div style="color:#9ca3af;font-size:2rem;"><i class="ti ti-package"></i></div>
-                <?php endif; ?>
-              </div>
-              <div class="card-info-area">
-                <h3 class="product-title"><?= e($prod['nombre']) ?></h3>
-                <div class="product-price">$<?= number_format($prod['precio'], 2) ?></div>
-                
-                <div class="card-actions">
-                  <button onclick="event.stopPropagation(); this.closest('.content').classList.add('flipped')" class="btn-card btn-detalles">Ver Detalles</button>
-                </div>
-              </div>
-            </div>
-            
-            <!-- DORSO (Cliente) -->
-            <div class="face back">
-              <h3 class="back-title"><?= e($prod['nombre']) ?></h3>
-              <div class="back-description"><?= nl2br(e($desc)) ?></div>
-              
-              <div class="card-actions">
-                <button onclick="event.stopPropagation(); this.closest('.content').classList.remove('flipped')" class="btn-card btn-volver"><i class="ti ti-arrow-back-up"></i></button>
-                <button onclick="event.stopPropagation(); window.open('<?= $waLink ?>', '_blank')" class="btn-card btn-adquirir"><i class="ti ti-brand-whatsapp"></i> Adquirir</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        $baseMsg = str_replace('{producto}', $prod['nombre'], $ajustesGlobales['whatsapp_mensaje'] ?? 'Hola, me interesa: {producto}');
+        $publicUrl = APP_URL . "/public/producto?id=" . $prod['id'];
+        $baseMsg .= "\n\n" . $publicUrl;
+        $waMsg = urlencode($baseMsg);
+        $waLink = "https://wa.me/{$waNum}?text={$waMsg}";
+    ?>
+    <div class="t-card" data-seccion="<?= $sec['id'] ?>" onclick="toggleCard(this)">
+      <!-- Imagen normal (fondo claro) -->
+      <div class="t-card-img">
+        <?php if($img): ?>
+          <img src="<?= $img ?>" loading="lazy" alt="<?= e($prod['nombre']) ?>">
+        <?php else: ?>
+          <i class="ti ti-package" style="color:#9ca3af;font-size:2.5rem;"></i>
+        <?php endif; ?>
       </div>
-      <?php 
-        endforeach; 
-      endforeach;
-      ?>
       
-      <?php if(!$hayProductos): ?>
-        <p style="color:#6b7280;text-align:center;grid-column:1/-1;padding:20px 0;">No hay productos disponibles.</p>
-      <?php endif; ?>
+      <!-- Info base (Fondo oscuro de la tarjeta) -->
+      <div class="t-card-info-base">
+        <p class="t-card-brand"><?= e($sec['nombre']) ?></p>
+        <h3 class="t-card-title"><?= e($prod['nombre']) ?></h3>
+        <div class="t-card-footer">
+          <div class="t-card-price">$<?= number_format($prod['precio'], 2) ?></div>
+        </div>
+      </div>
+      
+      <!-- Overlay Cristal (Solo en Hover) -->
+      <div class="t-card-glass">
+        <div class="t-card-glass-desc"><?= e($desc) ?></div>
+        <a href="<?= $waLink ?>" target="_blank" class="t-card-glass-btn" onclick="event.stopPropagation()">
+          <span>Adquirir</span>
+        </a>
+      </div>
     </div>
+    <?php 
+      endforeach; 
+    endforeach;
+    ?>
+    
+    <?php if(!$hayProductos): ?>
+      <p style="color:#6b7280;text-align:center;grid-column:1/-1;padding:20px 0;">No hay productos disponibles.</p>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -604,18 +722,20 @@ function shuffleQuote() {
 }
 
 // ── Tienda de Consumibles ──────────────────────────────
-function toggleTienda() {
-  const body    = document.getElementById('tiendaBody');
-  const chevron = document.getElementById('tiendaChevron');
-  const toggle  = document.getElementById('tiendaToggle');
-  const open    = body.classList.toggle('open');
-  chevron.classList.toggle('open', open);
-  toggle.style.borderRadius = open ? '18px 18px 0 0' : '18px';
-}
+function filtrarTienda(seccionId, btnElement) {
+  // Update active button
+  const btns = document.querySelectorAll('.t-filter-btn');
+  btns.forEach(btn => btn.classList.remove('active'));
+  if (btnElement) {
+    btnElement.classList.add('active');
+  } else {
+    btns[0].classList.add('active');
+  }
 
-function filtrarTienda(seccionId) {
-  const cards = document.querySelectorAll('#tiendaGrid .shop-card');
+  // Filter cards
+  const cards = document.querySelectorAll('#tiendaGrid .t-card');
   cards.forEach(card => {
+    card.classList.remove('active'); // Cerrar detalles al filtrar
     if (seccionId === 'todos' || card.getAttribute('data-seccion') == seccionId) {
       card.style.display = 'flex';
     } else {
@@ -624,8 +744,20 @@ function filtrarTienda(seccionId) {
   });
 }
 
+function toggleCard(card) {
+  const wasActive = card.classList.contains('active');
+  document.querySelectorAll('.t-card').forEach(c => c.classList.remove('active'));
+  if (!wasActive) {
+    card.classList.add('active');
+  }
+}
+
 function agregarAlCarrito(nombre, precio) {
   Xp.toast('success', `${nombre} agregado al carrito 🛒`);
+}
+
+function toggleNotifDropdown() {
+  document.getElementById('notifDropdown').classList.toggle('open');
 }
 </script>
 

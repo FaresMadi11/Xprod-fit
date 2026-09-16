@@ -431,6 +431,7 @@ function entGuardarRutina(): void {
         }
 
         $db->commit();
+        registrarNotificacion($clienteId, $entId, 'El entrenador te ha asignado/actualizado una rutina: ' . $descripcion);
         jsonOut(true, 'Rutina guardada correctamente.');
     } catch (Throwable $e) {
         $db->rollBack();
@@ -523,6 +524,7 @@ function entActualizarMedidas(): void {
          ON DUPLICATE KEY UPDATE peso_kg = ?"
     )->execute([$clienteId, $peso, $peso]);
 
+    registrarNotificacion($clienteId, $entId, 'El entrenador ha actualizado tus medidas.');
     jsonOut(true, 'Medidas actualizadas.');
 }
 
@@ -1275,4 +1277,10 @@ function entGuardarAjustesWhatsApp(): void {
     }
 
     jsonOut(true, 'Ajustes guardados correctamente.');
+}
+
+function registrarNotificacion($clienteId, $entrenadorId, $mensaje) {
+    $db = getDB();
+    $stmt = $db->prepare("INSERT INTO notificaciones (cliente_id, entrenador_id, mensaje) VALUES (?, ?, ?)");
+    $stmt->execute([$clienteId, $entrenadorId, $mensaje]);
 }

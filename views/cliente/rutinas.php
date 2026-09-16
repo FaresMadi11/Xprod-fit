@@ -18,7 +18,7 @@ $diaHoyNum  = (int)date('N');
 }
 .rl-header-icon {
   width: 44px; height: 44px; border-radius: 14px;
-  background: linear-gradient(135deg, #a3e635, #65a30d);
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
   display: grid; place-items: center;
   font-size: 1.3rem; color: #000; flex-shrink: 0;
 }
@@ -27,13 +27,13 @@ $diaHoyNum  = (int)date('N');
 
 /* ── Sección "Hoy" ── */
 .rl-section-label {
-  font-size: .68rem; font-weight: 800; color: #a3e635;
+  font-size: .68rem; font-weight: 800; color: #38bdf8;
   text-transform: uppercase; letter-spacing: 1px;
   padding: 0 20px; margin-bottom: 10px;
   display: flex; align-items: center; gap: 8px;
 }
 .rl-section-label::after {
-  content: ''; flex: 1; height: 1px; background: rgba(163,230,53,.15);
+  content: ''; flex: 1; height: 1px; background: rgba(125,211,252,.15);
 }
 .rl-section-label.other { color: #6b7280; margin-top: 18px; }
 .rl-section-label.other::after { background: rgba(255,255,255,.06); }
@@ -59,7 +59,7 @@ $diaHoyNum  = (int)date('N');
   background: linear-gradient(145deg, #131a09, #0f1a07);
 }
 .rl-card.hoy::before {
-  background: linear-gradient(90deg, transparent, #a3e635, transparent);
+  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
 }
 .rl-card:active { transform: scale(.98); }
 
@@ -67,7 +67,7 @@ $diaHoyNum  = (int)date('N');
 .rl-badge-hoy {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: .65rem; font-weight: 800; color: #000;
-  background: #a3e635; border-radius: 20px;
+  background: #38bdf8; border-radius: 20px;
   padding: 3px 10px; margin-bottom: 10px;
   text-transform: uppercase; letter-spacing: .5px;
 }
@@ -94,9 +94,9 @@ $diaHoyNum  = (int)date('N');
   color: #9ca3af; letter-spacing: .3px;
 }
 .rl-dia-chip.activo {
-  background: rgba(163,230,53,.18);
-  color: #a3e635;
-  border: 1px solid rgba(163,230,53,.3);
+  background: rgba(125,211,252,.18);
+  color: #38bdf8;
+  border: 1px solid rgba(125,211,252,.3);
 }
 
 /* Footer de la tarjeta */
@@ -118,10 +118,10 @@ $diaHoyNum  = (int)date('N');
   text-decoration: none; transition: all .2s;
 }
 .rl-btn-train.hoy {
-  background: linear-gradient(135deg, #a3e635, #65a30d);
-  color: #000; box-shadow: 0 4px 20px rgba(163,230,53,.25);
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  color: #fff; box-shadow: 0 4px 20px rgba(56,189,248,.25);
 }
-.rl-btn-train.hoy:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(163,230,53,.35); }
+.rl-btn-train.hoy:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(56,189,248,.35); }
 .rl-btn-train.normal {
   background: rgba(255,255,255,.07);
   color: #fff; border: 1px solid rgba(255,255,255,.1);
@@ -150,8 +150,8 @@ $diaHoyNum  = (int)date('N');
   min-width: 50px;
 }
 .rl-tab.active {
-  background: rgba(163,230,53,.15); color: #a3e635;
-  border-color: rgba(163,230,53,.3);
+  background: rgba(125,211,252,.15); color: #38bdf8;
+  border-color: rgba(125,211,252,.3);
 }
 .rl-day-content { display: none; }
 .rl-day-content.active { display: block; animation: fadeIn .3s ease; }

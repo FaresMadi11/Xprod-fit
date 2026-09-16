@@ -9,7 +9,7 @@ $chartColors = [
     'rgba(240,171,252,1)',  'rgba(248,113,113,1)',
 ];
 $chartBg = [
-    'rgba(163,230,53,0.2)', 'rgba(56,189,248,0.2)', 'rgba(251,146,60,0.2)',
+    'rgba(125,211,252,0.2)', 'rgba(56,189,248,0.2)', 'rgba(251,146,60,0.2)',
     'rgba(167,139,250,0.2)','rgba(251,191,36,0.2)', 'rgba(74,222,128,0.2)',
     'rgba(240,171,252,0.2)','rgba(248,113,113,0.2)',
 ];
@@ -85,6 +85,16 @@ function fechaES(string $fecha): string {
   margin: 6px 16px 22px;
 }
 
+/* ── Cuadro con opacidad para el calendario ── */
+.st-section-box {
+  background: rgba(0,0,0,0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 22px;
+  padding: 18px 16px 20px;
+}
+
 /* ════════════════════════════════════
    AGENDA / HISTORIAL
 ════════════════════════════════════ */
@@ -149,7 +159,7 @@ function fechaES(string $fecha): string {
 }
 .agenda-series-table td:first-child { color: #6b7280; width: 60px; }
 .agenda-series-table td.val { color: #e2e8f0; font-weight: 700; }
-.agenda-series-table td.kg  { color: #a3e635; font-weight: 700; }
+.agenda-series-table td.kg  { color: #7dd3fc; font-weight: 700; }
 
 /* ════════════════════════════════════
    GRÁFICAS DE PROGRESO
@@ -170,7 +180,7 @@ function fechaES(string $fecha): string {
   background: #252525; color: #fff;
 }
 .st-tren-tab.superior.active { color: #38bdf8; }
-.st-tren-tab.inferior.active { color: #a3e635; }
+.st-tren-tab.inferior.active { color: #7dd3fc; }
 
 /* Chips de grupos musculares */
 .st-grupo-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -186,7 +196,7 @@ function fechaES(string $fecha): string {
   background: rgba(56,189,248,.15); border-color: rgba(56,189,248,.5); color: #38bdf8;
 }
 .st-grupo-chip.active-inf {
-  background: rgba(163,230,53,.15); border-color: rgba(163,230,53,.5); color: #a3e635;
+  background: rgba(125,211,252,.15); border-color: rgba(125,211,252,.5); color: #7dd3fc;
 }
 
 /* Chart container */
@@ -274,15 +284,15 @@ function fechaES(string $fecha): string {
   min-height: 48px;
 }
 .cal-day-num {
-  font-size: .82rem; font-weight: 700; color: #6b7280;
+  font-size: .82rem; font-weight: 700; color: #d1d5db;
   line-height: 1;
 }
-.cal-cell.fuera-mes { opacity: .25; }
+.cal-cell.fuera-mes { opacity: .3; }
 .cal-cell.hoy {
-  border-color: rgba(163,230,53,.4);
-  background: rgba(163,230,53,.15);
+  border-color: rgba(56,189,248,.4);
+  background: rgba(56,189,248,.15);
 }
-.cal-cell.hoy .cal-day-num { color: #a3e635; }
+.cal-cell.hoy .cal-day-num { color: #38bdf8; }
 .cal-cell.entrenado {
   cursor: pointer;
   border-color: rgba(56,189,248,.25);
@@ -300,8 +310,8 @@ function fechaES(string $fecha): string {
   box-shadow: 0 0 0 2px rgba(56,189,248,.3);
 }
 .cal-cell.hoy.entrenado {
-  border-color: rgba(163,230,53,.5);
-  background: linear-gradient(135deg, rgba(163,230,53,.08), rgba(56,189,248,.06));
+  border-color: rgba(56,189,248,.6);
+  background: rgba(56,189,248,.22);
 }
 
 /* Celda con rutina planificada (día futuro) */
@@ -329,7 +339,7 @@ function fechaES(string $fecha): string {
   width: 5px; height: 5px; border-radius: 50%;
   background: #38bdf8; flex-shrink: 0;
 }
-.cal-cell.hoy .cal-dot { background: #a3e635; }
+.cal-cell.hoy .cal-dot { background: #fff; }
 .cal-cell.planificado .cal-dot-plan {
   width: 5px; height: 5px; border-radius: 50%;
   background: #fbbf24; flex-shrink: 0;
@@ -431,7 +441,7 @@ function fechaES(string $fecha): string {
 }
 .dm-table td:first-child { color: #6b7280; width: 60px; }
 .dm-table td.reps { color: #e2e8f0; font-weight: 700; }
-.dm-table td.kg   { color: #a3e635; font-weight: 700; }
+.dm-table td.kg   { color: #7dd3fc; font-weight: 700; }
 /* Planificado grid */
 .dm-plan-grid {
   display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;
@@ -518,31 +528,14 @@ function fechaES(string $fecha): string {
   </div>
 </div>
 
-<!-- ── Métricas rápidas ── -->
-<div class="st-metrics">
-  <div class="st-metric-card">
-    <div class="st-metric-icon" style="color:#a3e635">🏆</div>
-    <div class="st-metric-val"><?= $rutinasCompletadas ?></div>
-    <div class="st-metric-lbl">Rutinas</div>
-  </div>
-  <div class="st-metric-card">
-    <div class="st-metric-icon" style="color:#38bdf8">📅</div>
-    <div class="st-metric-val"><?= $diasEntrenados ?></div>
-    <div class="st-metric-lbl">Días</div>
-  </div>
-  <div class="st-metric-card">
-    <div class="st-metric-icon" style="color:#fb923c">🔥</div>
-    <div class="st-metric-val"><?= $rachaActual ?></div>
-    <div class="st-metric-lbl">Racha</div>
-  </div>
-</div>
 
-<div class="st-divider"></div>
+
 
 <!-- ══════════════════════════════════════
      SECCIÓN 1: CALENDARIO HISTÓRICO
 ══════════════════════════════════════ -->
 <div class="st-section">
+<div class="st-section-box">
   <div class="st-section-title">
     <i class="ti ti-calendar-week" style="color:#38bdf8"></i> Historial Semanal
   </div>
@@ -660,7 +653,8 @@ function fechaES(string $fecha): string {
     <?php endforeach; ?>
   </div>
 
-</div>
+</div><!-- end st-section-box -->
+</div><!-- end st-section -->
 
 <!-- ── MODAL DE DÍA ── -->
 <div class="dia-modal-overlay" id="diaModalOverlay" onclick="cerrarModalDia(event)">
@@ -893,7 +887,7 @@ function cerrarModalDia(event, force) {
 .pw-btn-save-all {
   display: none; align-items: center; gap: 5px;
   padding: 6px 13px; border-radius: 10px;
-  border: none; background: linear-gradient(135deg,#a3e635,#65a30d);
+  border: none; background: linear-gradient(135deg,#38bdf8,#0ea5e9);
   color: #000; font-size: .75rem; font-weight: 900; cursor: pointer;
   transition: all .2s;
 }
@@ -933,6 +927,7 @@ function cerrarModalDia(event, force) {
 </style>
 
 <div class="pw-section">
+  <div class="st-section-box">
   <div class="pw-header-row">
     <div class="st-section-title">
       <i class="ti ti-scale" style="color:#fb923c"></i> Peso Corporal
@@ -955,7 +950,7 @@ function cerrarModalDia(event, force) {
     $deltaClass  = $delta < 0 ? 'neg' : ($delta > 0 ? 'pos' : 'neu');
     $deltaStr    = ($delta > 0 ? '+' : '') . $delta . ' kg';
   ?>
-  <div class="pw-chart-wrap">
+  <div class="pw-chart-wrap" style="background:transparent; border:none; padding:16px 0 0 0; margin-bottom:0;">
     <div class="pw-chart-meta">
       <div class="pw-stat">
         <div class="pw-stat-val"><?= number_format($pesoActual, 2, '.', '') ?> kg</div>
@@ -978,6 +973,7 @@ function cerrarModalDia(event, force) {
     <p>No hay registros de peso aún. Actualiza tu peso desde tu perfil.</p>
   </div>
   <?php endif; ?>
+  </div>
 </div>
 
 <!-- Modal historial de peso -->
@@ -1200,11 +1196,72 @@ function cerrarHistorialPeso(event, force) {
 <!-- ══════════════════════════════════════
      SECCIÓN 3: GRÁFICAS DE PROGRESO
 ══════════════════════════════════════ -->
+<style>
+/* ── Tabs de métrica ── */
+.pm-metric-tabs {
+  display: flex; gap: 6px; margin-bottom: 14px;
+}
+.pm-metric-tab {
+  flex: 1; padding: 8px 6px; border: 1.5px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04); border-radius: 10px;
+  font-size: .72rem; font-weight: 700; color: #6b7280;
+  cursor: pointer; transition: all .2s; text-align: center; font-family: inherit;
+}
+.pm-metric-tab.active {
+  background: rgba(125,211,252,.15); border-color: rgba(125,211,252,.4); color: #7dd3fc;
+}
+.pm-metric-tab.active.blue {
+  background: rgba(56,189,248,.15); border-color: rgba(56,189,248,.4); color: #38bdf8;
+}
+.pm-metric-tab.active.purple {
+  background: rgba(167,139,250,.15); border-color: rgba(167,139,250,.4); color: #a78bfa;
+}
+
+/* ── Selector de ejercicios ── */
+.pm-ex-list {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; min-height: 36px;
+}
+.pm-ex-btn {
+  padding: 6px 13px; border-radius: 20px; border: 1.5px solid rgba(255,255,255,.09);
+  background: rgba(255,255,255,.04); color: #9ca3af;
+  font-size: .74rem; font-weight: 700; cursor: pointer;
+  transition: all .2s; font-family: inherit; white-space: nowrap;
+}
+.pm-ex-btn:hover { border-color: rgba(255,255,255,.2); color: #e2e8f0; }
+.pm-ex-btn.active {
+  background: rgba(125,211,252,.15); border-color: rgba(125,211,252,.4); color: #7dd3fc;
+}
+.pm-ex-empty {
+  font-size: .78rem; color: #374151; padding: 6px 0; display: flex; align-items: center; gap: 6px;
+}
+
+/* ── Tarjeta de resumen del ejercicio ── */
+.pm-summary-card {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; margin-bottom: 12px;
+}
+.pm-summary-stat {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;
+}
+.pm-summary-lbl {
+  font-size: .6rem; color: #4b5563; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .4px;
+}
+.pm-summary-val {
+  font-size: 1rem; font-weight: 900; color: #fff; line-height: 1;
+}
+.pm-summary-sub {
+  font-size: .6rem; color: #6b7280;
+}
+</style>
+
 <div class="st-section">
+  <div class="st-section-box">
   <div class="st-section-title">
-    <i class="ti ti-chart-area-line" style="color:#a3e635"></i> Progreso por grupo muscular
+    <i class="ti ti-chart-area-line" style="color:#7dd3fc"></i> Progreso por grupo muscular
   </div>
-  <div class="st-section-sub">Peso máximo usado por ejercicio desde tu primer entrenamiento</div>
+  <div class="st-section-sub">Selecciona un grupo y un ejercicio para ver tu evolución</div>
 
   <!-- Tabs tren -->
   <div class="st-tren-tabs">
@@ -1216,7 +1273,7 @@ function cerrarHistorialPeso(event, force) {
     </button>
   </div>
 
-  <!-- Chips tren superior -->
+  <!-- Chips grupo muscular - Superior -->
   <div id="chipsSuperior" class="st-grupo-chips">
     <?php foreach ($trenoSuperior as $g): ?>
     <button class="st-grupo-chip <?= $g==='pecho' ? 'active-sup' : '' ?>"
@@ -1228,7 +1285,7 @@ function cerrarHistorialPeso(event, force) {
     <?php endforeach; ?>
   </div>
 
-  <!-- Chips tren inferior -->
+  <!-- Chips grupo muscular - Inferior -->
   <div id="chipsInferior" class="st-grupo-chips" style="display:none">
     <?php foreach ($trenoInferior as $g): ?>
     <button class="st-grupo-chip"
@@ -1240,17 +1297,59 @@ function cerrarHistorialPeso(event, force) {
     <?php endforeach; ?>
   </div>
 
+  <!-- Selector de ejercicio individual -->
+  <div style="margin-bottom:4px;">
+    <div style="font-size:.65rem;color:#4b5563;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Ejercicio</div>
+    <div class="pm-ex-list" id="pmExList">
+      <span class="pm-ex-empty"><i class="ti ti-dots"></i> Selecciona un grupo muscular</span>
+    </div>
+  </div>
+
+  <!-- Tabs de métrica -->
+  <div class="pm-metric-tabs">
+    <button class="pm-metric-tab active" id="metricPeso" onclick="cambiarMetrica('peso')">
+      <i class="ti ti-barbell"></i> Peso Máx
+    </button>
+    <button class="pm-metric-tab" id="metricReps" onclick="cambiarMetrica('reps')">
+      <i class="ti ti-repeat"></i> Reps Máx
+    </button>
+    <button class="pm-metric-tab" id="metricVol" onclick="cambiarMetrica('volumen')">
+      <i class="ti ti-chart-area"></i> Volumen
+    </button>
+  </div>
+
+  <!-- Tarjeta de resumen -->
+  <div class="pm-summary-card" id="pmSummaryCard" style="display:none">
+    <div class="pm-summary-stat">
+      <div class="pm-summary-lbl">Primer registro</div>
+      <div class="pm-summary-val" id="pmStatFirst">—</div>
+      <div class="pm-summary-sub" id="pmStatFirstDate"></div>
+    </div>
+    <div class="pm-summary-stat">
+      <div class="pm-summary-lbl">Máximo</div>
+      <div class="pm-summary-val" id="pmStatMax" style="color:#7dd3fc">—</div>
+      <div class="pm-summary-sub" id="pmStatMaxDate"></div>
+    </div>
+    <div class="pm-summary-stat">
+      <div class="pm-summary-lbl">Último</div>
+      <div class="pm-summary-val" id="pmStatLast">—</div>
+      <div class="pm-summary-sub" id="pmStatLastDate"></div>
+    </div>
+  </div>
+
   <!-- Chart wrapper -->
   <div class="st-chart-wrap" id="chartWrap">
     <div class="st-chart-title" id="chartTitle">
-      <i class="ti ti-chart-bar"></i> <span id="chartTitleText">Pecho – Peso máximo (kg)</span>
+      <i class="ti ti-chart-line"></i> <span id="chartTitleText">Selecciona un ejercicio</span>
     </div>
-    <canvas id="mainChart" height="220"></canvas>
-    <div class="st-chart-empty" id="chartEmpty" style="display:none">
+    <canvas id="mainChart" height="200"></canvas>
+    <div class="st-chart-empty" id="chartEmpty">
       <i class="ti ti-chart-dots-3"></i>
-      <p id="chartEmptyMsg">Aún no hay datos para este grupo muscular.</p>
+      <p id="chartEmptyMsg">Selecciona un grupo muscular y un ejercicio para ver tu progreso.</p>
     </div>
   </div>
+
+  </div><!-- end st-section-box -->
 </div>
 
 <!-- ── Padding inferior para la nav ── -->
@@ -1266,9 +1365,11 @@ const TREN_SUPERIOR = <?= json_encode($trenoSuperior, JSON_UNESCAPED_UNICODE) ?>
 const TREN_INFERIOR = <?= json_encode($trenoInferior, JSON_UNESCAPED_UNICODE) ?>;
 
 // ── Estado ────────────────────────────────────────────────
-let currentTren   = 'superior';
-let currentGrupo  = 'pecho';
-let mainChart     = null;
+let currentTren    = 'superior';
+let currentGrupo   = 'pecho';
+let currentEjercicio = null;
+let currentMetrica = 'peso'; // 'peso' | 'reps' | 'volumen'
+let mainChart      = null;
 
 // ── Acordeón agenda ───────────────────────────────────────
 function toggleAgenda(id) {
@@ -1279,52 +1380,113 @@ function toggleAgenda(id) {
 // ── Cambiar tren ─────────────────────────────────────────
 function cambiarTren(tren) {
   currentTren = tren;
-
   document.getElementById('tabSuperior').classList.toggle('active', tren === 'superior');
   document.getElementById('tabInferior').classList.toggle('active', tren === 'inferior');
   document.getElementById('chipsSuperior').style.display = tren === 'superior' ? 'flex' : 'none';
   document.getElementById('chipsInferior').style.display = tren === 'inferior' ? 'flex' : 'none';
-
-  // Seleccionar primer chip del tren
   const grupos = tren === 'superior' ? TREN_SUPERIOR : TREN_INFERIOR;
   if (grupos.length) seleccionarGrupo(grupos[0], tren);
 }
 
 // ── Seleccionar grupo muscular ────────────────────────────
 function seleccionarGrupo(grupo, tren) {
-  currentGrupo = grupo;
+  currentGrupo    = grupo;
+  currentEjercicio = null;
 
-  // Limpiar chips activos
-  document.querySelectorAll('.st-grupo-chip').forEach(c => {
-    c.classList.remove('active-sup', 'active-inf');
-  });
-
-  // Activar chip seleccionado
+  // Chips de grupo
+  document.querySelectorAll('.st-grupo-chip').forEach(c =>
+    c.classList.remove('active-sup', 'active-inf'));
   const norm = grupo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const chip = document.getElementById(
     (tren === 'superior' ? 'chipSup_' : 'chipInf_') + norm
   );
   if (chip) chip.classList.add(tren === 'superior' ? 'active-sup' : 'active-inf');
 
-  // Actualizar título
-  document.getElementById('chartTitleText').textContent =
-    ucFirst(grupo) + ' – Peso máximo (kg)';
+  // Renderizar lista de ejercicios
+  renderEjercicioList(grupo);
 
-  renderChart(grupo);
-}
-
-// ── Renderizar Chart.js ───────────────────────────────────
-function renderChart(grupo) {
+  // Mostrar estado vacío en chart
   const canvas = document.getElementById('mainChart');
   const empty  = document.getElementById('chartEmpty');
-
+  canvas.style.display = 'none';
+  empty.style.display  = 'flex';
   const grupoData = GRAFICA_DATA[grupo];
-
   if (!grupoData || Object.keys(grupoData).length === 0) {
+    document.getElementById('chartEmptyMsg').textContent =
+      'Aún no tienes ejercicios de ' + ucFirst(grupo) + ' con peso registrado.';
+  } else {
+    document.getElementById('chartEmptyMsg').textContent =
+      'Selecciona un ejercicio para ver tu progreso.';
+    // Auto-seleccionar el primer ejercicio
+    const primerEj = Object.keys(grupoData)[0];
+    if (primerEj) setTimeout(() => seleccionarEjercicio(primerEj), 50);
+  }
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
+  document.getElementById('pmSummaryCard').style.display = 'none';
+}
+
+// ── Renderizar botones de ejercicio ─────────────────────
+function renderEjercicioList(grupo) {
+  const list = document.getElementById('pmExList');
+  const grupoData = GRAFICA_DATA[grupo];
+  if (!grupoData || Object.keys(grupoData).length === 0) {
+    list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin datos para este grupo</span>';
+    return;
+  }
+  let html = '';
+  Object.keys(grupoData).forEach(nombre => {
+    html += `<button class="pm-ex-btn" onclick="seleccionarEjercicio('${nombre.replace(/'/g, "\\'")}')"
+      data-ej="${nombre.replace(/"/g,'&quot;')}">${nombre}</button>`;
+  });
+  list.innerHTML = html;
+}
+
+// ── Seleccionar ejercicio individual ─────────────────────
+function seleccionarEjercicio(nombre) {
+  currentEjercicio = nombre;
+
+  // Activar botón
+  document.querySelectorAll('.pm-ex-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.ej === nombre);
+  });
+
+  renderChartEjercicio();
+  renderSummary();
+}
+
+// ── Cambiar métrica ───────────────────────────────────────
+function cambiarMetrica(metrica) {
+  currentMetrica = metrica;
+  // Actualizar tabs
+  document.getElementById('metricPeso').classList.toggle('active', metrica === 'peso');
+  document.getElementById('metricPeso').classList.remove('blue', 'purple');
+  document.getElementById('metricReps').classList.toggle('active', metrica === 'reps');
+  document.getElementById('metricReps').classList.remove('blue', 'purple');
+  document.getElementById('metricVol').classList.toggle('active',  metrica === 'volumen');
+  document.getElementById('metricVol').classList.remove('blue', 'purple');
+
+  if (metrica === 'reps')    document.getElementById('metricReps').classList.add('blue');
+  if (metrica === 'volumen') document.getElementById('metricVol').classList.add('purple');
+
+  if (currentEjercicio) {
+    renderChartEjercicio();
+    renderSummary();
+  }
+}
+
+// ── Renderizar gráfica de línea por ejercicio ─────────────
+function renderChartEjercicio() {
+  if (!currentEjercicio || !currentGrupo) return;
+  const canvas = document.getElementById('mainChart');
+  const empty  = document.getElementById('chartEmpty');
+  const grupoData = GRAFICA_DATA[currentGrupo];
+  const puntos = grupoData ? grupoData[currentEjercicio] : null;
+
+  if (!puntos || puntos.length === 0) {
     canvas.style.display = 'none';
     empty.style.display  = 'flex';
     document.getElementById('chartEmptyMsg').textContent =
-      'Aún no tienes ejercicios de ' + ucFirst(grupo) + ' con peso registrado.';
+      'Sin datos suficientes para ' + currentEjercicio;
     if (mainChart) { mainChart.destroy(); mainChart = null; }
     return;
   }
@@ -1332,76 +1494,116 @@ function renderChart(grupo) {
   canvas.style.display = 'block';
   empty.style.display  = 'none';
 
-  // Recopilar todas las fechas únicas
-  const allFechas = new Set();
-  Object.values(grupoData).forEach(pts => pts.forEach(p => allFechas.add(p.fecha)));
-  const fechas = Array.from(allFechas).sort();
-  const labels = fechas.map(f => {
-    const d = new Date(f + 'T00:00:00');
+  // Configuración según métrica
+  const metricaConfig = {
+    peso:    { key: 'peso_max',  color: '#7dd3fc', bg: 'rgba(125,211,252,.12)',   unit: 'kg',     label: 'Peso Máx (kg)' },
+    reps:    { key: 'reps_max',  color: '#38bdf8', bg: 'rgba(56,189,248,.12)',   unit: 'reps',   label: 'Reps Máx' },
+    volumen: { key: 'volumen',   color: '#a78bfa', bg: 'rgba(167,139,250,.12)',  unit: 'kg',     label: 'Volumen Total (kg)' },
+  };
+  const cfg = metricaConfig[currentMetrica];
+
+  // Actualizar título
+  document.getElementById('chartTitleText').textContent =
+    currentEjercicio + ' — ' + cfg.label;
+
+  const labels = puntos.map(p => {
+    const d = new Date(p.fecha + 'T00:00:00');
     return d.toLocaleDateString('es', { month: 'short', day: 'numeric' });
   });
-
-  // Construir datasets (un dataset por ejercicio)
-  const datasets = Object.entries(grupoData).map(([ejNombre, puntos], i) => {
-    const pMap = {};
-    puntos.forEach(p => { pMap[p.fecha] = p.peso_max; });
-    return {
-      label: ejNombre,
-      data: fechas.map(f => pMap[f] ?? null),
-      backgroundColor: CHART_BG[i % CHART_BG.length],
-      borderColor:     CHART_COLORS[i % CHART_COLORS.length],
-      borderWidth: 2,
-      borderRadius: 6,
-      spanGaps: true,
-    };
-  });
+  const datos  = puntos.map(p => parseFloat(p[cfg.key]) || 0);
 
   if (mainChart) mainChart.destroy();
 
   mainChart = new Chart(canvas, {
-    type: 'bar',
-    data: { labels, datasets },
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: cfg.label,
+        data: datos,
+        borderColor: cfg.color,
+        backgroundColor: cfg.bg,
+        borderWidth: 2.5,
+        pointBackgroundColor: cfg.color,
+        pointRadius: datos.length === 1 ? 6 : 4,
+        pointHoverRadius: 8,
+        tension: 0.35,
+        fill: true,
+        spanGaps: true,
+      }]
+    },
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: {
-          labels: { color: '#9ca3af', font: { size: 11 }, boxWidth: 12, padding: 14 },
-          position: 'bottom',
-        },
+        legend: { display: false },
         tooltip: {
-          backgroundColor: '#1a1a1a',
-          borderColor: 'rgba(255,255,255,.1)',
-          borderWidth: 1,
-          titleColor: '#fff',
-          bodyColor: '#9ca3af',
+          backgroundColor: '#111',
+          borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
+          titleColor: '#fff', bodyColor: cfg.color,
           callbacks: {
-            label: ctx => ' ' + ctx.dataset.label + ': ' + (ctx.parsed.y ?? '—') + ' kg'
+            label: ctx => ' ' + ctx.parsed.y.toFixed(currentMetrica === 'reps' ? 0 : 1) + ' ' + cfg.unit
           }
         }
       },
       scales: {
         x: {
-          ticks: { color: '#6b7280', font: { size: 10 } },
+          ticks: { color: '#6b7280', font: { size: 10 }, maxTicksLimit: 8 },
           grid: { color: 'rgba(255,255,255,.04)' },
         },
         y: {
           ticks: { color: '#6b7280', font: { size: 10 },
-            callback: v => v + ' kg' },
+            callback: v => v + ' ' + cfg.unit },
           grid: { color: 'rgba(255,255,255,.06)' },
-          beginAtZero: false,
+          beginAtZero: currentMetrica === 'reps',
         }
       }
     }
   });
 }
 
+// ── Renderizar tarjeta de resumen ──────────────────────────
+function renderSummary() {
+  if (!currentEjercicio || !currentGrupo) return;
+  const grupoData = GRAFICA_DATA[currentGrupo];
+  const puntos    = grupoData ? grupoData[currentEjercicio] : null;
+  const card      = document.getElementById('pmSummaryCard');
+
+  if (!puntos || puntos.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'grid';
+
+  const metricaKey = { peso: 'peso_max', reps: 'reps_max', volumen: 'volumen' }[currentMetrica];
+  const unit       = currentMetrica === 'reps' ? ' reps' : ' kg';
+  const decimals   = currentMetrica === 'reps' ? 0 : 1;
+
+  const vals = puntos.map(p => parseFloat(p[metricaKey]) || 0);
+  const maxIdx = vals.indexOf(Math.max(...vals));
+
+  const fmtFecha = f => {
+    const d = new Date(f + 'T00:00:00');
+    return d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+  };
+
+  document.getElementById('pmStatFirst').textContent     = vals[0].toFixed(decimals) + unit;
+  document.getElementById('pmStatFirstDate').textContent = fmtFecha(puntos[0].fecha);
+  document.getElementById('pmStatMax').textContent       = vals[maxIdx].toFixed(decimals) + unit;
+  document.getElementById('pmStatMaxDate').textContent   = fmtFecha(puntos[maxIdx].fecha);
+  document.getElementById('pmStatLast').textContent      = vals[vals.length-1].toFixed(decimals) + unit;
+  document.getElementById('pmStatLastDate').textContent  = fmtFecha(puntos[puntos.length-1].fecha);
+
+  // Color del máximo según métrica
+  const maxEl = document.getElementById('pmStatMax');
+  maxEl.style.color = currentMetrica === 'peso'    ? '#7dd3fc'
+                    : currentMetrica === 'reps'     ? '#38bdf8'
+                    : '#a78bfa';
+}
+
 // ── Utils ─────────────────────────────────────────────────
 function ucFirst(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
-// ── Init: renderizar gráfica de pecho al cargar ───────────
+// ── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  renderChart('pecho');
+  seleccionarGrupo('pecho', 'superior');
 });
 </script>
 

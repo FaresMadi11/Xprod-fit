@@ -76,28 +76,117 @@
     <div style="display: flex; justify-content: flex-end; padding: 15px 20px 0 20px;">
       
     </div>
+    <style>
+    /* Estilos Tienda Entrenador (Mismos que el Atleta) */
+    .t-filters {
+      display: flex; background: #3f3f46; border-radius: 30px;
+      padding: 4px; gap: 4px; margin-bottom: 20px;
+    }
+    .t-filter-btn {
+      flex: 1; text-align: center; padding: 10px 4px;
+      border-radius: 30px; color: #a1a1aa; font-size: 0.72rem; font-weight: 500;
+      text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+      border: none; background: transparent; letter-spacing: 0.5px;
+    }
+    .t-filter-btn.active {
+      background: #e2e8f0; color: #000; font-weight: 600;
+    }
     
+    .t-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    }
+    
+    .t-card {
+      background: #27272a; border-radius: 14px; padding: 10px;
+      display: flex; flex-direction: column; gap: 10px;
+      position: relative; overflow: hidden;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid transparent;
+    }
+    
+    .t-card-img {
+      background: #f8fafc; border-radius: 10px; height: 130px;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      position: relative;
+    }
+    .t-card-img img { 
+      max-width: 80%; max-height: 80%; object-fit: contain; mix-blend-mode: multiply; 
+      transition: transform 0.3s ease, filter 0.3s ease;
+    }
+    
+    .t-card-info-base { display: flex; flex-direction: column; gap: 4px; flex: 1; transition: opacity 0.3s; }
+    .t-card-brand { font-size: 0.65rem; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; margin:0;}
+    .t-card-title { font-size: 0.85rem; color: #fff; font-weight: 400; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin:0; }
+    .t-card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; }
+    .t-card-price { font-size: 1.05rem; color: #fff; font-weight: 700; }
+    
+    /* Overlay Cristal */
+    .t-card-glass {
+      position: absolute; inset: 0; z-index: 10;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 12px; padding: 20px;
+      opacity: 0; pointer-events: none;
+      transform: translateY(15px);
+      transition: opacity 250ms ease, transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      border-radius: 14px;
+    }
+    .t-card-glass::before {
+      content: ""; position: absolute; inset: -60px; z-index: -1;
+      background: radial-gradient(circle at 30% 20%, rgba(120, 170, 255, 0.3), transparent 45%),
+                  radial-gradient(circle at 70% 80%, rgba(160, 90, 255, 0.25), transparent 50%);
+      filter: blur(18px); opacity: 0; transition: opacity 250ms ease;
+    }
+    @media (hover: hover) {
+      .t-card:not(.edit-mode-active):hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border-color: rgba(255,255,255,0.1);
+      }
+      .t-card:not(.edit-mode-active):hover .t-card-glass { opacity: 1; pointer-events: auto; transform: translateY(0); }
+      .t-card:not(.edit-mode-active):hover .t-card-glass::before { opacity: 0.85; }
+      .t-card:not(.edit-mode-active):hover .t-card-img img { transform: scale(1.05); filter: blur(4px); opacity: 0.6; }
+    }
+    
+    .t-card.active:not(.edit-mode-active) { 
+      transform: translateY(-2px); 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .t-card.active:not(.edit-mode-active) .t-card-glass { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .t-card.active:not(.edit-mode-active) .t-card-glass::before { opacity: 0.85; }
+    .t-card.active:not(.edit-mode-active) .t-card-img img { transform: scale(1.05); filter: blur(4px); opacity: 0.6; }
+    
+    .t-card-glass-desc { font-size: 0.75rem; color: #e2e8f0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+    
+    /* Botones modo edición */
+    .t-grid.edit-mode .edit-overlay-btns { display: flex; }
+    .t-grid.edit-mode .t-card { border-color: rgba(94, 234, 212, 0.4); }
+    .edit-overlay-btns {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); display: none; z-index: 20;
+      flex-direction: row; align-items: center; justify-content: center; gap: 15px;
+      border-radius: 14px;
+    }
+    .btn-circular-edit, .btn-circular-delete {
+      width: 45px; height: 45px; border-radius: 50%; border: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; color: #fff; cursor: pointer; transition: 0.2s;
+    }
+    .btn-circular-edit { background: rgba(59, 130, 246, 0.9); }
+    .btn-circular-edit:hover { background: rgba(37, 99, 235, 1); transform: scale(1.1); }
+    .btn-circular-delete { background: rgba(239, 68, 68, 0.9); }
+    .btn-circular-delete:hover { background: rgba(220, 38, 38, 1); transform: scale(1.1); }
+    </style>
+
     <!-- Filtros por seccion -->
-    <div class="tienda-filters-container">
-      <div class="tienda-wrapper" id="tiendaFilters">
-        <div class="tienda-option">
-          <input checked value="todos" name="tienda-btn" type="radio" class="tienda-input" onchange="filtrarTienda('todos')">
-          <div class="tienda-btn">
-            <span class="tienda-span">Todos</span>
-          </div>
-        </div>
-        <?php foreach($tiendaSecciones as $sec): ?>
-        <div class="tienda-option">
-          <input value="<?= $sec['id'] ?>" name="tienda-btn" type="radio" class="tienda-input" onchange="filtrarTienda(<?= $sec['id'] ?>)">
-          <div class="tienda-btn">
-            <span class="tienda-span"><?= e($sec['nombre']) ?></span>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
+    <div class="t-filters" style="margin: 0 20px 20px 20px;">
+      <button class="t-filter-btn active" onclick="filtrarTienda('todos', this)">Todos</button>
+      <?php foreach($tiendaSecciones as $sec): ?>
+      <button class="t-filter-btn" onclick="filtrarTienda(<?= $sec['id'] ?>, this)"><?= e($sec['nombre']) ?></button>
+      <?php endforeach; ?>
     </div>
 
-    <div class="tienda-grid" id="tiendaGrid">
+    <div class="t-grid" id="tiendaGrid" style="padding: 0 20px 20px 20px;">
       <?php
       $hayProductos = false;
       foreach($tiendaSecciones as $sec):
@@ -107,57 +196,35 @@
           $img = $prod['imagen_path'] ? APP_URL . '/' . $prod['imagen_path'] : '';
           $desc = $prod['descripcion'] ?: 'Sin descripción disponible.';
       ?>
-      <div class="shop-card" data-seccion="<?= $sec['id'] ?>" data-nombre="<?= e($prod['nombre']) ?>" data-precio="<?= $prod['precio'] ?>">
+      <div class="t-card" data-seccion="<?= $sec['id'] ?>" onclick="toggleCard(this)">
         
-        <!-- Estado inicial: Círculo -->
-        <div class="container-image">
+        <!-- Área de imagen -->
+        <div class="t-card-img">
           <?php if($img): ?>
-            <img src="<?= $img ?>" class="image-circle">
+            <img src="<?= $img ?>" loading="lazy" alt="<?= e($prod['nombre']) ?>">
           <?php else: ?>
-            <div style="color:#9ca3af;font-size:2.5rem;"><i class="ti ti-package"></i></div>
+            <i class="ti ti-package" style="color:#9ca3af;font-size:2.5rem;"></i>
           <?php endif; ?>
         </div>
-
-        <!-- OVERLAY DE EDICIÓN (Visible al activar Modo Edición) -->
+        
+        <!-- OVERLAY DE EDICIÓN -->
         <div class="edit-overlay-btns">
           <button onclick="event.stopPropagation(); editarProducto(<?= htmlspecialchars(json_encode($prod), ENT_QUOTES) ?>)" class="btn-circular-edit" title="Editar"><i class="ti ti-pencil"></i></button>
           <button onclick="event.stopPropagation(); borrarProducto(<?= $prod['id'] ?>)" class="btn-circular-delete" title="Borrar"><i class="ti ti-trash"></i></button>
         </div>
 
-        <!-- Estado expandido: Tarjeta 3D -->
-        <div class="content">
-          <div class="flipper">
-            <!-- FRENTE -->
-            <div class="face front">
-              <div class="card-image-area">
-                <?php if($img): ?>
-                  <img src="<?= $img ?>" class="img-product">
-                <?php else: ?>
-                  <div style="color:#9ca3af;font-size:2rem;"><i class="ti ti-package"></i></div>
-                <?php endif; ?>
-              </div>
-              <div class="card-info-area">
-                <h3 class="product-title"><?= e($prod['nombre']) ?></h3>
-                <div class="product-price">$<?= number_format($prod['precio'], 2) ?></div>
-                
-                <div class="card-actions">
-                  <button onclick="event.stopPropagation(); this.closest('.content').classList.add('flipped')" class="btn-card btn-detalles">Ver Detalles</button>
-                </div>
-                
-                
-              </div>
-            </div>
-            
-            <!-- DORSO (Entrenador) -->
-            <div class="face back">
-              <h3 class="back-title"><?= e($prod['nombre']) ?></h3>
-              <div class="back-description"><?= nl2br(e($desc)) ?></div>
-              
-              <div class="card-actions">
-                <button onclick="event.stopPropagation(); this.closest('.content').classList.remove('flipped')" class="btn-card btn-volver"><i class="ti ti-arrow-back-up"></i> Volver</button>
-              </div>
-            </div>
+        <!-- Info base -->
+        <div class="t-card-info-base">
+          <p class="t-card-brand"><?= e($sec['nombre']) ?></p>
+          <h3 class="t-card-title"><?= e($prod['nombre']) ?></h3>
+          <div class="t-card-footer">
+            <div class="t-card-price">$<?= number_format($prod['precio'], 2) ?></div>
           </div>
+        </div>
+
+        <!-- Overlay Cristal (Solo Hover) -->
+        <div class="t-card-glass">
+          <div class="t-card-glass-desc"><?= e($desc) ?></div>
         </div>
 
       </div>
@@ -429,15 +496,33 @@ function toggleTienda() {
   }
 }
 
-function filtrarTienda(seccionId) {
-  const cards = document.querySelectorAll('#tiendaGrid .shop-card');
+function filtrarTienda(seccionId, btnElement) {
+  const btns = document.querySelectorAll('.t-filter-btn');
+  btns.forEach(btn => btn.classList.remove('active'));
+  if (btnElement) {
+    btnElement.classList.add('active');
+  } else {
+    if(btns.length > 0) btns[0].classList.add('active');
+  }
+
+  const cards = document.querySelectorAll('#tiendaGrid .t-card');
   cards.forEach(card => {
+    card.classList.remove('active'); 
     if (seccionId === 'todos' || card.getAttribute('data-seccion') == seccionId) {
       card.style.display = 'flex';
     } else {
       card.style.display = 'none';
     }
   });
+}
+
+function toggleCard(card) {
+  if (document.getElementById('tiendaGrid').classList.contains('edit-mode')) return;
+  const wasActive = card.classList.contains('active');
+  document.querySelectorAll('.t-card').forEach(c => c.classList.remove('active'));
+  if (!wasActive) {
+    card.classList.add('active');
+  }
 }
 
 function abrirModalProducto() {
