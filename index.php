@@ -1,6 +1,7 @@
 <?php
 // index.php – Router principal de Xprod Fit
 declare(strict_types=1);
+if (function_exists('opcache_reset')) { opcache_reset(); }
 
 // ── 1. Cargar variables de entorno (PRIMERO de todo) ──────────
 require __DIR__ . '/core/env.php';
@@ -23,10 +24,35 @@ if (empty($_SESSION['_initiated'])) {
     $_SESSION['_initiated'] = true;
 }
 
-// ── 3. Constantes globales ─────────────────────────────────────
-define('APP_URL',  rtrim(env('APP_URL', 'http://localhost/Xprod%20Fit'), '/'));
-define('BASE_DIR', __DIR__);
-define('APP_ENV',  env('APP_ENV', 'development'));
+// ── 3. Constantes globales y detección dinámica de entorno ──────
+$isHttps = (
+    (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ||
+    (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+    (!empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower((string)$_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off') ||
+    (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+);
+$protocol = $isHttps ? "https://" : "http://";
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+// Detectar automáticamente la subcarpeta del proyecto (ej: /Xprod Fit o '' si está en la raíz)
+$rawScriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+$scriptDir    = str_replace('\\', '/', $rawScriptDir);
+$basePath     = ($scriptDir === '/' || $scriptDir === '.') ? '' : rtrim($scriptDir, '/');
+$autoUrl      = $protocol . $host . $basePath;
+
+$envUrl       = env('APP_URL', '');
+$finalUrl     = !empty($envUrl) ? rtrim($envUrl, '/') : rtrim($autoUrl, '/');
+
+define('APP_URL',   $finalUrl);
+define('BASE_URL',  $finalUrl);
+define('BASE_PATH', $basePath);
+define('BASE_DIR',  __DIR__);
+define('APP_ENV',   env('APP_ENV', 'development'));
+
+// Zona horaria ÚNICA (fuente de verdad de "hoy" para PHP y MySQL; ver getDB()).
+// Sobrescribible con APP_TIMEZONE en .env si el servidor/usuarios cambian de región.
+define('APP_TIMEZONE', env('APP_TIMEZONE', 'America/Caracas'));
+date_default_timezone_set(APP_TIMEZONE);
 
 // ── 4. Núcleo de la aplicación ─────────────────────────────────
 require BASE_DIR . '/config/database.php';

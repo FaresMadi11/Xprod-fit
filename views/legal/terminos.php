@@ -46,7 +46,7 @@ li{font-size:.93rem;color:rgba(255,255,255,.75);margin-bottom:6px;}
 <div class="legal-wrap">
 
   <header class="legal-header">
-    <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>" class="legal-logo">
+    <a href="<?= APP_URL ?>" class="legal-logo">
       <div class="legal-logo-icon">⚡</div>
       <span class="legal-logo-name">XprodFit</span>
     </a>
@@ -55,7 +55,7 @@ li{font-size:.93rem;color:rgba(255,255,255,.75);margin-bottom:6px;}
     <p class="legal-meta">
       Última actualización: <?= date('d \d\e F \d\e Y') ?> &middot;
       Versión 1.0 &middot;
-      <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>/legal/privacidad">Ver Política de Privacidad →</a>
+      <a href="<?= APP_URL ?>/legal/privacidad">Ver Política de Privacidad →</a>
     </p>
   </header>
 
@@ -193,12 +193,12 @@ li{font-size:.93rem;color:rgba(255,255,255,.75);margin-bottom:6px;}
     <p>En caso de conflicto entre la versión en español y cualquier traducción, prevalecerá la versión en español.</p>
   </section>
 
-  <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>" class="back-link">← Volver a la aplicación</a>
+  <a href="<?= APP_URL ?>" class="back-link">← Volver a la aplicación</a>
 
   <footer class="legal-footer">
     <p>
       © <?= date('Y') ?> Xprod Fit · Todos los derechos reservados ·
-      <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>/legal/privacidad">Política de Privacidad</a>
+      <a href="<?= APP_URL ?>/legal/privacidad">Política de Privacidad</a>
     </p>
   </footer>
 </div>

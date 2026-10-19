@@ -10,9 +10,10 @@ if ($action === 'producto') {
     }
 
     $db = getDB();
-    $stmt = $db->prepare("SELECT * FROM productos_tienda WHERE id = ?");
+    $stmt = $db->prepare("SELECT id, seccion_id, nombre, descripcion, precio, imagen_path, activo FROM tienda_productos WHERE id = ? AND activo = 1");
     $stmt->execute([$id]);
     $producto = $stmt->fetch();
+
 
     if (!$producto) {
         http_response_code(404);

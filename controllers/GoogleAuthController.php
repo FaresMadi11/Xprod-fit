@@ -9,7 +9,7 @@ declare(strict_types=1);
  */
 function googleRedirect(): void {
     $clientId    = env('GOOGLE_CLIENT_ID', '');
-    $redirectUri = env('GOOGLE_REDIRECT_URI', '');
+    $redirectUri = APP_URL . '/auth/google-callback';
 
     if (empty($clientId) || $clientId === 'PENDIENTE_CONFIGURAR') {
         setFlash('error', 'Google OAuth no está configurado aún. Usa el login tradicional.');
@@ -92,26 +92,80 @@ function googleCallback(): void {
             throw new \RuntimeException('El email de Google no está verificado.');
         }
 
-        // ── Paso C: Crear o actualizar usuario en BD ──
-        $um  = new UsuarioModel();
-        $uid = $um->createOrUpdateFromGoogle($payload);
+        // ── Paso C: Evaluar si el usuario existe y si su perfil está completo ──
+        $email      = strtolower(trim((string)$payload['email']));
+        $googleId   = (string)$payload['sub'];
+        $givenName  = trim((string)($payload['given_name'] ?? ''));
+        $familyName = trim((string)($payload['family_name'] ?? ''));
+        $avatarUrl  = (string)($payload['picture'] ?? '');
 
-        // ── Paso D: Asignar a entrenador si es nuevo cliente ──
+        $um = new UsuarioModel();
         $db = getDB();
-        $hasCliente = $db->prepare("SELECT id FROM clientes WHERE usuario_id = ? LIMIT 1");
-        $hasCliente->execute([$uid]);
-        if (!$hasCliente->fetch()) {
-            $tr = $db->query("SELECT id FROM usuarios WHERE rol='entrenador' LIMIT 1")->fetchColumn();
-            if ($tr) {
-                $db->prepare('INSERT INTO clientes (usuario_id, entrenador_id) VALUES (?,?)')
-                   ->execute([$uid, $tr]);
+
+        $existingUser = $um->findByGoogleId($googleId) ?: $um->findByEmail($email);
+        $cliente = null;
+        if ($existingUser) {
+            $stCl = $db->prepare("SELECT id, cedula, peso_kg, altura_cm, objetivo, fecha_nac FROM clientes WHERE usuario_id = ? LIMIT 1");
+            $stCl->execute([(int)$existingUser['id']]);
+            $cliente = $stCl->fetch(\PDO::FETCH_ASSOC);
+        }
+
+        // Evaluar perfil incompleto: si no existe o falta peso_kg, altura_cm u objetivo
+        $perfilIncompleto = (!$existingUser || !$cliente || empty($cliente['peso_kg']) || empty($cliente['altura_cm']) || empty($cliente['objetivo']));
+
+        if ($perfilIncompleto) {
+            // Usuario Nuevo o Perfil Incompleto: asegurar registro en usuarios y clientes con estado_cuenta = 'pendiente'
+            $uid = $um->createOrUpdateFromGoogle($payload);
+
+            // Asegurar asignación en clientes
+            $stCheckCli = $db->prepare("SELECT id, cedula FROM clientes WHERE usuario_id = ? LIMIT 1");
+            $stCheckCli->execute([$uid]);
+            $clRow = $stCheckCli->fetch(\PDO::FETCH_ASSOC);
+            if (!$clRow) {
+                $tr = $db->query("SELECT id FROM usuarios WHERE rol='entrenador' LIMIT 1")->fetchColumn();
+                if ($tr) {
+                    $db->prepare("INSERT INTO clientes (usuario_id, entrenador_id) VALUES (?, ?)")
+                       ->execute([$uid, (int)$tr]);
+                }
+            }
+
+            // Pre-cargar nombre, apellido, correo y cédula (si existe) para el Onboarding Wizard
+            $_SESSION['google_onboarding'] = [
+                'user_id'    => $uid,
+                'email'      => $email,
+                'nombres'    => $givenName ?: ($payload['name'] ?? ''),
+                'apellidos'  => $familyName,
+                'avatar_url' => $avatarUrl,
+                'cedula'     => $clRow['cedula'] ?? ($cliente['cedula'] ?? ''),
+            ];
+
+            // NO permitir acceso al Dashboard: destruir variables de sesión de usuario activo
+            unset($_SESSION['user_id'], $_SESSION['nombre'], $_SESSION['email'], $_SESSION['rol'], $_SESSION['_login_at'], $_SESSION['_via']);
+
+            // Redirigir al Onboarding Wizard en Modo Google
+            redirect('auth/registro?google=1');
+            return;
+        }
+
+        // ── Paso D: Usuario con perfil completo ──
+        $user = $um->findById((int)$existingUser['id']);
+        if (!$user) throw new \RuntimeException('Usuario no encontrado tras OAuth.');
+
+        // Si el estado de cuenta sigue en 'pendiente', bloquear y mostrar vista Stand-by
+        if (($user['rol'] ?? '') !== 'entrenador') {
+            if (($user['estado_cuenta'] ?? 'pendiente') === 'pendiente') {
+                unset($_SESSION['user_id'], $_SESSION['nombre'], $_SESSION['email'], $_SESSION['rol'], $_SESSION['_login_at'], $_SESSION['_via']);
+                redirect('auth/login?standby=1');
+                return;
+            } elseif (($user['estado_cuenta'] ?? '') === 'rechazado') {
+                unset($_SESSION['user_id'], $_SESSION['nombre'], $_SESSION['email'], $_SESSION['rol'], $_SESSION['_login_at'], $_SESSION['_via']);
+                setFlash('error', UsuarioModel::MSG_RECHAZADO);
+                redirect('auth/login');
+                return;
             }
         }
 
-        // ── Paso E: Establecer sesión ──
-        $user = $um->findById($uid);
-        if (!$user) throw new \RuntimeException('Usuario no encontrado tras OAuth.');
-
+        // ── Paso E: Establecer sesión (Usuario activo) ──
         session_regenerate_id(true);
         $_SESSION['user_id']   = (int)$user['id'];
         $_SESSION['nombre']    = $user['nombre'];
@@ -122,6 +176,7 @@ function googleCallback(): void {
 
         $dest = $user['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard';
         redirect($dest);
+        return;
 
     } catch (\Throwable $e) {
         error_log('[Xprod Fit][OAuth] Error en callback: ' . $e->getMessage());
@@ -136,7 +191,7 @@ function googleCallback(): void {
 function googleExchangeCode(string $code): array {
     $clientId     = env('GOOGLE_CLIENT_ID', '');
     $clientSecret = env('GOOGLE_CLIENT_SECRET', '');
-    $redirectUri  = env('GOOGLE_REDIRECT_URI', '');
+    $redirectUri  = APP_URL . '/auth/google-callback';
 
     $postData = http_build_query([
         'code'          => $code,
@@ -152,7 +207,7 @@ function googleExchangeCode(string $code): array {
         CURLOPT_POSTFIELDS     => $postData,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 15,
-        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYPEER => false, // Fix para XAMPP local
         CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
     ]);
 

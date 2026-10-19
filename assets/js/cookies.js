@@ -122,15 +122,18 @@
         banner.setAttribute('aria-label', 'Aviso de cookies');
         banner.setAttribute('aria-live', 'polite');
 
+        const legalUrl = (typeof window.APP !== 'undefined' && window.APP ? window.APP : (typeof APP !== 'undefined' ? APP : '')) + '/legal/privacidad';
         banner.innerHTML = `
             <div class="ck-inner">
-                <span class="ck-icon" aria-hidden="true">🍪</span>
+                <span class="ck-icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#b388ff; vertical-align:middle;"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M7 13v.01"/><path d="M12 16v.01"/><path d="M16 12v.01"/></svg>
+                </span>
                 <div class="ck-text-area">
                     <div class="ck-title">Tu privacidad importa</div>
                     <p class="ck-desc">
                         Usamos cookies esenciales para que la plataforma funcione, y opcionales para mejorar tu experiencia.
                         Puedes gestionar tus preferencias o aceptar todo.
-                        <a href="/Xprod%20Fit/legal/privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
+                        <a href="${legalUrl}" target="_blank" rel="noopener">Política de Privacidad</a>
                     </p>
                 </div>
                 <div class="ck-actions">

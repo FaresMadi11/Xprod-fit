@@ -1,0 +1,19 @@
+{
+  "1": "redirect",
+  "4": "EntrenadorController.php",
+  "7": "run_migration_v24.php",
+  "10": ".addOrEnqueueAnAddress",
+  "20": "UsuarioModel",
+  "35": ".strpos",
+  "60": "Product",
+  "69": "core/helpers.php",
+  "79": "getDB",
+  "93": "footer.php",
+  "94": "views/layout/header.php",
+  "166": "cliente/dashboard.php",
+  "176": "run_migration_v21.php",
+  "177": "cliente/notificaciones.php",
+  "178": "submitRegistration",
+  "179": "run_migration_v22.php",
+  "183": "run_migration_v23.php"
+}

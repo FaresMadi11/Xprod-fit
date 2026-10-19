@@ -1,0 +1,21 @@
+# Ignore media, archives and temporary scratch files
+_proyecto_backup_desactivado.zip
+*.zip
+*.tar.gz
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.mp4
+*.pdf
+storage/
+scratch/
+assets/img/
+.git/
+.agents/
+.gemini/
+.claude/
+.impeccable/
+node_modules/
+vendor/

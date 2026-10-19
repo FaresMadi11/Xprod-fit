@@ -1,1055 +1,2349 @@
-<?php $pageTitle = 'Crear Rutina'; require __DIR__ . '/../layout/header.php'; ?>
+<?php $pageTitle = "Crear Rutina"; require __DIR__ . "/../layout/header.php"; ?>
 
 <style>
-/* ─── Variables and Basics ─── */
-:root {
-  --app-bg: #111526;
-  --card-bg: #1a2235;
-  --input-bg: #111526;
-  --accent-cyan: #0bd1d1;
-  --text-main: #ffffff;
-  --text-muted: #8b95a5;
-  --border-color: rgba(255,255,255,0.1);
-}
+/* ════════════════════════════════════════════════════
+   CREADOR DE RUTINAS PRO — Design System Aligned
+   - Usa tokens del sistema: var(--accent), var(--bg2)…
+   - Glassmorphism real con backdrop-filter
+   - Touch targets >= 44px (WCAG 2.5.5)
+   ════════════════════════════════════════════════════ */
 
-/* Override light theme if necessary to maintain the exact look of the design 
-   or allow it to adapt. We will allow adaptation using standard CSS variables where possible,
-   but use specific classes for the round checkboxes. */
-
-.routine-wrapper {
-  max-width: 600px;
+/* ── Layout wrapper ── */
+.cr-wrapper {
+  max-width: 640px;
   margin: 0 auto;
+  padding: 0 0 120px;
 }
 
-/* ─── Custom Header ─── */
-.header-custom {
+/* ── Top bar ── */
+.cr-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
-}
-.header-custom .btn-back {
-  background: transparent;
-  border: none;
-  font-size: 1.4rem;
-  color: var(--text);
-  cursor: pointer;
-  padding: 0;
-}
-.header-custom .title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0;
-}
-.header-custom .btn-save-text {
-  background: transparent;
-  border: none;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.3s;
-}
-.header-custom .btn-save-text:hover {
-  color: var(--accent);
-}
-
-/* ─── Main Card ─── */
-.routine-box {
-  background: var(--card-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--card-border);
-  border-radius: 20px;
-  padding: 24px 20px;
-  box-shadow: var(--shadow-sm);
-}
-html[data-theme="light"] .routine-box {
-  background: #ffffff;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-}
-
-/* ─── Floating Label Input ─── */
-.floating-group {
-  position: relative;
-  margin-bottom: 24px;
-}
-.floating-group select,
-.floating-group input {
-  width: 100%;
-  background: var(--input-bg);
-  border: 1px solid var(--accent);
-  border-radius: 12px;
-  padding: 16px;
-  color: var(--text);
-  font-size: 1rem;
-  font-weight: 500;
-  outline: none;
-  -webkit-appearance: none;
-  transition: box-shadow 0.3s;
-}
-html[data-theme="light"] .floating-group input,
-html[data-theme="light"] .floating-group select {
-  background: #fff;
-  border-color: var(--accent);
-}
-.floating-group select:focus,
-.floating-group input:focus {
-  box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.2);
-}
-.floating-group label {
-  position: absolute;
-  left: 14px;
-  top: -10px;
-  background: var(--card-glass);
-  padding: 0 6px;
-  font-size: 0.8rem;
-  color: var(--accent);
-  font-weight: 600;
-  border-radius: 4px;
-}
-html[data-theme="light"] .floating-group label { background: #fff; }
-
-/* ─── Días de la semana ─── */
-.section-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 12px;
-}
-
-.days-row {
-  display: flex;
   gap: 8px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg);
+  padding: 12px 0 8px;
 }
-.day-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  color: #8b95a5;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: 700;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.3s;
-  user-select: none;
-  border: none;
-}
-html[data-theme="light"] .day-btn {
-  background: #e2e8f0;
-  color: #64748b;
-}
-
-/* Checkbox hiding */
-.day-checkbox { display: none; }
-
-/* Checked state */
-.day-checkbox:checked + .day-btn {
-  background: var(--accent);
-  color: #000;
-  box-shadow: 0 4px 12px rgba(94, 234, 212, 0.4);
-}
-html[data-theme="light"] .day-checkbox:checked + .day-btn {
-  background: var(--accent);
-  color: #fff;
-}
-
-/* ─── Buttons ─── */
-.btn-add-exercise {
-  width: 100%;
-  background: transparent;
-  border: 2px solid var(--accent);
-  border-radius: 20px;
-  color: var(--accent);
-  padding: 14px;
+.cr-topbar-title {
   font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  text-align: center;
+  letter-spacing: -.01em;
+}
+.cr-btn-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  font-size: .9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-  margin-bottom: 20px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  color: var(--muted);
+  transition: color var(--trans), background var(--trans);
+  font-family: inherit;
 }
-.btn-add-exercise:hover {
-  background: rgba(94, 234, 212, 0.1);
-}
+.cr-btn-back:hover { color: var(--text); background: rgba(255,255,255,0.05); }
 
-.btn-save-main {
-  width: 100%;
+.cr-btn-save {
+  min-height: 44px;
+  padding: 10px 20px;
   background: var(--accent);
   border: none;
-  border-radius: 20px;
-  color: #000;
-  padding: 16px;
-  font-size: 1.05rem;
+  color: #fff;
+  border-radius: 22px;
+  font-size: .9rem;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 10px;
-  transition: transform 0.2s, filter 0.2s;
-  box-shadow: 0 6px 20px rgba(94, 234, 212, 0.3);
+  box-shadow: 0 4px 16px rgba(139,92,246,.4);
+  transition: filter var(--trans), transform var(--trans), box-shadow var(--trans);
+  font-family: inherit;
+  white-space: nowrap;
 }
-html[data-theme="light"] .btn-save-main { color: #fff; }
-.btn-save-main:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-}
+.cr-btn-save:hover  { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139,92,246,.5); }
+.cr-btn-save:active { filter: brightness(.95); transform: translateY(0); }
+.cr-btn-save:disabled { opacity: .6; cursor: not-allowed; }
 
-/* ─── Exercise Sub-card ─── */
-.ex-card {
-  background: rgba(0,0,0,0.15);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 14px;
-  padding: 12px;
-  margin-bottom: 12px;
-}
-html[data-theme="light"] .ex-card {
-  background: rgba(0,0,0,0.02);
-}
-
-.ex-header {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.ex-select-wrap {
-  flex: 1;
-  position: relative;
-}
-.ex-select-wrap select, .ex-select-wrap input.custom-ex-input {
+/* ── Título rutina ── */
+.cr-title-input {
   width: 100%;
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  color: var(--text);
-  font-size: 0.9rem;
-  outline: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-}
-html[data-theme="light"] .ex-select-wrap select,
-html[data-theme="light"] .ex-select-wrap input.custom-ex-input { background: #fff; }
-
-.ex-select-wrap select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b95a5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-}
-
-/* Fix for unreadable native dropdown options */
-.ex-select-wrap select option {
-  background-color: #1a2235;
-  color: #ffffff;
-  padding: 12px;
-}
-html[data-theme="light"] .ex-select-wrap select option {
-  background-color: #ffffff;
-  color: #111526;
-}
-
-.ex-btn-del {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.04);
-  border: none;
-  color: var(--muted);
-  font-size: 1.1rem;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.ex-btn-del:hover {
-  background: rgba(248, 113, 113, 0.15);
-  color: var(--danger);
-}
-html[data-theme="light"] .ex-btn-del { background: rgba(0,0,0,0.05); }
-
-/* Exercise Metrics Row */
-.ex-metrics {
-  display: flex;
-  gap: 10px;
-}
-.metric-box {
-  flex: 1;
-}
-.metric-label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: #6b7280;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-html[data-theme="light"] .metric-label { color: #94a3b8; }
-
-.metric-input-wrap {
-  display: flex;
-  align-items: center;
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 2px 6px;
-}
-html[data-theme="light"] .metric-input-wrap { background: #fff; }
-
-.metric-input-wrap i {
-  color: var(--muted);
-  font-size: 0.95rem;
-  margin-right: 4px;
-}
-.metric-input-wrap input {
   background: transparent;
   border: none;
+  border-bottom: 2px solid var(--border);
   color: var(--text);
-  width: 100%;
-  font-size: 0.85rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  text-align: center;
+  padding: 10px 0;
+  margin-bottom: 20px;
   outline: none;
-  padding: 4px 0;
+  transition: border-color var(--trans);
+  font-family: inherit;
+  caret-color: var(--accent);
 }
+.cr-title-input::placeholder { color: var(--muted); font-weight: 400; }
+.cr-title-input:focus { border-color: var(--accent); }
 
-/* Utility to trigger submit from external button */
-.btn-save-text {
-    z-index: 10;
-}
-
-/* ─── Silueta Muscular ─── */
-.zones-section {
-  margin-bottom: 24px;
-}
-.zones-layout {
+/* ── Detalles Rutina ── */
+.cr-details-group {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  align-items: flex-start;
+  margin-bottom: 24px;
 }
-@media(min-width: 600px) {
-  .zones-layout { flex-direction: row; align-items: stretch; }
-}
-.figures-panel {
-  display: flex;
-  gap: 12px;
-  flex-shrink: 0;
-  justify-content: center;
+.cr-textarea {
   width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: .9rem;
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color var(--trans);
 }
-@media(min-width: 600px) {
-  .figures-panel { width: auto; }
+.cr-textarea:focus { border-color: var(--accent); }
+/* Glassmorphism para el form container */
+.cr-form-glass {
+  background: rgba(15, 15, 19, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px 20px;
+  margin-bottom: 24px;
 }
-.svg-wrap {
-  flex: 1;
-  max-width: 130px;
-  background: rgba(0,0,0,0.25);
-  border: 1px solid rgba(255,255,255,0.08);
+
+/* Custom Select Dropdown */
+.cr-custom-select {
+  position: relative;
+  margin-bottom: 24px;
+}
+.cr-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: .95rem;
+  font-weight: 600;
+  transition: border-color var(--trans);
+}
+.cr-select-trigger:hover { border-color: var(--border-accent); }
+.cr-select-trigger i.ti-user { color: var(--muted); }
+.cr-select-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0; right: 0;
+  background: rgba(20, 20, 25, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 14px;
-  padding: 10px 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+  z-index: 50;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  max-height: 300px;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
 }
-.fig-title {
+.cr-custom-select.open .cr-select-dropdown {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.cr-select-search {
+  padding: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.cr-select-search input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: .9rem;
+  outline: none;
+  transition: border-color var(--trans);
+}
+.cr-select-search input:focus { border-color: var(--accent); }
+.cr-select-options { overflow-y: auto; }
+.cr-select-option {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--text);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background var(--trans);
+}
+.cr-select-option:last-child { border-bottom: none; }
+.cr-select-option:hover { background: rgba(139,92,246,0.15); }
+.cr-select-option.selected {
+  background: rgba(139,92,246,0.25);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ── Días Toggle ── */
+.cr-days-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cr-day-toggle {
+  display: none;
+}
+.cr-day-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+.cr-day-toggle:checked + .cr-day-label {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+.cr-label-text {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: block;
+}
+
+
+
+/* ── Exercise Canvas ── */
+#exerciseCanvas {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Exercise block (Fondo Sólido Oscuro) ── */
+.ex-block {
+  background: #121216;
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: cr-slideUp .28s cubic-bezier(0.34,1.56,0.64,1) both;
+  transition: border-color var(--trans), box-shadow var(--trans);
+}
+.ex-block:hover { border-color: rgba(255,255,255,0.12); }
+
+@keyframes cr-slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);   }
+}
+
+.ex-block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px 10px;
+}
+.ex-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(139,92,246,.15);
+  border: 1.5px solid rgba(139,92,246,.35);
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+.ex-name {
+  flex: 1;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent-light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ex-btn-dots {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: color var(--trans), background var(--trans);
+  flex-shrink: 0;
+}
+.ex-btn-dots:hover { color: var(--text); background: rgba(255,255,255,.06); }
+
+/* ── Rest timer ── */
+.ex-rest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 10px;
+  cursor: pointer;
+}
+.ex-rest-label {
+  font-size: .78rem;
+  color: var(--accent);
+  font-weight: 600;
+  transition: color var(--trans);
+}
+.ex-rest-row:hover .ex-rest-label { color: var(--accent-light); }
+.ex-rest-input {
+  display: none;
+  width: 64px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: var(--text);
+  font-size: .8rem;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+}
+.ex-rest-input:focus { border-color: var(--accent); }
+.ex-rest-row.active .ex-rest-input { display: inline-block; }
+.ex-rest-row.active .ex-rest-toggle-label { display: none; }
+
+/* ── Implement Toolbar & Unit Toggle ── */
+.ex-impl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+  margin-bottom: 6px;
+}
+.ex-impl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.impl-chip {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--trans);
+  font-family: inherit;
+}
+.impl-chip:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+.impl-chip.active {
+  background: rgba(139,92,246,0.18);
+  border-color: rgba(139,92,246,0.45);
+  color: var(--accent-light);
+}
+.impl-chip.active[data-impl="mancuerna"] {
+  background: rgba(168,85,247,0.18);
+  border-color: rgba(168,85,247,0.5);
+  color: #c084fc;
+}
+.impl-chip.active[data-impl="sin_peso"] {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.4);
+  color: #4ade80;
+}
+.impl-chip.active[data-impl="polea_maquina"] {
+  background: rgba(56,189,248,0.15);
+  border-color: rgba(56,189,248,0.4);
+  color: #38bdf8;
+}
+
+/* Unit Toggle Pill */
+.ex-unit-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  padding: 2px 4px;
+}
+.unit-toggle-text {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+.unit-pill-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--trans);
+  font-family: inherit;
+}
+.unit-pill-btn.active {
+  background: rgba(56,189,248,0.25);
+  color: #38bdf8;
+}
+
+/* Dumbbell hint */
+.dumbbell-hint {
+  font-size: 0.62rem;
+  color: #c084fc;
+  font-weight: 700;
+  display: block;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* Bodyweight pill */
+.set-bodyweight-pill {
+  width: 100%;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: rgba(34,197,94,0.08);
+  border: 1px dashed rgba(34,197,94,0.3);
+  color: #4ade80;
   font-size: 0.72rem;
   font-weight: 700;
-  color: #8b95a5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  user-select: none;
+}
+
+/* ── Set columns ── */
+.set-cols {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 6px 14px 4px;
+}
+.set-col-label {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .08em;
   text-transform: uppercase;
-  letter-spacing: .05em;
-  margin-bottom: 8px;
+  color: var(--muted);
+  text-align: center;
 }
-.svg-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
 
-/* Zonas interactivas del SVG */
-.mz-ns {
-  fill: #2a364f;
-  stroke: #1a2335;
-  stroke-width: 1.2;
+.set-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 5px 14px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  animation: cr-slideUp .2s ease both;
 }
-.mz {
+
+/* ── Serie badge ── */
+.set-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: .83rem;
+  font-weight: 800;
   cursor: pointer;
-  fill: #3e5077;
-  stroke: #222b40;
-  stroke-width: 1.5;
-  transition: all 0.25s ease;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  transition: transform .15s, border-color .15s;
+  user-select: none;
+  border: 1.5px solid transparent;
+  justify-self: center;
 }
-.mz:hover, .mz.hovered {
-  fill: rgba(11,209,209,0.4);
-  stroke: #0bd1d1;
-  filter: drop-shadow(0 0 5px rgba(11,209,209,0.6));
+.set-badge:active { transform: scale(.92); }
+.set-badge[data-type="normal"]        { background:rgba(139,92,246,.14); color:#a78bfa; border-color:rgba(139,92,246,.35); }
+.set-badge[data-type="calentamiento"] { background:rgba(251,191,36,.14); color:#fbbf24; border-color:rgba(251,191,36,.35); }
+.set-badge[data-type="fallo"]         { background:rgba(248,113,113,.14); color:#f87171; border-color:rgba(248,113,113,.35); }
+.set-badge[data-type="drop"]          { background:rgba(96,165,250,.14); color:#60a5fa; border-color:rgba(96,165,250,.35); }
+
+/* ── Set inputs ── */
+.set-input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  padding: 9px 8px;
+  color: var(--text);
+  font-size: .9rem;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  transition: border-color var(--trans);
+  font-family: inherit;
 }
-/* Cuando está seleccionado */
-.mz.sel {
-  fill: rgba(11,209,209,0.6) !important;
-  stroke: #0bd1d1 !important;
-  filter: drop-shadow(0 0 8px rgba(11,209,209,0.8)) !important;
+.set-input:focus { border-color: var(--accent); }
+.set-input::placeholder { color: var(--muted); font-weight: 400; }
+
+/* ── Add Serie button ── */
+.btn-add-set {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 28px);
+  margin: 10px 14px 14px;
+  min-height: 44px;
+  background: rgba(139,92,246,.06);
+  border: 1.5px dashed rgba(139,92,246,.35);
+  border-radius: 12px;
+  color: var(--accent-light);
+  font-size: .85rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--trans), border var(--trans);
+}
+.btn-add-set:hover {
+  background: rgba(139,92,246,.14);
+  border-style: solid;
+  border-color: var(--accent);
 }
 
-.zones-panel { flex: 1; min-width: 0; }
-.zones-chips { display: flex; flex-wrap: wrap; gap: 8px; min-height: 28px; margin-bottom: 12px; }
-.zone-chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: 20px;
-  font-size: 0.72rem; font-weight: 700; letter-spacing: .03em;
-  background: rgba(11,209,209,0.12); color: #0bd1d1;
-  border: 1px solid rgba(11,209,209,0.35);
-  animation: popIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+/* ── Add Ejercicio global ── */
+.btn-add-exercise-global {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  background: transparent;
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--trans), border var(--trans), transform var(--trans);
+  margin-top: 8px;
 }
-.zone-chip button { background:none; border:none; cursor:pointer; color:inherit; display:flex; padding:0; line-height:1; }
-.zone-chip button:hover { color: #f87171; }
-@keyframes popIn { 0%{transform:scale(0.7);opacity:0} 100%{transform:scale(1);opacity:1} }
-.zone-hint { font-size: 0.8rem; color: #6b7280; font-style: italic; }
+.btn-add-exercise-global:hover {
+  background: rgba(139,92,246,.1);
+  border-style: solid;
+  transform: translateY(-1px);
+}
+.btn-add-exercise-global:active { transform: translateY(0); }
 
-/* Bloques de ejercicios por zona */
-.zone-ex-block {
-  background: var(--card-glass, rgba(0,0,0,0.2));
-  border: 1px solid rgba(11,209,209,0.3);
-  border-radius: 16px; overflow: hidden;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 20px rgba(11,209,209,0.05);
-  animation: slideIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+/* ════════════════════════════════════════════════════
+   BOTTOM SHEETS — MODAL PORTAL ARCHITECTURE
+   Los elementos son movidos a <body> via JS portal para
+   escapar el overflow-x:hidden de .xp-main que rompe
+   position:fixed en navegadores Chromium/WebKit.
+   z-index: 9999 garantiza visibilidad sobre cualquier capa.
+   ════════════════════════════════════════════════════ */
+.bs-overlay {
+  position: fixed;
+  inset: 0;
+  top: 0; left: 0;          /* explícito: algunos browsers lo necesitan */
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 9998;             /* debajo del sheet, encima de todo lo demás */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s ease;
 }
-@keyframes slideIn { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
-.zone-ex-head {
-  display: flex; align-items: center; justify-content: space-between;
+.bs-overlay.is-open  { opacity: 1; pointer-events: all; }
+
+.bs-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;               /* explícito en lugar de right:0 */
+  z-index: 9999;
+  background: var(--bg2);
+  border-radius: 24px 24px 0 0;
+  border-top: 1px solid var(--border);
+  /* Estado cerrado: empujado 100% de su altura hacia abajo (invisible) */
+  transform: translateY(100%);
+  transition: transform .38s cubic-bezier(0.32,0.72,0,1);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+  box-shadow: 0 -12px 48px rgba(0,0,0,.6);
+  will-change: transform;
+}
+/* Clase .is-open (nuestro sistema) y alias .modal-activo (solicitado) */
+.bs-sheet.is-open,
+.bs-sheet.modal-activo { transform: translateY(0); }
+
+.bs-handle {
+  width: 40px;
+  height: 4px;
+  background: rgba(255,255,255,.18);
+  border-radius: 2px;
+  margin: 14px auto 18px;
+}
+.bs-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  padding: 0 20px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bs-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  min-height: 56px;
+  cursor: pointer;
+  transition: background var(--trans);
+  border-bottom: 1px solid var(--border);
+  font-size: .95rem;
+  color: var(--text);
+  font-weight: 500;
+  user-select: none;
+}
+.bs-item:last-child { border-bottom: none; }
+.bs-item:hover { background: rgba(255,255,255,.04); }
+.bs-item:active { background: rgba(255,255,255,.08); }
+.bs-item i { font-size: 1.2rem; color: var(--muted); width: 24px; flex-shrink: 0; }
+.bs-item.danger { color: var(--danger); }
+.bs-item.danger i { color: var(--danger); }
+
+.bs-badge-pill {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: .88rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════
+   BOTTOM SHEET — CATEGORÍAS (scroll oculto)
+══════════════════════════════════════════════════ */
+
+/* Scroll fluido sin scrollbar visible */
+.bs-sheet::-webkit-scrollbar { display: none; }
+.bs-sheet { scrollbar-width: none; }
+
+/* ── PANEL SISTEMA (drill-down) ── */
+/* El sheet contiene paneles horizontales; solo uno visible */
+.cats-panels {
+  /* Panels apilados verticalmente; mostramos uno a la vez */
+}
+
+/* ── HEADER interno del sheet (sticky dentro del scroll) ── */
+.modal-header-sticky {
+  position: sticky;
+  top: 0;
+  background: var(--bg2);
+  z-index: 20;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 15px;
+}
+.cats-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 12px;
+}
+.cats-btn-back-inner {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--accent-light);
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--trans), color var(--trans);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cats-btn-back-inner:hover { background: rgba(139,92,246,.14); color: var(--accent); }
+.cats-header-title {
+  flex: 1;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: -.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Search bar */
+.cats-search-wrap {
+  padding: 0 14px 0;
+  position: relative;
+}
+.cats-search {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  padding: 10px 14px 10px 38px;
+  color: var(--text);
+  font-size: .88rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--trans);
+}
+.cats-search:focus { border-color: var(--accent); }
+.cats-search-wrap { position: relative; }
+.cats-search-icon {
+  position: absolute;
+  left: 26px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+/* Panel visibility */
+.cats-panel { animation: cr-slideUp .22s ease both; }
+.cats-panel.hidden { display: none; }
+
+/* ── Vista B: Grilla de Categorías ── */
+.cat-section-label {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 14px 20px 8px;
+}
+.cat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 14px 4px;
+}
+.cat-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background var(--trans), border-color var(--trans), transform .15s;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--text);
+  min-height: 56px;
+  position: relative;
+}
+.cat-card:hover  { background: rgba(139,92,246,.12); border-color: rgba(139,92,246,.4); }
+.cat-card:active { transform: scale(.97); }
+/* Chevron indicator */
+.cat-card::after {
+  content: '';
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--muted);
+  border-top: 2px solid var(--muted);
+  transform: rotate(45deg);
+  position: absolute;
+  right: 14px;
+  opacity: .5;
+  transition: opacity var(--trans);
+}
+.cat-card:hover::after { opacity: 1; }
+.cat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  color: var(--accent-light);
+  flex-shrink: 0;
+}
+
+/* ── Vista B2: Lista de Ejercicios (con miniatura) ── */
+.ex-list {
+  display: flex;
+  flex-direction: column;
+  padding: 15px 14px 100px; /* espacio top y espacio bottom para el botón flotante */
+  gap: 6px;
+}
+.ex-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: background var(--trans), border-color var(--trans), transform .12s;
+  user-select: none;
+  min-height: 64px;
+  background: rgba(255,255,255,.03);
+  position: relative;
+}
+.ex-list-item:hover  { background: rgba(255,255,255,.06); }
+.ex-list-item:active { transform: scale(.98); }
+
+/* Estado: seleccionado */
+.ex-list-item.selected {
+  border-color: var(--accent);
+  background: rgba(139,92,246,.1);
+}
+.ex-list-item.selected .ex-li-check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Miniatura circular del ejercicio */
+.ex-li-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: rgba(139,92,246,.15);
+  border: 1.5px solid rgba(139,92,246,.25);
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  color: var(--accent-light);
+  position: relative;
+}
+.ex-li-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  position: absolute;
+  inset: 0;
+}
+
+/* Texto del ejercicio */
+.ex-li-body { flex: 1; min-width: 0; }
+.ex-li-name {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ex-li-desc {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Checkmark de selección */
+.ex-li-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transform: scale(.5);
+  transition: opacity .18s, transform .18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.ex-li-check i { font-size: .75rem; color: #fff; }
+
+/* Estado vacío */
+.ex-list-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+/* ── Botón flotante de confirmación ── */
+.cats-confirm-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0; right: 0;
   padding: 12px 16px;
-  background: linear-gradient(90deg, rgba(11,209,209,0.15) 0%, rgba(11,209,209,0.05) 100%);
-  border-bottom: 1px solid rgba(11,209,209,0.1);
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  background: linear-gradient(to top, var(--bg2) 70%, transparent);
+  display: none;          /* visible solo en panel ejercicios con selección */
+  z-index: 20;
 }
-.zone-ex-head span { 
-  font-size: 0.85rem; font-weight: 800; color: #0bd1d1; 
-  text-transform: uppercase; letter-spacing: .06em; 
-  display: flex; align-items: center; gap: 8px; 
+.cats-confirm-bar.visible { display: block; }
+.cats-btn-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  background: var(--accent);
+  border: none;
+  border-radius: 16px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 24px rgba(139,92,246,.45);
+  transition: filter var(--trans), transform var(--trans);
 }
-.zone-ex-head span::before { content: '⚡'; font-size: 1rem; }
-.zone-ex-rows {}
-.btn-add-zone-ex {
-  display: flex; justify-content: center; align-items: center; gap: 6px;
-  width: calc(100% - 32px); margin: 12px 16px;
-  padding: 10px; background: rgba(11,209,209,0.05); border: 1px dashed rgba(11,209,209,0.4);
-  border-radius: 12px; color: #0bd1d1; font-size: 0.85rem; font-weight: 700;
-  font-family: inherit; cursor: pointer; transition: all .3s ease;
-}
-.btn-add-zone-ex:hover { 
-  background: rgba(11,209,209,0.15); 
-  border-style: solid; 
-  box-shadow: 0 4px 12px rgba(11,209,209,0.2); 
+.cats-btn-confirm:hover  { filter: brightness(1.1); transform: translateY(-1px); }
+.cats-btn-confirm:active { transform: translateY(0); filter: brightness(.95); }
+.cats-btn-confirm .confirm-count {
+  background: rgba(255,255,255,.25);
+  border-radius: 8px;
+  padding: 2px 9px;
+  font-size: .85rem;
+  font-weight: 800;
 }
 
-/* Tooltip SVG */
-#mz-tip {
-  position: fixed; background: rgba(5,8,20,0.95);
-  border: 1px solid #0bd1d1; padding: 3px 9px;
-  border-radius: 5px; font-size: 0.7rem; font-weight: 700; color: #0bd1d1;
-  pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 9999; white-space: nowrap;
-}
+/* ── Drag-to-reorder ── */
+.ex-block.dragging    { opacity: .5; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.ex-block.drag-over   { border-color: var(--accent-light); background: rgba(139,92,246,.08); }
+
+/* ── Spinner ── */
+@keyframes cr-spin { to { transform: rotate(360deg); } }
+.cr-spin { display: inline-block; animation: cr-spin .8s linear infinite; }
 </style>
 
-<div class="routine-wrapper">
-    <div class="header-custom">
-        <button type="button" class="btn-back" onclick="history.back()">
-            <i class="ti ti-arrow-left"></i>
-        </button>
-        <h1 class="title">Crear Rutina</h1>
-        <button type="button" class="btn-save-text" onclick="document.getElementById('mainSubmit').click()">
-            Guardar
-        </button>
-    </div>
+<div class="cr-wrapper">
 
-    <form id="rutinaForm" class="xp-form">
-        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-        
-        <div class="routine-box">
-            <!-- Atleta Selection (Required by DB but blended into design) -->
-            <div class="floating-group" style="margin-bottom:20px; border-color:var(--border);">
-                <label style="color:var(--text); left:14px;">Atleta asignado *</label>
-                <select name="cliente_id" required style="border-color:var(--border);">
-                    <option value="">— Seleccionar —</option>
-                    <?php foreach($clientes as $c): ?>
-                    <option value="<?= $c['id'] ?>"><?= e($c['nombre']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+  <!-- Top bar -->
+  <div class="cr-topbar">
+    <button type="button" class="cr-btn-back" onclick="history.back()" aria-label="Cancelar y volver">
+      <i class="ti ti-arrow-left"></i> Cancelar
+    </button>
+    <span class="cr-topbar-title" role="heading" aria-level="1"><?= $pageTitle ?></span>
+    <button type="button" class="cr-btn-save" id="btnGuardar">Guardar</button>
+  </div>
 
-            <!-- Nombre de la rutina (Usamos descripcion en BD) -->
-            <div class="floating-group">
-                <label>Nombre de la rutina</label>
-                <input type="text" name="descripcion" placeholder="Ej: Hipertrofia Tren Superior" required>
-            </div>
-
-            <!-- Días de la semana -->
-            <div class="section-title">Días de la semana</div>
-            <div class="days-row">
-                <?php 
-                $dias = [1=>'L', 2=>'M', 3=>'M', 4=>'J', 5=>'V']; 
-                foreach($dias as $i => $d): 
-                ?>
-                <label>
-                    <input type="checkbox" name="dias[]" value="<?= $i ?>" class="day-checkbox">
-                    <div class="day-btn"><?= $d ?></div>
-                </label>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- ══════════ ZONAS MUSCULARES (FRENTE Y ESPALDA) ══════════ -->
-            <div class="zones-section">
-              <div class="section-title" style="margin-bottom:8px">Zonas a entrenar</div>
-              <p style="font-size:0.8rem;color:#6b7280;margin-bottom:14px">Toca las siluetas para seleccionar grupos musculares</p>
-              <div class="zones-layout">
-
-                <div class="figures-panel">
-                  <!-- --- FRENTE --- -->
-                  <div class="svg-wrap">
-                    <div class="fig-title">Frente</div>
-                    
-<svg viewBox="0 0 400 850" xmlns="http://www.w3.org/2000/svg" class="anatomy-svg">
-  <!-- Cabeza y Cuello (Base no seleccionable) -->
-  <path d="M 175 90 C 175 30 225 30 225 90 C 225 120 215 130 200 145 C 185 130 175 120 175 90 Z" class="mz-ns"/>
-  <path d="M 183 140 C 180 155 185 160 200 160 C 215 160 220 155 217 140 Z" class="mz-ns"/>
-  
-  <!-- Trapecio -->
-  <path d="M 183 140 C 160 148 145 158 135 175 C 150 155 165 145 188 138 Z" class="mz" data-g="trapecio" data-m="Trapecio"/>
-  <path d="M 217 140 C 240 148 255 158 265 175 C 250 155 235 145 212 138 Z" class="mz" data-g="trapecio" data-m="Trapecio"/>
-  
-  <!-- Hombros (Deltoides redondeados) -->
-  <path d="M 135 175 C 105 185 95 230 110 260 C 120 240 130 200 150 178 C 145 170 140 165 135 175 Z" class="mz" data-g="hombro" data-m="Hombros"/>
-  <path d="M 265 175 C 295 185 305 230 290 260 C 280 240 270 200 250 178 C 255 170 260 165 265 175 Z" class="mz" data-g="hombro" data-m="Hombros"/>
-  
-  <!-- Pecho (Pectorales masivos) -->
-  <path d="M 150 178 C 130 210 135 250 155 265 C 175 275 198 260 198 245 L 198 165 C 175 165 155 170 150 178 Z" class="mz" data-g="pecho" data-m="Pecho"/>
-  <path d="M 250 178 C 270 210 265 250 245 265 C 225 275 202 260 202 245 L 202 165 C 225 165 245 170 250 178 Z" class="mz" data-g="pecho" data-m="Pecho"/>
-
-  <!-- Abdomen (Six pack definido) -->
-  <path d="M 198 245 C 175 255 170 280 170 340 C 170 375 175 400 198 405 Z" class="mz" data-g="abdomen" data-m="Abdomen"/>
-  <path d="M 202 245 C 225 255 230 280 230 340 C 230 375 225 400 202 405 Z" class="mz" data-g="abdomen" data-m="Abdomen"/>
-
-  <!-- Oblicuos -->
-  <path d="M 155 265 C 140 290 145 365 160 395 C 170 395 170 360 170 340 C 170 310 170 280 155 265 Z" class="mz" data-g="abdomen" data-m="Oblicuos"/>
-  <path d="M 245 265 C 260 290 255 365 240 395 C 230 395 230 360 230 340 C 230 310 230 280 245 265 Z" class="mz" data-g="abdomen" data-m="Oblicuos"/>
-
-  <!-- Bíceps (Abultados) -->
-  <path d="M 110 260 C 95 290 100 330 115 350 C 130 320 135 285 130 265 Z" class="mz" data-g="bíceps" data-m="Bíceps"/>
-  <path d="M 290 260 C 305 290 300 330 285 350 C 270 320 265 285 270 265 Z" class="mz" data-g="bíceps" data-m="Bíceps"/>
-
-  <!-- Antebrazos -->
-  <path d="M 115 350 C 90 400 85 440 95 470 C 110 460 130 410 130 370 C 130 360 120 350 115 350 Z" class="mz" data-g="antebrazos" data-m="Antebrazos"/>
-  <path d="M 285 350 C 310 400 315 440 305 470 C 290 460 270 410 270 370 C 270 360 280 350 285 350 Z" class="mz" data-g="antebrazos" data-m="Antebrazos"/>
-
-  <!-- Tríceps (Borde exterior frontal) -->
-  <path d="M 110 260 C 95 280 90 310 98 340 C 95 310 95 290 102 265 Z" class="mz" data-g="tríceps" data-m="Tríceps"/>
-  <path d="M 290 260 C 305 280 310 310 302 340 C 305 310 305 290 298 265 Z" class="mz" data-g="tríceps" data-m="Tríceps"/>
-
-  <!-- Zona pélvica -->
-  <path d="M 198 405 C 175 405 160 415 145 430 C 165 445 185 440 200 455 C 215 440 235 445 255 430 C 240 415 225 405 202 405 Z" class="mz-ns"/>
-  
-  <!-- Manos -->
-  <path d="M 95 470 C 80 500 80 520 100 525 C 120 520 105 480 105 460 Z" class="mz-ns"/>
-  <path d="M 305 470 C 320 500 320 520 300 525 C 280 520 295 480 295 460 Z" class="mz-ns"/>
-
-  <!-- Cuádriceps (Muslos redondos) -->
-  <path d="M 195 435 C 150 435 130 500 135 560 C 140 600 150 630 170 650 L 195 650 Z" class="mz" data-g="cuádriceps" data-m="Cuádriceps"/>
-  <path d="M 205 435 C 250 435 270 500 265 560 C 260 600 250 630 230 650 L 205 650 Z" class="mz" data-g="cuádriceps" data-m="Cuádriceps"/>
-  
-  <!-- Rodillas -->
-  <path d="M 170 655 C 160 670 185 675 195 655 Z" class="mz-ns"/>
-  <path d="M 230 655 C 240 670 215 675 205 655 Z" class="mz-ns"/>
-
-  <!-- Gemelos / Pantorrillas frontales -->
-  <path d="M 165 680 C 140 720 150 780 160 800 L 185 800 C 185 750 195 690 180 680 Z" class="mz" data-g="gemelos" data-m="Pantorrillas"/>
-  <path d="M 235 680 C 260 720 250 780 240 800 L 215 800 C 215 750 205 690 220 680 Z" class="mz" data-g="gemelos" data-m="Pantorrillas"/>
-  
-  <!-- Pies -->
-  <path d="M 160 805 C 140 835 155 850 180 850 L 185 810 Z" class="mz-ns"/>
-  <path d="M 240 805 C 260 835 245 850 220 850 L 215 810 Z" class="mz-ns"/>
-</svg>
-                  </div>
-
-                  <!-- --- ESPALDA --- -->
-                  <div class="svg-wrap">
-                    <div class="fig-title">Espalda</div>
-                    
-<svg viewBox="0 0 400 850" xmlns="http://www.w3.org/2000/svg" class="anatomy-svg">
-  <!-- Cabeza y Cuello -->
-  <path d="M 175 90 C 175 30 225 30 225 90 C 225 120 215 130 200 145 C 185 130 175 120 175 90 Z" class="mz-ns"/>
-  
-  <!-- Trapecio (espalda masivo) -->
-  <path d="M 200 145 C 160 165 140 210 135 240 C 165 255 190 290 198 330 Z" class="mz" data-g="trapecio" data-m="Trapecio"/>
-  <path d="M 200 145 C 240 165 260 210 265 240 C 235 255 210 290 202 330 Z" class="mz" data-g="trapecio" data-m="Trapecio"/>
-  
-  <!-- Espalda / Dorsales (forma de V) -->
-  <path d="M 135 240 C 100 310 115 390 145 440 L 198 330 Z" class="mz" data-g="espalda" data-m="Espalda"/>
-  <path d="M 265 240 C 300 310 285 390 255 440 L 202 330 Z" class="mz" data-g="espalda" data-m="Espalda"/>
-  
-  <!-- Lumbar -->
-  <path d="M 198 335 L 148 445 C 170 475 195 475 198 470 Z" class="mz" data-g="espalda" data-m="Lumbar"/>
-  <path d="M 202 335 L 252 445 C 230 475 205 475 202 470 Z" class="mz" data-g="espalda" data-m="Lumbar"/>
-  
-  <!-- Hombros posteriores -->
-  <path d="M 135 175 C 105 185 95 230 110 260 C 120 240 130 200 150 178 C 145 170 140 165 135 175 Z" class="mz" data-g="hombro" data-m="Hombros"/>
-  <path d="M 265 175 C 295 185 305 230 290 260 C 280 240 270 200 250 178 C 255 170 260 165 265 175 Z" class="mz" data-g="hombro" data-m="Hombros"/>
-  
-  <!-- Tríceps (Herradura) -->
-  <path d="M 110 260 C 90 295 95 340 115 360 C 125 330 135 295 130 270 Z" class="mz" data-g="tríceps" data-m="Tríceps"/>
-  <path d="M 290 260 C 310 295 305 340 285 360 C 275 330 265 295 270 270 Z" class="mz" data-g="tríceps" data-m="Tríceps"/>
-
-  <!-- Antebrazos posteriores -->
-  <path d="M 115 360 C 90 405 85 445 95 475 C 110 465 130 415 130 375 Z" class="mz" data-g="antebrazos" data-m="Antebrazos"/>
-  <path d="M 285 360 C 310 405 315 445 305 475 C 290 465 270 415 270 375 Z" class="mz" data-g="antebrazos" data-m="Antebrazos"/>
-
-  <!-- Glúteos redondos -->
-  <path d="M 198 475 C 170 475 140 490 135 525 C 130 565 170 585 198 575 Z" class="mz" data-g="glúteos" data-m="Glúteos"/>
-  <path d="M 202 475 C 230 475 260 490 265 525 C 270 565 230 585 202 575 Z" class="mz" data-g="glúteos" data-m="Glúteos"/>
-
-  <!-- Isquiotibiales / Femoral -->
-  <path d="M 195 580 C 160 585 140 615 145 655 C 155 665 175 665 185 655 C 195 635 200 605 198 580 Z" class="mz" data-g="femoral" data-m="Isquiotibiales"/>
-  <path d="M 205 580 C 240 585 260 615 255 655 C 245 665 225 665 215 655 C 205 635 200 605 202 580 Z" class="mz" data-g="femoral" data-m="Isquiotibiales"/>
-
-  <!-- Corvas -->
-  <path d="M 165 660 C 170 675 185 670 185 660 Z" class="mz-ns"/>
-  <path d="M 235 660 C 230 675 215 670 215 660 Z" class="mz-ns"/>
-
-  <!-- Gemelos / Pantorrillas (Volumen posterior) -->
-  <path d="M 165 675 C 130 710 145 780 160 800 L 185 800 C 195 740 200 690 185 675 Z" class="mz" data-g="gemelos" data-m="Pantorrillas"/>
-  <path d="M 235 675 C 270 710 255 780 240 800 L 215 800 C 205 740 200 690 215 675 Z" class="mz" data-g="gemelos" data-m="Pantorrillas"/>
-
-  <!-- Pies y Manos -->
-  <path d="M 95 475 C 80 505 80 525 100 530 C 120 525 105 485 105 465 Z" class="mz-ns"/>
-  <path d="M 305 475 C 320 505 320 525 300 530 C 280 525 295 485 295 465 Z" class="mz-ns"/>
-  
-  <path d="M 160 805 C 140 835 155 850 180 850 L 185 810 Z" class="mz-ns"/>
-  <path d="M 240 805 C 260 835 245 850 220 850 L 215 810 Z" class="mz-ns"/>
-</svg>
-                  </div>
-                </div>
-
-                <!-- Panel derecho: chips + bloques de ejercicios -->
-                <div class="zones-panel">
-                  <p class="zone-hint" style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;margin-bottom:6px">Zonas seleccionadas</p>
-                  <div class="zones-chips" id="zonaChips">
-                    <span class="zone-hint" id="zonaHint">Ninguna — toca la figura</span>
-                  </div>
-                  <!-- Los bloques de zona ahora se insertan debajo en la lista central -->
-                  <input type="hidden" name="musculos_objetivo" id="musculosInp">
-                </div>
-              </div>
-            </div>
-            <!-- ═════════════════════════════════════════════════════════ -->
-
-            <!-- Ejercicios -->
-            <div class="section-title">Lista de Ejercicios</div>
-            
-            <!-- Contenedor general unificado de la rutina -->
-            <div id="exerciseBuilder"></div>
-
-            <button type="submit" class="btn-save-main" id="mainSubmit" style="display:block;">
-                Guardar Rutina
-            </button>
+  <!-- Formulario Superior (Glassmorphism) -->
+  <div class="cr-form-glass">
+    <!-- Custom Select Atleta -->
+    <div class="cr-custom-select" id="customAtletaSelect">
+      <div class="cr-select-trigger" onclick="toggleAtletaDropdown()">
+        <i class="ti ti-user"></i>
+        <span id="atletaSelectedText"><?= $atleta_id ? e($atleta_nombre) : '— Seleccionar Atleta —' ?></span>
+        <i class="ti ti-chevron-down" style="margin-left:auto"></i>
+      </div>
+      <div class="cr-select-dropdown" id="atletaDropdown">
+        <div class="cr-select-search">
+          <input type="text" id="atletaSearch" placeholder="Buscar atleta..." onkeyup="filterAtletas()" autocomplete="off">
         </div>
-    </form>
-</div>
-
-<div id="mz-tip"></div>
-<script>
-const catalogo = <?= json_encode($catalogo) ?>;
-let ejercicioCount = 0;
-
-/* ════════ SILUETA — lógica de zonas ════════ */
-(function(){
-  const tip        = document.getElementById('mz-tip');
-  const chipsWrap  = document.getElementById('zonaChips');
-  const hintEl     = document.getElementById('zonaHint');
-  const blocksWrap = document.getElementById('zonaExBlocks');
-  const musculosEl = document.getElementById('musculosInp');
-
-  // Mapa músculo → ejercicios del catálogo (por nombre de zona en data-m)
-  // Si el catálogo del servidor tiene campo "zona" o similar úsalo; si no, filtramos por texto.
-  const STATIC_EX = {
-    "Trapecio":      ["Encogimientos con mancuernas", "Encogimientos con barra", "Paseo del granjero"],
-    "Hombros":       ["Press militar","Elevaciones laterales","Face pull","Vuelos posteriores","Press Arnold"],
-    "Pecho":         ["Press banca plano","Press banca inclinado","Aperturas con mancuernas","Fondos en paralelas","Crossover en polea"],
-    "Abdomen":       ["Crunch abdominal","Plancha frontal","Rueda abdominal","Elevación de piernas colgado","Crunch en polea"],
-    "Oblicuos":      ["Twist ruso","Cable Wood Chop","Crunch oblicuo","Plancha lateral","Elevación lateral de piernas"],
-    "Bíceps":        ["Curl con barra","Curl martillo","Curl en polea baja","Curl concentrado","Curl 21"],
-    "Tríceps":       ["Extensión en polea","Press francés","Fondos en banco","Extensión sobre la cabeza","Kickback con mancuerna"],
-    "Antebrazos":    ["Curl de muñeca","Curl inverso","Farmer walk","Grippers"],
-    "Cuádriceps":    ["Sentadilla","Prensa de piernas","Extensión de cuádriceps","Sentadilla frontal","Zancada"],
-    "Isquiotibiales":["Curl femoral tumbado","Curl femoral sentado","Peso muerto rumano","Buenos días","Curl nórdico"],
-    "Pantorrillas":  ["Elevación de talones de pie","Elevación de talones sentado","Prensa de pantorrilla"],
-    "Espalda":       ["Jalón al pecho","Remo con barra","Dominadas","Pull-over","Remo sentado","Remo con mancuerna"],
-    "Lumbar":        ["Extensiones lumbares", "Peso muerto", "Superman", "Buenos días"],
-    "Glúteos":       ["Hip Thrust", "Sentadilla búlgara", "Patada de glúteo", "Abducciones en máquina"],
-  };
-
-  function getOpts(zone) {
-    // Primero intentar del catálogo del servidor
-    const fromCat = catalogo.filter(e => {
-      if (!e.zona_muscular) return false;
-      return e.zona_muscular.toLowerCase().includes(zone.toLowerCase()) ||
-             zone.toLowerCase().includes(e.zona_muscular.toLowerCase());
-    }).map(e => e.nombre);
-    const list = fromCat.length ? fromCat : (STATIC_EX[zone] || [zone + ' — sin ejercicios']);
-    return list.map(n => `<option value="${n}">${n}</option>`).join('');
-  }
-
-  function slug(s){ return s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,''); }
-
-  let sel = new Set();
-
-  function renderChips(){
-    chipsWrap.innerHTML = '';
-    if(!sel.size){ chipsWrap.appendChild(hintEl); return; }
-    sel.forEach(z=>{
-      const s = document.createElement('span');
-      s.className='zone-chip';
-      s.innerHTML=`${z}<button type="button" onclick="mvToggle('${z}')"><svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>`;
-      chipsWrap.appendChild(s);
-    });
-  }
-
-  function bindSelectLogic(container) {
-    const selects = container.querySelectorAll('.ej-select');
-    selects.forEach(sel => {
-        if (sel.dataset.bound) return;
-        sel.dataset.bound = "true";
-        const txt = sel.parentElement.querySelector('.custom-ex-input');
-        const note = sel.closest('.ex-card').querySelector('.ej-note');
-        
-        sel.addEventListener('change', function() {
-            if (this.value === '__custom__') {
-                txt.style.display = 'block';
-                sel.style.display = 'none';
-                txt.required = true;
-                sel.required = false;
-                txt.focus();
-                if (note) note.value = '';
-            } else {
-                txt.value = this.value; 
-                const found = catalogo.find(e => e.nombre === this.value);
-                if (found && note) {
-                    note.value = found.nota_default || found.nota_biomecanica || '';
-                }
-            }
-        });
-    });
-  }
-
-  window.mvToggle = function(name){
-    document.querySelectorAll('.mz.hovered').forEach(el=>el.classList.remove('hovered'));
-    
-    if(sel.has(name)){
-      sel.delete(name);
-      document.querySelectorAll(`.mz[data-m="${name}"]`).forEach(el=>{
-        el.classList.remove('sel');
-      });
-      const b=document.getElementById('zb_'+slug(name)); if(b) b.remove();
-    } else {
-      sel.add(name);
-      document.querySelectorAll(`.mz[data-m="${name}"]`).forEach(el=>el.classList.add('sel'));
-      addBlock(name);
-    }
-    renderChips();
-    musculosEl.value=[...sel].join(', ');
-  };
-
-  function addBlock(zone){
-    const opts = getOpts(zone);
-    const div  = document.createElement('div');
-    div.className='zone-ex-block'; div.id='zb_'+slug(zone);
-    div.innerHTML=`
-      <div class="zone-ex-head"><span>DIVISIÓN: ${zone.toUpperCase()}</span></div>
-      <div class="zone-ex-rows">
-        <div class="ex-card" style="border:none; border-bottom:1px solid rgba(255,255,255,0.04); border-radius:0; margin:0; padding:12px 14px;">
-            <div class="ex-header" style="margin-bottom:10px; display:flex; gap:10px;">
-                <div class="ex-select-wrap" style="flex:1;">
-                    <select class="ej-select" required>
-                        <option value="">Elegir ejercicio para ${zone}...</option>
-                        ${opts}
-                        <option value="__custom__">Personalizado...</option>
-                    </select>
-                    <input type="text" name="ejercicio_nombre[]" class="custom-ex-input" placeholder="Nombre del ejercicio" style="display:none;">
-                </div>
-                <button type="button" class="ex-btn-del" onclick="mvDelRow(this)">
-                    <i class="ti ti-trash"></i>
-                </button>
-            </div>
-            <div class="ex-metrics">
-                <div class="metric-box">
-                    <div class="metric-label">Series</div>
-                    <div class="metric-input-wrap">
-                        <i class="ti ti-list"></i>
-                        <input name="ejercicio_series[]" type="number" value="4" min="1" max="20" required>
-                    </div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">Reps</div>
-                    <div class="metric-input-wrap">
-                        <i class="ti ti-barbell"></i>
-                        <input name="ejercicio_reps[]" type="text" placeholder="8-12" value="10-12" required>
-                    </div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">RIR</div>
-                    <div class="metric-input-wrap">
-                        <i class="ti ti-rotate-clockwise"></i>
-                        <input name="ejercicio_rir[]" type="text" placeholder="1-2" value="2" required>
-                    </div>
-                </div>
-            </div>
-            <input type="hidden" name="ejercicio_nota[]" value="${zone}" class="ej-note">
+        <div class="cr-select-options">
+          <?php foreach($clientes as $c): ?>
+          <div class="cr-select-option <?= (isset($atleta_id) && $atleta_id == $c['id']) ? 'selected' : '' ?>" data-value="<?= $c['id'] ?>" onclick="selectAtleta(<?= $c['id'] ?>, '<?= e(addslashes($c['nombre'])) ?>')">
+            <?= e($c['nombre']) ?>
+          </div>
+          <?php endforeach; ?>
         </div>
       </div>
-      <button type="button" class="btn-add-zone-ex" onclick="mvAddRow(this,'${zone}')">
-          <i class="ti ti-plus"></i> Añadir otro ejercicio a ${zone}
-      </button>
-    `;
-    
-    // Select logic for custom exercise
-    bindSelectLogic(div);
+      <input type="hidden" id="selectAtleta" name="cliente_id" value="<?= $atleta_id ?? '' ?>">
+    </div>
 
-    // Insertamos bloque de zona en la lista central (antes de boton de añadir global)
-    document.getElementById('exerciseBuilder').appendChild(div);
-    
-    // Visual cue
-    setTimeout(() => {
-        div.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        div.animate([
-            { transform: 'translateY(-10px)', opacity: 0.5 },
-            { transform: 'translateY(0)', opacity: 1 }
-        ], { duration: 300, easing: 'ease-out' });
-    }, 50);
+    <!-- Título de la rutina -->
+    <input
+      type="text"
+      class="cr-title-input"
+      id="rutinaTitle"
+      placeholder="Título de la Rutina…"
+      maxlength="150"
+      aria-label="Título de la rutina"
+      autocomplete="off"
+    >
+
+    <div class="cr-details-group">
+      <div>
+        <label class="cr-label-text">Días de la semana</label>
+        <div class="cr-days-grid">
+          <?php 
+            $dias = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+            $diasNombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            foreach($dias as $i => $letra): 
+          ?>
+          <input type="checkbox" id="dia_<?= $i ?>" class="cr-day-toggle" value="<?= $i+1 ?>">
+          <label for="dia_<?= $i ?>" class="cr-day-label" title="<?= $diasNombres[$i] ?>"><?= $letra ?></label>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      
+      <div>
+        <label class="cr-label-text">Descripción (opcional)</label>
+        <textarea id="rutinaDesc" class="cr-textarea" placeholder="Notas generales sobre la rutina..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra superior de ejercicios con contador y botón Reordenar -->
+  <div class="canvas-header-bar" id="canvasHeaderBar" style="display:none; align-items:center; justify-content:space-between; margin:16px 0 10px; padding:0 4px;">
+    <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;" id="canvasExCount">Ejercicios</span>
+    <button type="button" class="btn-quick-reorder" onclick="startReorder()" style="display:inline-flex; align-items:center; gap:6px; background:rgba(138,43,226,0.15); border:1px solid rgba(138,43,226,0.3); color:#d8b4fe; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:700; cursor:pointer;" title="Reordenar ejercicios">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+      Reordenar
+    </button>
+  </div>
+
+  <!-- ════ VISTA REORDENAR COMPACTA FULL-SCREEN (IMAGE_27 / IMAGE_28) ════ -->
+  <div id="vista-reordenar-wrap" role="dialog" aria-modal="true" aria-label="Reordenar ejercicios">
+    <div class="reorder-compact-header">
+      <button type="button" class="reorder-back-btn" onclick="cancelarReordenarCompacto()" aria-label="Volver">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
+      <h3 class="reorder-compact-title">Reordenar</h3>
+      <div style="width: 38px;"></div>
+    </div>
+
+    <div class="reorder-scroll-container">
+      <div id="lista-compacta-reordenar"></div>
+    </div>
+
+    <div class="reorder-compact-footer">
+      <button type="button" class="reorder-btn-listo" id="btnListoReordenar" onclick="guardarNuevoOrdenCompacto()">
+        Listo
+      </button>
+    </div>
+  </div>
+
+  <!-- Canvas de ejercicios -->
+  <div id="exerciseCanvas" role="list" aria-label="Ejercicios de la rutina"></div>
+
+  <!-- Botón global agregar ejercicio -->
+  <button
+    type="button"
+    class="btn-add-exercise-global"
+    id="btnAddExercise"
+    onclick="openCategorySheet()"
+    aria-label="Agregar ejercicio"
+  >
+    <i class="ti ti-plus" aria-hidden="true"></i> Agregar Ejercicio
+  </button>
+
+</div><!-- /.cr-wrapper -->
+
+<!-- ════ BOTTOM SHEET: Opciones Ejercicio (Vista C) ════ -->
+<div class="bs-overlay" id="overlayExOpts" aria-hidden="true" onclick="closeSheet('sheetExOpts')"></div>
+<div class="bs-sheet"  id="sheetExOpts"   role="dialog" aria-modal="true" aria-label="Opciones del ejercicio">
+  <div class="bs-handle" aria-hidden="true"></div>
+  <div class="bs-title">Opciones del Ejercicio</div>
+  <div class="bs-item" onclick="startReorder()" role="button" tabindex="0">
+    <i class="ti ti-arrows-sort" aria-hidden="true"></i> Reordenar Ejercicios
+  </div>
+  <div class="bs-item" onclick="replaceExercise()" role="button" tabindex="0">
+    <i class="ti ti-refresh" aria-hidden="true"></i> Reemplazar Ejercicio
+  </div>
+  <div class="bs-item danger" onclick="deleteExercise()" role="button" tabindex="0">
+    <i class="ti ti-trash" aria-hidden="true"></i> Eliminar Ejercicio
+  </div>
+</div>
+
+<!-- ════ BOTTOM SHEET: Tipo de Serie (Vista D) ════ -->
+<div class="bs-overlay" id="overlaySetType" aria-hidden="true" onclick="closeSheet('sheetSetType')"></div>
+<div class="bs-sheet"  id="sheetSetType"   role="dialog" aria-modal="true" aria-label="Tipo de serie">
+  <div class="bs-handle" aria-hidden="true"></div>
+  <div class="bs-title">Tipo de Serie</div>
+  <div class="bs-item" onclick="setSerieType('calentamiento')" role="button" tabindex="0">
+    <span class="bs-badge-pill" style="background:rgba(251,191,36,.18);color:#fbbf24" aria-hidden="true">W</span>
+    <div>
+      <div style="font-weight:700">Calentamiento</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:2px">No cuenta para volumen total</div>
+    </div>
+  </div>
+  <div class="bs-item" onclick="setSerieType('normal')" role="button" tabindex="0">
+    <span class="bs-badge-pill" style="background:rgba(139,92,246,.18);color:#a78bfa" aria-hidden="true">1</span>
+    <div>
+      <div style="font-weight:700">Normal</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Serie estándar con reps y peso</div>
+    </div>
+  </div>
+  <div class="bs-item" onclick="setSerieType('fallo')" role="button" tabindex="0">
+    <span class="bs-badge-pill" style="background:rgba(248,113,113,.18);color:#f87171" aria-hidden="true">F</span>
+    <div>
+      <div style="font-weight:700">Al Fallo</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Máximas reps hasta el fallo</div>
+    </div>
+  </div>
+  <div class="bs-item" onclick="setSerieType('drop')" role="button" tabindex="0">
+    <span class="bs-badge-pill" style="background:rgba(96,165,250,.18);color:#60a5fa" aria-hidden="true">D</span>
+    <div>
+      <div style="font-weight:700">Drop Set</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:2px">Reducir peso sin descanso</div>
+    </div>
+  </div>
+  <div class="bs-item danger" onclick="deleteSerie()" role="button" tabindex="0">
+    <i class="ti ti-trash" aria-hidden="true"></i> Eliminar esta Serie
+  </div>
+</div>
+
+<!-- ════ BOTTOM SHEET: Categorías → Ejercicios (Drill-down + Multi-select) ════ -->
+<div class="bs-overlay" id="overlayCats" aria-hidden="true" onclick="closeSheet('sheetCats')"></div>
+<div class="bs-sheet" id="sheetCats" role="dialog" aria-modal="true" aria-label="Seleccionar ejercicios">
+
+  <!-- Handle universal -->
+  <div class="bs-handle" aria-hidden="true"></div>
+
+  <!-- Header sticky (cambia según el panel activo) -->
+  <div class="modal-header-sticky" id="catsHeader">
+    <div class="cats-header-bar">
+      <!-- Botón volver (oculto en panel cats) -->
+      <button type="button" class="cats-btn-back-inner hidden" id="catsBtnBack"
+              onclick="catsDrillBack()" aria-label="Volver a categorías">
+        <i class="ti ti-arrow-left" aria-hidden="true"></i> Categorías
+      </button>
+      <span class="cats-header-title" id="catsHeaderTitle">Grupo Muscular</span>
+    </div>
+    <!-- Buscador (visible solo en panel ejercicios) -->
+    <div class="cats-search-wrap hidden" id="catsSearchWrap">
+      <i class="ti ti-search cats-search-icon" aria-hidden="true"></i>
+      <input type="search" class="cats-search" id="catsSearchInput"
+             placeholder="Buscar ejercicio…"
+             aria-label="Buscar ejercicio"
+             oninput="catsFilterExercises(this.value)">
+    </div>
+  </div>
+
+  <!-- ── Panel A: Grilla de Categorías ── -->
+  <div class="cats-panel" id="panelCats" role="list">
+    <div class="cat-section-label">Upper Body</div>
+    <div class="cat-grid" id="catGridUpper" role="list"></div>
+    <div class="cat-section-label">Lower Body</div>
+    <div class="cat-grid" id="catGridLower" role="list"></div>
+    <div class="cat-section-label">Other</div>
+    <div class="cat-grid" id="catGridOther" role="list"></div>
+    <div style="height:16px"></div>
+  </div>
+
+  <!-- ── Panel B: Lista de ejercicios de la categoría ── -->
+  <div class="cats-panel hidden" id="panelExercises" role="list" aria-label="Ejercicios de la categoría">
+    <div class="ex-list" id="exList"></div>
+  </div>
+
+  <!-- ── Botón flotante de confirmación (multi-select) ── -->
+  <div class="cats-confirm-bar" id="catsConfirmBar">
+    <button type="button" class="cats-btn-confirm" id="catsBtnConfirm"
+            onclick="confirmSelection()" aria-live="polite">
+      <i class="ti ti-plus" aria-hidden="true"></i>
+      Agregar <span class="confirm-count" id="confirmCount">0</span> Ejercicio(s)
+    </button>
+  </div>
+
+</div><!-- /#sheetCats -->
+
+<script>
+/* ════════════════════════════════════════════════════
+   MODAL PORTAL — Mover todos los modales a <body>
+   ─────────────────────────────────────────────────
+   CAUSA RAÍZ DEL BUG: .xp-main tiene overflow-x:hidden
+   (style.css línea 228). Esto crea un Bloque de Formato
+   que "captura" position:fixed, haciendo que los modales
+   queden confinados dentro de <main> y se vean al hacer
+   scroll, en lugar de anclarse al viewport.
+
+   SOLUCIÓN: appendChild a document.body extrae los nodos
+   del árbol de .xp-main antes de que ningún sheet se abra.
+   Después de la extracción, position:fixed funciona
+   correctamente relativo al viewport.
+   ════════════════════════════════════════════════════ */
+(function modalPortal() {
+  const IDS = [
+    'overlayExOpts',  'sheetExOpts',
+    'overlaySetType', 'sheetSetType',
+    'overlayCats',    'sheetCats',
+    'vista-reordenar-wrap',
+  ];
+  /* Ejecutar en DOMContentLoaded si el DOM aún no está listo,
+     o de inmediato si el script corre después del HTML (defer) */
+  function moveToBody() {
+    IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.parentElement !== document.body) {
+        document.body.appendChild(el);
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', moveToBody);
+  } else {
+    moveToBody();
+  }
+})();
+/* ════════════════════════════════════════════════════
+   CREADOR DE RUTINAS PRO — JavaScript v2
+   FIXES:
+     [1] No redeclara APP ni csrf (ya vienen del header como APP y CSRF)
+     [2] numero_serie enviado correctamente al backend
+     [3] replaceExercise sin memory-leak (flag _replaceModeActive)
+     [4] Drag-to-reorder nativo HTML5
+     [5] Rest timer toggle funcional
+     [6] Escape key cierra sheet activo
+     [7] Bottom Sheet usa var(--bg2) — no hardcoded
+   ════════════════════════════════════════════════════ */
+
+/* ── Datos PHP → JS ─────────────────────────────── */
+/* APP y CSRF ya declarados en header.php como window.APP y window.CSRF */
+const catalogoEjercicios = <?= json_encode($catalogo   ?? [], JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+const categoriasDB       = <?= json_encode($categorias ?? [], JSON_HEX_TAG | JSON_HEX_APOS) ?>;
+
+/* ── Estado ───────────────────────────────────────── */
+let ejercicioCount     = 0;
+let activeExBlockEl    = null;
+let activeBadgeEl      = null;
+let _replaceModeActive = false;
+let dragSrc            = null;
+
+/* ═══════════════════════════════════════════════════
+   SHEETS: open / close / escape
+═══════════════════════════════════════════════════ */
+const SHEET_OVERLAY_MAP = {
+  sheetExOpts  : 'overlayExOpts',
+  sheetSetType : 'overlaySetType',
+  sheetCats    : 'overlayCats',
+};
+
+function openSheet(sheetId, overlayId) {
+  const sheet = document.getElementById(sheetId);
+  if (!sheet) return;
+  /* Agregar .is-open Y alias .modal-activo (solicitado) */
+  sheet.classList.add('is-open', 'modal-activo');
+  const ovId = overlayId || SHEET_OVERLAY_MAP[sheetId];
+  const ov   = document.getElementById(ovId);
+  if (ov) {
+    ov.classList.add('is-open');
+    ov.removeAttribute('aria-hidden');
+    ov.setAttribute('aria-hidden','false');
+  }
+  document.body.style.overflow = 'hidden';
+  /* Focus trap: primer elemento interactivo */
+  const first = sheet.querySelector('button,[tabindex="0"]');
+  if (first) setTimeout(() => first.focus(), 60);
+}
+
+function closeSheet(sheetId) {
+  const sheet = document.getElementById(sheetId);
+  if (!sheet) return;
+  /* Quitar ambas clases */
+  sheet.classList.remove('is-open', 'modal-activo');
+  const ov = document.getElementById(SHEET_OVERLAY_MAP[sheetId]);
+  if (ov) {
+    ov.classList.remove('is-open');
+    ov.setAttribute('aria-hidden','true');
+  }
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  const openId = Object.keys(SHEET_OVERLAY_MAP).find(id =>
+    document.getElementById(id)?.classList.contains('is-open')
+  );
+  if (openId) { e.preventDefault(); closeSheet(openId); }
+});
+
+/* ═══════════════════════════════════════════════════
+   CATEGORÍAS + EJERCICIOS — Drill-down & Multi-select
+═══════════════════════════════════════════════════ */
+const iconMap = {
+  'abdominales':'ti-layout-bottombar', 'antebrazos':'ti-hand-finger',
+  'biceps':'ti-arm', 'bíceps':'ti-arm', 'cuello':'ti-man',
+  'dorsales':'ti-arrow-autofit-up', 'espalda baja':'ti-spine',
+  'espalda superior':'ti-arrow-autofit-up', 'hombros':'ti-arrow-up-circle',
+  'pecho':'ti-heart-filled', 'trapecio':'ti-triangle',
+  'triceps':'ti-wave-sine', 'tríceps':'ti-wave-sine',
+  'abductores':'ti-layout-sidebar', 'aductores':'ti-layout-sidebar-right',
+  'cuadriceps':'ti-run', 'cuádriceps':'ti-run', 'gluteos':'ti-user', 'glúteos':'ti-user',
+  'isquiotibiales':'ti-run', 'pantorrillas':'ti-anchor',
+  'cardio':'ti-heart-rate-monitor', 'cuerpo entero':'ti-body-scan', 'otro':'ti-dots',
+};
+
+const fallbackCats = [
+  {grupo:'upper_body',nombre:'Abdominales'},{grupo:'upper_body',nombre:'Antebrazos'},
+  {grupo:'upper_body',nombre:'Bíceps'},{grupo:'upper_body',nombre:'Cuello'},
+  {grupo:'upper_body',nombre:'Dorsales'},{grupo:'upper_body',nombre:'Espalda Baja'},
+  {grupo:'upper_body',nombre:'Espalda Superior'},{grupo:'upper_body',nombre:'Hombros'},
+  {grupo:'upper_body',nombre:'Pecho'},{grupo:'upper_body',nombre:'Trapecio'},{grupo:'upper_body',nombre:'Tríceps'},
+  {grupo:'lower_body',nombre:'Abductores'},{grupo:'lower_body',nombre:'Aductores'},
+  {grupo:'lower_body',nombre:'Cuádriceps'},{grupo:'lower_body',nombre:'Glúteos'},
+  {grupo:'lower_body',nombre:'Isquiotibiales'},{grupo:'lower_body',nombre:'Pantorrillas'},
+  {grupo:'other',nombre:'Cardio'},{grupo:'other',nombre:'Cuerpo Entero'},{grupo:'other',nombre:'Otro'},
+];
+
+/* ── Mock de ejercicios (por categoría)
+   Estructura espeja el futuro SELECT del CRUD:
+   { id, nombre, descripcion, imagen_path, categoria }
+   imagen_path = null → se muestra ícono fallback
+──────────────────────────────────────────────── */
+const mockExercises = {
+  'Abdominales': [
+    { id:'abs_1', nombre:'Crunch abdominal',    descripcion:'Contracción abdominal clásica',  imagen_path:null },
+    { id:'abs_2', nombre:'Plancha',             descripcion:'Isométrico de core completo',    imagen_path:null },
+    { id:'abs_3', nombre:'Rueda abdominal',     descripcion:'Ab roller para core avanzado',   imagen_path:null },
+    { id:'abs_4', nombre:'Elevación de piernas',descripcion:'Cuelga en barra o tumbado',      imagen_path:null },
+    { id:'abs_5', nombre:'Russian Twist',       descripcion:'Rotación con o sin peso',        imagen_path:null },
+  ],
+  'Bíceps': [
+    { id:'bic_1', nombre:'Curl con barra',      descripcion:'Bíceps con barra recta o EZ',   imagen_path:null },
+    { id:'bic_2', nombre:'Curl martillo',       descripcion:'Curl neutral, trabaja braquial', imagen_path:null },
+    { id:'bic_3', nombre:'Curl predicador',     descripcion:'Banca Scott para pico del bícep',imagen_path:null },
+    { id:'bic_4', nombre:'Curl concentrado',    descripcion:'Aislamiento unilateral',         imagen_path:null },
+  ],
+  'Pecho': [
+    { id:'pec_1', nombre:'Press banca plana',   descripcion:'Empuje horizontal con barra',   imagen_path:null },
+    { id:'pec_2', nombre:'Press inclinado',     descripcion:'45° énfasis en pecho superior', imagen_path:null },
+    { id:'pec_3', nombre:'Aperturas con mancuernas',descripcion:'Stretch y contracción del pectoral',imagen_path:null },
+    { id:'pec_4', nombre:'Fondos en paralelas', descripcion:'Calisténico para pecho y tríceps',imagen_path:null },
+    { id:'pec_5', nombre:'Pullover',            descripcion:'Expansión de caja torácica',     imagen_path:null },
+  ],
+  'Dorsales': [
+    { id:'dor_1', nombre:'Dominadas',           descripcion:'Jalón con peso corporal',       imagen_path:null },
+    { id:'dor_2', nombre:'Jalón al pecho',      descripcion:'Polea alta, ancho de dorsales', imagen_path:null },
+    { id:'dor_3', nombre:'Remo con barra',      descripcion:'Remo horizontal con barra',     imagen_path:null },
+    { id:'dor_4', nombre:'Remo con mancuerna',  descripcion:'Remo unilateral en banco',      imagen_path:null },
+  ],
+  'Cuádriceps': [
+    { id:'cua_1', nombre:'Sentadilla',          descripcion:'Squat libre con barra',         imagen_path:null },
+    { id:'cua_2', nombre:'Prensa de pierna',    descripcion:'Máquina de presión de piernas', imagen_path:null },
+    { id:'cua_3', nombre:'Extensión de pierna', descripcion:'Aislamiento en máquina',        imagen_path:null },
+    { id:'cua_4', nombre:'Zancadas',            descripcion:'Lunge con o sin peso',          imagen_path:null },
+  ],
+  'Glúteos': [
+    { id:'glu_1', nombre:'Hip Thrust',          descripcion:'Empuje de caderas con barra',   imagen_path:null },
+    { id:'glu_2', nombre:'Romanian Deadlift',   descripcion:'Peso muerto rumano',            imagen_path:null },
+    { id:'glu_3', nombre:'Patada de glúteo',    descripcion:'Máquina o cable glúteo',        imagen_path:null },
+  ],
+  'Cardio': [
+    { id:'car_1', nombre:'Carrera en cinta',    descripcion:'Cardio continuo o intervalos',  imagen_path:null },
+    { id:'car_2', nombre:'Bicicleta estática',  descripcion:'Low-impact cardio vascular',    imagen_path:null },
+    { id:'car_3', nombre:'Remo ergómetro',      descripcion:'Full body cardiovascular',      imagen_path:null },
+    { id:'car_4', nombre:'Saltar la cuerda',    descripcion:'Alta intensidad, bajo costo',   imagen_path:null },
+  ],
+};
+
+/* Selección múltiple: Set de ejercicios seleccionados { id, nombre, descripcion, imagen_path } */
+let selectedExercises = new Map(); /* key=id, value=objeto ejercicio */
+let _currentCategory  = null;
+
+/* ────────────────────────────────────────────────────
+   CONSTRUCCIÓN DE LA GRILLA DE CATEGORÍAS
+──────────────────────────────────────────────────── */
+(function buildCategoryGrid() {
+  const cats  = (categoriasDB && categoriasDB.length) ? categoriasDB : fallbackCats;
+  const grids = { upper_body:'catGridUpper', lower_body:'catGridLower', other:'catGridOther' };
+
+  cats.forEach(cat => {
+    const grid = document.getElementById(grids[cat.grupo]);
+    if (!grid) return;
+    const icon = iconMap[cat.nombre.toLowerCase()] || 'ti-dumbbell';
+
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.setAttribute('role','listitem');
+    card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label', cat.nombre + ': ver ejercicios');
+    card.innerHTML = `<div class="cat-icon" aria-hidden="true"><i class="ti ${icon}"></i></div><span>${cat.nombre}</span>`;
+
+    card.addEventListener('click',   () => catsDrillInto(cat.nombre));
+    card.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') catsDrillInto(cat.nombre); });
+    grid.appendChild(card);
+  });
+})();
+
+/* ────────────────────────────────────────────────────
+   DRILL-DOWN: Panel Cats → Panel Exercises
+──────────────────────────────────────────────────── */
+function catsDrillInto(catNombre) {
+  _currentCategory = catNombre;
+
+  /* Si estamos en modo reemplazo (single-select), desactivamos multi */
+  const isSingle = _replaceModeActive;
+
+  /* Cambiar header */
+  document.getElementById('catsHeaderTitle').textContent = catNombre;
+  document.getElementById('catsBtnBack').classList.remove('hidden');
+  document.getElementById('catsSearchWrap').classList.remove('hidden');
+  document.getElementById('catsSearchInput').value = '';
+
+  /* Cambiar paneles */
+  document.getElementById('panelCats').classList.add('hidden');
+  const panelEx = document.getElementById('panelExercises');
+  panelEx.classList.remove('hidden');
+
+  /* Scroll top del sheet */
+  document.getElementById('sheetCats').scrollTop = 0;
+
+  /* Renderizar lista */
+  renderExerciseList(catNombre, '', isSingle);
+}
+
+function catsDrillBack() {
+  _currentCategory = null;
+
+  document.getElementById('catsHeaderTitle').textContent = 'Grupo Muscular';
+  document.getElementById('catsBtnBack').classList.add('hidden');
+  document.getElementById('catsSearchWrap').classList.add('hidden');
+  document.getElementById('panelCats').classList.remove('hidden');
+  document.getElementById('panelExercises').classList.add('hidden');
+  document.getElementById('catsConfirmBar').classList.remove('visible');
+
+  document.getElementById('sheetCats').scrollTop = 0;
+}
+
+/* ────────────────────────────────────────────────────
+   RENDER: Lista de ejercicios (con miniatura)
+   isSingle = true → modo reemplazo (no multi-select)
+──────────────────────────────────────────────────── */
+function renderExerciseList(catNombre, filter, isSingle) {
+  const list = document.getElementById('exList');
+  list.innerHTML = '';
+
+  /* Prioriza datos reales del catálogo PHP; si no, usa mock */
+  let exercises = getExercisesForCategory(catNombre);
+
+  if (filter) {
+    const q = filter.toLowerCase();
+    exercises = exercises.filter(ex => ex.nombre.toLowerCase().includes(q) || (ex.descripcion||'').toLowerCase().includes(q));
   }
 
-  window.mvAddRow = function(btn, zone){
-    const opts=getOpts(zone);
-    const wrap=btn.previousElementSibling;
-    const row=document.createElement('div'); row.className='ex-card';
-    row.style='border:none; border-bottom:1px solid rgba(255,255,255,0.04); border-radius:0; margin:0; padding:12px 14px;';
-    row.innerHTML=`
-            <div class="ex-header" style="margin-bottom:10px; display:flex; gap:10px;">
-                <div class="ex-select-wrap" style="flex:1;">
-                    <select class="ej-select" required>
-                        <option value="">Elegir ejercicio para ${zone}...</option>
-                        ${opts}
-                        <option value="__custom__">Personalizado...</option>
-                    </select>
-                    <input type="text" name="ejercicio_nombre[]" class="custom-ex-input" placeholder="Nombre del ejercicio" style="display:none;">
-                </div>
-                <button type="button" class="ex-btn-del" onclick="mvDelRow(this)">
-                    <i class="ti ti-trash"></i>
-                </button>
-            </div>
-            <div class="ex-metrics">
-                <div class="metric-box">
-                    <div class="metric-label">Series</div>
-                    <div class="metric-input-wrap">
-                        <i class="ti ti-list"></i>
-                        <input name="ejercicio_series[]" type="number" value="4" min="1" max="20" required>
-                    </div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">Reps</div>
-                    <div class="metric-input-wrap">
-                        <i class="ti ti-barbell"></i>
-                        <input name="ejercicio_reps[]" type="text" placeholder="8-12" value="10-12" required>
-                    </div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-label">RIR</div>
-                    <div class="metric-input-wrap">
-                        <i class="ti ti-rotate-clockwise"></i>
-                        <input name="ejercicio_rir[]" type="text" placeholder="1-2" value="2" required>
-                    </div>
-                </div>
-            </div>
-            <input type="hidden" name="ejercicio_nota[]" value="${zone}" class="ej-note">
-    `;
-    
-    // Insertamos bloque en la división de zona correspondiente
-    wrap.appendChild(row);
-    
-    // Add logic for select
-    bindSelectLogic(wrap);
-    
-    // Efecto visual: iluminar levemente y hacer scroll para indicar adición
-    setTimeout(() => {
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        row.animate([
-            { boxShadow: '0 0 0 1px rgba(11,209,209,0)' },
-            { boxShadow: '0 0 0 1px rgba(11,209,209,1)' },
-            { boxShadow: '0 0 0 1px rgba(11,209,209,0)' }
-        ], { duration: 800, easing: 'ease-out' });
-    }, 50);
-  };
+  if (!exercises.length) {
+    list.innerHTML = `<div class="ex-list-empty"><i class="ti ti-mood-empty" style="font-size:2rem;display:block;margin-bottom:8px"></i>Sin ejercicios para esta categoría</div>`;
+    return;
+  }
 
-  window.mvDelRow = function(btn){
-    const row=btn.closest('.ex-card'), wrap=row.parentElement;
-    if(wrap.querySelectorAll('.ex-card').length>1) {
-        row.remove();
-    } else {
-        // Remover el bloque entero de la zona si era el último
-        wrap.closest('.zone-ex-block').remove();
+  exercises.forEach(ex => {
+    const isSelected = selectedExercises.has(ex.id);
+    const item = document.createElement('div');
+    item.className = 'ex-list-item' + (isSelected ? ' selected' : '');
+    item.dataset.exId = ex.id;
+    item.setAttribute('role','checkbox');
+    item.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    item.setAttribute('tabindex','0');
+    item.setAttribute('aria-label', ex.nombre);
+
+    /* Miniatura: imagen si existe, ícono fallback si no */
+    const thumbInner = ex.imagen_path
+      ? `<img src="${APP}/uploads/${ex.imagen_path}" alt="${ex.nombre}" loading="lazy">`
+      : `<i class="ti ti-dumbbell" aria-hidden="true"></i>`;
+
+    item.innerHTML = `
+      <div class="ex-li-thumb" aria-hidden="true">${thumbInner}</div>
+      <div class="ex-li-body">
+        <div class="ex-li-name">${ex.nombre}</div>
+        ${ex.descripcion ? `<div class="ex-li-desc">${ex.descripcion}</div>` : ''}
+      </div>
+      <div class="ex-li-check" aria-hidden="true"><i class="ti ti-check"></i></div>`;
+
+    item.addEventListener('click',   () => toggleExerciseSelection(ex, item, isSingle));
+    item.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' ') toggleExerciseSelection(ex, item, isSingle); });
+    list.appendChild(item);
+  });
+}
+
+/* ────────────────────────────────────────────────────
+   TOGGLE: seleccionar / deseleccionar ejercicio
+──────────────────────────────────────────────────── */
+function toggleExerciseSelection(ex, itemEl, isSingle) {
+  if (isSingle) {
+    /* Modo reemplazo: confirmar inmediatamente */
+    closeSheet('sheetCats');
+    _replaceModeActive = false;
+    if (activeExBlockEl) {
+      const nameEl = document.getElementById('exName_' + activeExBlockEl.dataset.idx);
+      const thumbEl = activeExBlockEl.querySelector('.ex-thumb');
+      if (nameEl) nameEl.textContent = ex.nombre;
+      if (thumbEl) {
+        thumbEl.innerHTML = ex.imagen_path
+          ? `<img src="${APP}/uploads/${ex.imagen_path}" alt="${ex.nombre}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">`
+          : `<i class="ti ti-dumbbell"></i>`;
+
+      }
     }
+    activeExBlockEl = null;
+    selectedExercises.clear();
+    return;
+  }
+
+  /* Multi-select */
+  if (selectedExercises.has(ex.id)) {
+    selectedExercises.delete(ex.id);
+    itemEl.classList.remove('selected');
+    itemEl.setAttribute('aria-checked','false');
+  } else {
+    selectedExercises.set(ex.id, ex);
+    itemEl.classList.add('selected');
+    itemEl.setAttribute('aria-checked','true');
+  }
+
+  /* Micro-animación del checkmark ya manejada por CSS transition */
+  updateConfirmBar();
+}
+
+function updateConfirmBar() {
+  const count = selectedExercises.size;
+  const bar   = document.getElementById('catsConfirmBar');
+  const cnt   = document.getElementById('confirmCount');
+  cnt.textContent = count;
+  bar.classList.toggle('visible', count > 0);
+  /* Actualizar aria */
+  document.getElementById('catsBtnConfirm').setAttribute('aria-label',
+    count > 0 ? `Agregar ${count} ejercicio${count>1?'s':''} al canvas` : 'Sin ejercicios seleccionados'
+  );
+}
+
+/* ────────────────────────────────────────────────────
+   SEARCH: filtrar ejercicios en tiempo real
+──────────────────────────────────────────────────── */
+function catsFilterExercises(value) {
+  renderExerciseList(_currentCategory, value, false);
+  /* Restaurar estado de selección visualmente */
+  document.querySelectorAll('.ex-list-item').forEach(item => {
+    const id = item.dataset.exId;
+    if (selectedExercises.has(id)) item.classList.add('selected');
+  });
+}
+
+/* ────────────────────────────────────────────────────
+   CONFIRM: Inyectar ejercicios al Canvas
+──────────────────────────────────────────────────── */
+function confirmSelection() {
+  if (!selectedExercises.size) return;
+
+  const toAdd = [...selectedExercises.values()];
+  closeSheet('sheetCats');
+
+  /* Limpiar estado */
+  selectedExercises.clear();
+  catsDrillBack();
+  updateConfirmBar();
+
+  /* Inyectar ejercicios con delay escalonado para animación fluida */
+  toAdd.forEach((ex, i) => {
+    setTimeout(() => addExercise(ex), i * 80);
+  });
+}
+
+/* ────────────────────────────────────────────────────
+   OPEN: abrir modal categorías (reset estado)
+──────────────────────────────────────────────────── */
+function openCategorySheet() {
+  /* Si no es modo replace, limpiamos selección previa al abrir */
+  if (!_replaceModeActive) selectedExercises.clear();
+  /* Si veníamos del panel ejercicios, volvemos al panel cats */
+  catsDrillBack();
+  updateConfirmBar();
+  openSheet('sheetCats','overlayCats');
+}
+
+/* ────────────────────────────────────────────────────
+   HELPER: obtener ejercicios por categoría
+   → Prioriza catálogo PHP; si vacío, usa mock
+──────────────────────────────────────────────────── */
+function getExercisesForCategory(catNombre) {
+  /* Cuando el backend los envíe, catalogoEjercicios tendrá estructura:
+     [ { id, nombre, descripcion, imagen_path, grupo_muscular }, … ]
+     Por ahora usa mockExercises como fallback */
+  const fromDB = (catalogoEjercicios || []).filter(e =>
+    (e.grupo_muscular || '').toLowerCase() === catNombre.toLowerCase()
+  );
+  if (fromDB.length) return fromDB;
+  return mockExercises[catNombre] || [];
+}
+
+/* ═══════════════════════════════════════════════════
+   VISTA A — Canvas: añadir ejercicio
+   Acepta: objeto { id, nombre, descripcion, imagen_path, tipo_implemento, unidad_carga }
+           o string (retrocompat con replaceExercise)
+═══════════════════════════════════════════════════ */
+function addExercise(exOrName) {
+  /* Normalizar: acepta string o objeto de ejercicio */
+  const ex = (typeof exOrName === 'string')
+    ? { id: null, nombre: exOrName, descripcion: '', imagen_path: null, tipo_implemento: null, unidad_carga: null }
+    : exOrName;
+
+  ejercicioCount++;
+  const idx   = ejercicioCount;
+  const block = document.createElement('div');
+  block.className    = 'ex-block';
+  block.dataset.idx  = idx;
+  /* Guardamos metadatos del ejercicio en el bloque para el payload */
+  if (ex.id)          block.dataset.catId  = ex.id;
+  if (ex.imagen_path) block.dataset.img    = ex.imagen_path;
+
+  // Clasificación de implemento inicial inteligente
+  let impl = ex.tipo_implemento || null;
+  let unit = ex.unidad_carga || 'kg';
+  if (!impl) {
+    const nomLower = (ex.nombre || '').toLowerCase();
+    if (nomLower.includes('mancuerna') || nomLower.includes('dumbbell')) {
+      impl = 'mancuerna';
+      unit = 'kg';
+    } else if (nomLower.includes('polea') || nomLower.includes('cable') || nomLower.includes('maquina') || nomLower.includes('máquina') || nomLower.includes('prensa') || nomLower.includes('jalon') || nomLower.includes('jalón')) {
+      impl = 'polea_maquina';
+      unit = (unit === 'placas') ? 'placas' : 'kg';
+    } else if (nomLower.includes('dominada') || nomLower.includes('fondo') || nomLower.includes('flexion') || nomLower.includes('flexión') || nomLower.includes('push up') || nomLower.includes('pull up') || nomLower.includes('abdominal') || nomLower.includes('crunch') || nomLower.includes('plancha') || nomLower.includes('bodyweight')) {
+      impl = 'sin_peso';
+      unit = 'ninguna';
+    } else {
+      impl = 'barra';
+      unit = 'kg';
+    }
+  }
+  if (impl === 'sin_peso') unit = 'ninguna';
+
+  block.dataset.implemento = impl;
+  block.dataset.unidad     = unit;
+
+  block.setAttribute('role','listitem');
+  block.setAttribute('aria-label','Ejercicio: ' + ex.nombre);
+  block.setAttribute('draggable','true');
+
+  /* Miniatura: imagen si existe, ícono fallback */
+  const thumbContent = ex.imagen_path
+    ? `<img src="${APP}/uploads/${ex.imagen_path}" alt="${ex.nombre}"
+            style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0;"
+            loading="lazy">`
+    : `<i class="ti ti-dumbbell" aria-hidden="true"></i>`;
+
+  const labelColWeight = (impl === 'mancuerna')
+    ? 'KG (c/u) ×2'
+    : (impl === 'polea_maquina' && unit === 'placas')
+      ? 'PLACAS'
+      : (impl === 'sin_peso')
+        ? 'SIN PESO'
+        : 'KG';
+
+  block.innerHTML = `
+    <div class="ex-block-head">
+      <div class="ex-thumb" aria-hidden="true" style="position:relative;overflow:hidden;">${thumbContent}</div>
+      <div class="ex-name" id="exName_${idx}">${ex.nombre}</div>
+      <button type="button" class="ex-btn-dots"
+              onclick="openExOptions(this.closest('.ex-block'))"
+              aria-label="Opciones de ${ex.nombre}" aria-haspopup="dialog">
+        <i class="ti ti-dots-vertical" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <!-- Toolbar de Implemento y Selector Rápido KG / Placas -->
+    <div class="ex-impl-toolbar" id="implToolbar_${idx}">
+      <div class="ex-impl-chips" role="group" aria-label="Seleccionar implemento de entrenamiento">
+        <button type="button" class="impl-chip ${impl==='mancuerna'?'active':''}" data-impl="mancuerna"
+                onclick="cambiarImplemento(${idx}, 'mancuerna')" title="Mancuernas (por mano / lado)">
+          <i class="ti ti-barbell"></i> Mancuernas (×2)
+        </button>
+        <button type="button" class="impl-chip ${impl==='barra'?'active':''}" data-impl="barra"
+                onclick="cambiarImplemento(${idx}, 'barra')" title="Barra / Peso libre">
+          <i class="ti ti-barbell-off"></i> Barra / Libre
+        </button>
+        <button type="button" class="impl-chip ${impl==='polea_maquina'?'active':''}" data-impl="polea_maquina"
+                onclick="cambiarImplemento(${idx}, 'polea_maquina')" title="Polea o Máquina de placas">
+          <i class="ti ti-circuit-switch-open"></i> Polea / Máq
+        </button>
+        <button type="button" class="impl-chip ${impl==='sin_peso'?'active':''}" data-impl="sin_peso"
+                onclick="cambiarImplemento(${idx}, 'sin_peso')" title="Peso corporal / Sin carga externa">
+          <i class="ti ti-user-check"></i> Sin peso
+        </button>
+      </div>
+
+      <div class="ex-unit-toggle" id="unitToggle_${idx}" style="${impl==='polea_maquina'?'display:flex':'display:none'}">
+        <span class="unit-toggle-text">Unidad:</span>
+        <button type="button" class="unit-pill-btn ${unit==='kg'?'active':''}" data-unit="kg"
+                onclick="cambiarUnidad(${idx}, 'kg')">KG</button>
+        <button type="button" class="unit-pill-btn ${unit==='placas'?'active':''}" data-unit="placas"
+                onclick="cambiarUnidad(${idx}, 'placas')">Placas</button>
+      </div>
+    </div>
+
+    <div class="ex-rest-row" id="restRow_${idx}" onclick="toggleRestTimer(this)"
+         role="button" tabindex="0" aria-label="Activar temporizador de descanso">
+      <i class="ti ti-clock" style="font-size:.9rem;color:var(--accent)" aria-hidden="true"></i>
+      <span class="ex-rest-label ex-rest-toggle-label">Descanso: <strong>APAGADO</strong></span>
+      <input class="ex-rest-input" type="number" min="10" max="600" step="5"
+             placeholder="seg" aria-label="Segundos de descanso"
+             onclick="event.stopPropagation()">
+      <span class="ex-rest-label" id="restOnLabel_${idx}" style="display:none">seg</span>
+    </div>
+
+    <div class="set-cols" id="setCols_${idx}" aria-hidden="true">
+      <div class="set-col-label">SERIE</div>
+      <div class="set-col-label label-weight" id="colWeight_${idx}">${labelColWeight}</div>
+      <div class="set-col-label">REPS</div>
+      <div class="set-col-label">RIR &#9660;</div>
+    </div>
+
+    <div class="sets-body" id="setsBody_${idx}" role="list" aria-label="Series"></div>
+
+    <button type="button" class="btn-add-set" onclick="addSet(${idx})"
+            aria-label="Agregar serie a ${ex.nombre}">
+      <i class="ti ti-plus" aria-hidden="true"></i> Agregar Serie
+    </button>`;
+
+  document.getElementById('exerciseCanvas').appendChild(block);
+  initDragHandlers(block);
+  addSet(idx);
+  updateCanvasHeader();
+  setTimeout(() => block.scrollIntoView({behavior:'smooth',block:'nearest'}), 60);
+}
+
+function toggleRestTimer(rowEl) {
+  const input        = rowEl.querySelector('.ex-rest-input');
+  const toggleLabel  = rowEl.querySelector('.ex-rest-toggle-label');
+  const onLabel      = rowEl.querySelector('[id^="restOnLabel"]');
+  const isActive     = rowEl.classList.toggle('active');
+
+  if (isActive) {
+    if (input)       input.style.display = 'inline-block';
+    if (onLabel)     onLabel.style.display = 'inline';
+    if (toggleLabel) toggleLabel.style.display = 'none';
+    if (input)       input.focus();
+    rowEl.setAttribute('aria-label','Descanso activado');
+  } else {
+    if (input)       input.style.display = 'none';
+    if (onLabel)     onLabel.style.display = 'none';
+    if (toggleLabel) toggleLabel.style.display = '';
+    rowEl.setAttribute('aria-label','Activar temporizador de descanso');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   SERIES — añadir / cambiar tipo / eliminar
+═══════════════════════════════════════════════════ */
+function addSet(exIdx) {
+  const body = document.getElementById('setsBody_' + exIdx);
+  if (!body) return;
+  const block = body.closest('.ex-block');
+  const impl  = block?.dataset.implemento || 'barra';
+  const unit  = block?.dataset.unidad || 'kg';
+
+  const num  = body.querySelectorAll('.set-row').length + 1;
+  const row  = document.createElement('div');
+  row.className      = 'set-row';
+  row.dataset.serieNum = num;
+  row.setAttribute('role','listitem');
+
+  /* Badge de tipo */
+  const badge = document.createElement('div');
+  badge.className      = 'set-badge';
+  badge.dataset.type   = 'normal';
+  badge.textContent    = num;
+  badge.setAttribute('tabindex','0');
+  badge.setAttribute('role','button');
+  badge.setAttribute('aria-label','Serie ' + num + ', tipo: normal. Toca para cambiar');
+  badge.onclick  = () => openSetTypeSheet(badge);
+  badge.onkeydown = e => { if(e.key==='Enter'||e.key===' ') openSetTypeSheet(badge); };
+  row.appendChild(badge);
+
+  // Columna Carga: si es sin_peso vs con carga
+  const weightWrap = document.createElement('div');
+  weightWrap.className = 'set-weight-cell';
+
+  if (impl === 'sin_peso') {
+    weightWrap.innerHTML = `
+      <div class="set-bodyweight-pill" title="Sin peso / Peso corporal">
+        <i class="ti ti-user-check"></i> Sin peso
+      </div>
+      <input type="number" class="set-input set-input-weight" style="display:none" value="0">`;
+  } else {
+    let ph = 'Kg';
+    let step = '0.5';
+    if (impl === 'mancuerna') {
+      ph = 'Kg c/u';
+    } else if (impl === 'polea_maquina' && unit === 'placas') {
+      ph = 'Placas';
+      step = '1';
+    }
+    weightWrap.innerHTML = `
+      <input type="number" class="set-input set-input-weight" placeholder="${ph}" min="0" step="${step}"
+             inputmode="decimal" aria-label="Carga objetivo" oninput="actualizarHintMancuerna(this)">
+      <span class="dumbbell-hint" style="display:none"></span>`;
+  }
+  row.appendChild(weightWrap);
+
+  // Columna REPS
+  const repsWrap = document.createElement('div');
+  repsWrap.innerHTML = `<input type="number" class="set-input set-input-reps" placeholder="—" min="0" step="1" inputmode="numeric" aria-label="Repeticiones objetivo">`;
+  row.appendChild(repsWrap);
+
+  // Columna RIR
+  const rirWrap = document.createElement('div');
+  rirWrap.innerHTML = `<input type="number" class="set-input set-input-rir" placeholder="RIR" min="0" max="10" step="1" inputmode="numeric" aria-label="Reps en Reserva (0-10)">`;
+  row.appendChild(rirWrap);
+
+  body.appendChild(row);
+}
+
+/* ═══════════════════════════════════════════════════
+   CONTROLADORES DE IMPLEMENTO Y UNIDAD DE CARGA
+═══════════════════════════════════════════════════ */
+function cambiarImplemento(exIdx, nuevoImpl) {
+  const block = document.querySelector(`.ex-block[data-idx="${exIdx}"]`);
+  if (!block) return;
+
+  block.dataset.implemento = nuevoImpl;
+
+  // Actualizar chips activos
+  block.querySelectorAll('.impl-chip').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.impl === nuevoImpl);
+  });
+
+  const unitToggle = document.getElementById('unitToggle_' + exIdx);
+  const colWeight  = document.getElementById('colWeight_' + exIdx);
+
+  if (nuevoImpl === 'polea_maquina') {
+    if (unitToggle) unitToggle.style.display = 'flex';
+    if (!block.dataset.unidad || block.dataset.unidad === 'ninguna') {
+      block.dataset.unidad = 'kg';
+    }
+  } else {
+    if (unitToggle) unitToggle.style.display = 'none';
+    if (nuevoImpl === 'sin_peso') {
+      block.dataset.unidad = 'ninguna';
+    } else {
+      block.dataset.unidad = 'kg';
+    }
+  }
+
+  const unit = block.dataset.unidad;
+
+  // Actualizar label de columna
+  if (colWeight) {
+    if (nuevoImpl === 'mancuerna') colWeight.textContent = 'KG (c/u) ×2';
+    else if (nuevoImpl === 'polea_maquina' && unit === 'placas') colWeight.textContent = 'PLACAS';
+    else if (nuevoImpl === 'sin_peso') colWeight.textContent = 'SIN PESO';
+    else colWeight.textContent = 'KG';
+  }
+
+  // Actualizar filas de series existentes
+  block.querySelectorAll('.set-row').forEach(row => {
+    const weightCell = row.querySelector('.set-weight-cell');
+    if (!weightCell) return;
+    if (nuevoImpl === 'sin_peso') {
+      weightCell.innerHTML = `
+        <div class="set-bodyweight-pill" title="Sin peso / Peso corporal">
+          <i class="ti ti-user-check"></i> Sin peso
+        </div>
+        <input type="number" class="set-input set-input-weight" style="display:none" value="0">`;
+    } else {
+      let ph = 'Kg';
+      let step = '0.5';
+      if (nuevoImpl === 'mancuerna') ph = 'Kg c/u';
+      else if (nuevoImpl === 'polea_maquina' && unit === 'placas') { ph = 'Placas'; step = '1'; }
+      
+      const existingInput = weightCell.querySelector('.set-input-weight');
+      const val = (existingInput && existingInput.value !== '0') ? existingInput.value : '';
+      weightCell.innerHTML = `
+        <input type="number" class="set-input set-input-weight" value="${val}" placeholder="${ph}" min="0" step="${step}"
+               inputmode="decimal" aria-label="Carga objetivo" oninput="actualizarHintMancuerna(this)">
+        <span class="dumbbell-hint" style="display:none"></span>`;
+      const input = weightCell.querySelector('.set-input-weight');
+      if (input && val) actualizarHintMancuerna(input);
+    }
+  });
+}
+
+function cambiarUnidad(exIdx, nuevaUnidad) {
+  const block = document.querySelector(`.ex-block[data-idx="${exIdx}"]`);
+  if (!block) return;
+
+  block.dataset.unidad = nuevaUnidad;
+
+  // Actualizar botones de toggle
+  const unitToggle = document.getElementById('unitToggle_' + exIdx);
+  if (unitToggle) {
+    unitToggle.querySelectorAll('.unit-pill-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.unit === nuevaUnidad);
+    });
+  }
+
+  // Actualizar encabezado
+  const colWeight = document.getElementById('colWeight_' + exIdx);
+  if (colWeight) {
+    colWeight.textContent = (nuevaUnidad === 'placas') ? 'PLACAS' : 'KG';
+  }
+
+  // Actualizar placeholders y steps de las series
+  block.querySelectorAll('.set-weight-cell').forEach(cell => {
+    const input = cell.querySelector('.set-input-weight');
+    if (input) {
+      input.placeholder = (nuevaUnidad === 'placas') ? 'Placas' : 'Kg';
+      input.step = (nuevaUnidad === 'placas') ? '1' : '0.5';
+    }
+  });
+}
+
+function actualizarHintMancuerna(input) {
+  const block = input.closest('.ex-block');
+  const hint  = input.nextElementSibling;
+  if (!block || !hint) return;
+  const isMancuerna = (block.dataset.implemento === 'mancuerna');
+  const val = parseFloat(input.value);
+  if (isMancuerna && val > 0) {
+    hint.textContent = `(${val} kg c/u = ${val * 2} kg tot)`;
+    hint.style.display = 'block';
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+/* Vista D: abrir / cambiar / eliminar */
+function openSetTypeSheet(badge) { activeBadgeEl = badge; openSheet('sheetSetType','overlaySetType'); }
+
+const typeLabels = { calentamiento:'W', normal:null, fallo:'F', drop:'D' };
+const typeNames  = { calentamiento:'calentamiento', normal:'normal', fallo:'fallo', drop:'drop set' };
+
+function setSerieType(type) {
+  if (!activeBadgeEl) return;
+  const num = activeBadgeEl.closest('.set-row')?.dataset.serieNum ?? '1';
+  activeBadgeEl.dataset.type = type;
+  activeBadgeEl.textContent  = (type === 'normal') ? num : (typeLabels[type] || num);
+  activeBadgeEl.setAttribute('aria-label','Serie ' + num + ', tipo: ' + typeNames[type] + '. Toca para cambiar');
+  closeSheet('sheetSetType');
+  activeBadgeEl = null;
+}
+
+function deleteSerie() {
+  if (!activeBadgeEl) return;
+  const row  = activeBadgeEl.closest('.set-row');
+  const body = row?.parentElement;
+  if (!row || !body) { closeSheet('sheetSetType'); return; }
+
+  row.animate([{opacity:1},{opacity:0,transform:'translateX(20px)'}],{duration:180}).onfinish = () => {
+    row.remove();
+    body.querySelectorAll('.set-row').forEach((r, i) => {
+      r.dataset.serieNum = i + 1;
+      const b = r.querySelector('.set-badge');
+      if (b && b.dataset.type === 'normal') {
+        b.textContent = i + 1;
+        b.setAttribute('aria-label','Serie ' + (i+1) + ', tipo: normal. Toca para cambiar');
+      }
+    });
   };
+  closeSheet('sheetSetType');
+  activeBadgeEl = null;
+}
 
-  /* Tooltip */
-  document.addEventListener('mousemove',e=>{ tip.style.left=(e.clientX+13)+'px'; tip.style.top=(e.clientY+12)+'px'; });
+/* ═══════════════════════════════════════════════════
+   VISTA C — Opciones de Ejercicio
+═══════════════════════════════════════════════════ */
+function openExOptions(blockEl) { activeExBlockEl = blockEl; openSheet('sheetExOpts','overlayExOpts'); }
 
-  /* Interacción SVG */
-  document.querySelectorAll('.mz').forEach(el=>{
-    const name=el.getAttribute('data-m');
-    
-    el.addEventListener('click', (e) => {
-      e.preventDefault(); 
-      mvToggle(name);
+function deleteExercise() {
+  if (!activeExBlockEl) return;
+  const el = activeExBlockEl;
+  closeSheet('sheetExOpts');
+  activeExBlockEl = null;
+  el.animate(
+    [{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.96) translateY(6px)'}],
+    {duration:220}
+  ).onfinish = () => { el.remove(); updateCanvasHeader(); };
+}
+
+function replaceExercise() {
+  closeSheet('sheetExOpts');
+  _replaceModeActive = true;   /* single-select mode en toggleExerciseSelection */
+  /* Limpiar selección múltiple previa y abrir en panel cats */
+  selectedExercises.clear();
+  catsDrillBack();
+  updateConfirmBar();
+  openSheet('sheetCats','overlayCats');
+}
+
+/* ═══════════════════════════════════════════════════
+   REORDER — Drag & Drop nativo HTML5
+═══════════════════════════════════════════════════ */
+function initDragHandlers(block) {
+  block.addEventListener('dragstart', e => {
+    dragSrc = block;
+    block.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', block.dataset.idx);
+  });
+  block.addEventListener('dragend', () => {
+    block.classList.remove('dragging');
+    document.querySelectorAll('.ex-block').forEach(b => b.classList.remove('drag-over'));
+    dragSrc = null;
+  });
+  block.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (block !== dragSrc) block.classList.add('drag-over');
+  });
+  block.addEventListener('dragleave', () => block.classList.remove('drag-over'));
+  block.addEventListener('drop', e => {
+    e.preventDefault();
+    block.classList.remove('drag-over');
+    if (!dragSrc || dragSrc === block) return;
+    const canvas = document.getElementById('exerciseCanvas');
+    const allBlocks = [...canvas.querySelectorAll('.ex-block')];
+    const fromIdx   = allBlocks.indexOf(dragSrc);
+    const toIdx     = allBlocks.indexOf(block);
+    canvas.insertBefore(dragSrc, fromIdx < toIdx ? block.nextSibling : block);
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   VISTA COMPACTA DE REORDENAR (IMAGE_27 / IMAGE_28)
+═══════════════════════════════════════════════════ */
+let sortableCompacto = null;
+let eliminadosEnReordenar = [];
+
+function updateCanvasHeader() {
+  const bar = document.getElementById('canvasHeaderBar');
+  const countEl = document.getElementById('canvasExCount');
+  const blocks = document.querySelectorAll('#exerciseCanvas .ex-block');
+  if (!bar) return;
+  if (blocks.length >= 2) {
+    bar.style.display = 'flex';
+    if (countEl) countEl.textContent = `Ejercicios (${blocks.length})`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function startReorder() {
+  closeSheet('sheetExOpts');
+  activeExBlockEl = null;
+  eliminadosEnReordenar = [];
+
+  const canvas = document.getElementById('exerciseCanvas');
+  const wrap = document.getElementById('vista-reordenar-wrap');
+  const compactList = document.getElementById('lista-compacta-reordenar');
+
+  if (!canvas || !wrap || !compactList) return;
+
+  const blocks = canvas.querySelectorAll('.ex-block');
+  if (!blocks.length) {
+    if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('warning', 'No hay ejercicios para reordenar.');
+    return;
+  }
+
+  // 1. Poblar la lista compacta (una sola fila de 62px por ejercicio)
+  compactList.innerHTML = '';
+  blocks.forEach(b => {
+    const idx = b.dataset.idx;
+    const nameEl = document.getElementById('exName_' + idx);
+    const nombre = nameEl ? nameEl.textContent.trim() : 'Ejercicio';
+    const thumbEl = b.querySelector('.ex-thumb');
+    const imgEl = thumbEl ? thumbEl.querySelector('img') : null;
+    const imgSrc = imgEl ? imgEl.src : '';
+
+    const avatarHtml = imgSrc
+      ? `<img src="${imgSrc}" alt="${nombre}" style="width:100%;height:100%;object-fit:cover;" loading="lazy">`
+      : `<span style="color:#aaa;font-weight:700;font-size:0.85rem;">${nombre.substring(0, 2).toUpperCase()}</span>`;
+
+
+    const item = document.createElement('div');
+    item.className = 'reorder-item';
+    item.dataset.idx = idx;
+    item.innerHTML = `
+      <!-- Izquierda: Botón Eliminar Rojo con signo - en blanco -->
+      <button type="button" class="delete-btn" onclick="eliminarItemCompacto('${idx}')" aria-label="Eliminar ${nombre}" title="Eliminar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"><line x1="4" y1="12" x2="20" y2="12"></line></svg>
+      </button>
+      
+      <!-- Centro: Avatar y Nombre -->
+      <div class="item-info">
+        <div class="avatar-ejercicio">
+          ${avatarHtml}
+        </div>
+        <span class="item-nombre">${nombre}</span>
+      </div>
+      
+      <!-- Derecha: Handle de Arrastre (3 líneas horizontales grises) -->
+      <div class="drag-handle" title="Arrastrar para reordenar" aria-label="Arrastrar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+      </div>
+    `;
+    compactList.appendChild(item);
+  });
+
+  // 2. Mostrar pantalla completa de reordenar
+  wrap.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // 3. Inicializar SortableJS con handle en las 3 rayitas
+  initSortableCompacto();
+}
+
+function initSortableCompacto() {
+  const lista = document.getElementById('lista-compacta-reordenar');
+  if (!lista || typeof Sortable === 'undefined') return;
+
+  if (sortableCompacto) {
+    try { sortableCompacto.destroy(); } catch (_) {}
+  }
+
+  sortableCompacto = new Sortable(lista, {
+    handle: '.drag-handle', // Solo se arrastra desde las rayitas
+    animation: 150, // Animación suave al intercambiar posiciones (mms)
+    ghostClass: 'sortable-ghost', // Clase CSS para el elemento fantasma
+    touchStartThreshold: 3,
+    onEnd: function () {
+      if (navigator.vibrate) {
+        try { navigator.vibrate(20); } catch (_) {}
+      }
+    }
+  });
+}
+
+function eliminarItemCompacto(idx) {
+  const item = document.querySelector(`#lista-compacta-reordenar .reorder-item[data-idx="${idx}"]`);
+  if (!item) return;
+
+  if (!eliminadosEnReordenar.includes(idx)) {
+    eliminadosEnReordenar.push(idx);
+  }
+
+  item.animate([
+    { opacity: 1, transform: 'scale(1)', height: '62px' },
+    { opacity: 0, transform: 'scale(0.85) translateX(-25px)', height: '0px', padding: '0px' }
+  ], { duration: 180, easing: 'ease-out' }).onfinish = () => item.remove();
+}
+
+function cancelarReordenarCompacto() {
+  const wrap = document.getElementById('vista-reordenar-wrap');
+  if (wrap) {
+    wrap.classList.remove('active');
+  }
+  document.body.style.overflow = '';
+}
+
+function guardarNuevoOrdenCompacto() {
+  const canvas = document.getElementById('exerciseCanvas');
+  const items = document.querySelectorAll('#lista-compacta-reordenar .reorder-item');
+  if (!canvas) return;
+
+  // 1. Reordenar los bloques grandes en exerciseCanvas según el nuevo orden
+  items.forEach(it => {
+    const idx = it.dataset.idx;
+    const block = canvas.querySelector(`.ex-block[data-idx="${idx}"]`);
+    if (block) canvas.appendChild(block);
+  });
+
+  // 2. Eliminar de exerciseCanvas los bloques que se borraron con el botón rojo
+  eliminadosEnReordenar.forEach(idx => {
+    const block = canvas.querySelector(`.ex-block[data-idx="${idx}"]`);
+    if (block) block.remove();
+  });
+
+  // 3. Ocultar vista compacta y restaurar el canvas normal
+  cancelarReordenarCompacto();
+  updateCanvasHeader();
+
+  if (typeof Xp !== 'undefined' && Xp.toast) {
+    Xp.toast('success', 'Orden de ejercicios actualizado.');
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   GUARDAR — POST JSON al backend
+   FIX[1]: usa window.CSRF (del header) — no redeclarado
+   FIX[2]: numero_serie incluido en cada serie
+═══════════════════════════════════════════════════ */
+document.getElementById('btnGuardar').addEventListener('click', async () => {
+  const btn         = document.getElementById('btnGuardar');
+  const titulo      = document.getElementById('rutinaTitle').value.trim();
+  const clienteId   = document.getElementById('selectAtleta').value;
+  const descripcion = document.getElementById('rutinaDesc').value.trim();
+  const dias        = Array.from(document.querySelectorAll('.cr-day-toggle:checked')).map(el => parseInt(el.value));
+
+  if (!clienteId) {
+    if (typeof Xp !== 'undefined') Xp.toast('warning','Selecciona un atleta antes de guardar.');
+    document.getElementById('selectAtleta').focus();
+    return;
+  }
+  if (!titulo) {
+    if (typeof Xp !== 'undefined') Xp.toast('warning','Ponle un nombre a la rutina.');
+    document.getElementById('rutinaTitle').focus();
+    return;
+  }
+  const blocks = document.querySelectorAll('#exerciseCanvas .ex-block');
+  if (!blocks.length) {
+    if (typeof Xp !== 'undefined') Xp.toast('warning','Agrega al menos un ejercicio.');
+    return;
+  }
+
+  const ejercicios = [];
+  blocks.forEach((b, orden) => {
+    const idx      = b.dataset.idx;
+    const nombre   = document.getElementById('exName_' + idx)?.textContent.trim() || '';
+    const restRow  = document.getElementById('restRow_' + idx);
+    const restIn   = restRow?.querySelector('.ex-rest-input');
+    const descanso = (restRow?.classList.contains('active') && restIn?.value)
+                     ? parseInt(restIn.value, 10) : null;
+
+    const impl = b.dataset.implemento || 'barra';
+    let unit   = b.dataset.unidad || (impl === 'sin_peso' ? 'ninguna' : 'kg');
+
+    const series = [];
+    let tienePesoValido = false;
+    b.querySelectorAll('.set-row').forEach((row, si) => {
+      const badge  = row.querySelector('.set-badge');
+      const weightInput = row.querySelector('.set-input-weight') || row.querySelectorAll('input[type="number"]')[0];
+      const repsInput   = row.querySelector('.set-input-reps')   || row.querySelectorAll('input[type="number"]')[1];
+      const rirInput    = row.querySelector('.set-input-rir')    || row.querySelectorAll('input[type="number"]')[2];
+
+      const pesoVal = (impl !== 'sin_peso' && weightInput && weightInput.value !== '' && weightInput.value !== '0')
+                      ? parseFloat(weightInput.value) : null;
+      if (pesoVal !== null && pesoVal > 0) tienePesoValido = true;
+
+      series.push({
+        numero_serie  : si + 1,
+        tipo_serie    : badge?.dataset.type || 'normal',
+        kg_objetivo   : pesoVal,
+        reps_objetivo : (repsInput && repsInput.value !== '') ? parseInt(repsInput.value, 10) : null,
+        rir           : (rirInput && rirInput.value !== '') ? parseInt(rirInput.value, 10) : null,
+      });
     });
 
-    el.addEventListener('mouseenter', ()=>{
-      tip.style.opacity='1'; tip.textContent=name;
-      document.querySelectorAll(`.mz[data-m="${name}"]`).forEach(p => p.classList.add('hovered'));
-    });
-    
-    el.addEventListener('mouseleave', ()=>{
-      tip.style.opacity='0';
-      document.querySelectorAll(`.mz[data-m="${name}"]`).forEach(p => p.classList.remove('hovered'));
+    // Si el entrenador deja el peso en 0, vacío o marca 'Sin peso', guardarlo explícitamente como sin_peso
+    let finalImpl = impl;
+    let finalUnit = unit;
+    if (impl === 'sin_peso' || (!tienePesoValido && impl !== 'polea_maquina')) {
+      finalImpl = 'sin_peso';
+      finalUnit = 'ninguna';
+    }
+
+    if (nombre) ejercicios.push({
+      nombre,
+      orden: orden + 1,
+      tipo_implemento: finalImpl,
+      unidad_carga: finalUnit,
+      descanso_segundos: descanso,
+      series
     });
   });
 
-  /* Seleccionado: Cyan brillante */
-  const styleTag=document.createElement('style');
-  styleTag.textContent='.mz.sel { fill: rgba(11,209,209,0.45) !important; stroke: #0bd1d1 !important; }';
-  document.head.appendChild(styleTag);
+  if (!ejercicios.length) {
+    if (typeof Xp !== 'undefined') Xp.toast('warning','Ningún ejercicio tiene nombre válido.');
+    return;
+  }
 
-})();
-/* ══════════════════════════════════════════ */
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2 cr-spin" aria-hidden="true"></i>';
 
-function agregarEjercicio() {
-    ejercicioCount++;
-    const i = ejercicioCount;
-    const div = document.createElement('div');
-    div.className = 'ex-card';
-    div.id = `ej_${i}`;
-    
-    div.innerHTML = `
-        <div class="ex-header">
-            <div class="ex-select-wrap">
-                <select class="ej-select" required>
-                    <option value="">Ejercicio</option>
-                    ${catalogo.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('')}
-                    <option value="__custom__">Personalizado...</option>
-                </select>
-                <input type="text" name="ejercicio_nombre[]" class="custom-ex-input" placeholder="Nombre del ejercicio" style="display:none;" id="custom_${i}">
-            </div>
-            <button type="button" class="ex-btn-del" onclick="document.getElementById('ej_${i}').remove()">
-                <i class="ti ti-trash"></i>
-            </button>
-        </div>
-
-        <div class="ex-metrics">
-            <div class="metric-box">
-                <div class="metric-label">Series</div>
-                <div class="metric-input-wrap">
-                    <i class="ti ti-list"></i>
-                    <input name="ejercicio_series[]" type="number" value="2" min="1" max="20" required>
-                </div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-label">Reps</div>
-                <div class="metric-input-wrap">
-                    <i class="ti ti-barbell"></i>
-                    <input name="ejercicio_reps[]" type="text" placeholder="8-12" required>
-                </div>
-            </div>
-            <div class="metric-box">
-                <div class="metric-label">RIR</div>
-                <div class="metric-input-wrap">
-                    <i class="ti ti-rotate-clockwise"></i>
-                    <input name="ejercicio_rir[]" type="text" placeholder="1" required>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Hidden input for notes since design removed it but DB might use it -->
-        <input type="hidden" name="ejercicio_nota[]" class="ej-note" value="">
-    `;
-    
-    // Select logic for custom exercise
-    const sel = div.querySelector('.ej-select');
-    const txt = div.querySelector(`#custom_${i}`);
-    const note = div.querySelector('.ej-note');
-    
-    sel.addEventListener('change', function() {
-        if (this.value === '__custom__') {
-            txt.style.display = 'block';
-            sel.style.display = 'none';
-            txt.required = true;
-            sel.required = false;
-            txt.focus();
-            note.value = '';
-        } else {
-            txt.value = this.value; // Store selected in hidden input basically
-            const found = catalogo.find(e => e.nombre === this.value);
-            if (found) {
-                note.value = found.nota_default || found.nota_biomecanica || '';
-            }
-        }
+  try {
+    const res = await fetch(`${APP}/entrenador/guardar-plantilla-rutina`, {
+      method  : 'POST',
+      headers : { 'Content-Type': 'application/json' },
+      body    : JSON.stringify({
+        titulo,
+        cliente_id : clienteId,
+        descripcion,
+        dias,
+        ejercicios,
+        csrf_token : window.CSRF,    /* FIX: CSRF correcto del header */
+      }),
     });
 
-    document.getElementById('exerciseBuilder').appendChild(div);
-}
-
-document.getElementById('rutinaForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const btn = document.getElementById('mainSubmit');
-    const headerBtn = document.querySelector('.btn-save-text');
-    
-    btn.disabled = true;
-    headerBtn.disabled = true;
-    const orgHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i> Guardando...';
-
-    // Verify exercises
-    const exerciseCards = document.querySelectorAll('.ex-card');
-    if (exerciseCards.length === 0) {
-        Xp.toast('warning', 'Agrega al menos un ejercicio.');
-        btn.disabled = false;
-        headerBtn.disabled = false;
-        btn.innerHTML = orgHtml;
-        return;
-    }
-
-    // Sync selects to hidden inputs
-    document.querySelectorAll('.ex-card').forEach(card => {
-        const sel = card.querySelector('.ej-select');
-        const customIn = card.querySelector('.custom-ex-input');
-        if (sel.style.display !== 'none' && sel.value && sel.value !== '__custom__') {
-            customIn.value = sel.value;
-        }
-    });
-
-    const fd = new FormData(e.target);
-    const r = await fetch(APP + '/entrenador/guardar-rutina', { method: 'POST', body: fd })
-        .then(x => x.json()).catch(() => ({ ok: false, msg: 'Error de red.' }));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const r = await res.json();
 
     if (r.ok) {
-        Xp.toast('success', r.msg);
-        setTimeout(() => history.back(), 1200);
+      if (typeof Xp !== 'undefined') Xp.toast('success', r.msg || '¡Rutina guardada!');
+      setTimeout(() => history.back(), 1300);
     } else {
-        Xp.toast('error', r.msg);
-        btn.disabled = false;
-        headerBtn.disabled = false;
-        btn.innerHTML = orgHtml;
+      if (typeof Xp !== 'undefined') Xp.toast('error', r.msg || 'No se pudo guardar la rutina.');
     }
+  } catch (_) {
+    if (typeof Xp !== 'undefined') Xp.toast('error','Error de conexión. Intenta de nuevo.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Guardar';
+  }
 });
 
-// Add first exercise by default (Disabled since users add via silhouette)
-// agregarEjercicio();
+// ── Custom Select Atleta ──
+function toggleAtletaDropdown() {
+  const sel = document.getElementById('customAtletaSelect');
+  sel.classList.toggle('open');
+  if(sel.classList.contains('open')) {
+    setTimeout(() => document.getElementById('atletaSearch').focus(), 50);
+  }
+}
+function filterAtletas() {
+  const v = document.getElementById('atletaSearch').value.toLowerCase();
+  document.querySelectorAll('.cr-select-option').forEach(el => {
+    el.style.display = el.textContent.toLowerCase().includes(v) ? 'block' : 'none';
+  });
+}
+function selectAtleta(id, nombre) {
+  document.getElementById('selectAtleta').value = id;
+  document.getElementById('atletaSelectedText').textContent = nombre;
+  document.querySelectorAll('.cr-select-option').forEach(el => el.classList.remove('selected'));
+  document.querySelector('.cr-select-option[data-value="'+id+'"]').classList.add('selected');
+  toggleAtletaDropdown();
+}
+// Cerrar clickeando afuera
+document.addEventListener('click', e => {
+  const sel = document.getElementById('customAtletaSelect');
+  if (sel && !sel.contains(e.target)) sel.classList.remove('open');
+});
 </script>
 
-<?php require __DIR__ . '/../layout/footer.php'; ?>
+<?php require __DIR__ . "/../layout/footer.php"; ?>

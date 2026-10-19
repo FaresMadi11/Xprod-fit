@@ -38,6 +38,15 @@ function getDB(): PDO {
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
                 PDO::MYSQL_ATTR_FOUND_ROWS   => true, // rowCount() funciona en UPDATE
             ]);
+
+            // Alinear la zona horaria de la sesión MySQL con la de PHP (CURDATE()/NOW()
+            // == date()). Offset numérico: no depende de las tablas tz de MySQL.
+            $offset = (new DateTime('now', new DateTimeZone(
+                defined('APP_TIMEZONE') ? APP_TIMEZONE : date_default_timezone_get()
+            )))->format('P');
+            if (preg_match('/^[+-]\d{2}:\d{2}$/', $offset)) {
+                $pdo->exec("SET time_zone = '" . $offset . "'");
+            }
         } catch (\PDOException $e) {
             // Registrar error sin exponer credenciales
             error_log('[Xprod Fit] Error de conexión a BD: ' . $e->getMessage());

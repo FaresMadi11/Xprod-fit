@@ -72,15 +72,39 @@ const Xp = {
     });
   },
 
+  getBase() {
+    if (typeof window.APP !== 'undefined' && window.APP) return window.APP.replace(/\/+$/, '');
+    if (typeof APP !== 'undefined' && APP) return APP.replace(/\/+$/, '');
+    const path = window.location.pathname;
+    const base = path.includes('/index.php')
+      ? path.substring(0, path.indexOf('/index.php'))
+      : path.replace(/\/(auth|cliente|entrenador|legal|public)(\/.*)?$/i, '');
+    return (window.location.origin + base).replace(/\/+$/, '');
+  },
+
   async post(url, data) {
     const body = new FormData();
-    body.append('csrf_token', CSRF);
+    body.append('csrf_token', typeof CSRF !== 'undefined' ? CSRF : (window.CSRF || ''));
     Object.entries(data).forEach(([k, v]) => body.append(k, v));
-    const cleanBase = (typeof APP !== 'undefined' && APP ? APP : window.location.origin).replace(/\/+$/, '');
+    const cleanBase = this.getBase();
     const cleanUrl = encodeURI(decodeURI(cleanBase) + '/' + url.replace(/^\/+/, ''));
     const res = await fetch(cleanUrl, { method: 'POST', body });
     return res.json();
   },
+
+  async get(url, params = {}) {
+    const cleanBase = this.getBase();
+    let cleanUrl = cleanBase + '/' + url.replace(/^\/+/, '');
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && v !== '') query.append(k, v);
+    });
+    const qs = query.toString();
+    if (qs) cleanUrl += (cleanUrl.includes('?') ? '&' : '?') + qs;
+    const res = await fetch(cleanUrl);
+    return res.json();
+  },
+
 
   confirm(title, text, action) {
     Swal.fire({
@@ -92,6 +116,28 @@ const Xp = {
       confirmButtonColor: '#5eead4',
     }).then(r => r.isConfirmed && action());
   }
+};
+window.Xp = Xp;
+
+// Toast Glassmorphism flotante global
+window.mostrarToast = function(mensaje) {
+  const prev = document.getElementById('xpFloatingToast');
+  if (prev) prev.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'xpFloatingToast';
+  toast.className = 'xp-toast-pill';
+  toast.innerHTML = `<i class="ti ti-circle-check bx bx-check-circle" style="color:#b388ff;font-size:1.15rem;display:inline-flex;align-items:center;"></i><span>${mensaje || 'Datos de Pago Móvil copiados'}</span>`;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 350);
+  }, 2500);
 };
 
 /* ─── AUTH: login form submit ───────────────────────────── */
@@ -130,7 +176,13 @@ if (regForm) {
       email: regForm.email.value,
       password: regForm.password.value,
     }).catch(() => ({ ok: false, msg: 'Error de red.' }));
-    if (r.ok) { Xp.toast('success', 'Cuenta creada'); setTimeout(() => location.href = r.redirect, 1000); }
+    if (r.ok) {
+      Swal.fire({
+        icon: 'success', title: 'Cuenta registrada', text: r.msg,
+        background: '#111827', color: '#fff',
+        confirmButtonText: 'Entendido', confirmButtonColor: '#8B5CF6',
+      }).then(() => { location.href = r.redirect; });
+    }
     else Xp.toast('error', r.msg);
     btn.disabled = false;
   });
@@ -257,7 +309,7 @@ async function promptNuevoPeso() {
     fd.append('csrf_token', typeof CSRF !== 'undefined' ? CSRF : document.querySelector('meta[name="csrf-token"]')?.content);
 
     try {
-      const baseApp = (typeof APP !== 'undefined' && APP ? APP : window.location.origin).replace(/\/+$/, '');
+      const baseApp = Xp.getBase();
       const res = await fetch(baseApp + '/cliente/api-nuevo-peso', { method: 'POST', body: fd });
       const data = await res.json();
       if (data.ok) {

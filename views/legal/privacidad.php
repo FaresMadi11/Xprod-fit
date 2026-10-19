@@ -65,7 +65,7 @@ li{font-size:.93rem;color:rgba(255,255,255,.75);margin-bottom:6px;}
 
   <!-- Header -->
   <header class="legal-header">
-    <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>" class="legal-logo">
+    <a href="<?= APP_URL ?>" class="legal-logo">
       <div class="legal-logo-icon">⚡</div>
       <span class="legal-logo-name">XprodFit</span>
     </a>
@@ -74,7 +74,7 @@ li{font-size:.93rem;color:rgba(255,255,255,.75);margin-bottom:6px;}
     <p class="legal-meta">
       Última actualización: <?= date('d \d\e F \d\e Y') ?> &middot;
       Versión 1.0 &middot;
-      <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>/legal/terminos">Ver Términos y Condiciones →</a>
+      <a href="<?= APP_URL ?>/legal/terminos">Ver Términos y Condiciones →</a>
     </p>
   </header>
 
@@ -246,12 +246,12 @@ li{font-size:.93rem;color:rgba(255,255,255,.75);margin-bottom:6px;}
     <p>Si consideras que el tratamiento de tus datos no es conforme, tienes derecho a presentar una reclamación ante la autoridad de control competente (en España: <a href="https://www.aepd.es" target="_blank" rel="noopener">AEPD</a>).</p>
   </section>
 
-  <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>" class="back-link">← Volver a la aplicación</a>
+  <a href="<?= APP_URL ?>" class="back-link">← Volver a la aplicación</a>
 
   <footer class="legal-footer">
     <p>
       © <?= date('Y') ?> Xprod Fit · Todos los derechos reservados ·
-      <a href="<?= defined('APP_URL') ? APP_URL : '/Xprod%20Fit' ?>/legal/terminos">Términos y Condiciones</a>
+      <a href="<?= APP_URL ?>/legal/terminos">Términos y Condiciones</a>
     </p>
   </footer>
 </div>

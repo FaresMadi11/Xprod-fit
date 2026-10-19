@@ -18,22 +18,22 @@ $diaHoyNum  = (int)date('N');
 }
 .rl-header-icon {
   width: 44px; height: 44px; border-radius: 14px;
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
   display: grid; place-items: center;
-  font-size: 1.3rem; color: #000; flex-shrink: 0;
+  font-size: 1.3rem; color: #fff; flex-shrink: 0;
 }
 .rl-header-text h1 { font-size: 1.4rem; font-weight: 900; color: #fff; margin: 0; }
 .rl-header-text p  { font-size: .78rem; color: #6b7280; margin: 2px 0 0; }
 
 /* ── Sección "Hoy" ── */
 .rl-section-label {
-  font-size: .68rem; font-weight: 800; color: #38bdf8;
+  font-size: .68rem; font-weight: 800; color: var(--text-purple, #b388ff);
   text-transform: uppercase; letter-spacing: 1px;
   padding: 0 20px; margin-bottom: 10px;
   display: flex; align-items: center; gap: 8px;
 }
 .rl-section-label::after {
-  content: ''; flex: 1; height: 1px; background: rgba(125,211,252,.15);
+  content: ''; flex: 1; height: 1px; background: rgba(138,43,226,.2);
 }
 .rl-section-label.other { color: #6b7280; margin-top: 18px; }
 .rl-section-label.other::after { background: rgba(255,255,255,.06); }
@@ -51,23 +51,23 @@ $diaHoyNum  = (int)date('N');
 .rl-card::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(163,230,53,0), transparent);
+  background: linear-gradient(90deg, transparent, rgba(138,43,226,0), transparent);
   transition: background .3s;
 }
 .rl-card.hoy {
-  border-color: rgba(163,230,53,.3);
-  background: linear-gradient(145deg, #131a09, #0f1a07);
+  border-color: rgba(138,43,226,.35);
+  background: linear-gradient(145deg, #181126, #120c1d);
 }
 .rl-card.hoy::before {
-  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent-primary, #8a2be2), transparent);
 }
 .rl-card:active { transform: scale(.98); }
 
 /* Badge HOY */
 .rl-badge-hoy {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: .65rem; font-weight: 800; color: #000;
-  background: #38bdf8; border-radius: 20px;
+  font-size: .65rem; font-weight: 800; color: #fff;
+  background: var(--accent-primary, #8a2be2); border-radius: 20px;
   padding: 3px 10px; margin-bottom: 10px;
   text-transform: uppercase; letter-spacing: .5px;
 }
@@ -94,9 +94,9 @@ $diaHoyNum  = (int)date('N');
   color: #9ca3af; letter-spacing: .3px;
 }
 .rl-dia-chip.activo {
-  background: rgba(125,211,252,.18);
-  color: #38bdf8;
-  border: 1px solid rgba(125,211,252,.3);
+  background: var(--accent-bg, rgba(138,43,226,.15));
+  color: var(--text-purple, #b388ff);
+  border: 1px solid var(--accent-primary, #8a2be2);
 }
 
 /* Footer de la tarjeta */
@@ -107,8 +107,8 @@ $diaHoyNum  = (int)date('N');
   font-size: .7rem; font-weight: 700; padding: 4px 12px;
   border-radius: 20px; text-transform: capitalize;
 }
-.rl-estado-pendiente  { background: rgba(251,191,36,.12); color: #fbbf24; }
-.rl-estado-en_progreso{ background: rgba(56,189,248,.12);  color: #38bdf8; }
+.rl-estado-pendiente  { background: rgba(138,43,226,.12); color: var(--text-purple, #b388ff); border: 1px solid rgba(138,43,226,.3); }
+.rl-estado-en_progreso{ background: rgba(157,78,221,.2);  color: #d8b4fe; border: 1px solid rgba(157,78,221,.4); }
 
 /* Botón entrenar */
 .rl-btn-train {
@@ -118,10 +118,10 @@ $diaHoyNum  = (int)date('N');
   text-decoration: none; transition: all .2s;
 }
 .rl-btn-train.hoy {
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
-  color: #fff; box-shadow: 0 4px 20px rgba(56,189,248,.25);
+  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
+  color: #fff; box-shadow: 0 4px 20px rgba(138,43,226,.3);
 }
-.rl-btn-train.hoy:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(56,189,248,.35); }
+.rl-btn-train.hoy:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(138,43,226,.45); }
 .rl-btn-train.normal {
   background: rgba(255,255,255,.07);
   color: #fff; border: 1px solid rgba(255,255,255,.1);

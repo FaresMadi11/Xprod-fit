@@ -32,39 +32,41 @@
 </div>
 
 <?php if(!empty($pesoHistorial) || !empty($sesiones)): ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script>
+document.addEventListener('DOMContentLoaded', () => {
 <?php if(!empty($pesoHistorial)): ?>
-new Chart(document.getElementById('pesochart'), {
-  type: 'line',
-  data: {
-    labels: <?= json_encode(array_column($pesoHistorial, 'fecha')) ?>,
-    datasets: [{
-      label: 'Peso (kg)',
-      data: <?= json_encode(array_column($pesoHistorial, 'peso_kg')) ?>,
-      borderColor: '#5eead4', backgroundColor: 'rgba(94,234,212,.1)',
-      tension: .4, fill: true, pointRadius: 4
-    }]
-  },
-  options: { responsive:true, plugins:{legend:{labels:{color:'#e2e8f0'}}},
-    scales: { x:{ticks:{color:'#64748b'}}, y:{ticks:{color:'#64748b'}} } }
-});
+  new Chart(document.getElementById('pesochart'), {
+    type: 'line',
+    data: {
+      labels: <?= json_encode(array_column($pesoHistorial, 'fecha')) ?>,
+      datasets: [{
+        label: 'Peso (kg)',
+        data: <?= json_encode(array_column($pesoHistorial, 'peso_kg')) ?>,
+        borderColor: '#8B5CF6', backgroundColor: 'rgba(139,92,246,.1)',
+        tension: .4, fill: true, pointRadius: 4
+      }]
+    },
+    options: { responsive:true, plugins:{legend:{labels:{color:'#e2e8f0'}}},
+      scales: { x:{ticks:{color:'#64748b'}}, y:{ticks:{color:'#64748b'}} } }
+  });
 <?php endif; ?>
 <?php if(!empty($sesiones)): ?>
-new Chart(document.getElementById('sesioneschart'), {
-  type: 'bar',
-  data: {
-    labels: <?= json_encode(array_column(array_reverse($sesiones), 'mes')) ?>,
-    datasets: [{
-      label: 'Sesiones',
-      data: <?= json_encode(array_column(array_reverse($sesiones), 'total')) ?>,
-      backgroundColor: 'rgba(129,140,248,.6)', borderColor: '#818cf8', borderWidth:1
-    }]
-  },
-  options: { responsive:true, plugins:{legend:{labels:{color:'#e2e8f0'}}},
-    scales: { x:{ticks:{color:'#64748b'}}, y:{ticks:{color:'#64748b'},beginAtZero:true} } }
-});
+  new Chart(document.getElementById('sesioneschart'), {
+    type: 'bar',
+    data: {
+      labels: <?= json_encode(array_column(array_reverse($sesiones), 'mes')) ?>,
+      datasets: [{
+        label: 'Sesiones',
+        data: <?= json_encode(array_column(array_reverse($sesiones), 'total')) ?>,
+        backgroundColor: 'rgba(129,140,248,.6)', borderColor: '#818cf8', borderWidth:1
+      }]
+    },
+    options: { responsive:true, plugins:{legend:{labels:{color:'#e2e8f0'}}},
+      scales: { x:{ticks:{color:'#64748b'}}, y:{ticks:{color:'#64748b'},beginAtZero:true} } }
+  });
 <?php endif; ?>
+});
 </script>
 <?php endif; ?>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

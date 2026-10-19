@@ -59,8 +59,9 @@ $url = APP_URL . '/public/producto?id=' . $producto['id'];
 <body>
     <div class="card">
         <?php if ($producto['imagen_path']): ?>
-            <img src="<?= $img ?>" alt="<?= $title ?>">
+            <img src="<?= $img ?>" alt="<?= $title ?>" loading="lazy">
         <?php endif; ?>
+
         <h1><?= $title ?></h1>
         <p><?= nl2br($desc) ?></p>
         <div class="price">$<?= number_format((float)$producto['precio'], 2) ?></div>

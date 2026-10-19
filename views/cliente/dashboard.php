@@ -4,6 +4,27 @@
 $pesoActual = (float)($medidas['peso_kg'] ?? 0);
 $objetivo   = $medidas['objetivo'] ?? '';
 
+// Determinación del Estado de Meta (Active vs Empty)
+$tieneMetaActiva = false;
+if (!empty($metaDetalle) && empty($metaDetalle['omitido'])) {
+    $tieneMetaActiva = true;
+} elseif (!empty($objetivo) && trim($objetivo) !== '') {
+    $tieneMetaActiva = true;
+    if (!$metaDetalle) {
+        $metaDetalle = [
+            'id'             => 'general',
+            'titulo'         => $objetivo,
+            'categoria'      => 'general',
+            'icono'          => 'ti-target',
+            'color'          => '#8a2be2',
+            'subnivel'       => null,
+            'custom_texto'   => null,
+            'omitido'        => false,
+            'actualizado_en' => date('Y-m-d H:i:s')
+        ];
+    }
+}
+
 // Calcular progreso de peso si hay meta y hay historial
 $progressPct = 0;
 if ($pesoInicial > 0 && $pesoActual > 0 && $pesoInicial !== $pesoActual) {
@@ -54,12 +75,182 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 /* ── Reset general de la pagina ── */
 .xp-main { padding: 0 !important; }
 
+/* ── HERO WORKOUT CARD (UI-UX-PRO-MAX) ── */
+.hero-workout-card {
+  margin: 0 16px 14px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(32, 18, 54, 0.82) 0%, rgba(14, 9, 24, 0.90) 100%);
+  border: 1px solid rgba(138, 43, 226, 0.32);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.hero-workout-card::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.30) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(20px);
+}
+.hero-workout-card.rest-day {
+  background: linear-gradient(135deg, rgba(18, 24, 44, 0.80) 0%, rgba(10, 14, 26, 0.90) 100%);
+  border-color: rgba(56, 189, 248, 0.28);
+}
+.hero-workout-card.rest-day::before {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%);
+}
+.hwc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 2;
+}
+.hwc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #c4b5fd;
+  background: rgba(138, 43, 226, 0.2);
+  border: 1px solid rgba(138, 43, 226, 0.35);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.hwc-badge.rest {
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.32);
+}
+.hwc-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 10px #22c55e;
+  animation: hwcPulse 2s infinite ease-in-out;
+}
+@keyframes hwcPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+.hwc-status-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3px 9px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.hwc-status-pill.completed {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.hwc-status-pill.rest {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+.hwc-body {
+  margin-bottom: 15px;
+  position: relative;
+  z-index: 2;
+}
+.hwc-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.25;
+  margin: 0 0 5px 0;
+  letter-spacing: -0.3px;
+}
+.hwc-desc {
+  font-size: 0.82rem;
+  color: #a1a1aa;
+  line-height: 1.45;
+  margin: 0;
+}
+.hwc-action {
+  position: relative;
+  z-index: 2;
+}
+.hwc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 14px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.88rem;
+  letter-spacing: 0.2px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.hwc-btn.primary {
+  background: linear-gradient(135deg, #8a2be2 0%, #7c3aed 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(138, 43, 226, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.hwc-btn.primary:hover {
+  background: linear-gradient(135deg, #9d4edd 0%, #8b5cf6 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(138, 43, 226, 0.58);
+  color: #ffffff;
+}
+.hwc-btn.completed {
+  background: rgba(34, 197, 94, 0.14);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+.hwc-btn.completed:hover {
+  background: rgba(34, 197, 94, 0.22);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.hwc-btn.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.hwc-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.hwc-btn span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ── Header superior ── */
 .db-header {
   padding: 20px 20px 14px;
   display: flex; justify-content: space-between; align-items: flex-start;
 }
-.db-greeting { font-size: .82rem; color: #38bdf8; font-weight: 500; margin-bottom: 2px; }
+.db-greeting { font-size: .82rem; color: var(--text-purple, #b388ff); font-weight: 500; margin-bottom: 2px; }
 .db-welcome  { font-size: 1.6rem; font-weight: 900; color: #fff; line-height: 1.2; }
 .db-actions  { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
 .db-icon-btn {
@@ -76,38 +267,52 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 }
 
 /* ── Stat cards ── */
-.db-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px 16px; }
+.db-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0; margin-bottom: 16px; }
 @media (max-width: 480px) {
-  .db-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .db-stats { gap: 8px; }
 }
 .db-stat-card {
   background: var(--card-glass); border-radius: 20px;
-  padding: 16px 16px; min-height: 135px;
+  padding: 14px 12px; min-height: 130px;
   display: flex; flex-direction: column; justify-content: space-between;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  min-width: 0; overflow: hidden;
 }
-.db-stat-top  { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px; }
+.db-stat-top  { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px; gap: 4px; }
 .db-stat-icon {
   width: 32px; height: 32px; border-radius: 10px;
   background: rgba(255,255,255,0.07);
-  display: grid; place-items: center; font-size: 1rem; color: #9ca3af;
+  display: grid; place-items: center; font-size: 1rem; color: #9ca3af; flex-shrink: 0;
 }
 .db-edit-weight-btn {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 10px; border-radius: 20px;
-  background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.3);
-  color: #38bdf8; font-size: 0.72rem; font-weight: 700;
-  text-decoration: none; transition: all 0.2s ease;
+  padding: 4px 9px; border-radius: 20px;
+  background: var(--accent-bg, rgba(138,43,226,0.15)); border: 1px solid var(--accent-primary, #8a2be2);
+  color: var(--text-purple, #b388ff); font-size: 0.7rem; font-weight: 700;
+  text-decoration: none; transition: all 0.2s ease; flex-shrink: 0; white-space: nowrap;
 }
 .db-edit-weight-btn:hover {
-  background: #38bdf8; color: #000; transform: translateY(-1px);
+  background: var(--accent-primary, #8a2be2); color: #fff; transform: translateY(-1px);
 }
-.db-stat-label { font-size: .72rem; color: #6b7280; margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.db-stat-label { font-size: .68rem; color: #6b7280; margin-top: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
 .db-stat-value {
-  font-size: 2.1rem; font-weight: 900; color: #fff;
-  line-height: 1.1; letter-spacing: -1px; margin-top: 2px;
+  font-size: 1.65rem; font-weight: 900; color: #fff;
+  line-height: 1.1; letter-spacing: -0.5px; margin-top: 2px;
+  display: flex; align-items: baseline; gap: 3px; white-space: nowrap;
 }
-.db-stat-value small { font-size: 0.95rem; font-weight: 500; color: #9ca3af; letter-spacing: 0; }
+.db-stat-value small { font-size: 0.82rem; font-weight: 600; color: #9ca3af; letter-spacing: 0; }
+.db-peso-row {
+  margin-top: 8px; display: flex; justify-content: space-between; align-items: flex-end; gap: 6px; min-width: 0;
+}
+.db-peso-side {
+  text-align: right; flex-shrink: 0; min-width: 0;
+}
+.db-peso-side .init-txt {
+  font-size: .62rem; color: #9ca3af; font-weight: 600; white-space: nowrap;
+}
+.db-peso-side .delta-txt {
+  font-size: .78rem; font-weight: 800; color: var(--text-purple, #b388ff); white-space: nowrap;
+}
 
 /* ── Tarjeta de Frase Motivadora ── */
 .db-quote-card {
@@ -118,7 +323,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 }
 .db-quote-tag {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 0.68rem; font-weight: 800; color: #38bdf8;
+  font-size: 0.68rem; font-weight: 800; color: var(--text-purple, #b388ff);
   text-transform: uppercase; letter-spacing: 0.5px;
 }
 .db-quote-shuffle {
@@ -126,7 +331,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   cursor: pointer; padding: 2px 4px; font-size: 0.9rem;
   border-radius: 6px; transition: all 0.2s ease;
 }
-.db-quote-shuffle:hover { color: #38bdf8; transform: rotate(45deg); }
+.db-quote-shuffle:hover { color: var(--accent-hover, #9d4edd); transform: rotate(45deg); }
 .db-quote-body { margin-top: auto; }
 .db-quote-text {
   font-size: 0.77rem; font-weight: 500; color: #e2e8f0;
@@ -135,7 +340,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
 .db-quote-author {
-  font-size: 0.65rem; font-weight: 700; color: #7dd3fc;
+  font-size: 0.65rem; font-weight: 700; color: var(--text-purple, #b388ff);
   margin-top: 5px; letter-spacing: 0.3px; text-transform: uppercase;
 }
 
@@ -240,40 +445,384 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 }
 .meta-delete-btn:hover { background: rgba(239,68,68,0.25); }
 
-.meta-delete-btn:hover { background: rgba(239,68,68,0.25); }
+/* ── SELECTOR DE METAS COMPACTO & ESTÉTICO (UI-UX-PRO-MAX) ── */
+.meta-step-header {
+  margin-bottom: 12px;
+}
+.meta-step-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #c4b5fd;
+  background: rgba(138, 43, 226, 0.18);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  margin-bottom: 5px;
+}
+.meta-step-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 3px 0;
+  letter-spacing: -0.2px;
+}
+.meta-step-sub {
+  font-size: 0.78rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+.goals-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.goal-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 8px;
+  background: rgba(22, 22, 28, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  min-height: 82px;
+  max-height: 94px;
+  box-sizing: border-box;
+  user-select: none;
+  outline: none !important;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.goal-chip:focus,
+.goal-chip:focus-visible,
+.goal-chip:active {
+  outline: none !important;
+  box-shadow: none;
+}
+
+.goal-chip:hover {
+  background: rgba(32, 32, 42, 0.75);
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+}
+
+.goal-chip-icon {
+  font-size: 1.45rem;
+  margin-bottom: 5px;
+  color: #a1a1aa;
+  transition: color 0.25s ease, transform 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.goal-chip-icon i {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.goal-chip-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  line-height: 1.22;
+  margin: 0;
+  padding: 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.25s ease, font-weight 0.25s ease;
+}
+
+/* Ocultar checkmark */
+.goal-chip-check,
+.goal-chip-top {
+  display: none !important;
+}
+
+/* Estado Activo / Seleccionado (Identidad morada) */
+.goal-chip.selected,
+.goal-chip.active {
+  border-color: #8a2be2 !important;
+  background: rgba(138, 43, 226, 0.16) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 18px rgba(138, 43, 226, 0.22) !important;
+  transform: translateY(-1px);
+  outline: none !important;
+}
+
+.goal-chip.selected .goal-chip-icon,
+.goal-chip.active .goal-chip-icon,
+.goal-chip.selected .goal-chip-icon i,
+.goal-chip.active .goal-chip-icon i {
+  color: #c4b5fd !important;
+  transform: scale(1.08);
+}
+
+.goal-chip.selected .goal-chip-title,
+.goal-chip.active .goal-chip-title {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Tarjeta Otros (Personalizado) compacta a lo ancho */
+.goal-chip.goal-chip-otros {
+  grid-column: 1 / -1;
+  min-height: 52px;
+  max-height: 60px;
+  padding: 8px 14px;
+  flex-direction: row;
+  gap: 10px;
+}
+.goal-chip.goal-chip-otros .goal-chip-icon {
+  margin-bottom: 0;
+  font-size: 1.35rem;
+}
+.goal-chip.goal-chip-otros .goal-chip-icon i {
+  font-size: 1.35rem;
+}
+.goal-chip.goal-chip-otros .goal-chip-title {
+  text-align: left;
+/* ── Layout Contenedor Responsive (Bento UI) ── */
+.xp-client-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 12px 14px calc(95px + env(safe-area-inset-bottom, 20px)) 14px;
+}
+@media (min-width: 768px) {
+  .xp-client-container {
+    padding: 24px 32px 60px 32px;
+  }
+}
+
+/* ── Header adaptativo ── */
+.sys-top-header.premium-header {
+  margin: 0 0 16px 0 !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.user-info-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.user-text-wrap {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.sys-top-greet-new {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-name-gradient {
+  font-size: 1.15rem !important;
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.user-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Tarjetas adaptativas sin overflow ── */
+.hero-workout-card {
+  margin: 0 0 14px 0 !important;
+}
+.bento-meta-wrapper {
+  margin: 0 0 16px 0 !important;
+}
+#tiendaSection {
+  margin: 0 0 16px 0 !important;
+}
+
+/* ── Desktop Bento Layout (Monitores / PC) ── */
+@media (min-width: 992px) {
+  .user-name-gradient {
+    font-size: 1.4rem !important;
+  }
+  .db-bento-top-row {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 18px;
+  }
+  .db-bento-top-row .hero-workout-card {
+    margin: 0 !important;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .db-bento-top-row .db-stats {
+    margin: 0 !important;
+    height: 100%;
+    grid-template-columns: 1fr 1fr;
+    align-content: stretch;
+  }
+  .db-bento-top-row .db-stat-card {
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .t-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 16px !important;
+  }
+}
 </style>
-<!-- ── HEADER ── -->
-<div class="db-header">
-  <div>
-    <div class="db-greeting">Hola, <?= e($nomUser) ?></div>
-    <div class="db-welcome">Bienvenido de<br>vuelta</div>
+
+<!-- ── CONTENEDOR PRINCIPAL CLIENTE (RESPONSIVE BENTO UI) ── -->
+<div class="xp-client-container">
+
+<!-- ── HEADER DE BIENVENIDA (PREMIUM BENTO UI) ── -->
+<div class="sys-top-header premium-header">
+  <div class="user-info-group">
+    <div class="user-avatar">
+       <?= strtoupper(substr($nomUser, 0, 1)) ?>
+    </div>
+    <div class="user-text-wrap">
+      <p class="sys-top-greet-new">Bienvenido de vuelta</p>
+      <h1 class="sys-top-title user-name-gradient" title="<?= e($nomUser) ?>">
+        <span class="user-name-text"><?= e($nomUser) ?></span>
+        <i class="ti ti-sparkles" style="color: #fbbf24; font-size:1.1rem; flex-shrink:0;"></i>
+      </h1>
+    </div>
   </div>
-  <div class="db-actions">
-    <button onclick="toggleNotifDropdown()" class="db-icon-btn" title="Notificaciones" style="border:none; cursor:pointer;">
-      <i class="ti ti-bell"></i>
-    </button>
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Salir">
+  
+  <div class="header-actions">
+    <div class="sys-top-logo brand-glow">
+      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    </div>
+
+    <?php 
+      $unreadCliHdr = contarNotificacionesNoLeidas((int)$_SESSION['user_id'], 'cliente');
+    ?>
+    <div class="notif-wrapper" style="position:relative;">
+      <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
+        <i class="ti ti-bell"></i>
+        <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
+      </button>
+    </div>
+
+    <!-- Botón Logout -->
+    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión">
       <i class="ti ti-logout"></i>
     </a>
   </div>
 </div>
 
-<!-- ── NOTIFICACIONES DROPDOWN ── -->
-<div class="db-notif-dropdown" id="notifDropdown">
-  <div class="db-notif-header">
-    <span>Notificaciones</span>
-    <button onclick="toggleNotifDropdown()" class="db-notif-close">&times;</button>
-  </div>
-  <?php if(empty($notificaciones)): ?>
-    <div class="db-notif-empty">No hay novedades recientes.</div>
-  <?php else: ?>
-    <?php foreach($notificaciones as $n): ?>
-      <div class="db-notif-item">
-        <div class="db-notif-msg"><?= e($n['mensaje']) ?></div>
-        <div class="db-notif-date"><?= date('d/m/Y H:i', strtotime($n['fecha'])) ?></div>
+<!-- ── FILA SUPERIOR BENTO (HERO WORKOUT + STATS) ── -->
+<div class="db-bento-top-row">
+
+<!-- ── HERO BENTO WORKOUT CARD (UI-UX-PRO-MAX) ── -->
+<div class="hero-workout-card <?= (!$esRutinaDeHoy ? 'rest-day' : '') ?>">
+  <div class="hwc-header">
+    <?php if ($esRutinaDeHoy && $rutinaActiva): ?>
+      <div class="hwc-badge">
+        <span class="hwc-pulse-dot"></span>
+        <span>Rutina de Hoy · <?= e($nombreDiaHoy) ?></span>
       </div>
-    <?php endforeach; ?>
-  <?php endif; ?>
+      <?php if ($sesionHoyCompletada): ?>
+        <span class="hwc-status-pill completed"><i class="ti ti-circle-check"></i> Completada</span>
+      <?php elseif ($numEjerciciosHoy > 0): ?>
+        <span class="hwc-status-pill"><i class="ti ti-barbell"></i> <?= $numEjerciciosHoy ?> ejercicios</span>
+      <?php endif; ?>
+    <?php else: ?>
+      <div class="hwc-badge rest">
+        <i class="ti ti-moon-stars"></i>
+        <span>Descanso Activo · <?= e($nombreDiaHoy) ?></span>
+      </div>
+      <span class="hwc-status-pill rest"><i class="ti ti-shield-check"></i> Recuperación</span>
+    <?php endif; ?>
+  </div>
+
+  <div class="hwc-body">
+    <?php if ($esRutinaDeHoy && $rutinaActiva): ?>
+      <h2 class="hwc-title"><?= e($rutinaActiva['nombre'] ?: ('Entrenamiento de ' . $nombreDiaHoy)) ?></h2>
+      <p class="hwc-desc">
+        <?= $sesionHoyCompletada 
+            ? '¡Excelente trabajo! Has completado el entrenamiento programado para hoy.' 
+            : 'Tienes tu sesión lista. Mantén la técnica estricta y supera tus marcas.' ?>
+      </p>
+    <?php elseif ($rutinaActiva): ?>
+      <h2 class="hwc-title">Día de Recuperación Muscular</h2>
+      <p class="hwc-desc">Hoy no tienes entrenamiento programado. Próxima rutina en agenda: <strong><?= e($rutinaActiva['nombre']) ?></strong>.</p>
+    <?php else: ?>
+      <h2 class="hwc-title">Planificación en Preparación</h2>
+      <p class="hwc-desc">Tu entrenador está estructurando tu programa de ejercicios personalizado.</p>
+    <?php endif; ?>
+  </div>
+
+  <div class="hwc-action">
+    <?php if ($esRutinaDeHoy && $rutinaActiva): ?>
+      <?php $urlTrain = APP_URL . "/cliente/rutina-dia?rutina=" . (int)$rutinaActiva['id'] . "&dia=" . (int)$diaHoy; ?>
+      <a href="<?= $urlTrain ?>" class="hwc-btn <?= $sesionHoyCompletada ? 'completed' : 'primary' ?>">
+        <span>
+          <i class="ti <?= $sesionHoyCompletada ? 'ti-check' : 'ti-player-play-filled' ?>"></i>
+          <?= $sesionHoyCompletada ? 'Ver / Editar Sesión Realizada' : 'Iniciar Entrenamiento' ?>
+        </span>
+        <i class="ti ti-chevron-right"></i>
+      </a>
+    <?php else: ?>
+      <a href="<?= APP_URL ?>/cliente/rutinas" class="hwc-btn secondary">
+        <span>
+          <i class="ti ti-calendar-event"></i>
+          Ver Agenda Semanal de Rutinas
+        </span>
+        <i class="ti ti-chevron-right"></i>
+      </a>
+    <?php endif; ?>
+  </div>
 </div>
 
 <!-- ── STAT CARDS ── -->
@@ -298,11 +847,11 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   <div class="db-stat-card">
     <div class="db-stat-top">
       <div class="db-stat-icon"><i class="ti ti-scale"></i></div>
-      <button onclick="promptNuevoPeso()" class="db-edit-weight-btn" title="Añadir registro de peso" style="background:transparent; border:1px solid rgba(163,230,53,0.3); color:#a3e635; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:4px;">
+      <button onclick="promptNuevoPeso()" class="db-edit-weight-btn" title="Añadir registro de peso">
         <i class="ti ti-plus"></i> Añadir
       </button>
     </div>
-    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:flex-end">
+    <div class="db-peso-row">
       <div>
         <div class="db-stat-label">Peso Actual</div>
         <div class="db-stat-value">
@@ -310,9 +859,9 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
         </div>
       </div>
       <?php if($pesoInicial > 0 && $pesoActual > 0): ?>
-      <div style="text-align:right">
-        <div style="font-size:.7rem;color:#6b7280;font-weight:500">Inicial: <?= number_format($pesoInicial, 2, '.', '') ?> kg</div>
-        <div style="font-size:.82rem;font-weight:700;color:<?= ($pesoActual <= $pesoInicial ? '#a3e635' : '#38bdf8') ?>">
+      <div class="db-peso-side">
+        <div class="init-txt">Inicial: <?= number_format($pesoInicial, 2, '.', '') ?> kg</div>
+        <div class="delta-txt">
           <?= ($pesoActual - $pesoInicial > 0 ? '+' : '') . number_format($pesoActual - $pesoInicial, 2, '.', '') ?> kg
         </div>
       </div>
@@ -320,74 +869,178 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
     </div>
   </div>
 </div>
+</div><!-- end db-bento-top-row -->
 
-<!-- ── METAS ── -->
-<div class="db-metas-section">
-  <div class="db-metas-header">
-    <div class="db-metas-title">Metas</div>
-    <a href="<?= APP_URL ?>/cliente/perfil" class="db-metas-link">Ver todas →</a>
+<!-- ══════════════════════════════════════════════════════════════════
+     SECCIÓN METAS (BENTO UI & EXPANDIBLE IN-SITU – UI-UX-PRO-MAX)
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="bento-meta-wrapper" id="bentoMetaWrapper">
+
+  <!-- ── 1. ESTADO EMPTY (Omitido o Sin Meta) ── -->
+  <div class="bento-meta-card" id="bentoMetaEmptyCard" style="<?= $tieneMetaActiva ? 'display:none;' : 'display:block;' ?>">
+    <div class="bento-meta-empty-content">
+      <div class="bento-meta-empty-text">
+        <div class="bento-meta-empty-badge">
+          <i class="ti ti-target-arrow"></i> Metas de Entrenamiento
+        </div>
+        <h3 class="bento-meta-empty-title">¿Cuál es tu meta?</h3>
+        <p class="bento-meta-empty-sub">Aún no has definido tu objetivo principal. Elige tu meta para que tu rutina y exigencias se adapten a lo que buscas lograr.</p>
+      </div>
+      <div>
+        <button type="button" id="btnToggleEmptyMetaSelector" class="btn-bento-add-meta" onclick="toggleMetaSelector('empty')">
+          <i class="ti ti-plus"></i> <span id="lblBtnAddMeta">Agregar metas</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Acordeón Desplegable para Agregar Meta In-Situ -->
+    <div class="bento-meta-accordion" id="accordionEmptySelector">
+      <div class="in-situ-meta-selector" id="emptySelectorContainer"></div>
+    </div>
   </div>
-  <div class="db-metas-sub">Tu progreso en cada meta</div>
-  <div class="db-metas-bubbles">
-    <?php if(empty($objetivos)): ?>
-      <p class="db-meta-empty">Sin metas definidas. Edita tu perfil.</p>
-    <?php else: ?>
-      <?php foreach($objetivos as $obj): ?>
-      <button class="db-meta-bubble"
-              style="--meta-color: <?= e($obj['color']) ?>"
-              onclick="openMetaPanel(<?= htmlspecialchars(json_encode($obj), ENT_QUOTES) ?>)"
-              title="<?= e($obj['nombre']) ?>">
-        <i class="ti <?= e($obj['icono']) ?>"></i>
-      </button>
-      <?php endforeach; ?>
-    <?php endif; ?>
+
+  <!-- ── 2. ESTADO ACTIVO (Meta Configurada con Detalle Expandible) ── -->
+  <div class="bento-meta-card" id="bentoMetaActiveCard" style="<?= $tieneMetaActiva ? 'display:block;' : 'display:none;' ?>">
+    <div class="bento-meta-active-header" id="btnToggleActiveMetaDetail" onclick="toggleActiveMetaDetail()">
+      <div class="bento-meta-active-left">
+        <div class="bento-meta-icon-badge" id="bentoActiveIconBadge" style="color: <?= e($metaDetalle['color'] ?? '#8a2be2') ?>; border-color: <?= e($metaDetalle['color'] ?? '#8a2be2') ?>55; box-shadow: 0 0 20px <?= e($metaDetalle['color'] ?? '#8a2be2') ?>33;">
+          <i class="ti <?= e($metaDetalle['icono'] ?? 'ti-target') ?>" id="bentoActiveIcon"></i>
+        </div>
+        <div class="bento-meta-active-titles">
+          <span class="bento-meta-active-label">Tu Meta Actual</span>
+          <div class="bento-meta-active-title" id="bentoActiveTitle">
+            <?= e($metaDetalle['titulo'] ?? ($objetivo ?: 'Mi Meta')) ?>
+          </div>
+          <div class="bento-meta-active-sub" id="bentoActiveSub">
+            <?php if (!empty($metaDetalle['subnivel'])): ?>
+              <span class="badge" style="background:rgba(138,43,226,0.2);color:#c4b5fd;font-weight:700;border:1px solid rgba(138,43,226,0.3);padding:3px 8px;border-radius:6px;">
+                <i class="ti <?= e($metaDetalle['subnivel']['icono'] ?? 'ti-sparkles') ?>"></i> <?= e($metaDetalle['subnivel']['titulo']) ?>
+              </span>
+            <?php elseif (!empty($metaDetalle['custom_texto'])): ?>
+              <span class="badge" style="background:rgba(236,72,153,0.15);color:#f472b6;font-weight:700;border:1px solid rgba(236,72,153,0.3);padding:3px 8px;border-radius:6px;">
+                Personalizado
+              </span>
+            <?php else: ?>
+              <span style="color:#9ca3af;font-size:0.8rem;">Toca para desplegar detalle</span>
+            <?php endif; ?>
+          </div>
+        </div>
+      </div>
+      <div class="bento-meta-chevron" id="bentoActiveChevron">
+        <i class="ti ti-chevron-down"></i>
+      </div>
+    </div>
+
+    <!-- Acordeón Desplegable de Detalle In-Situ -->
+    <div class="bento-meta-accordion" id="accordionActiveDetail">
+      <div id="bentoActiveDetailView">
+        <div class="meta-detail-grid">
+          <!-- Columna 1: Enfoque / Especificación -->
+          <div class="meta-detail-box" id="boxDetailEnfoque">
+            <div class="meta-detail-box-title">
+              <i class="ti ti-flame" style="color:#f87171;"></i> Enfoque del Entrenamiento
+            </div>
+            <div class="meta-detail-box-val" id="detailEnfoqueDesc">
+              <?php if (!empty($metaDetalle['subnivel'])): ?>
+                <strong><?= e($metaDetalle['subnivel']['titulo']) ?>:</strong> <?= e($metaDetalle['subnivel']['subtitulo'] ?: 'Enfoque de hipertrofia y simetría muscular.') ?>
+              <?php elseif (!empty($metaDetalle['custom_texto'])): ?>
+                <strong>Meta Personalizada:</strong> <?= e($metaDetalle['custom_texto']) ?>
+              <?php else: ?>
+                <?= e($metaDetalle['titulo'] ?? 'Entrenamiento balanceado adaptado a tu condición física.') ?>
+              <?php endif; ?>
+            </div>
+          </div>
+
+          <!-- Columna 2: Claves de Éxito -->
+          <div class="meta-detail-box" id="boxDetailClaves">
+            <div class="meta-detail-box-title">
+              <i class="ti ti-sparkles" style="color:#38bdf8;"></i> Claves de Consistencia
+            </div>
+            <div class="meta-detail-box-val" id="detailClavesDesc">
+              Prioriza la sobrecarga progresiva, ejecución técnica impecable y nutrición adecuada para maximizar tu adaptación.
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones in-situ -->
+        <div class="bento-meta-actions">
+          <button type="button" class="btn-bento-change" onclick="openChangeMetaSelector()">
+            <i class="ti ti-replace"></i> Cambiar mi meta
+          </button>
+        </div>
+      </div>
+
+      <!-- Selector In-Situ para cambiar meta dentro del estado activo -->
+      <div id="bentoChangeMetaSelector" style="display:none; margin-top:14px;">
+        <div class="in-situ-meta-selector" id="changeSelectorContainer"></div>
+      </div>
+    </div>
   </div>
+
 </div>
 
 <!-- ── TIENDA DE CONSUMIBLES ── -->
 <style>
 /* Estilos Tienda Cliente */
 #tiendaSection {
-  background: #1e1e1e;
+  background: var(--card-glass, #121217);
   border-radius: 20px;
-  padding: 20px 16px;
+  padding: 18px 16px;
   margin: 16px;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: all 0.3s ease;
 }
 
 .t-header {
   display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+  transition: all 0.25s ease;
+}
+#tiendaSection.open .t-header {
   border-bottom: 1px solid rgba(255,255,255,0.06);
-  padding-bottom: 16px;
-  margin-bottom: 20px;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
 }
 .t-header-left {
   display: flex; align-items: center; gap: 8px;
-  font-size: 1.05rem; font-weight: 500; color: #fff; letter-spacing: 0.5px;
+  font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: 0.5px;
 }
-.t-header-left i { font-size: 1.4rem; color: #fff; }
-.t-header-right { position: relative; }
-.t-header-right i { font-size: 1.4rem; color: #9ca3af; }
-.t-cart-badge {
-  position: absolute; top: -6px; right: -8px;
-  background: #e2e8f0; color: #000;
-  font-size: 0.65rem; font-weight: 800;
-  width: 16px; height: 16px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+.t-header-left i { font-size: 1.35rem; color: var(--text-purple, #b388ff); }
+.t-header-right { display: flex; align-items: center; gap: 6px; }
+.t-chevron {
+  font-size: 1.3rem; color: var(--text-purple, #b388ff);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#tiendaSection.open .t-chevron {
+  transform: rotate(180deg);
+}
+
+.t-collapsible-body {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+}
+#tiendaSection.open .t-collapsible-body {
+  max-height: 4000px;
+  opacity: 1;
 }
 
 .t-filters {
-  display: flex; background: #3f3f46; border-radius: 30px;
+  display: flex; background: rgba(255,255,255,0.06); border-radius: 30px;
   padding: 4px; gap: 4px; margin-bottom: 20px;
 }
 .t-filter-btn {
   flex: 1; text-align: center; padding: 10px 4px;
-  border-radius: 30px; color: #a1a1aa; font-size: 0.72rem; font-weight: 500;
+  border-radius: 30px; color: #a1a1aa; font-size: 0.72rem; font-weight: 600;
   text-transform: uppercase; cursor: pointer; transition: all 0.2s;
   border: none; background: transparent; letter-spacing: 0.5px;
 }
 .t-filter-btn.active {
-  background: #e2e8f0; color: #000; font-weight: 600;
+  background: var(--accent-primary, #8a2be2); color: #fff; font-weight: 700;
+  box-shadow: 0 2px 10px rgba(138,43,226,0.35);
 }
 
 .t-grid {
@@ -487,14 +1140,18 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 .t-card-glass-btn span { position: relative; z-index: 3; text-decoration: none; border: none; background-color: transparent; color: #fff; }
 </style>
 
-<div id="tiendaSection">
-  <div class="t-header">
+<div id="tiendaSection" class="open">
+  <div class="t-header" onclick="toggleTiendaSection()" title="Toca para abrir o cerrar">
     <div class="t-header-left">
-      <i class="ti ti-shopping-cart"></i>
-      TIENDA DE CONSUMIBLES
+      <i class="ti ti-bolt"></i>
+      <span style="letter-spacing: 1px;">SUPLEMENTOS</span>
+    </div>
+    <div class="t-header-right">
+      <i class="ti ti-chevron-down t-chevron" id="tiendaChevron"></i>
     </div>
   </div>
 
+  <div class="t-collapsible-body" id="tiendaBody">
   <!-- Filters -->
   <div class="t-filters">
     <button class="t-filter-btn active" onclick="filtrarTienda('todos', this)">Todos</button>
@@ -557,7 +1214,9 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
       <p style="color:#6b7280;text-align:center;grid-column:1/-1;padding:20px 0;">No hay productos disponibles.</p>
     <?php endif; ?>
   </div>
+  </div>
 </div>
+</div><!-- end xp-client-container -->
 
 <!-- ── PANEL DETALLE DE META ── -->
 <div class="meta-overlay" id="metaOverlay" onclick="if(event.target===this)closeMetaPanel()">
@@ -757,8 +1416,486 @@ function agregarAlCarrito(nombre, precio) {
 }
 
 function toggleNotifDropdown() {
-  document.getElementById('notifDropdown').classList.toggle('open');
+  const btn = document.getElementById('btnCliNotifToggle');
+  if (btn && typeof toggleXpNotifDropdown === 'function') {
+    toggleXpNotifDropdown(btn);
+  }
+}
+
+// ── Toggle Tienda de Suplementos (Acordeón Plegable) ──
+function toggleTiendaSection() {
+  const sec = document.getElementById('tiendaSection');
+  if (!sec) return;
+  const isOpen = sec.classList.toggle('open');
+  try {
+    localStorage.setItem('tienda_suplementos_open', isOpen ? '1' : '0');
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const sec = document.getElementById('tiendaSection');
+  if (sec) {
+    const saved = localStorage.getItem('tienda_suplementos_open');
+    if (saved === '0') {
+      sec.classList.remove('open');
+    } else if (saved === '1') {
+      sec.classList.add('open');
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════════
+//   BENTO METAS (Expansible In-Situ & Sin Recargas)
+// ═══════════════════════════════════════════════════════
+let CURRENT_META = <?= json_encode($metaDetalle, JSON_UNESCAPED_UNICODE) ?>;
+let selectedGoalTemp = CURRENT_META?.id || (CURRENT_META?.custom_texto ? 'otros' : null);
+let selectedSublevelTemp = CURRENT_META?.subnivel?.clave || 'estetico';
+
+function toggleActiveMetaDetail() {
+  const card = document.getElementById('bentoMetaActiveCard');
+  const acc = document.getElementById('accordionActiveDetail');
+  if (!card || !acc) return;
+
+  const isExpanded = card.classList.toggle('expanded');
+  if (isExpanded) {
+    acc.classList.add('open');
+    acc.style.maxHeight = (acc.scrollHeight + 120) + 'px';
+  } else {
+    acc.classList.remove('open');
+    acc.style.maxHeight = '0';
+    closeChangeMetaSelector();
+  }
+}
+
+function toggleMetaSelector(mode) {
+  const accEmpty = document.getElementById('accordionEmptySelector');
+  const lblBtn = document.getElementById('lblBtnAddMeta');
+  if (!accEmpty) return;
+
+  const isOpen = accEmpty.classList.contains('open');
+  if (isOpen) {
+    accEmpty.classList.remove('open');
+    accEmpty.style.maxHeight = '0';
+    if (lblBtn) lblBtn.textContent = 'Agregar metas';
+  } else {
+    renderDashboardMetaSelector('emptySelectorContainer');
+    accEmpty.classList.add('open');
+    accEmpty.style.maxHeight = (accEmpty.scrollHeight + 800) + 'px';
+    if (lblBtn) lblBtn.textContent = 'Cerrar selector';
+  }
+}
+
+function openChangeMetaSelector() {
+  const detailView = document.getElementById('bentoActiveDetailView');
+  const changeSelector = document.getElementById('bentoChangeMetaSelector');
+  const acc = document.getElementById('accordionActiveDetail');
+  if (!detailView || !changeSelector) return;
+
+  detailView.style.display = 'none';
+  changeSelector.style.display = 'block';
+  renderDashboardMetaSelector('changeSelectorContainer');
+
+  if (acc) {
+    acc.style.maxHeight = (acc.scrollHeight + 800) + 'px';
+  }
+}
+
+function closeChangeMetaSelector() {
+  const detailView = document.getElementById('bentoActiveDetailView');
+  const changeSelector = document.getElementById('bentoChangeMetaSelector');
+  const acc = document.getElementById('accordionActiveDetail');
+  if (!detailView || !changeSelector) return;
+
+  detailView.style.display = 'block';
+  changeSelector.style.display = 'none';
+  if (acc && acc.classList.contains('open')) {
+    acc.style.maxHeight = (acc.scrollHeight + 80) + 'px';
+  }
+}
+
+function closeDashboardMetaSelector() {
+  const accEmpty = document.getElementById('accordionEmptySelector');
+  if (accEmpty && accEmpty.classList.contains('open')) {
+    toggleMetaSelector('empty');
+  }
+  closeChangeMetaSelector();
+}
+
+function renderDashboardMetaSelector(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  selectedGoalTemp = CURRENT_META?.id || (CURRENT_META?.custom_texto ? 'otros' : 'perder_grasa');
+  selectedSublevelTemp = CURRENT_META?.subnivel?.clave || 'estetico';
+
+  const needsStep2 = (id) => (id === 'ganar_masa' || id === 'otros');
+
+  const html = `
+    <div class="meta-wizard-container" id="${containerId}_wizard">
+      <!-- ── PASO 1: SELECCIÓN DE META PRINCIPAL ── -->
+      <div id="${containerId}_step1" class="meta-wizard-step" style="display:block;">
+        <div class="meta-step-header">
+          <span class="meta-step-pill" id="${containerId}_step1Pill">${needsStep2(selectedGoalTemp) ? 'Paso 1 de 2' : 'Meta Principal'}</span>
+          <h4 class="meta-step-title">Selecciona tu Meta Principal</h4>
+          <p class="meta-step-sub">Elige el objetivo que orientará tus rutinas y entrenamientos:</p>
+        </div>
+
+        <div class="goals-grid" id="${containerId}_goalsGrid">
+          <div class="goal-chip ${selectedGoalTemp === 'perder_grasa' ? 'selected' : ''}" data-id="perder_grasa" data-title="Perder grasa / Definición" data-category="definicion" data-icon="ti-flame" data-color="#f87171" role="button" tabindex="0">
+            <span class="goal-chip-icon"><i class="ti ti-flame"></i></span>
+            <div class="goal-chip-title">Perder grasa / Definición</div>
+          </div>
+
+          <div class="goal-chip ${selectedGoalTemp === 'ganar_masa' ? 'selected' : ''}" data-id="ganar_masa" data-title="Ganar masa muscular (Hipertrofia)" data-category="hipertrofia" data-icon="ti-barbell" data-color="#818cf8" role="button" tabindex="0">
+            <span class="goal-chip-icon"><i class="ti ti-barbell"></i></span>
+            <div class="goal-chip-title">Ganar masa muscular (Hipertrofia)</div>
+          </div>
+
+          <div class="goal-chip ${selectedGoalTemp === 'fuerza_maxima' ? 'selected' : ''}" data-id="fuerza_maxima" data-title="Aumentar fuerza máxima" data-category="fuerza" data-icon="ti-bolt" data-color="#fbbf24" role="button" tabindex="0">
+            <span class="goal-chip-icon"><i class="ti ti-bolt"></i></span>
+            <div class="goal-chip-title">Aumentar fuerza máxima</div>
+          </div>
+
+          <div class="goal-chip ${selectedGoalTemp === 'recomposicion' ? 'selected' : ''}" data-id="recomposicion" data-title="Recomposición corporal" data-category="recomposicion" data-icon="ti-refresh" data-color="#a855f7" role="button" tabindex="0">
+            <span class="goal-chip-icon"><i class="ti ti-refresh"></i></span>
+            <div class="goal-chip-title">Recomposición corporal</div>
+          </div>
+
+          <div class="goal-chip ${selectedGoalTemp === 'resistencia' ? 'selected' : ''}" data-id="resistencia" data-title="Mejorar resistencia y condición" data-category="resistencia" data-icon="ti-run" data-color="#22c55e" role="button" tabindex="0">
+            <span class="goal-chip-icon"><i class="ti ti-run"></i></span>
+            <div class="goal-chip-title">Mejorar resistencia y condición</div>
+          </div>
+
+          <div class="goal-chip ${selectedGoalTemp === 'salud_bienestar' ? 'selected' : ''}" data-id="salud_bienestar" data-title="Salud y bienestar general" data-category="salud" data-icon="ti-heart" data-color="#38bdf8" role="button" tabindex="0">
+            <span class="goal-chip-icon"><i class="ti ti-heart"></i></span>
+            <div class="goal-chip-title">Salud y bienestar general</div>
+          </div>
+
+          <!-- Opción Otros -->
+          <div class="goal-chip goal-chip-otros ${selectedGoalTemp === 'otros' ? 'selected' : ''}" data-id="otros" data-title="Objetivo Personalizado" data-category="personalizado" data-icon="ti-edit" data-color="#ec4899" role="button" tabindex="0">
+            <span class="goal-chip-icon"><i class="ti ti-edit"></i></span>
+            <div class="goal-chip-title">Otros (Personalizado)</div>
+          </div>
+        </div>
+
+        <div class="bento-meta-actions" style="margin-top:14px;">
+          <button type="button" class="btn-bento-change" onclick="closeDashboardMetaSelector()">
+            Cancelar
+          </button>
+          <button type="button" id="${containerId}_btnStep1Next" class="btn-bento-add-meta" onclick="handleDashboardMetaStep1Next('${containerId}')" style="padding:10px 20px; font-size:0.86rem;">
+            <!-- Contenido dinámico Siguiente o Guardar -->
+          </button>
+        </div>
+      </div>
+
+      <!-- ── PASO 2: ENFOQUE ESPECÍFICO (SOLO TRAS CLIC EN SIGUIENTE) ── -->
+      <div id="${containerId}_step2" class="meta-wizard-step" style="display:none;">
+        <div class="meta-step-header">
+          <span class="meta-step-pill">Paso 2 de 2</span>
+          <h4 class="meta-step-title" id="${containerId}_step2Title">Personaliza tu Enfoque</h4>
+          <p class="meta-step-sub" id="${containerId}_step2Sub">Ajusta el detalle de tu objetivo:</p>
+        </div>
+
+        <!-- Sub-Nivel de Hipertrofia (Drill-Down) -->
+        <div id="${containerId}_boxSubHipertrofia" class="subnivel-drilldown-box" style="display:none;">
+          <div class="subnivel-cards-grid">
+            <div class="subnivel-card ${selectedSublevelTemp === 'estetico' ? 'selected' : ''}" data-sub="estetico" role="button" tabindex="0">
+              <div class="subnivel-silhouette"><i class="ti ti-sparkles" style="color:#38bdf8;"></i></div>
+              <div class="subnivel-card-title">Físico Estético</div>
+              <div class="subnivel-card-desc">Definición atlética, cintura estrecha y proporciones simétricas clásicas.</div>
+              <span class="subnivel-card-pill">Simetría & V-Taper</span>
+            </div>
+            <div class="subnivel-card ${selectedSublevelTemp === 'culturista' ? 'selected' : ''}" data-sub="culturista" role="button" tabindex="0">
+              <div class="subnivel-silhouette"><i class="ti ti-barbell" style="color:#818cf8;"></i></div>
+              <div class="subnivel-card-title">Fisicoculturista</div>
+              <div class="subnivel-card-desc">Máxima hipertrofia muscular, densidad, volumen y fuerza extrema.</div>
+              <span class="subnivel-card-pill">Volumen & Densidad</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Burbuja para 'Otros' -->
+        <div id="${containerId}_boxOtros" class="meta-otros-expandable" style="display:none; margin-top:10px;">
+          <div class="meta-otros-bubble">
+            <label class="meta-otros-label"><i class="ti ti-sparkles"></i> ¿Cuál es tu meta específica?</label>
+            <div class="meta-otros-input-wrap">
+              <input type="text" id="${containerId}_inputOtros" maxlength="150" value="${CURRENT_META?.custom_texto || ''}" placeholder="Ej: Calistenia, Maratón, Rehabilitación..." class="meta-otros-input" autocomplete="off">
+            </div>
+          </div>
+        </div>
+
+        <div class="bento-meta-actions" style="margin-top:18px;">
+          <button type="button" class="btn-bento-change" onclick="goToDashboardMetaStep('${containerId}', 1)">
+            <i class="ti ti-arrow-left"></i> Atrás
+          </button>
+          <button type="button" class="btn-bento-add-meta" onclick="saveDashboardMeta('${containerId}')" style="padding:10px 20px; font-size:0.86rem;">
+            <i class="ti ti-check"></i> Guardar mi Meta
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  container.innerHTML = html;
+
+  function updateStep1Button() {
+    const btnNext = document.getElementById(`${containerId}_btnStep1Next`);
+    const pill = document.getElementById(`${containerId}_step1Pill`);
+    if (!btnNext) return;
+
+    if (needsStep2(selectedGoalTemp)) {
+      btnNext.innerHTML = '<span>Siguiente</span> <i class="ti ti-arrow-right"></i>';
+      if (pill) pill.textContent = 'Paso 1 de 2';
+    } else {
+      btnNext.innerHTML = '<i class="ti ti-check"></i> <span>Guardar mi Meta</span>';
+      if (pill) pill.textContent = 'Selección Directa';
+    }
+  }
+
+  updateStep1Button();
+
+  // Listeners para los chips del selector
+  const chips = container.querySelectorAll('.goal-chip');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      selectedGoalTemp = chip.getAttribute('data-id');
+      updateStep1Button();
+    });
+  });
+
+  // Listeners para las tarjetas de subnivel
+  const subCards = container.querySelectorAll('.subnivel-card');
+  subCards.forEach(sc => {
+    sc.addEventListener('click', () => {
+      subCards.forEach(c => c.classList.remove('selected'));
+      sc.classList.add('selected');
+      selectedSublevelTemp = sc.getAttribute('data-sub') || 'estetico';
+    });
+  });
+}
+
+function handleDashboardMetaStep1Next(containerId) {
+  if (!selectedGoalTemp) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ icon: 'warning', title: 'Selecciona una meta', text: 'Por favor elige un objetivo.', background: '#111827', color: '#fff' });
+    } else {
+      alert('Por favor selecciona una meta.');
+    }
+    return;
+  }
+
+  if (selectedGoalTemp === 'ganar_masa' || selectedGoalTemp === 'otros') {
+    goToDashboardMetaStep(containerId, 2);
+  } else {
+    saveDashboardMeta(containerId);
+  }
+}
+
+function goToDashboardMetaStep(containerId, stepNum) {
+  const step1 = document.getElementById(`${containerId}_step1`);
+  const step2 = document.getElementById(`${containerId}_step2`);
+  const container = document.getElementById(containerId);
+  if (!step1 || !step2) return;
+
+  if (stepNum === 2) {
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+
+    const boxHiper = document.getElementById(`${containerId}_boxSubHipertrofia`);
+    const boxOtros = document.getElementById(`${containerId}_boxOtros`);
+    const titleEl  = document.getElementById(`${containerId}_step2Title`);
+    const subEl    = document.getElementById(`${containerId}_step2Sub`);
+
+    if (selectedGoalTemp === 'ganar_masa') {
+      if (boxHiper) boxHiper.style.display = 'block';
+      if (boxOtros) boxOtros.style.display = 'none';
+      if (titleEl) titleEl.textContent = '¿Hasta dónde quieres llegar?';
+      if (subEl) subEl.textContent = 'Selecciona el enfoque muscular que define tu objetivo:';
+    } else if (selectedGoalTemp === 'otros') {
+      if (boxHiper) boxHiper.style.display = 'none';
+      if (boxOtros) {
+        boxOtros.style.display = 'block';
+        boxOtros.style.opacity = '1';
+        boxOtros.style.maxHeight = '140px';
+      }
+      if (titleEl) titleEl.textContent = 'Meta Personalizada';
+      if (subEl) subEl.textContent = 'Escribe tu objetivo físico específico:';
+      setTimeout(() => {
+        document.getElementById(`${containerId}_inputOtros`)?.focus();
+      }, 150);
+    }
+  } else {
+    step2.style.display = 'none';
+    step1.style.display = 'block';
+  }
+
+  const acc = container.closest('.bento-meta-accordion');
+  if (acc && acc.classList.contains('open')) {
+    setTimeout(() => {
+      acc.style.maxHeight = (acc.scrollHeight + 600) + 'px';
+    }, 80);
+  }
+}
+
+async function saveDashboardMeta(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const activeChip = container.querySelector('.goal-chip.selected');
+  if (!activeChip) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ icon: 'warning', title: 'Selecciona una meta', text: 'Por favor elige un objetivo antes de guardar.', background: '#111827', color: '#fff' });
+    } else {
+      alert('Por favor selecciona una meta.');
+    }
+    return;
+  }
+
+  const id = activeChip.getAttribute('data-id');
+  const titulo = activeChip.getAttribute('data-title');
+  const categoria = activeChip.getAttribute('data-category');
+  const icono = activeChip.getAttribute('data-icon');
+  const color = activeChip.getAttribute('data-color');
+
+  let subnivel = null;
+  let customTexto = null;
+
+  if (id === 'otros') {
+    const input = document.getElementById(`${containerId}_inputOtros`);
+    customTexto = (input?.value || '').trim();
+    if (!customTexto) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: 'warning', title: 'Meta personalizada', text: 'Por favor escribe tu objetivo personalizado.', background: '#111827', color: '#fff' });
+      } else {
+        alert('Por favor escribe tu objetivo personalizado.');
+      }
+      input?.focus();
+      return;
+    }
+  } else if (id === 'ganar_masa') {
+    const isCulturista = (selectedSublevelTemp === 'culturista');
+    subnivel = isCulturista ? {
+      clave: 'culturista',
+      titulo: 'Fisicoculturista',
+      subtitulo: 'Máxima hipertrofia muscular, densidad, volumen y fuerza extrema.',
+      silueta: 'culturista',
+      icono: 'ti-barbell'
+    } : {
+      clave: 'estetico',
+      titulo: 'Físico Estético',
+      subtitulo: 'Definición atlética, cintura estrecha y proporciones simétricas clásicas.',
+      silueta: 'estetico',
+      icono: 'ti-sparkles'
+    };
+  }
+
+  const payload = {
+    csrf_token: typeof CSRF !== 'undefined' ? CSRF : '',
+    id: id,
+    titulo: titulo,
+    categoria: categoria,
+    icono: icono,
+    color: color,
+    subnivel: subnivel,
+    custom_texto: customTexto,
+    omitido: false
+  };
+
+  try {
+    const resp = await fetch('<?= APP_URL ?>/cliente/api-guardar-meta', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': typeof CSRF !== 'undefined' ? CSRF : ''
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const res = await resp.json();
+    if (res.ok && res.meta) {
+      CURRENT_META = res.meta;
+
+      // Actualizar tarjeta activa en el DOM
+      const titleEl = document.getElementById('bentoActiveTitle');
+      const subEl = document.getElementById('bentoActiveSub');
+      const iconEl = document.getElementById('bentoActiveIcon');
+      const badgeEl = document.getElementById('bentoActiveIconBadge');
+      const descEnfoque = document.getElementById('detailEnfoqueDesc');
+
+      if (titleEl) titleEl.textContent = res.meta.titulo;
+      if (iconEl) iconEl.className = 'ti ' + (res.meta.icono || 'ti-target');
+      if (badgeEl) {
+        badgeEl.style.color = res.meta.color || '#8a2be2';
+        badgeEl.style.borderColor = (res.meta.color || '#8a2be2') + '55';
+        badgeEl.style.boxShadow = `0 0 20px ${(res.meta.color || '#8a2be2')}33`;
+      }
+
+      if (subEl) {
+        if (res.meta.subnivel) {
+          subEl.innerHTML = `<span class="badge" style="background:rgba(138,43,226,0.2);color:#c4b5fd;font-weight:700;border:1px solid rgba(138,43,226,0.3);padding:3px 8px;border-radius:6px;"><i class="ti ${res.meta.subnivel.icono || 'ti-sparkles'}"></i> ${res.meta.subnivel.titulo}</span>`;
+        } else if (res.meta.custom_texto) {
+          subEl.innerHTML = `<span class="badge" style="background:rgba(236,72,153,0.15);color:#f472b6;font-weight:700;border:1px solid rgba(236,72,153,0.3);padding:3px 8px;border-radius:6px;">Personalizado</span>`;
+        } else {
+          subEl.innerHTML = `<span style="color:#9ca3af;font-size:0.8rem;">Toca para desplegar detalle</span>`;
+        }
+      }
+
+      if (descEnfoque) {
+        if (res.meta.subnivel) {
+          descEnfoque.innerHTML = `<strong>${res.meta.subnivel.titulo}:</strong> ${res.meta.subnivel.subtitulo}`;
+        } else if (res.meta.custom_texto) {
+          descEnfoque.innerHTML = `<strong>Meta Personalizada:</strong> ${res.meta.custom_texto}`;
+        } else {
+          descEnfoque.textContent = res.meta.titulo;
+        }
+      }
+
+      // Transición visual: si estábamos en Empty State, mostrar Active State
+      const emptyCard = document.getElementById('bentoMetaEmptyCard');
+      const activeCard = document.getElementById('bentoMetaActiveCard');
+      if (emptyCard && activeCard) {
+        emptyCard.style.display = 'none';
+        activeCard.style.display = 'block';
+        activeCard.classList.remove('anim-bubble-pop');
+        void activeCard.offsetWidth;
+        activeCard.classList.add('anim-bubble-pop');
+      }
+
+      // Cerrar acordeones
+      closeDashboardMetaSelector();
+
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Meta configurada!',
+          text: 'Tu nuevo objetivo se ha guardado exitosamente.',
+          background: '#111827',
+          color: '#fff',
+          confirmButtonColor: '#8a2be2',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } else {
+        alert('¡Meta actualizada con éxito!');
+      }
+    } else {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: 'error', title: 'Error', text: res.msg || 'No se pudo guardar la meta.', background: '#111827', color: '#fff' });
+      } else {
+        alert(res.msg || 'Error al guardar');
+      }
+    }
+  } catch (err) {
+    console.error('Error guardando meta:', err);
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ icon: 'error', title: 'Error de conexión', text: err.message, background: '#111827', color: '#fff' });
+    } else {
+      alert('Error de conexión');
+    }
+  }
 }
 </script>
 
-<?php require __DIR__ . '/../layout/footer.php'; ?>
+<?php $hideFooter = true; require __DIR__ . '/../layout/footer.php'; ?>

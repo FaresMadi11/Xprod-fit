@@ -1,37 +1,62 @@
 <?php $pageTitle='Mis Atletas'; require __DIR__.'/../layout/header.php'; ?>
 
-<!-- ── PAGE HEADER ─────────────────────────────────────── -->
-<div class="page-header d-flex justify-content-between align-items-center mb-0">
-  <div class="d-flex align-items-center gap-3">
-    <button onclick="history.back()" class="btn-xp btn-secondary" style="padding:8px 12px;flex-shrink:0">
-      <i class="ti ti-arrow-left"></i>
-    </button>
-    <div>
-      <h2><i class="ti ti-users" style="color:var(--accent)"></i> Mis Atletas</h2>
-      <p>Gestiona los perfiles y métricas de tus atletas.</p>
-    </div>
-  </div>
-  <div class="d-flex gap-2 align-items-center flex-wrap" style="margin-top:10px">
-    <a href="<?= APP_URL ?>/entrenador/registrar-cliente" class="btn-xp btn-primary">
-      <i class="ti ti-user-plus"></i> Nuevo Atleta
-    </a>
-  </div>
-</div>
-
 <?php $totalPendientes = count($modificacionesPendientes ?? []); ?>
 
-<!-- ── FILTER TOGGLE ───────────────────────────────────── -->
-<div class="atletas-filter-bar" id="filterBar">
-  <button class="atletas-filter-btn active" id="btnTodos" onclick="setFilter('todos')">
-    <i class="ti ti-users"></i> Todos
-  </button>
-  <button class="atletas-filter-btn" id="btnModificar" onclick="setFilter('modificar')">
-    <i class="ti ti-exchange"></i> Modificar Rutina
-    <?php if($totalPendientes > 0): ?>
-      <span class="filter-badge"><?= $totalPendientes ?></span>
-    <?php endif; ?>
-  </button>
+<!-- ── PAGE HEADER ─────────────────────────────────────── -->
+<div class="cl-header">
+  <div class="cl-header-top">
+    <div class="cl-title-group">
+      <span class="cl-eyebrow">Directorio</span>
+      <h1 class="cl-title">
+        Mis Atletas
+        <span class="cl-count-badge"><?= count($clientes) ?></span>
+      </h1>
+    </div>
+    <a href="<?= APP_URL ?>/entrenador/registrar-cliente" class="cl-add-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14m-7-7h14"/></svg>
+      <span class="cl-add-label">Nuevo</span>
+    </a>
+  </div>
+
+  <!-- Buscador -->
+  <div class="cl-search-wrap" id="clSearchWrap">
+    <span class="cl-search-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"/></svg>
+    </span>
+    <input type="search" class="cl-search-input" id="clSearch" placeholder="Buscar atleta..." autocomplete="off" oninput="buscarAtleta(this.value)">
+    <button class="cl-search-clear" id="clSearchClear" onclick="limpiarBusqueda()" style="display:none" aria-label="Limpiar búsqueda">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+
 </div>
+
+<?php if(!empty($solicitudesPendientes)): ?>
+  <div class="glass-surface mb-4" style="padding: 18px; border-radius: 18px; border: 1px solid rgba(251,191,36,0.3); margin-bottom: 24px;">
+    <h3 style="font-size: 1.15rem; font-weight: 700; color: #facc15; margin-top: 0; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+      <i class="ti ti-user-plus"></i> Nuevas Solicitudes (<?= count($solicitudesPendientes) ?>)
+    </h3>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <?php foreach ($solicitudesPendientes as $solicitud): ?>
+        <div class="solicitud-card" id="solicitud-<?= $solicitud['usuario_id'] ?>" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); transition: all 0.25s;">
+          <div>
+            <div style="font-weight: 600; color: #fff; font-size: 1rem; margin-bottom: 2px;"><?= e($solicitud['nombre']) ?></div>
+            <div style="color: rgba(255,255,255,0.5); font-size: 0.85rem;"><i class="ti ti-mail"></i> <?= e($solicitud['email']) ?></div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-xp" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); border-radius: 10px; cursor: pointer; transition: all 0.2s;" onclick="gestionarSolicitud(<?= $solicitud['usuario_id'] ?>, 'aprobar')" onmouseover="this.style.background='rgba(16,185,129,0.25)'" onmouseout="this.style.background='rgba(16,185,129,0.15)'">
+              <i class="ti ti-check"></i> Aceptar
+            </button>
+            <button class="btn-xp" style="padding: 8px 14px; font-size: 0.85rem; background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; cursor: pointer; transition: all 0.2s;" onclick="gestionarSolicitud(<?= $solicitud['usuario_id'] ?>, 'rechazar')" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">
+              <i class="ti ti-x"></i> Rechazar
+            </button>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+<?php endif; ?>
 
 <?php if(empty($clientes)): ?>
   <div class="card-bento" style="text-align:center;padding:40px 20px">
@@ -43,555 +68,314 @@
   </div>
 <?php else: ?>
 
-  <!-- ── PANEL "MODIFICAR RUTINA" ──────────────────────── -->
-  <div id="panelModificar" style="display:none">
-    <?php if($totalPendientes === 0): ?>
-      <div class="card-bento" style="text-align:center;padding:36px 20px">
-        <i class="ti ti-check" style="font-size:2.5rem;color:var(--success);display:block;margin-bottom:12px"></i>
-        <p style="color:var(--muted);font-size:.95rem">No hay solicitudes de modificación pendientes. ✓</p>
-      </div>
-    <?php else: ?>
-      <div style="display:grid;gap:14px">
-        <?php foreach(($modificacionesPendientes ?? []) as $cId => $mod): ?>
-        <div class="mod-request-card">
-          <div class="mod-request-left">
-            <div class="mod-avatar"><?= strtoupper(substr($mod['atleta'],0,1)) ?></div>
-            <div>
-              <div class="mod-name"><?= e($mod['atleta']) ?></div>
-              <div class="mod-meta">
-                <span class="badge-xp <?= $mod['tipo_modificacion'] === 'permanente' ? 'badge-info' : 'badge-warn' ?>">
-                  <?= $mod['tipo_modificacion'] === 'permanente' ? 'Permanente' : 'Temporal' ?>
-                </span>
-                <span style="color:var(--muted);font-size:.8rem"><?= date('d/m/Y', strtotime($mod['creado_en'])) ?></span>
-              </div>
-              <?php if($mod['descripcion']): ?>
-                <p style="margin:6px 0 0;font-size:.82rem;color:#cbd5e1;font-style:italic">"<?= e($mod['descripcion']) ?>"</p>
-              <?php endif; ?>
-            </div>
-          </div>
-          <a href="<?= APP_URL ?>/entrenador/revisar-modificacion?id=<?= $mod['rutina_id'] ?>"
-             class="btn-xp btn-primary" style="white-space:nowrap;font-size:.82rem;padding:8px 16px">
-            <i class="ti ti-eye"></i> Ver / Titular
-          </a>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-  </div>
 
-  <!-- ── GRID DE ATLETAS ────────────────────────────────── -->
+  <!-- ── GRID DE ATLETAS (desktop) / LISTA INSTAGRAM (mobile) ── -->
   <div class="atletas-grid" id="atletasGrid">
-    <?php foreach($clientes as $c):
+    <?php
+    $colors = ['#7c3aed','#ec4899','#f97316','#10b981','#3b82f6','#ef4444','#8b5cf6','#06b6d4','#f59e0b','#6366f1'];
+    foreach($clientes as $i => $c):
       $parts     = explode(' ', trim($c['nombre']));
       $firstName = $parts[0] ?? '';
       $lastName  = $parts[1] ?? '';
       $shortName = trim($firstName . ' ' . $lastName);
       $hasMod    = isset($modificacionesPendientes[$c['cliente_id']]);
+      $initial   = strtoupper(substr($firstName, 0, 1));
+      $color     = $colors[$i % count($colors)];
     ?>
-    <div class="at-card<?= $hasMod ? ' has-mod' : '' ?>"
-         data-href="<?= APP_URL ?>/entrenador/perfil-cliente?id=<?= $c['cliente_id'] ?>">
+    <a class="ig-card glass-surface<?= $hasMod ? ' has-mod' : '' ?>"
+       href="<?= APP_URL ?>/entrenador/perfil-cliente?id=<?= $c['cliente_id'] ?>"
+       data-name="<?= strtolower(e($c['nombre'])) ?>"
+       data-email="<?= strtolower(e($c['email'])) ?>">
 
       <?php if($hasMod): ?>
-        <div class="at-mod-badge" title="Solicitud de modificación pendiente">
-          <i class="ti ti-exchange"></i>
-        </div>
+        <div class="at-mod-badge" title="Solicitud de modificacion pendiente"><i class="ti ti-exchange"></i></div>
       <?php endif; ?>
-
-      <!-- Nombre — visible por defecto -->
-      <div class="at-name-default"><?= e($shortName) ?></div>
-
-      <!-- Info y Stats — visible tras primer clic -->
-      <div class="at-textBox">
-        <button class="at-close-btn" title="Cerrar"><i class="ti ti-x"></i></button>
-        <p class="at-text at-head"><?= e($c['nombre']) ?></p>
-        <p class="at-text at-email" style="margin-top:0"><i class="ti ti-mail"></i> <?= e($c['email']) ?></p>
-        
-        <div class="stat-container" style="gap:10px">
-          <div class="stat-group">
-            <div class="stat-val" style="font-size:.9rem"><?= $c['peso_kg'] ? (float)$c['peso_kg'] . ' kg' : '--' ?></div>
-            <div class="stat-lbl" style="font-size:.55rem">Actual</div>
-          </div>
-          <?php if(!empty($c['objetivo'])): ?>
-          <div class="stat-group wide" style="margin-left: 5px; flex: 1;">
-            <div class="stat-val" style="font-size:.8rem"><?= e($c['objetivo']) ?></div>
-            <div class="stat-lbl" style="font-size:.55rem">Meta</div>
-          </div>
-          <?php endif; ?>
+      <div class="ig-avatar" style="background:<?= $color ?>"><?= $initial ?></div>
+      <div class="ig-info">
+        <div class="ig-name">
+          <?= e($shortName) ?>
+          <?php if($hasMod): ?><i class="ti ti-exchange ig-mod-icon" title="Modificacion pendiente"></i><?php endif; ?>
         </div>
-        
-        <span class="at-click-msg">Haz clic de nuevo para Ver Perfil</span>
+        <div class="ig-micro">
+          <?= $c['peso_kg'] ? (float)$c['peso_kg'] . ' kg &bull; ' : '' ?><?= e($c['email'] ?? 'Sin correo') ?>
+        </div>
       </div>
-
-    </div>
+      <div class="ig-dot<?= $hasMod ? ' ig-dot-warn' : '' ?>"></div>
+      <div class="ig-btn-wrap"><span class="ig-btn">Ver Perfil</span></div>
+    </a>
     <?php endforeach; ?>
   </div>
 
 <?php endif; ?>
 
 <style>
-/* ══════════════════════════════════════
-   FILTER BAR
-══════════════════════════════════════ */
-.atletas-filter-bar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+/* PAGE HEADER */
+.cl-header { display:flex; flex-direction:column; gap:14px; margin-bottom:24px; padding-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.06); }
+.cl-header-top { display:flex; justify-content:space-between; align-items:flex-end; }
+.cl-title-group { display:flex; flex-direction:column; gap:3px; }
+.cl-eyebrow { font-size:0.72rem; color:var(--muted); font-weight:500; letter-spacing:0.08em; text-transform:uppercase; }
+.cl-title { font-size:1.6rem; color:var(--text); font-weight:700; margin:0; letter-spacing:-0.03em; display:flex; align-items:center; gap:10px; line-height:1.1; }
+.cl-count-badge { display:inline-flex; align-items:center; justify-content:center; min-width:26px; height:22px; padding:0 7px; border-radius:100px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); font-size:0.72rem; font-weight:600; color:var(--muted); font-variant-numeric:tabular-nums; }
+.cl-add-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:10px; background:var(--accent,#8B5CF6); color:#0b0e1a; font-size:0.85rem; font-weight:600; text-decoration:none; transition:opacity 0.15s,transform 0.15s; white-space:nowrap; box-shadow:none !important; }
+.cl-add-btn:hover { opacity:0.88; transform:translateY(-1px); }
+.cl-add-btn:active { transform:scale(0.97); }
+.cl-add-label { display:inline; }
+
+/* SEARCH */
+.cl-search-wrap { position:relative; display:flex; align-items:center; background:var(--input-bg); border:1px solid rgba(255,255,255,0.18); border-radius:12px; transition:border-color 0.18s,background 0.18s; overflow:hidden; }
+.cl-search-wrap:focus-within { border-color:rgba(255,255,255,0.4); background:var(--bg3); }
+.cl-search-icon { display:flex; align-items:center; padding:0 12px 0 14px; color:var(--muted); flex-shrink:0; pointer-events:none; }
+.cl-search-input { flex:1; background:transparent; border:none; outline:none; color:var(--text); font-family:'Inter',sans-serif; font-size:0.88rem; padding:11px 0; min-width:0; }
+.cl-search-input::placeholder { color:var(--muted); opacity:0.6; }
+.cl-search-clear { display:flex; align-items:center; justify-content:center; width:32px; height:32px; margin-right:6px; border-radius:8px; border:none; background:rgba(255,255,255,0.06); color:var(--muted); cursor:pointer; flex-shrink:0; transition:background 0.15s,color 0.15s; }
+.cl-search-clear:hover { background:rgba(255,255,255,0.12); color:#fff; }
+.ig-card.search-hidden { display:none !important; }
+
+/* FILTER BAR */
+.atletas-filter-bar { display:flex; gap:8px; }
+.atletas-filter-btn { display:inline-flex; align-items:center; gap:7px; padding:8px 16px; border-radius:999px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); color:var(--muted); font-family:'Inter',sans-serif; font-size:.82rem; font-weight:600; cursor:pointer; transition:all .2s; position:relative; }
+.atletas-filter-btn:hover { border-color:rgba(94,234,212,.3); color:var(--accent); background:rgba(94,234,212,.06); }
+.atletas-filter-btn.active { background:rgba(94,234,212,.15); border-color:var(--accent); color:var(--accent); }
+.filter-badge { display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 4px; border-radius:999px; background:var(--warn); color:#0b0e1a; font-size:.68rem; font-weight:800; }
+
+/* MOD REQUEST CARD */
+.mod-request-card { display:flex; align-items:center; justify-content:space-between; gap:16px; background:var(--bg3); border:1px solid rgba(251,191,36,.25); border-radius:18px; padding:18px 20px; transition:all .22s; box-shadow:none !important; }
+.mod-request-card:hover { border-color:rgba(251,191,36,.5); transform:translateX(4px); }
+.mod-request-left { display:flex; align-items:center; gap:14px; flex:1; min-width:0; }
+.mod-avatar { width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--warn),#f59e0b); display:grid; place-items:center; color:#0b0e1a; font-weight:800; font-size:1.1rem; flex-shrink:0; }
+.mod-name { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:5px; }
+.mod-meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+/* ═══════════════════════════════════
+   GRID — ESCRITORIO (columns grid)
+   LISTA — MOVIL (instagram DM style)
+═══════════════════════════════════ */
+.atletas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+  padding: 4px 0 20px;
 }
-.atletas-filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  color: var(--muted);
-  font-family: 'Inter', sans-serif;
-  font-size: .85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all .22s cubic-bezier(.4,0,.2,1);
+
+/* ── CARD ESCRITORIO ── */
+.ig-card {
   position: relative;
+  text-decoration: none;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 14px 18px;
+  transition: transform 0.2s;
 }
-.atletas-filter-btn:hover {
-  border-color: rgba(94,234,212,.3);
-  color: var(--accent);
-  background: rgba(94,234,212,.06);
+.ig-card:hover {
+  transform: translateY(-2px);
 }
-.atletas-filter-btn.active {
-  background: rgba(94,234,212,.15);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.filter-badge {
-  display: inline-grid;
-  place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--warn);
-  color: #0b0e1a;
-  font-size: .72rem;
-  font-weight: 800;
-  line-height: 1;
+.ig-card.has-mod { border-color: rgba(251,191,36,.5) !important; }
+
+.at-mod-badge {
+  position: absolute; top:9px; right:9px;
+  width:22px; height:22px; border-radius:50%;
+  background:var(--warn); color:#0b0e1a;
+  display:grid; place-items:center; font-size:10px; z-index:10;
   animation: pulse-badge 2s infinite;
 }
 @keyframes pulse-badge {
-  0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,.4); }
-  50%      { box-shadow: 0 0 0 6px rgba(251,191,36,0); }
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
 }
 
-/* ══════════════════════════════════════
-   MOD REQUEST CARD
-══════════════════════════════════════ */
-.mod-request-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(251,191,36,.25);
-  border-radius: 18px;
-  padding: 18px 20px;
-  backdrop-filter: blur(8px);
-  transition: all .22s cubic-bezier(.4,0,.2,1);
-  animation: slideIn .3s ease both;
-}
-.mod-request-card:hover {
-  border-color: rgba(251,191,36,.5);
-  transform: translateX(4px);
-}
-@keyframes slideIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.mod-request-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex: 1;
-  min-width: 0;
-}
-.mod-avatar {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--warn), #f59e0b);
+/* Avatar */
+.ig-avatar {
+  width: 58px; height: 58px;
+  border-radius: 8px; /* Square */
   display: grid; place-items: center;
-  color: #0b0e1a; font-weight: 800; font-size: 1.1rem;
+  font-size: 1.35rem; font-weight: 800; color: #fff;
   flex-shrink: 0;
-}
-.mod-name  { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 5px; }
-.mod-meta  { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-
-/* ══════════════════════════════════════
-   GRID
-══════════════════════════════════════ */
-.atletas-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  padding: 4px 4px 20px 4px;
-  max-height: calc(100vh - 240px);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-/* Scrollbar para el grid */
-.atletas-grid::-webkit-scrollbar { width: 6px; }
-.atletas-grid::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 4px; }
-.atletas-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-
-@media (min-width: 600px)  { .atletas-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 900px)  { .atletas-grid { grid-template-columns: repeat(4, 1fr); } }
-@media (min-width: 1200px) { .atletas-grid { grid-template-columns: repeat(5, 1fr); } }
-
-/* ══════════════════════════════════════
-   CARD — estilo Ethereum card
-══════════════════════════════════════ */
-.at-card {
-  /* dimensiones */
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  border-radius: 20px;
-  overflow: hidden;
-
-  /* layout */
-  position: relative;
-  display: grid;
-  place-items: center;
-
-  color: #fff;
-  cursor: pointer;
-
-  /* Igual que dash-stat-card pero con fondo sólido para que no transparente */
-  background: var(--bg);
-  border: 1px solid var(--card-border);
-  box-shadow: var(--shadow-sm);
-
-  transition: transform .2s, box-shadow .2s, border-color .2s;
-}
-.at-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
-}
-.at-card.has-mod {
-  border-color: rgba(251,191,36,.35);
+  box-shadow: none !important;
 }
 
-/* ── Badge modificación ── */
-.at-mod-badge {
-  position: absolute;
-  top: 10px; right: 10px;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  background: var(--warn);
-  color: #0b0e1a;
-  display: grid; place-items: center;
-  font-size: 11px;
-  z-index: 10;
-  animation: pulse-badge 2s infinite;
+/* Info text */
+.ig-info { display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; width:100%; }
+.ig-name { font-size:0.82rem; font-weight:700; color:#fff; display:flex; align-items:center; gap:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.ig-mod-icon { font-size:0.65rem; color:var(--warn); }
+.ig-micro { font-size:0.68rem; color:rgba(255,255,255,0.38); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+
+/* Status dot + btn */
+.ig-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.2); margin-top:2px; }
+.ig-dot.ig-dot-warn { background:var(--warn); box-shadow:none !important; }
+.ig-btn-wrap { width:100%; }
+.ig-btn {
+  display:block; width:100%; text-align:center;
+  font-size:0.72rem; font-weight:600; color:var(--accent);
+  padding:6px 0; border-radius:8px;
+  background:rgba(94,234,212,0.08); border:1px solid rgba(94,234,212,0.2);
+  transition:background 0.15s;
+}
+.ig-btn:hover { background:rgba(94,234,212,0.16); }
+
+/* ════════════════════════════════════════
+   MOBILE — Instagram DM exact style
+════════════════════════════════════════ */
+@media (max-width: 767px) {
+  .cl-title { font-size:1.3rem; }
+  .cl-add-label { display:none; }
+  .cl-add-btn { padding:9px 11px; }
+  .cl-search-input { font-size:0.85rem; }
+  .atletas-filter-bar { overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+  .atletas-filter-bar::-webkit-scrollbar { display:none; }
+
+  /* El header mantiene su padding pero el grid se escapa de él */
+  .xp-main { padding-bottom: 0 !important; display: flex; flex-direction: column; }
+  .xp-footer { display: none !important; }
+
+  .atletas-grid {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Estira el contenedor hasta el final de la pantalla */
+    gap: 12px;
+    /* padding-bottom previene que el ultimo item quede detras del nav bar fijo */
+    padding: 0 0 70px 0;
+  }
+
+  /* Cada fila — exactamente como Instagram DM */
+  .ig-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 18px;
+    gap: 16px;
+    transform: none !important;
+  }
+  .ig-card:active { transform: scale(0.98) !important; }
+  /* Línea lateral para modificación pendiente */
+  .ig-card.has-mod { border-left: 3px solid rgba(251,191,36,0.7); padding-left:17px; }
+
+  /* Avatar grande como Instagram (~56px) */
+  .ig-avatar {
+    width: 56px; height: 56px;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+    /* Anillo sutil para atletas normales */
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+  }
+  .ig-avatar.has-mod-ring { box-shadow: 0 0 0 2px var(--warn); }
+  .at-mod-badge { display:none; }
+
+  /* Info — izquierda alineada, tipografía grande */
+  .ig-info {
+    align-items: flex-start;
+    text-align: left;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    gap: 2px;
+  }
+  .ig-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .ig-micro {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.42);
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  /* Punto de estado — oculto, lo reemplaza la flecha */
+  .ig-dot { display: none; }
+
+  /* Botón — oculto en mobile, la fila entera navega */
+  .ig-btn-wrap { display:none; }
 }
 
-/* ── Nombre por defecto — visible por defecto ── */
-.at-name-default {
-  grid-area: 1 / 1;
-  font-size: clamp(.85rem, 2.5vw, 1.15rem);
-  font-weight: 800;
-  color: rgba(255,255,255,0.88);
-  text-align: center;
-  padding: 0 14px;
-  line-height: 1.25;
-  word-break: break-word;
-  letter-spacing: .3px;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
-  transition: opacity .3s ease, transform .3s ease;
-  z-index: 1;
-}
+html[data-theme="light"] .cl-search-wrap { background:rgba(0,0,0,0.05); border-color:rgba(0,0,0,0.12); }
+html[data-theme="light"] .cl-count-badge { background:rgba(0,0,0,0.05); border-color:rgba(0,0,0,0.1); }
 
-/* ── TextBox de info — oculto por defecto ── */
-.at-textBox {
-  /* superpuesto al icono: mismo grid-area */
-  grid-area: 1 / 1;
-  width: 100%;
-  height: 100%;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 20px 16px;
-  text-align: center;
-
-  /* fondo de revelado */
-  background:
-    radial-gradient(
-      130% 130% at 20% 0%,
-      rgba(255,255,255,0.09),
-      transparent 60%
-    ),
-    linear-gradient(180deg, rgba(12,18,28,0.88), rgba(6,10,18,0.96));
-
-  /* hidden by default */
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(10px);
-  transition: opacity .3s ease, transform .3s ease;
-  z-index: 2;
+@keyframes fadeOutLeft {
+  from { opacity: 1; transform: translate3d(0, 0, 0); }
+  to { opacity: 0; transform: translate3d(-100%, 0, 0); }
 }
-.at-textBox span {
-  font-size: .68rem;
-  text-transform: uppercase;
-  letter-spacing: 2.5px;
-  color: rgba(255,255,255,0.40);
-  font-weight: 600;
-}
-.at-text.at-head {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #fff;
-  margin: 0;
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90%;
-}
-.at-text.at-email {
-  font-size: .68rem;
-  color: rgba(255,255,255,0.50);
-  margin: 2px 0 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 90%;
-  font-weight: 300;
-}
-
-/* ══════════════════════════════════════
-   ESTADO ACTIVO — primer clic
-══════════════════════════════════════ */
-.at-card.is-active {
-  border-color: rgba(255,255,255,0.22);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.55),
-              0 0 0 1px rgba(255,255,255,0.14);
-  transform: scale(1.04);
-  z-index: 20;
-}
-/* ocultar nombre cuando is-active */
-.at-card.is-active .at-name-default {
-  opacity: 0;
-  transform: scale(0.85);
-  pointer-events: none;
-}
-/* mostrar textBox info cuando is-active */
-.at-card.is-active .at-textBox {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
-
-/* ── TextBox de info — oculto por defecto ── */
-.at-textBox {
-  grid-area: 1 / 1;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 38px 12px 16px;
-  text-align: center;
-  background:
-    radial-gradient(130% 130% at 20% 0%, rgba(255,255,255,0.09), transparent 60%),
-    linear-gradient(180deg, rgba(8,12,20,0.92), rgba(4,6,12,0.98));
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(10px);
-  transition: opacity .3s ease, transform .3s ease;
-  z-index: 3;
-}
-.at-close-btn {
-  position: absolute;
-  top: 10px; right: 10px;
-  background: rgba(255,255,255,0.1);
-  border: none;
-  color: #fff;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  display: grid; place-items: center;
-  cursor: pointer;
-  transition: background 0.2s;
-  z-index: 5;
-}
-.at-close-btn:hover { background: var(--warn); color: #000; }
-.at-text.at-head {
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #fff;
-  margin: 0;
-  line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  max-width: 100%;
-  word-break: break-word;
-  padding: 0 4px;
-}
-.at-text.at-email {
-  font-size: .65rem;
-  color: rgba(255,255,255,0.50);
-  margin: 2px 0 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  font-weight: 300;
-  padding: 0 4px;
-  box-sizing: border-box;
-}
-.stat-container {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  width: 100%;
-}
-.stat-group {
-  text-align: center;
-  max-width: 50%;
-}
-.stat-val {
-  font-size: 1rem;
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.2;
-}
-.stat-lbl {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
-  letter-spacing: 1px;
-  margin-top: 2px;
-}
-.stat-group.wide .stat-val {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--accent);
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-.at-click-msg {
-  margin-top: auto;
-  font-size: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: rgba(94, 234, 212, 0.6);
-  font-weight: 600;
-  width: 100%;
-  white-space: normal;
-  line-height: 1.3;
-  padding: 0 4px;
-  box-sizing: border-box;
-}
-
-/* ══════════════════════════════════════
-   ESTADO ACTIVO — primer clic
-══════════════════════════════════════ */
-.at-card.is-active {
-  border-color: rgba(255,255,255,0.22);
-  box-shadow: 0 24px 64px rgba(0,0,0,0.55),
-              0 0 0 1px rgba(255,255,255,0.14);
-  transform: scale(1.04);
-  z-index: 20;
-}
-/* ocultar nombre cuando is-active */
-.at-card.is-active .at-name-default {
-  opacity: 0;
-  transform: scale(0.85);
-  pointer-events: none;
-}
-/* mostrar textBox info cuando is-active */
-.at-card.is-active .at-textBox {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
+.fade-out-left {
+  animation: fadeOutLeft 0.5s forwards;
 }
 </style>
 
 <script>
-/* ── FILTER LOGIC ──────────────────────────────────── */
-let currentFilter = 'todos';
 
-function setFilter(mode) {
-  currentFilter = mode;
-  const grid  = document.getElementById('atletasGrid');
-  const panel = document.getElementById('panelModificar');
-  const btnT  = document.getElementById('btnTodos');
-  const btnM  = document.getElementById('btnModificar');
-
-  if (mode === 'todos') {
-    btnT.classList.add('active');
-    btnM.classList.remove('active');
-    panel.style.display = 'none';
-    if (grid) grid.style.display = 'grid';
-  } else {
-    btnM.classList.add('active');
-    btnT.classList.remove('active');
-    panel.style.display = 'block';
-    if (grid) grid.style.display = 'none';
-  }
+function buscarAtleta(q) {
+  const clearBtn = document.getElementById('clSearchClear');
+  clearBtn.style.display = q.trim() ? 'flex' : 'none';
+  const query = q.toLowerCase().trim();
+  document.querySelectorAll('#atletasGrid .ig-card').forEach(card => {
+    const name  = card.dataset.name  || '';
+    const email = card.dataset.email || '';
+    card.classList.toggle('search-hidden', query && !name.includes(query) && !email.includes(query));
+  });
 }
 
-/* ── CARD CLICK LOGIC ──────────────────────────────── */
-(function () {
-  const grid = document.getElementById('atletasGrid');
-  if (!grid) return;
-  const cards = grid.querySelectorAll('.at-card');
+function limpiarBusqueda() {
+  const input = document.getElementById('clSearch');
+  input.value = '';
+  buscarAtleta('');
+  input.focus();
+}
 
-  function closeAll(except) {
-    cards.forEach(function (c) {
-      if (c !== except) c.classList.remove('is-active');
-    });
-  }
-
-  cards.forEach(function (card) {
-    var href = card.dataset.href;
-    
-    card.addEventListener('click', function (e) {
-      // Si se hace clic en el botón cerrar
-      if (e.target.closest('.at-close-btn')) {
-        e.preventDefault();
-        e.stopPropagation();
-        card.classList.remove('is-active');
-        return;
-      }
-
-      e.stopPropagation();
-      var isActive = card.classList.contains('is-active');
-
-      if (!isActive) {
-        /* 1er clic → mostrar la info central (peso, meta, etc) */
-        e.preventDefault();
-        closeAll(card);
-        card.classList.add('is-active');
-      } else {
-        /* Si ya está activa y clickeamos (no en la X), vamos al perfil */
-        window.location.href = href;
-      }
-    });
+function gestionarSolicitud(usuarioId, accion) {
+  const card = document.getElementById('solicitud-' + usuarioId);
+  if (!card) return;
+  
+  // Opcional: deshabilitar botones
+  const btns = card.querySelectorAll('button');
+  btns.forEach(b => b.disabled = true);
+  
+  fetch('<?= APP_URL ?>/entrenador/api-aprobar-atleta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usuario_id: usuarioId, accion: accion })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok) {
+      card.classList.add('fade-out-left');
+      setTimeout(() => { 
+        card.remove(); 
+        // Si no quedan tarjetas, se podría ocultar el panel completo
+        const parent = document.querySelector('.solicitud-card')?.parentElement;
+        if (parent && parent.children.length === 0) {
+            parent.parentElement.classList.add('fade-out-left');
+            setTimeout(() => parent.parentElement.remove(), 500);
+        }
+      }, 500);
+      Swal.fire({
+        icon: 'success',
+        title: data.msg,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    } else {
+      Swal.fire('Error', data.msg, 'error');
+      btns.forEach(b => b.disabled = false);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    Swal.fire('Error', 'Problema de red.', 'error');
+    btns.forEach(b => b.disabled = false);
   });
+}
 
-  document.addEventListener('click', function (e) {
-    if (!e.target.closest('.at-card')) closeAll(null);
-  });
-
-  if (window.location.hash === '#modificar') { setFilter('modificar'); }
-})();
 </script>
 
 <?php require __DIR__.'/../layout/footer.php'; ?>

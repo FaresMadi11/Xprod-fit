@@ -7,9 +7,10 @@
 <!-- Tabler Icons -->
 <link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" rel="stylesheet">
 <!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 <!-- Anime.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" defer></script>
+
 
 <style>
     :root {
@@ -44,9 +45,9 @@
     .recovery-container {
         width: 100%;
         max-width: 450px;
-        background: var(--container-bg);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
         border: 1px solid var(--border-color);
         border-radius: 24px;
         padding: 40px;
@@ -122,20 +123,20 @@
 
     .form-control {
         width: 100%;
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid var(--border-color);
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 12px;
         padding: 14px 15px 14px 45px;
         color: var(--text-primary);
-        font-size: 1rem;
+        font-size: 1.05rem;
         transition: all 0.3s;
         outline: none;
     }
 
     .form-control:focus {
-        border-color: var(--accent-color);
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        background: rgba(15, 23, 42, 0.8);
+        border-color: #407E8C;
+        box-shadow: 0 0 12px rgba(64,126,140,0.25);
+        background: transparent;
     }
 
     .toggle-password {
@@ -354,7 +355,7 @@
     </div>
     
     <div class="back-link">
-        <a href="login.php"><i class="ti ti-arrow-left"></i> Volver al Login</a>
+        <a href="<?= APP_URL ?>/auth/login"><i class="ti ti-arrow-left"></i> Volver al Login</a>
     </div>
 </div>
 
@@ -363,9 +364,8 @@
     let recoveryToken = "";
     let userEmail = "";
 
-    // Endpoints (Ajusta la ruta según la ubicación real en Xprod Fit)
-    // Asumimos que este archivo está en /views/auth/ y las api en /api/
-    const APP_URL = '<?= APP_URL ?? "" ?>';
+    window.APP = '<?= APP_URL ?>';
+    const APP_URL = window.APP;
     const endpointVerificar = APP_URL + '/api/recuperar_password.php';
     const endpointCambiar = APP_URL + '/api/cambiar_password_recovery.php';
 
@@ -611,7 +611,7 @@
                     timerProgressBar: true,
                     showConfirmButton: false
                 }).then(() => {
-                    window.location.href = 'login.php';
+                    window.location.href = APP_URL + '/auth/login';
                 });
             } else {
                 showAlert('error', 'Error', data.message || 'Error al actualizar contraseña.');

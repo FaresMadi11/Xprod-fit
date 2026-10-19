@@ -34,18 +34,37 @@ $grupoIconos = [
     'abductores'     => 'ti-arrows-horizontal',
 ];
 
-// Formatear fecha en español
-function fechaES(string $fecha): string {
-    $meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    $dias  = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    $ts    = strtotime($fecha);
-    return $dias[date('w',$ts)] . ' ' . date('j',$ts) . ' ' . $meses[(int)date('n',$ts)];
-}
 ?>
 
+
 <style>
-/* ── Reset ── */
-.xp-main { padding: 0 !important; min-height: 100vh; }
+/* ── Reset y Layout Contenedor Responsive (Bento UI) ── */
+.xp-main { padding: 0 !important; }
+
+.xp-client-container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 10px 12px calc(95px + env(safe-area-inset-bottom, 25px)) 12px;
+}
+@media (min-width: 768px) {
+  .xp-client-container {
+    padding: 24px 32px 60px 32px;
+  }
+}
+@media (min-width: 1024px) {
+  .st-desktop-grid {
+    display: grid;
+    grid-template-columns: 460px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .st-desktop-grid .st-section {
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+  }
+}
 
 /* ── Header ── */
 .st-header {
@@ -54,7 +73,7 @@ function fechaES(string $fecha): string {
 }
 .st-header-icon {
   width: 44px; height: 44px; border-radius: 14px;
-  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
   display: grid; place-items: center; font-size: 1.25rem; color: #fff; flex-shrink: 0;
 }
 .st-header-text h1 { font-size: 1.4rem; font-weight: 900; color: #fff; margin: 0; }
@@ -87,7 +106,7 @@ function fechaES(string $fecha): string {
 
 /* ── Cuadro con opacidad para el calendario ── */
 .st-section-box {
-  background: rgba(0,0,0,0.42);
+  background: rgba(0,0,0,0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.07);
@@ -179,8 +198,8 @@ function fechaES(string $fecha): string {
 .st-tren-tab.active {
   background: #252525; color: #fff;
 }
-.st-tren-tab.superior.active { color: #38bdf8; }
-.st-tren-tab.inferior.active { color: #7dd3fc; }
+.st-tren-tab.superior.active { color: var(--text-purple, #b388ff); }
+.st-tren-tab.inferior.active { color: var(--text-purple, #b388ff); }
 
 /* Chips de grupos musculares */
 .st-grupo-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -191,12 +210,12 @@ function fechaES(string $fecha): string {
   transition: all .2s; display: flex; align-items: center; gap: 5px;
   text-transform: capitalize;
 }
-.st-grupo-chip:hover { border-color: rgba(56,189,248,.3); color: #9ca3af; }
+.st-grupo-chip:hover { border-color: rgba(138,43,226,.4); color: #d8b4fe; }
 .st-grupo-chip.active-sup {
-  background: rgba(56,189,248,.15); border-color: rgba(56,189,248,.5); color: #38bdf8;
+  background: var(--accent-bg, rgba(138,43,226,.15)); border-color: var(--accent-primary, #8a2be2); color: var(--text-purple, #b388ff);
 }
 .st-grupo-chip.active-inf {
-  background: rgba(125,211,252,.15); border-color: rgba(125,211,252,.5); color: #7dd3fc;
+  background: var(--accent-bg, rgba(138,43,226,.15)); border-color: var(--accent-primary, #8a2be2); color: var(--text-purple, #b388ff);
 }
 
 /* Chart container */
@@ -289,40 +308,40 @@ function fechaES(string $fecha): string {
 }
 .cal-cell.fuera-mes { opacity: .3; }
 .cal-cell.hoy {
-  border-color: rgba(56,189,248,.4);
-  background: rgba(56,189,248,.15);
+  border-color: #8a2be2 !important;
+  background: rgba(138, 43, 226, 0.2) !important;
 }
-.cal-cell.hoy .cal-day-num { color: #38bdf8; }
+.cal-cell.hoy .cal-day-num { color: #fff; font-weight: 800; }
 .cal-cell.entrenado {
   cursor: pointer;
-  border-color: rgba(56,189,248,.25);
-  background: rgba(56,189,248,.06);
+  border-color: rgba(138,43,226,.3);
+  background: rgba(138,43,226,.08);
 }
 .cal-cell.entrenado .cal-day-num { color: #e2e8f0; }
 .cal-cell.entrenado:hover {
-  border-color: rgba(56,189,248,.5);
-  background: rgba(56,189,248,.12);
+  border-color: rgba(157,78,221,.6);
+  background: rgba(157,78,221,.15);
   transform: scale(1.05);
 }
 .cal-cell.selected {
-  border-color: rgba(56,189,248,.7) !important;
-  background: rgba(56,189,248,.2) !important;
-  box-shadow: 0 0 0 2px rgba(56,189,248,.3);
+  border-color: var(--accent-primary, #8a2be2) !important;
+  background: var(--accent-bg, rgba(138,43,226,.2)) !important;
+  box-shadow: 0 0 0 2px rgba(138,43,226,.35);
 }
 .cal-cell.hoy.entrenado {
-  border-color: rgba(56,189,248,.6);
-  background: rgba(56,189,248,.22);
+  border-color: #8a2be2 !important;
+  background: rgba(138, 43, 226, 0.25) !important;
 }
 
 /* Celda con rutina planificada (día futuro) */
 .cal-cell.planificado {
   cursor: pointer;
-  border-color: rgba(251,191,36,.2);
+  border-color: rgba(138,43,226,.25);
 }
 .cal-cell.planificado .cal-day-num { color: #9ca3af; }
 .cal-cell.planificado:hover {
-  border-color: rgba(251,191,36,.45);
-  background: rgba(251,191,36,.06);
+  border-color: rgba(138,43,226,.45);
+  background: rgba(138,43,226,.08);
   transform: scale(1.05);
 }
 .cal-cell.clickable {
@@ -333,134 +352,213 @@ function fechaES(string $fecha): string {
   background: rgba(255,255,255,.04);
   transform: scale(1.02);
 }
+.cal-cell:focus-visible {
+  outline: 2px solid #8a2be2;
+  outline-offset: 2px;
+}
 
-/* Punto de actividad */
+/* Punto de actividad: punto morado brillante solo si existe rutina completada real en BD */
 .cal-dot {
   width: 5px; height: 5px; border-radius: 50%;
-  background: #38bdf8; flex-shrink: 0;
+  background: #a855f7;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.85);
+  flex-shrink: 0;
 }
-.cal-cell.hoy .cal-dot { background: #fff; }
-.cal-cell.planificado .cal-dot-plan {
+.cal-cell.hoy .cal-dot { background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, 0.9); }
+/* Punto tenue para rutinas programadas hoy / futuro */
+.cal-dot-plan {
   width: 5px; height: 5px; border-radius: 50%;
-  background: #fbbf24; flex-shrink: 0;
+  background: rgba(179, 136, 255, 0.45);
+  flex-shrink: 0;
 }
 
-/* ── MODAL DE DÍA ── */
-.dia-modal-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0,0,0,.75); backdrop-filter: blur(8px);
-  display: flex; align-items: flex-end; justify-content: center;
-  opacity: 0; pointer-events: none;
-  transition: opacity .3s ease;
+/* ── MODAL DE DÍA (Bottom-Sheet) ──────────────────────────────────
+   Backdrop y sheet son HERMANOS y ambos se mueven a <body> por JS (portal):
+   .xp-main (overflow) y .st-section-box (backdrop-filter) crean un contenedor
+   que "captura" position:fixed → el blur cubría la pantalla pero la hoja
+   quedaba fuera del viewport. */
+.dia-modal-backdrop {
+  position: fixed !important; inset: 0 !important; z-index: 999990 !important;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .3s ease, visibility 0s linear .3s;
 }
-.dia-modal-overlay.open {
-  opacity: 1; pointer-events: all;
+.dia-modal-backdrop.open {
+  opacity: 1; visibility: visible; pointer-events: all;
+  transition: opacity .3s ease, visibility 0s;
 }
+
 .dia-modal {
-  width: 100%; max-width: 520px;
-  background: #111; border-radius: 28px 28px 0 0;
-  border: 1px solid rgba(255,255,255,.08); border-bottom: none;
-  transform: translateY(100%);
-  transition: transform .35s cubic-bezier(.32,1.3,.42,1);
-  max-height: 88vh; overflow-y: auto;
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 999999 !important;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  background: #15151a !important;
+  border-top: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 40px 20px;
+  box-shadow: 0 -16px 48px rgba(0,0,0,.65);
+  color: #e5e7eb;
+  /* Cerrado: el slide usa la propiedad individual `translate` para no chocar con el
+     `transform: translateX(-50%) !important` que centra la hoja. */
+  translate: 0 100%;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: translate .35s cubic-bezier(.32,.72,0,1), opacity .25s ease, visibility 0s linear .35s;
+  outline: none;
 }
-.dia-modal-overlay.open .dia-modal {
-  transform: translateY(0);
+.dia-modal.open {
+  translate: 0 0;
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transition: translate .35s cubic-bezier(.32,.72,0,1), opacity .25s ease, visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dia-modal, .dia-modal-backdrop { transition: none !important; }
 }
 .dia-modal-handle {
   width: 40px; height: 4px; border-radius: 2px;
-  background: rgba(255,255,255,.15); margin: 12px auto 0;
+  background: rgba(255,255,255,.18); margin: -12px auto 16px;
 }
 .dia-modal-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  padding: 16px 20px 12px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding-bottom: 14px; margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
 }
-.dia-modal-title-wrap { flex: 1; }
+.dia-modal-title-wrap { flex: 1; min-width: 0; }
 .dia-modal-fecha {
-  font-size: 1.05rem; font-weight: 900; color: #fff; line-height: 1.2;
+  font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.2; margin: 0;
 }
 .dia-modal-sub {
-  font-size: .72rem; color: #6b7280; margin-top: 4px;
-  display: flex; align-items: center; gap: 6px;
+  font-size: .74rem; color: #9ca3af; margin-top: 8px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
 .dia-modal-badge {
-  font-size: .6rem; font-weight: 800; padding: 2px 9px; border-radius: 20px;
+  font-size: .62rem; font-weight: 800; padding: 3px 10px; border-radius: 20px;
   text-transform: uppercase; letter-spacing: .4px;
+  background: rgba(255,255,255,.07); color: #9ca3af;
 }
-.badge-historial { background: rgba(56,189,248,.15); color: #38bdf8; }
-.badge-planificado { background: rgba(251,191,36,.15); color: #fbbf24; }
-.badge-descanso { background: rgba(107,114,128,.15); color: #6b7280; }
+.dia-modal-badge:empty { display: none; }
+.dia-modal-badge.modo-historial     { background: rgba(138,43,226,.18); color: #c4a3ff; }
+.dia-modal-badge.modo-hoy           { background: rgba(138,43,226,.30); color: #fff; }
+.dia-modal-badge.modo-planificacion { background: rgba(251,191,36,.15); color: #fbbf24; }
+.dia-modal-badge.est-completado     { background: rgba(74,222,128,.15); color: #4ade80; }
+.dia-modal-badge.est-parcial        { background: rgba(251,191,36,.15); color: #fbbf24; }
+.dia-modal-badge.est-pendiente      { background: rgba(167,139,250,.18); color: #c4b5fd; }
+.dia-modal-badge.est-programado     { background: rgba(251,191,36,.12); color: #fbbf24; }
 .dia-modal-close {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
-  color: #9ca3af; cursor: pointer; display: grid; place-items: center;
-  font-size: .9rem; transition: all .2s; flex-shrink: 0; margin-top: 2px;
+  width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  color: #cbd5e1; cursor: pointer; display: grid; place-items: center;
+  font-size: 1rem; transition: background .2s, color .2s;
 }
-.dia-modal-close:hover { background: rgba(255,255,255,.12); color: #fff; }
-.dia-modal-body { padding: 16px 20px 32px; }
+.dia-modal-close:hover { background: rgba(255,255,255,.14); color: #fff; }
+.dia-modal-close:focus-visible, .dm-btn-rutina:focus-visible { outline: 2px solid #b388ff; outline-offset: 2px; }
+.dia-modal-body { padding: 0; }
+
 .dia-modal-loading {
   display: flex; align-items: center; justify-content: center;
-  gap: 10px; color: #4b5563; font-size: .85rem; padding: 32px 0;
+  gap: 10px; color: #9ca3af; font-size: .85rem; padding: 36px 0;
 }
 @keyframes spin-modal { to { transform: rotate(360deg); } }
 .dia-modal-spinner {
   width: 22px; height: 22px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,.1); border-top-color: #38bdf8;
+  border: 2px solid rgba(255,255,255,.12); border-top-color: #8a2be2;
   animation: spin-modal .7s linear infinite;
 }
-.dia-modal-empty {
-  text-align: center; padding: 32px 0; color: #4b5563;
+.dia-modal-empty { text-align: center; padding: 28px 8px 8px; color: #9ca3af; }
+.dia-modal-empty i { font-size: 2.2rem; display: block; margin-bottom: 12px; color: #6d4aa8; }
+.dia-modal-empty p { font-size: .88rem; line-height: 1.5; margin: 0; }
+.dia-modal-empty .dm-btn-rutina { margin-top: 18px; }
+
+/* Cabecera de rutina + estadísticas rápidas */
+.dm-rutina {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 12px;
+  background: rgba(138,43,226,.10); border: 1px solid rgba(138,43,226,.25); border-radius: 16px;
 }
-.dia-modal-empty i { font-size: 2rem; display: block; margin-bottom: 10px; }
-.dia-modal-empty p { font-size: .82rem; }
-/* Ejercicio dentro del modal */
+.dm-rutina > i { font-size: 1.4rem; color: #b388ff; flex-shrink: 0; }
+.dm-rutina-nombre { font-size: .95rem; font-weight: 800; color: #fff; overflow-wrap: anywhere; }
+.dm-rutina-fecha  { font-size: .72rem; color: #9ca3af; margin-top: 2px; }
+.dm-section-label {
+  font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+  color: #a78bfa; margin: 0 0 8px;
+}
+.dm-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
+.dm-stat {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px; padding: 10px 8px; text-align: center;
+}
+.dm-stat b { display: block; font-size: 1.05rem; font-weight: 900; color: #fff; }
+.dm-stat span { font-size: .6rem; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; font-weight: 700; }
+
+/* Ejercicio */
 .dm-ejercicio {
   margin-bottom: 16px; padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255,255,255,.05);
+  border-bottom: 1px solid rgba(255,255,255,.06);
 }
-.dm-ejercicio:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+.dm-ejercicio:last-of-type { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
 .dm-ex-name {
-  font-size: .9rem; font-weight: 700; color: #e2e8f0;
-  margin-bottom: 8px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: .92rem; font-weight: 800; color: #f1f5f9;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
 }
-.dm-grupo-chip {
-  font-size: .58rem; font-weight: 700; padding: 2px 8px; border-radius: 20px;
-  background: rgba(56,189,248,.12); color: #38bdf8; text-transform: capitalize;
+.dm-equip, .dm-grupo-chip {
+  font-size: .6rem; font-weight: 800; padding: 3px 9px; border-radius: 20px;
+  display: inline-flex; align-items: center; gap: 4px; text-transform: capitalize;
 }
-/* Tabla historial */
+.dm-equip { background: rgba(138,43,226,.2); color: #d8b4fe; border: 1px solid rgba(138,43,226,.35); }
+.dm-grupo-chip { background: rgba(255,255,255,.07); color: #9ca3af; }
+
+/* Series reales */
 .dm-table { width: 100%; border-collapse: collapse; }
 .dm-table th {
-  font-size: .6rem; color: #4b5563; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .4px; padding: 0 0 6px; text-align: left;
+  font-size: .6rem; color: #6b7280; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .4px; padding: 0 0 6px; text-align: left;
 }
+.dm-table th:not(:first-child), .dm-table td:not(:first-child) { text-align: right; }
 .dm-table td {
-  font-size: .82rem; color: #9ca3af; padding: 6px 0;
-  border-top: 1px solid rgba(255,255,255,.04);
+  font-size: .86rem; color: #cbd5e1; padding: 7px 0;
+  border-top: 1px solid rgba(255,255,255,.05); font-variant-numeric: tabular-nums;
 }
-.dm-table td:first-child { color: #6b7280; width: 60px; }
+.dm-table td:first-child { width: 48px; }
+.dm-table td.kg   { color: #fff; font-weight: 800; }
 .dm-table td.reps { color: #e2e8f0; font-weight: 700; }
-.dm-table td.kg   { color: #7dd3fc; font-weight: 700; }
-/* Planificado grid */
-.dm-plan-grid {
-  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px;
+.dm-set-badge {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  font-size: .72rem; font-weight: 900;
+  background: rgba(139,92,246,.18); color: #a78bfa;
 }
+.dm-set-badge[data-t="calentamiento"] { background: rgba(251,191,36,.18);  color: #fbbf24; }
+.dm-set-badge[data-t="fallo"]         { background: rgba(248,113,113,.18); color: #f87171; }
+.dm-set-badge[data-t="drop"]          { background: rgba(96,165,250,.18);  color: #60a5fa; }
+
+/* Planificado (sólo lectura) */
+.dm-plan-grid { display: flex; gap: 8px; flex-wrap: wrap; }
 .dm-plan-chip {
   background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
   border-radius: 10px; padding: 5px 10px; font-size: .75rem; color: #9ca3af;
 }
-.dm-plan-chip span { color: #fff; font-weight: 700; }
-/* Botón ir a la rutina */
+.dm-plan-chip span { color: #fff; font-weight: 800; }
+
+/* Botón de acción */
 .dm-btn-rutina {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; padding: 13px;
-  background: linear-gradient(135deg,#fbbf24,#d97706);
-  color: #000; font-size: .88rem; font-weight: 900;
+  width: 100%; box-sizing: border-box; padding: 14px; margin-top: 18px;
+  background: linear-gradient(135deg, #8a2be2, #9d4edd);
+  color: #fff; font-size: .92rem; font-weight: 800;
   border: none; border-radius: 14px; cursor: pointer; text-decoration: none;
-  margin-top: 16px; transition: all .2s;
+  box-shadow: 0 6px 20px rgba(138,43,226,.4); transition: transform .2s, box-shadow .2s;
 }
-.dm-btn-rutina:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(251,191,36,.35); }
+.dm-btn-rutina:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(138,43,226,.5); color: #fff; }
+
 
 /* Panel de detalle */
 .cal-detail {
@@ -517,7 +615,35 @@ function fechaES(string $fecha): string {
 .agenda-series-table td.val { color: #e2e8f0; font-weight: 700; }
 .agenda-series-table td.kg  { color: #a3e635; font-weight: 700; }
 
+/* Botón y contenedor para gráfica de sesión en modal */
+.dm-grafica-toggle-btn {
+  background: rgba(138, 43, 226, 0.15);
+  border: 1px solid rgba(138, 43, 226, 0.35);
+  color: #c084fc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+.dm-grafica-toggle-btn:hover {
+  background: rgba(138, 43, 226, 0.3);
+  border-color: #c084fc;
+  color: #fff;
+}
+.dm-grafica-sesion-wrap {
+  animation: fadeIn 0.25s ease;
+}
+
 </style>
+
+<!-- ── CONTENEDOR PRINCIPAL CLIENTE (RESPONSIVE BENTO UI) ── -->
+<div class="xp-client-container">
 
 <!-- ── Header ── -->
 <div class="st-header">
@@ -528,8 +654,8 @@ function fechaES(string $fecha): string {
   </div>
 </div>
 
-
-
+<!-- ── GRID RESPONSIVE BENTO (PC / MONITORES) ── -->
+<div class="st-desktop-grid">
 
 <!-- ══════════════════════════════════════
      SECCIÓN 1: CALENDARIO HISTÓRICO
@@ -537,7 +663,7 @@ function fechaES(string $fecha): string {
 <div class="st-section">
 <div class="st-section-box">
   <div class="st-section-title">
-    <i class="ti ti-calendar-week" style="color:#38bdf8"></i> Historial Semanal
+    <i class="ti ti-calendar-week" style="color:var(--text-purple, #b388ff)"></i> Historial Semanal
   </div>
 
   <!-- Navegación de mes -->
@@ -589,8 +715,7 @@ function fechaES(string $fecha): string {
     // Limitar a 5 semanas
     $semanas = array_slice($semanas, 0, 5);
 
-    // Fechas con historial para lookup rápido
-    $fechasConHistorial = array_keys($historial);
+    // Fechas entrenadas y días programados provistos por el controlador
   ?>
 
   <div class="cal-nav">
@@ -624,27 +749,33 @@ function fechaES(string $fecha): string {
       <div class="cal-week-label">Sem <?= $sIdx + 1 ?></div>
       <div class="cal-week-cells">
         <?php foreach ($semana as $dia):
-          $fechaStr  = $dia->format('Y-m-d');
-          $diaNum    = (int)$dia->format('j');
-          $esMes     = (int)$dia->format('n') === $calMes;
-          $esHoy     = $fechaStr === date('Y-m-d');
-          $esFuturo  = $fechaStr > date('Y-m-d');
-          $tieneDatos = in_array($fechaStr, $fechasConHistorial);
-          $clases = 'cal-cell';
-          if (!$esMes)      $clases .= ' fuera-mes';
-          if ($esHoy)       $clases .= ' hoy';
-          if ($tieneDatos)  $clases .= ' entrenado';
-          elseif ($esFuturo) $clases .= ' planificado';
-          else               $clases .= ' clickable';
+          $fechaStr   = $dia->format('Y-m-d');
+          $diaNum     = (int)$dia->format('j');
+          $esMes      = (int)$dia->format('n') === $calMes;
+          // Fecha actual estricta del sistema (misma que usa el endpoint): pasado / hoy / futuro
+          $esHoy      = $fechaStr === $fechaHoy;
+          $esFuturo   = $fechaStr >  $fechaHoy;
+          // Punto sólido: SÓLO si hay series completadas reales en BD (nunca en días futuros)
+          $entreno    = !$esFuturo && in_array($fechaStr, $fechasEntrenadas, true);
+          // Punto tenue: hoy/futuro con rutina programada ese día de la semana
+          $programado = in_array((int)$dia->format('N'), $diasProgramados, true);
+          $clases = 'cal-cell clickable';
+          if (!$esMes)                          $clases .= ' fuera-mes';
+          if ($esHoy)                           $clases .= ' hoy';
+          if ($entreno)                         $clases .= ' entrenado';
+          elseif ($esFuturo && $programado)     $clases .= ' planificado';
+          $estadoTxt = $esHoy ? 'hoy' : ($esFuturo ? ($programado ? 'rutina programada' : 'sin rutina')
+                                                    : ($entreno ? 'entrenado' : 'sin actividad'));
         ?>
         <div class="<?= $clases ?>"
              data-fecha="<?= $fechaStr ?>"
-             onclick="abrirModalDia('<?= $fechaStr ?>')">
+             role="button" tabindex="0"
+             aria-label="<?= htmlspecialchars(fechaES($fechaStr) . ', ' . $estadoTxt, ENT_QUOTES, 'UTF-8') ?>">
           <span class="cal-day-num"><?= $diaNum ?></span>
-          <?php if ($tieneDatos): ?>
-            <span class="cal-dot"></span>
-          <?php elseif ($esFuturo): ?>
-            <span class="cal-dot-plan"></span>
+          <?php if ($entreno): ?>
+            <span class="cal-dot" aria-hidden="true"></span>
+          <?php elseif (($esHoy || $esFuturo) && $programado): ?>
+            <span class="cal-dot-plan" aria-hidden="true"></span>
           <?php endif; ?>
         </div>
         <?php endforeach; ?>
@@ -656,154 +787,525 @@ function fechaES(string $fecha): string {
 </div><!-- end st-section-box -->
 </div><!-- end st-section -->
 
-<!-- ── MODAL DE DÍA ── -->
-<div class="dia-modal-overlay" id="diaModalOverlay" onclick="cerrarModalDia(event)">
-  <div class="dia-modal" id="diaModal">
-    <div class="dia-modal-handle"></div>
-    <div class="dia-modal-header">
-      <div class="dia-modal-title-wrap">
-        <div class="dia-modal-fecha" id="diaModalFecha"></div>
-        <div class="dia-modal-sub">
-          <span class="dia-modal-badge" id="diaModalBadge"></span>
-          <span id="diaModalSub"></span>
-        </div>
+<?php
+/**
+ * Modal Bottom-Sheet del Calendario + Lógica JavaScript Frontend
+ * ui-ux-pro-max standard:
+ * - Portal al final de <body> para evitar que backdrop-filter o overflow de contenedores padres atrapen el fixed bottom-sheet
+ * - Manejo de los 3 casos temporales: Historial (< hoy), Hoy (=== hoy), Planificación (> hoy)
+ * - Badges de tipo de serie (W, 1..N, F, D) y de equipamiento (Mancuernas, Máquina, Polea, Barra, etc.)
+ * - Accesibilidad (WAI-ARIA dialog, focus-trap, escape, aria-live)
+ */
+?>
+<!-- ── MODAL BOTTOM-SHEET DEL CALENDARIO ── -->
+<div class="dia-modal-backdrop" id="diaModalBackdrop" aria-hidden="true" onclick="cerrarModalDia(event)"></div>
+
+<div class="dia-modal" id="diaModal"
+     role="dialog" aria-modal="true" aria-labelledby="diaModalFecha"
+     tabindex="-1">
+  <div class="dia-modal-handle" aria-hidden="true"></div>
+  <div class="dia-modal-header">
+    <div class="dia-modal-title-wrap">
+      <h2 class="dia-modal-fecha" id="diaModalFecha">Detalle del Día</h2>
+      <div class="dia-modal-sub">
+        <span class="dia-modal-badge" id="diaModalBadge"></span>
+        <span id="diaModalSub"></span>
       </div>
-      <button class="dia-modal-close" onclick="cerrarModalDia(null, true)">
-        <i class="ti ti-x"></i>
-      </button>
     </div>
-    <div class="dia-modal-body" id="diaModalBody">
-      <div class="dia-modal-loading"><div class="dia-modal-spinner"></div> Cargando...</div>
+    <button class="dia-modal-close" id="diaModalClose"
+            type="button" onclick="cerrarModalDia(null, true)"
+            aria-label="Cerrar detalle del día">
+      <i class="ti ti-x" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="dia-modal-body" id="diaModalBody" aria-live="polite">
+    <div class="dia-modal-loading">
+      <div class="dia-modal-spinner" aria-hidden="true"></div>
+      <span>Cargando detalle...</span>
     </div>
   </div>
 </div>
 
-<!-- Datos del historial para JS -->
 <script>
-const HISTORIAL = <?= json_encode($historial, JSON_UNESCAPED_UNICODE) ?>;
-const MESES_ES  = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS_ES   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+(function() {
+  'use strict';
 
-function labelFecha(fecha) {
-  const d = new Date(fecha + 'T00:00:00');
-  return DIAS_ES[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_ES[d.getMonth() + 1];
-}
+  // Fecha de referencia del sistema (inyectada de PHP, idéntica a la que evalúa el backend)
+  const FECHA_HOY = <?= json_encode($fechaHoy, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+  const APP_BASE  = (typeof APP !== 'undefined' ? APP : '');
 
-async function abrirModalDia(fecha) {
-  // Marcar celda seleccionada
-  document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
-  const celda = document.querySelector('.cal-cell[data-fecha="' + fecha + '"]');
-  if (celda) celda.classList.add('selected');
+  const DIAS_LARGOS  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-  // Abrir overlay
-  const overlay = document.getElementById('diaModalOverlay');
-  const body    = document.getElementById('diaModalBody');
-  document.getElementById('diaModalFecha').textContent = labelFecha(fecha);
-  document.getElementById('diaModalBadge').textContent  = '';
-  document.getElementById('diaModalBadge').className    = 'dia-modal-badge';
-  document.getElementById('diaModalSub').textContent    = '';
-  body.innerHTML = '<div class="dia-modal-loading"><div class="dia-modal-spinner"></div> Cargando...</div>';
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
+  let activeFetchAbort = null;
+  let ultimoElementoFoco = null;
 
-  // Fetch
-  try {
-    const res  = await fetch(APP + '/cliente/api-dia-detalle?fecha=' + fecha);
-    const data = await res.json();
-    renderModalDia(fecha, data);
-  } catch(e) {
-    body.innerHTML = '<div class="dia-modal-empty"><i class="ti ti-wifi-off"></i><p>Error de conexión</p></div>';
-  }
-}
-
-function renderModalDia(fecha, data) {
-  const badge = document.getElementById('diaModalBadge');
-  const sub   = document.getElementById('diaModalSub');
-  const body  = document.getElementById('diaModalBody');
-
-  if (!data.ok) {
-    body.innerHTML = '<div class="dia-modal-empty"><i class="ti ti-alert-circle"></i><p>' + (data.msg || 'Error') + '</p></div>';
-    return;
+  // Sanitización estricta anti-XSS para inyecciones HTML dinámicas
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
-  if (data.tipo === 'historial') {
-    badge.textContent = 'Entrenado';
-    badge.classList.add('badge-historial');
-    const ejs = data.data;
-    let totalSeries = 0;
-    ejs.forEach(e => totalSeries += e.series.length);
-    sub.textContent = ejs.length + ' ejercicio' + (ejs.length !== 1 ? 's' : '') + ' · ' + totalSeries + ' series';
+  // Formato: "Miércoles, 7 de octubre de 2026"
+  function formatoFechaLarga(fechaStr) {
+    if (!fechaStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) return fechaStr;
+    const parts = fechaStr.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    const diaNom = DIAS_LARGOS[d.getDay()];
+    const diaNum = parts[2];
+    const mesNom = MESES_LARGOS[parts[1] - 1];
+    const anoNum = parts[0];
+    return `${diaNom}, ${diaNum} de ${mesNom} de ${anoNum}`;
+  }
 
-    let html = '';
-    ejs.forEach(ej => {
-      html += `<div class="dm-ejercicio">
-        <div class="dm-ex-name">
-          <i class="ti ti-dumbbell" style="color:#38bdf8;font-size:.85rem"></i>
-          ${ej.nombre}
-          ${ej.grupo_muscular ? '<span class="dm-grupo-chip">' + ej.grupo_muscular + '</span>' : ''}
-        </div>
-        <table class="dm-table">
-          <thead><tr><th>Serie</th><th>Reps</th><th>Peso (kg)</th><th>Volumen</th></tr></thead>
-          <tbody>`;
-      ej.series.forEach(s => {
-        const vol = (s.reps && s.peso) ? (s.reps * parseFloat(s.peso)).toFixed(1) + ' kg' : '—';
-        html += `<tr>
-          <td>Serie ${s.numero}</td>
-          <td class="reps">${s.reps !== null ? s.reps + ' reps' : '—'}</td>
-          <td class="kg">${s.peso !== null ? parseFloat(s.peso).toFixed(1) + ' kg' : '—'}</td>
-          <td style="color:#6b7280">${vol}</td>
-        </tr>`;
-      });
-      html += '</tbody></table></div>';
-    });
-    body.innerHTML = html;
+  // PORTAL JS: Mover backdrop y sheet a document.body para garantizar position:fixed infalible
+  function asegurarPortalBody() {
+    const backdrop = document.getElementById('diaModalBackdrop');
+    const modal    = document.getElementById('diaModal');
+    if (backdrop && backdrop.parentElement !== document.body) {
+      document.body.appendChild(backdrop);
+    }
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+  }
 
-  } else if (data.tipo === 'planificado') {
-    badge.textContent = 'Planificado';
-    badge.classList.add('badge-planificado');
-    sub.textContent = data.rutina_desc || 'Rutina programada';
-    const ejs = data.data;
-
-    let html = '';
-    ejs.forEach(ej => {
-      html += `<div class="dm-ejercicio">
-        <div class="dm-ex-name">
-          <i class="ti ti-dumbbell" style="color:#fbbf24;font-size:.85rem"></i>
-          ${ej.nombre}
-          ${ej.grupo_muscular ? '<span class="dm-grupo-chip">' + ej.grupo_muscular + '</span>' : ''}
-        </div>
-        <div class="dm-plan-grid">
-          <div class="dm-plan-chip"><span>${ej.series_total}</span> series</div>
-          <div class="dm-plan-chip"><span>${ej.repeticiones || '—'}</span> reps</div>
-          ${ej.rir ? '<div class="dm-plan-chip">RIR <span>' + ej.rir + '</span></div>' : ''}
-        </div>
-      </div>`;
-    });
-    html += `<a href="${APP}/cliente/rutina-dia?rutina=${data.rutina_id}" class="dm-btn-rutina">
-      <i class="ti ti-player-play-filled"></i> Ir a esta rutina
-    </a>`;
-    body.innerHTML = html;
-
-  } else if (data.tipo === 'descanso') {
-    badge.textContent = 'Descanso';
-    badge.classList.add('badge-descanso');
-    body.innerHTML = '<div class="dia-modal-empty"><i class="ti ti-zzz" style="color:#374151"></i><p>Día de descanso. ¡La recuperación también es entrenamiento!</p></div>';
-
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', asegurarPortalBody);
   } else {
-    badge.textContent = 'Sin rutina';
-    badge.classList.add('badge-descanso');
-    body.innerHTML = '<div class="dia-modal-empty"><i class="ti ti-calendar-off" style="color:#374151"></i><p>No hay rutina programada para este día.</p></div>';
+    asegurarPortalBody();
   }
-}
 
-function cerrarModalDia(event, force) {
-  if (!force && event && document.getElementById('diaModal').contains(event.target)) return;
-  const overlay = document.getElementById('diaModalOverlay');
-  overlay.classList.remove('open');
-  document.body.style.overflow = '';
-  document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
-}
+  // Helper para inicial de la serie (W, 1, 2, F, D)
+  function badgeSerieTexto(tipo, num) {
+    const t = String(tipo || 'normal').toLowerCase();
+    if (t === 'calentamiento') return 'W';
+    if (t === 'fallo')         return 'F';
+    if (t === 'drop')          return 'D';
+    return String(num || 1);
+  }
+
+  function badgeSerieTitulo(tipo, num) {
+    const t = String(tipo || 'normal').toLowerCase();
+    if (t === 'calentamiento') return 'Serie de Calentamiento (W)';
+    if (t === 'fallo')         return 'Serie al Fallo (F)';
+    if (t === 'drop')          return 'Drop Set (D)';
+    return 'Serie ' + (num || 1);
+  }
+
+  // Abrir modal con Fetch API y evaluación temporal
+  async function abrirModalDia(fecha) {
+    if (!fecha) return;
+    asegurarPortalBody();
+
+    ultimoElementoFoco = document.activeElement;
+
+    // Resaltar celda seleccionada en el calendario
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+    const celda = document.querySelector(`.cal-cell[data-fecha="${fecha}"]`);
+    if (celda) celda.classList.add('selected');
+
+    const backdrop = document.getElementById('diaModalBackdrop');
+    const modal    = document.getElementById('diaModal');
+    const fechaEl  = document.getElementById('diaModalFecha');
+    const badgeEl  = document.getElementById('diaModalBadge');
+    const subEl    = document.getElementById('diaModalSub');
+    const bodyEl   = document.getElementById('diaModalBody');
+
+    fechaEl.textContent = formatoFechaLarga(fecha);
+    subEl.textContent   = '';
+    badgeEl.textContent = '';
+    badgeEl.className   = 'dia-modal-badge';
+
+    // Badge preliminar inmediato según comparación temporal
+    if (fecha < FECHA_HOY) {
+      badgeEl.textContent = 'Historial';
+      badgeEl.classList.add('modo-historial');
+    } else if (fecha === FECHA_HOY) {
+      badgeEl.textContent = 'Hoy';
+      badgeEl.classList.add('modo-hoy');
+    } else {
+      badgeEl.textContent = 'Planificación';
+      badgeEl.classList.add('modo-planificacion');
+    }
+
+    bodyEl.innerHTML = `
+      <div class="dia-modal-loading">
+        <div class="dia-modal-spinner" aria-hidden="true"></div>
+        <span>Consultando registros...</span>
+      </div>
+    `;
+
+    // Abrir bottom-sheet y bloquear scroll de fondo
+    backdrop.classList.add('open');
+    modal.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    // Foco accesible al modal
+    setTimeout(() => { modal.focus(); }, 100);
+
+    // Cancelar fetch previo si aún estuviera en curso
+    if (activeFetchAbort) {
+      activeFetchAbort.abort();
+    }
+    activeFetchAbort = new AbortController();
+
+    try {
+      const url = `${APP_BASE}/cliente/api-dia-detalle?fecha=${encodeURIComponent(fecha)}`;
+      const res = await fetch(url, { credentials: 'same-origin', signal: activeFetchAbort.signal });
+      const data = await res.json();
+      renderModalDia(fecha, data);
+    } catch(err) {
+      if (err.name === 'AbortError') return;
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-wifi-off" aria-hidden="true"></i>
+          <p>No se pudo conectar con el servidor para consultar este día.</p>
+          <button type="button" class="dm-btn-rutina" style="max-width:220px;margin:16px auto 0;" onclick="window.abrirModalDia('${esc(fecha)}')">
+            <i class="ti ti-reload" aria-hidden="true"></i> Reintentar
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  // Renderizar contenido según Caso A, Caso B o Caso C
+  function renderModalDia(fecha, data) {
+    const badgeEl = document.getElementById('diaModalBadge');
+    const subEl   = document.getElementById('diaModalSub');
+    const bodyEl  = document.getElementById('diaModalBody');
+
+    if (!data || !data.ok) {
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <p>${esc((data && data.msg) || 'Error al obtener los datos del día.')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Actualizar badges según modo y estado devuelto por el backend
+    badgeEl.className = 'dia-modal-badge';
+    if (data.modo === 'historial') {
+      badgeEl.classList.add('modo-historial');
+      badgeEl.textContent = 'Historial';
+    } else if (data.modo === 'hoy') {
+      badgeEl.classList.add('modo-hoy');
+      badgeEl.textContent = (data.estado === 'completado') ? 'Hoy · Completado'
+                          : (data.estado === 'parcial'    ? 'Hoy · En Progreso' : 'Hoy');
+    } else {
+      badgeEl.classList.add('modo-planificacion');
+      badgeEl.textContent = 'Planificación';
+    }
+
+    // CASO A: Día Pasado sin actividad registrada
+    if (data.estado === 'sin_actividad') {
+      subEl.textContent = 'Sin entrenamiento registrado';
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-calendar-off" aria-hidden="true"></i>
+          <p>No se registró actividad ni rutina completada en esta fecha.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Sin rutina programada (aplica para Hoy o Futuro)
+    if (data.estado === 'sin_rutina') {
+      subEl.textContent = 'Día libre / Sin rutina';
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-moon-stars" aria-hidden="true"></i>
+          <p>${data.modo === 'hoy' ? 'No tienes una rutina programada para el día de hoy.' : 'No hay rutina programada para esta fecha futura.'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    // CASO A & B: Entrenamiento registrado (completado o parcial)
+    if (data.estado === 'completado' || data.estado === 'parcial') {
+      const resumen = data.resumen || {};
+      const numEjs  = resumen.ejercicios || (data.ejercicios ? data.ejercicios.length : 0);
+      const numSets = resumen.series || 0;
+
+      subEl.textContent = `${numEjs} ejercicio${numEjs !== 1 ? 's' : ''} · ${numSets} serie${numSets !== 1 ? 's' : ''}`;
+
+      let html = '';
+
+      // Cabecera de la Rutina Realizada
+      const rutinaNombre = (data.rutina && data.rutina.nombre) ? data.rutina.nombre : 'Entrenamiento Realizado';
+      html += `
+        <div class="dm-rutina">
+          <i class="ti ti-flame" aria-hidden="true"></i>
+          <div style="flex:1;min-width:0;">
+            <div class="dm-rutina-nombre">${esc(rutinaNombre)}</div>
+            <div class="dm-rutina-fecha">${esc(formatoFechaLarga(fecha))}</div>
+          </div>
+        </div>
+      `;
+
+      // Tarjetas Bento de resumen rápido
+      html += `
+        <div class="dm-stats">
+          <div class="dm-stat">
+            <b>${numEjs}</b>
+            <span>Ejercicios</span>
+          </div>
+          <div class="dm-stat">
+            <b>${numSets}</b>
+            <span>Series</span>
+          </div>
+        </div>
+      `;
+
+      // Desglose de ejercicios y series completadas
+      const lista = data.ejercicios || [];
+      window.ejerciciosDiaActual = lista;
+
+      // Destruir instancias previas de gráficas de sesión si existieran
+      if (window.chartsSesion) {
+        Object.values(window.chartsSesion).forEach(c => { if (c) c.destroy(); });
+      }
+      window.chartsSesion = {};
+
+      lista.forEach((ej, index) => {
+        const equip = ej.equipamiento ? esc(ej.equipamiento) : null;
+        const grupo = ej.grupo_muscular ? esc(ej.grupo_muscular) : null;
+        const tieneSeries = ej.series && ej.series.length > 0;
+
+        html += `
+          <div class="dm-ejercicio">
+            <div class="dm-ex-name">
+              <i class="ti ti-barbell" style="color:var(--text-purple,#b388ff);font-size:.95rem" aria-hidden="true"></i>
+              <span style="flex:1;min-width:0">${esc(ej.nombre)}</span>
+              ${equip ? `<span class="dm-equip"><i class="ti ti-tools" aria-hidden="true"></i>${equip}</span>` : ''}
+              ${grupo ? `<span class="dm-grupo-chip">${grupo}</span>` : ''}
+              ${tieneSeries ? `<button type="button" class="dm-grafica-toggle-btn" onclick="toggleGraficaSesion(${index})" title="Ver gráfica de la sesión"><i class="ti ti-chart-bar"></i> Gráfica</button>` : ''}
+            </div>
+            <table class="dm-table">
+              <thead>
+                <tr>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Peso</th>
+                  <th scope="col">Reps</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        (ej.series || []).forEach(s => {
+          const badgeTxt = badgeSerieTexto(s.tipo, s.numero);
+          const badgeTit = badgeSerieTitulo(s.tipo, s.numero);
+          const repsVal  = (s.reps !== null && s.reps !== undefined) ? `${s.reps} reps` : '—';
+          const pesoVal  = (s.peso !== null && s.peso !== undefined) ? `${parseFloat(s.peso).toFixed(1)} kg` : '—';
+
+          html += `
+            <tr>
+              <td>
+                <span class="dm-set-badge" data-t="${esc(s.tipo)}" title="${esc(badgeTit)}">
+                  ${esc(badgeTxt)}
+                </span>
+              </td>
+              <td class="kg">${esc(pesoVal)}</td>
+              <td class="reps">${esc(repsVal)}</td>
+            </tr>
+          `;
+        });
+
+        html += `
+              </tbody>
+            </table>
+
+            ${tieneSeries ? `
+            <div class="dm-grafica-sesion-wrap" id="graficaWrap_${index}" style="display:none;margin-top:10px;padding:12px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">
+              <div style="font-size:0.75rem;font-weight:700;color:#c084fc;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                <i class="ti ti-chart-bar"></i> Rendimiento por serie en este día (Repeticiones)
+              </div>
+              <canvas id="canvasSesion_${index}" height="130"></canvas>
+            </div>
+            ` : ''}
+
+          </div>
+        `;
+      });
+
+      // Acción si es Hoy y está parcial
+      if (data.accion && data.accion.url) {
+        html += `
+          <a href="${esc(data.accion.url)}" class="dm-btn-rutina">
+            <i class="ti ti-player-play-filled" aria-hidden="true"></i> ${esc(data.accion.label || 'Continuar entrenando')}
+          </a>
+        `;
+      }
+
+      bodyEl.innerHTML = html;
+      return;
+    }
+
+    // CASO B: Hoy pendiente (rutina programada pero aún no entrenada)
+    if (data.modo === 'hoy' && data.estado === 'pendiente') {
+      const rutinaNombre = (data.rutina && data.rutina.nombre) ? data.rutina.nombre : 'Rutina de Hoy';
+      subEl.textContent = 'Rutina de hoy · Pendiente de realizar';
+
+      let html = `
+        <div class="dm-rutina">
+          <i class="ti ti-clock-play" aria-hidden="true" style="color:#fbbf24"></i>
+          <div style="flex:1;min-width:0;">
+            <div class="dm-rutina-nombre">${esc(rutinaNombre)}</div>
+            <div class="dm-rutina-fecha">Programada para hoy</div>
+          </div>
+        </div>
+        <p class="dm-section-label">Ejercicios a realizar hoy:</p>
+      `;
+
+      const lista = data.ejercicios || [];
+      lista.forEach(ej => {
+        const equip = ej.equipamiento ? esc(ej.equipamiento) : null;
+        const grupo = ej.grupo_muscular ? esc(ej.grupo_muscular) : null;
+
+        html += `
+          <div class="dm-ejercicio">
+            <div class="dm-ex-name">
+              <i class="ti ti-circle-dot" style="color:#a78bfa;font-size:.85rem" aria-hidden="true"></i>
+              <span style="flex:1;min-width:0">${esc(ej.nombre)}</span>
+              ${equip ? `<span class="dm-equip"><i class="ti ti-tools" aria-hidden="true"></i>${equip}</span>` : ''}
+              ${grupo ? `<span class="dm-grupo-chip">${grupo}</span>` : ''}
+            </div>
+            <div class="dm-plan-grid">
+              <div class="dm-plan-chip">Series: <span>${esc(ej.series_total || 0)}</span></div>
+              <div class="dm-plan-chip">Reps: <span>${esc(ej.repeticiones || '—')}</span></div>
+              ${ej.rir ? `<div class="dm-plan-chip">RIR: <span>${esc(ej.rir)}</span></div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      if (data.accion && data.accion.url) {
+        html += `
+          <a href="${esc(data.accion.url)}" class="dm-btn-rutina">
+            <i class="ti ti-flame" aria-hidden="true"></i> ${esc(data.accion.label || 'Ir a entrenar hoy')}
+          </a>
+        `;
+      }
+
+      bodyEl.innerHTML = html;
+      return;
+    }
+
+    // CASO C: Día Futuro (Modo Planificación - sólo lectura, sin pesos ni repeticiones reales)
+    if (data.modo === 'planificacion') {
+      const rutinaNombre = (data.rutina && data.rutina.nombre) ? data.rutina.nombre : 'Rutina Programada';
+      subEl.textContent = 'Rutina programada para este día';
+
+      let html = `
+        <div class="dm-rutina" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25)">
+          <i class="ti ti-calendar-event" aria-hidden="true" style="color:#fbbf24"></i>
+          <div style="flex:1;min-width:0;">
+            <div class="dm-rutina-nombre">${esc(rutinaNombre)}</div>
+            <div class="dm-rutina-fecha">${esc(formatoFechaLarga(fecha))}</div>
+          </div>
+        </div>
+        <p class="dm-section-label">Planificación asignada por tu entrenador:</p>
+      `;
+
+      const lista = data.ejercicios || [];
+      lista.forEach(ej => {
+        const equip = ej.equipamiento ? esc(ej.equipamiento) : null;
+        const grupo = ej.grupo_muscular ? esc(ej.grupo_muscular) : null;
+
+        html += `
+          <div class="dm-ejercicio">
+            <div class="dm-ex-name">
+              <i class="ti ti-notes" style="color:#fbbf24;font-size:.85rem" aria-hidden="true"></i>
+              <span style="flex:1;min-width:0">${esc(ej.nombre)}</span>
+              ${equip ? `<span class="dm-equip"><i class="ti ti-tools" aria-hidden="true"></i>${equip}</span>` : ''}
+              ${grupo ? `<span class="dm-grupo-chip">${grupo}</span>` : ''}
+            </div>
+            <div class="dm-plan-grid">
+              <div class="dm-plan-chip">Objetivo: <span>${esc(ej.series_total || 0)} series</span></div>
+              <div class="dm-plan-chip">Reps: <span>${esc(ej.repeticiones || '—')}</span></div>
+              ${ej.rir ? `<div class="dm-plan-chip">RIR: <span>${esc(ej.rir)}</span></div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      bodyEl.innerHTML = html;
+      return;
+    }
+  }
+
+  // Cerrar bottom-sheet
+  function cerrarModalDia(event, force) {
+    if (!force && event) {
+      const modal = document.getElementById('diaModal');
+      if (modal && modal.contains(event.target)) return;
+    }
+
+    if (activeFetchAbort) {
+      activeFetchAbort.abort();
+      activeFetchAbort = null;
+    }
+
+    const backdrop = document.getElementById('diaModalBackdrop');
+    const modal    = document.getElementById('diaModal');
+    if (backdrop) {
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+    if (modal) {
+      modal.classList.remove('open');
+    }
+
+    document.body.style.overflow = '';
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+
+    if (ultimoElementoFoco && typeof ultimoElementoFoco.focus === 'function') {
+      try { ultimoElementoFoco.focus(); } catch(_) {}
+    }
+  }
+
+  // Delegación de eventos en el calendario (click y accesibilidad con teclado Enter / Espacio)
+  document.addEventListener('click', function(e) {
+    const celda = e.target.closest('.cal-cell[data-fecha]');
+    if (celda) {
+      e.preventDefault();
+      const fecha = celda.getAttribute('data-fecha');
+      abrirModalDia(fecha);
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    // Escape cierra el modal
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      const modal = document.getElementById('diaModal');
+      if (modal && modal.classList.contains('open')) {
+        cerrarModalDia(null, true);
+        return;
+      }
+    }
+    // Accesibilidad teclado en celdas: Enter o Espacio abre el detalle
+    if (e.key === 'Enter' || e.key === ' ') {
+      const celda = document.activeElement && document.activeElement.closest('.cal-cell[data-fecha]');
+      if (celda) {
+        e.preventDefault();
+        abrirModalDia(celda.getAttribute('data-fecha'));
+      }
+    }
+  });
+
+  // Exponer a ámbito global para llamadas de fallback o botones de reintento
+  window.abrirModalDia  = abrirModalDia;
+  window.cerrarModalDia = cerrarModalDia;
+})();
 </script>
 
 
@@ -1207,14 +1709,10 @@ function cerrarHistorialPeso(event, force) {
   font-size: .72rem; font-weight: 700; color: #6b7280;
   cursor: pointer; transition: all .2s; text-align: center; font-family: inherit;
 }
-.pm-metric-tab.active {
-  background: rgba(125,211,252,.15); border-color: rgba(125,211,252,.4); color: #7dd3fc;
-}
-.pm-metric-tab.active.blue {
-  background: rgba(56,189,248,.15); border-color: rgba(56,189,248,.4); color: #38bdf8;
-}
+.pm-metric-tab.active,
+.pm-metric-tab.active.blue,
 .pm-metric-tab.active.purple {
-  background: rgba(167,139,250,.15); border-color: rgba(167,139,250,.4); color: #a78bfa;
+  background: var(--accent-bg, rgba(138,43,226,.15)); border-color: var(--accent-primary, #8a2be2); color: var(--text-purple, #b388ff);
 }
 
 /* ── Selector de ejercicios ── */
@@ -1229,37 +1727,234 @@ function cerrarHistorialPeso(event, force) {
 }
 .pm-ex-btn:hover { border-color: rgba(255,255,255,.2); color: #e2e8f0; }
 .pm-ex-btn.active {
-  background: rgba(125,211,252,.15); border-color: rgba(125,211,252,.4); color: #7dd3fc;
+  background: var(--accent-bg, rgba(138,43,226,.15)); border-color: var(--accent-primary, #8a2be2); color: var(--text-purple, #b388ff);
 }
 .pm-ex-empty {
   font-size: .78rem; color: #374151; padding: 6px 0; display: flex; align-items: center; gap: 6px;
 }
 
-/* ── Tarjeta de resumen del ejercicio ── */
+/* ── Tarjeta de resumen del ejercicio (2 columnas de récord) ── */
 .pm-summary-card {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px; margin-bottom: 12px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 14px;
 }
 .pm-summary-stat {
   background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
-  border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;
+  border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
 }
 .pm-summary-lbl {
-  font-size: .6rem; color: #4b5563; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .4px;
+  font-size: .62rem; color: #6b7280; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .5px;
 }
 .pm-summary-val {
-  font-size: 1rem; font-weight: 900; color: #fff; line-height: 1;
+  font-size: 1.15rem; font-weight: 900; color: #fff; line-height: 1;
 }
 .pm-summary-sub {
-  font-size: .6rem; color: #6b7280;
+  font-size: .65rem; color: #9ca3af; font-weight: 600;
 }
+
+/* ── Historial de Marcas Cronológicas ── */
+.pm-marcas-wrap {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+.pm-marcas-header {
+  font-size: .72rem;
+  font-weight: 800;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pm-marcas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.pm-marcas-list::-webkit-scrollbar {
+  width: 4px;
+}
+.pm-marcas-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+.pm-marcas-list::-webkit-scrollbar-thumb {
+  background: rgba(138, 43, 226, 0.4);
+  border-radius: 4px;
+}
+/* ── Salón de Récords · 3 Mejores Series en Fila Horizontal ── */
+.pm-versiones-wrap,
+.pm-series-wrap {
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.pm-versiones-header,
+.pm-series-header {
+  font-size: .72rem;
+  font-weight: 800;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pm-versiones-grid,
+.pm-series-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.pm-version-card,
+.pm-serie-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 6px !important;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3px;
+  text-align: left;
+  min-width: 0 !important;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box !important;
+}
+.pm-version-card:hover:not(.disabled),
+.pm-serie-card:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+.pm-version-card.pos-1.active,
+.pm-serie-card.pos-1.active {
+  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.18);
+}
+.pm-version-card.pos-2.active,
+.pm-serie-card.pos-2.active {
+  border-color: #cbd5e1;
+  background: rgba(148, 163, 184, 0.08);
+  box-shadow: 0 4px 14px rgba(148, 163, 184, 0.18);
+}
+.pm-version-card.pos-3.active,
+.pm-serie-card.pos-3.active {
+  border-color: #f59e0b;
+  background: rgba(217, 119, 6, 0.08);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.18);
+}
+.pm-version-card.disabled,
+.pm-serie-card.disabled {
+  opacity: 0.45;
+  cursor: default;
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.015);
+}
+.pm-version-top,
+.pm-serie-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+}
+.pm-version-badge,
+.pm-serie-badge {
+  font-size: 1rem;
+  line-height: 1;
+}
+.pm-version-tag,
+.pm-serie-tag {
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.pm-version-tag.pos-1, .pm-serie-tag.pos-1 { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.pm-version-tag.pos-2, .pm-serie-tag.pos-2 { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+.pm-version-tag.pos-3, .pm-serie-tag.pos-3 { background: rgba(217, 119, 6, 0.15); color: #f59e0b; }
+.pm-version-tag.empty, .pm-serie-tag.empty { background: rgba(255, 255, 255, 0.05); color: #6b7280; }
+
+.pm-version-val,
+.pm-serie-val {
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.18;
+  margin-top: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px;
+}
+.pm-serie-reps {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+.pm-version-date,
+.pm-serie-date {
+  font-size: 0.64rem;
+  color: #9ca3af;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pm-version-cal-link,
+.pm-serie-cal-link {
+  font-size: 0.58rem;
+  color: #c084fc;
+  font-weight: 700;
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.18s ease;
+}
+.pm-version-cal-link:hover,
+.pm-serie-cal-link:hover {
+  color: #e9d5ff;
+  text-decoration: underline;
+}
+
 </style>
 
 <div class="st-section">
   <div class="st-section-box">
   <div class="st-section-title">
-    <i class="ti ti-chart-area-line" style="color:#7dd3fc"></i> Progreso por grupo muscular
+    <i class="ti ti-chart-area-line" style="color:var(--text-purple, #b388ff)"></i> Progreso por grupo muscular
   </div>
   <div class="st-section-sub">Selecciona un grupo y un ejercicio para ver tu evolución</div>
 
@@ -1305,35 +2000,17 @@ function cerrarHistorialPeso(event, force) {
     </div>
   </div>
 
-  <!-- Tabs de métrica -->
-  <div class="pm-metric-tabs">
-    <button class="pm-metric-tab active" id="metricPeso" onclick="cambiarMetrica('peso')">
-      <i class="ti ti-barbell"></i> Peso Máx
-    </button>
-    <button class="pm-metric-tab" id="metricReps" onclick="cambiarMetrica('reps')">
-      <i class="ti ti-repeat"></i> Reps Máx
-    </button>
-    <button class="pm-metric-tab" id="metricVol" onclick="cambiarMetrica('volumen')">
-      <i class="ti ti-chart-area"></i> Volumen
-    </button>
-  </div>
-
-  <!-- Tarjeta de resumen -->
-  <div class="pm-summary-card" id="pmSummaryCard" style="display:none">
+  <!-- Tarjetas de resumen de récords de fuerza (2 Columnas) -->
+  <div class="pm-summary-card" id="pmSummaryCard" style="display:none;margin-top:12px;">
     <div class="pm-summary-stat">
-      <div class="pm-summary-lbl">Primer registro</div>
-      <div class="pm-summary-val" id="pmStatFirst">—</div>
-      <div class="pm-summary-sub" id="pmStatFirstDate"></div>
+      <div class="pm-summary-lbl"><i class="ti ti-trophy" style="color:#fbbf24"></i> Peso Máximo</div>
+      <div class="pm-summary-val" id="pmStatMax" style="color:var(--text-purple, #b388ff)">—</div>
+      <div class="pm-summary-sub" id="pmStatMaxSub"></div>
     </div>
     <div class="pm-summary-stat">
-      <div class="pm-summary-lbl">Máximo</div>
-      <div class="pm-summary-val" id="pmStatMax" style="color:#7dd3fc">—</div>
-      <div class="pm-summary-sub" id="pmStatMaxDate"></div>
-    </div>
-    <div class="pm-summary-stat">
-      <div class="pm-summary-lbl">Último</div>
-      <div class="pm-summary-val" id="pmStatLast">—</div>
-      <div class="pm-summary-sub" id="pmStatLastDate"></div>
+      <div class="pm-summary-lbl"><i class="ti ti-flame" style="color:#f43f5e"></i> Mayor Reps</div>
+      <div class="pm-summary-val" id="pmStatReps" style="color:#f43f5e">—</div>
+      <div class="pm-summary-sub" id="pmStatRepsSub"></div>
     </div>
   </div>
 
@@ -1349,29 +2026,42 @@ function cerrarHistorialPeso(event, force) {
     </div>
   </div>
 
+  <!-- Salón de Récords · 3 Series en Fila Horizontal -->
+  <div class="pm-versiones-wrap pm-series-wrap" id="pmHistorialMarcasWrap" style="display:none;">
+    <div class="pm-versiones-header pm-series-header">
+      <span><i class="ti ti-medal" style="color:#fbbf24"></i> Salón de Récords · 3 Mejores Series</span>
+      <span id="pmMarcasCount" style="font-size:.65rem; color:#6b7280; font-weight:700;">Toca una serie para compararla</span>
+    </div>
+    <div class="pm-versiones-grid pm-series-grid" id="pmHistorialMarcasList"></div>
+  </div>
+
   </div><!-- end st-section-box -->
 </div>
 
-<!-- ── Padding inferior para la nav ── -->
-<div style="height:80px"></div>
+</div><!-- end st-desktop-grid -->
+</div><!-- end xp-client-container -->
+
+<!-- ── Padding inferior seguro para la barra de navegación ── -->
+<div style="height: calc(95px + env(safe-area-inset-bottom, 25px));"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// ── Datos del PHP ─────────────────────────────────────────
-const GRAFICA_DATA  = <?= json_encode($graficaData, JSON_UNESCAPED_UNICODE) ?>;
-const CHART_COLORS  = <?= json_encode($chartColors) ?>;
-const CHART_BG      = <?= json_encode($chartBg) ?>;
+// ── Configuración inicial ─────────────────────────────────
 const TREN_SUPERIOR = <?= json_encode($trenoSuperior, JSON_UNESCAPED_UNICODE) ?>;
 const TREN_INFERIOR = <?= json_encode($trenoInferior, JSON_UNESCAPED_UNICODE) ?>;
 
-// ── Estado ────────────────────────────────────────────────
-let currentTren    = 'superior';
-let currentGrupo   = 'pecho';
-let currentEjercicio = null;
-let currentMetrica = 'peso'; // 'peso' | 'reps' | 'volumen'
-let mainChart      = null;
+// ── Estado de navegación y datos ──────────────────────────
+let currentTren           = 'superior';
+let currentGrupo          = 'pecho';
+let currentEjercicio      = null;
+let currentEjercicioId    = null;
+let currentBarrasPesos    = [];
+let currentResumenRecords = null;
+let currentTop3Sesiones   = [];
+let currentVersionIndex   = 0;
+let mainChart             = null;
 
-// ── Acordeón agenda ───────────────────────────────────────
+// ── Acordeón agenda (preservado para calendario) ───────────
 function toggleAgenda(id) {
   const el = document.getElementById(id);
   if (el) el.classList.toggle('open');
@@ -1388,12 +2078,14 @@ function cambiarTren(tren) {
   if (grupos.length) seleccionarGrupo(grupos[0], tren);
 }
 
-// ── Seleccionar grupo muscular ────────────────────────────
-function seleccionarGrupo(grupo, tren) {
-  currentGrupo    = grupo;
-  currentEjercicio = null;
+// ── Seleccionar grupo muscular (Fetch Dinámico) ───────────
+async function seleccionarGrupo(grupo, tren) {
+  currentGrupo       = grupo;
+  currentEjercicio   = null;
+  currentEjercicioId = null;
+  currentHistorial   = [];
 
-  // Chips de grupo
+  // Actualizar chips de la UI
   document.querySelectorAll('.st-grupo-chip').forEach(c =>
     c.classList.remove('active-sup', 'active-inf'));
   const norm = grupo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -1402,204 +2094,424 @@ function seleccionarGrupo(grupo, tren) {
   );
   if (chip) chip.classList.add(tren === 'superior' ? 'active-sup' : 'active-inf');
 
-  // Renderizar lista de ejercicios
-  renderEjercicioList(grupo);
+  // Estado de carga en selector de ejercicios
+  const list = document.getElementById('pmExList');
+  list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-loader ti-spin"></i> Cargando ejercicios registrados...</span>';
 
-  // Mostrar estado vacío en chart
+  // Ocultar gráfica, resumen y marcas mientras carga
   const canvas = document.getElementById('mainChart');
   const empty  = document.getElementById('chartEmpty');
   canvas.style.display = 'none';
   empty.style.display  = 'flex';
-  const grupoData = GRAFICA_DATA[grupo];
-  if (!grupoData || Object.keys(grupoData).length === 0) {
-    document.getElementById('chartEmptyMsg').textContent =
-      'Aún no tienes ejercicios de ' + ucFirst(grupo) + ' con peso registrado.';
-  } else {
-    document.getElementById('chartEmptyMsg').textContent =
-      'Selecciona un ejercicio para ver tu progreso.';
-    // Auto-seleccionar el primer ejercicio
-    const primerEj = Object.keys(grupoData)[0];
-    if (primerEj) setTimeout(() => seleccionarEjercicio(primerEj), 50);
-  }
-  if (mainChart) { mainChart.destroy(); mainChart = null; }
   document.getElementById('pmSummaryCard').style.display = 'none';
-}
+  const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
+  if (marcasWrap) marcasWrap.style.display = 'none';
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
 
-// ── Renderizar botones de ejercicio ─────────────────────
-function renderEjercicioList(grupo) {
-  const list = document.getElementById('pmExList');
-  const grupoData = GRAFICA_DATA[grupo];
-  if (!grupoData || Object.keys(grupoData).length === 0) {
-    list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin datos para este grupo</span>';
-    return;
+  try {
+    const res = await fetch(APP + '/cliente/api-progreso-ejercicios?grupo=' + encodeURIComponent(grupo));
+    const data = await res.json();
+
+    if (!data.ok || !data.ejercicios || data.ejercicios.length === 0) {
+      list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
+      document.getElementById('chartEmptyMsg').textContent =
+        'Aún no tienes series completadas registradas en ' + ucFirst(grupo) + '.';
+      document.getElementById('chartTitleText').textContent = 'Progreso de ' + ucFirst(grupo);
+      return;
+    }
+
+    // Renderizar botones de ejercicios
+    let html = '';
+    data.ejercicios.forEach(ej => {
+      const safeName = (ej.nombre || '').replace(/'/g, "\\'");
+      const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
+      const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
+      html += `<button class="pm-ex-btn" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
+        data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
+    });
+    list.innerHTML = html;
+
+    // Auto-seleccionar el primer ejercicio registrado
+    if (data.ejercicios.length > 0) {
+      seleccionarEjercicio(data.ejercicios[0].nombre, data.ejercicios[0].id || 0);
+    }
+  } catch (err) {
+    console.error('Error al cargar ejercicios de progreso:', err);
+    list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-alert-circle"></i> Error de conexión al cargar ejercicios</span>';
+    document.getElementById('chartEmptyMsg').textContent = 'Error de conexión al cargar ejercicios.';
   }
-  let html = '';
-  Object.keys(grupoData).forEach(nombre => {
-    html += `<button class="pm-ex-btn" onclick="seleccionarEjercicio('${nombre.replace(/'/g, "\\'")}')"
-      data-ej="${nombre.replace(/"/g,'&quot;')}">${nombre}</button>`;
-  });
-  list.innerHTML = html;
 }
 
-// ── Seleccionar ejercicio individual ─────────────────────
-function seleccionarEjercicio(nombre) {
-  currentEjercicio = nombre;
+// ── Seleccionar ejercicio individual (Fetch Historial) ────
+async function seleccionarEjercicio(nombre, id) {
+  currentEjercicio   = nombre;
+  currentEjercicioId = id || null;
 
-  // Activar botón
+  // Activar botón en la lista
   document.querySelectorAll('.pm-ex-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.ej === nombre);
   });
 
-  renderChartEjercicio();
-  renderSummary();
-}
-
-// ── Cambiar métrica ───────────────────────────────────────
-function cambiarMetrica(metrica) {
-  currentMetrica = metrica;
-  // Actualizar tabs
-  document.getElementById('metricPeso').classList.toggle('active', metrica === 'peso');
-  document.getElementById('metricPeso').classList.remove('blue', 'purple');
-  document.getElementById('metricReps').classList.toggle('active', metrica === 'reps');
-  document.getElementById('metricReps').classList.remove('blue', 'purple');
-  document.getElementById('metricVol').classList.toggle('active',  metrica === 'volumen');
-  document.getElementById('metricVol').classList.remove('blue', 'purple');
-
-  if (metrica === 'reps')    document.getElementById('metricReps').classList.add('blue');
-  if (metrica === 'volumen') document.getElementById('metricVol').classList.add('purple');
-
-  if (currentEjercicio) {
-    renderChartEjercicio();
-    renderSummary();
-  }
-}
-
-// ── Renderizar gráfica de línea por ejercicio ─────────────
-function renderChartEjercicio() {
-  if (!currentEjercicio || !currentGrupo) return;
   const canvas = document.getElementById('mainChart');
   const empty  = document.getElementById('chartEmpty');
-  const grupoData = GRAFICA_DATA[currentGrupo];
-  const puntos = grupoData ? grupoData[currentEjercicio] : null;
+  document.getElementById('chartTitleText').textContent = nombre + ' — Cargando historial...';
 
-  if (!puntos || puntos.length === 0) {
+  try {
+    let url = APP + '/cliente/api-progreso-historial?ejercicio_nombre=' + encodeURIComponent(nombre);
+    if (id) url += '&ejercicio_id=' + id;
+
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (!data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
+      currentTop3Sesiones   = [];
+      currentBarrasPesos    = [];
+      currentResumenRecords = null;
+      canvas.style.display = 'none';
+      empty.style.display  = 'flex';
+      document.getElementById('chartEmptyMsg').textContent =
+        'Sin datos suficientes de series completadas para ' + nombre;
+      document.getElementById('chartTitleText').textContent = nombre;
+      document.getElementById('pmSummaryCard').style.display = 'none';
+      const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
+      if (marcasWrap) marcasWrap.style.display = 'none';
+      if (mainChart) { mainChart.destroy(); mainChart = null; }
+      return;
+    }
+
+    currentBarrasPesos    = data.barras_pesos || [];
+    currentResumenRecords = data.resumen_records || null;
+    currentTop3Sesiones   = data.top3_sesiones || [];
+    currentVersionIndex   = 0;
+
+    renderChartEjercicio(0);
+    renderSummary();
+    renderPodioTop3();
+  } catch (err) {
+    console.error('Error al cargar historial del ejercicio:', err);
     canvas.style.display = 'none';
     empty.style.display  = 'flex';
-    document.getElementById('chartEmptyMsg').textContent =
-      'Sin datos suficientes para ' + currentEjercicio;
-    if (mainChart) { mainChart.destroy(); mainChart = null; }
-    return;
+    document.getElementById('chartEmptyMsg').textContent = 'Error al cargar el historial de marcas.';
   }
+}
+
+// ── Renderizar gráfica de barras de la Versión Seleccionada ──
+function renderChartEjercicio(versionIdx = null) {
+  if (versionIdx !== null && versionIdx !== undefined) {
+    currentVersionIndex = versionIdx;
+  }
+
+  const sesionActiva = (currentTop3Sesiones && currentTop3Sesiones[currentVersionIndex]) ? currentTop3Sesiones[currentVersionIndex] : null;
+  const barras = (sesionActiva && sesionActiva.barras && sesionActiva.barras.length > 0) ? sesionActiva.barras : currentBarrasPesos;
+
+  if (!currentEjercicio || !barras || barras.length === 0) return;
+  const canvas = document.getElementById('mainChart');
+  const empty  = document.getElementById('chartEmpty');
 
   canvas.style.display = 'block';
   empty.style.display  = 'none';
 
-  // Configuración según métrica
-  const metricaConfig = {
-    peso:    { key: 'peso_max',  color: '#7dd3fc', bg: 'rgba(125,211,252,.12)',   unit: 'kg',     label: 'Peso Máx (kg)' },
-    reps:    { key: 'reps_max',  color: '#38bdf8', bg: 'rgba(56,189,248,.12)',   unit: 'reps',   label: 'Reps Máx' },
-    volumen: { key: 'volumen',   color: '#a78bfa', bg: 'rgba(167,139,250,.12)',  unit: 'kg',     label: 'Volumen Total (kg)' },
-  };
-  const cfg = metricaConfig[currentMetrica];
+  const posEtiquetas = ['1ª Mejor Serie (Oro)', '2ª Serie (Plata)', '3ª Serie (Bronce)'];
+  const posTxt = posEtiquetas[currentVersionIndex] || 'Serie Destacada';
+  const fechaTitulo = sesionActiva ? (sesionActiva.fecha_completa || sesionActiva.fecha_formateada) : '';
 
-  // Actualizar título
   document.getElementById('chartTitleText').textContent =
-    currentEjercicio + ' — ' + cfg.label;
+    `${currentEjercicio} — ${posTxt}${fechaTitulo ? ' · ' + fechaTitulo : ''}`;
 
-  const labels = puntos.map(p => {
-    const d = new Date(p.fecha + 'T00:00:00');
-    return d.toLocaleDateString('es', { month: 'short', day: 'numeric' });
-  });
-  const datos  = puntos.map(p => parseFloat(p[cfg.key]) || 0);
+  const labels = barras.map(b => b.peso_label);
+  const datosReps = barras.map(b => b.reps_max);
 
-  if (mainChart) mainChart.destroy();
+  if (mainChart) {
+    mainChart.destroy();
+    mainChart = null;
+  }
+
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  gradient.addColorStop(0, 'rgba(168, 85, 247, 0.9)');
+  gradient.addColorStop(1, 'rgba(138, 43, 226, 0.35)');
+
+  // Plugin para imprimir la fecha flotando directamente arriba de cada barra
+  const fechaPlugin = {
+    id: 'fechaEncimaBarra',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((dataset, i) => {
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((bar, index) => {
+          const b = barras[index];
+          const fechaTxt = (b && (b.fecha_label || (sesionActiva && sesionActiva.fecha_formateada))) || '';
+          if (fechaTxt) {
+            ctx.save();
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '700 10.5px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(fechaTxt, bar.x, Math.max(bar.y - 8, 12));
+            ctx.restore();
+          }
+        });
+      });
+    }
+  };
 
   mainChart = new Chart(canvas, {
-    type: 'line',
+    type: 'bar',
     data: {
-      labels,
+      labels: labels,
       datasets: [{
-        label: cfg.label,
-        data: datos,
-        borderColor: cfg.color,
-        backgroundColor: cfg.bg,
-        borderWidth: 2.5,
-        pointBackgroundColor: cfg.color,
-        pointRadius: datos.length === 1 ? 6 : 4,
-        pointHoverRadius: 8,
-        tension: 0.35,
-        fill: true,
-        spanGaps: true,
+        label: 'Repeticiones Logradas',
+        data: datosReps,
+        backgroundColor: gradient,
+        borderColor: '#c084fc',
+        borderWidth: 1.5,
+        borderRadius: 8,
+        maxBarThickness: 46
       }]
     },
+    plugins: [fechaPlugin],
     options: {
       responsive: true,
       interaction: { mode: 'index', intersect: false },
+      onClick: (evt, elements) => {
+        if (elements && elements.length > 0) {
+          const idx = elements[0].index;
+          const b = barras[idx];
+          const fIso = (b && b.fecha_iso) || (sesionActiva && sesionActiva.fecha);
+          if (fIso && typeof window.abrirModalDia === 'function') {
+            window.abrirModalDia(fIso);
+          }
+        }
+      },
+      onHover: (evt, elements) => {
+        evt.native.target.style.cursor = (elements && elements.length > 0) ? 'pointer' : 'default';
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#111',
-          borderColor: 'rgba(255,255,255,.1)', borderWidth: 1,
-          titleColor: '#fff', bodyColor: cfg.color,
+          backgroundColor: 'rgba(15, 15, 20, 0.95)',
+          borderColor: 'rgba(168, 85, 247, 0.4)',
+          borderWidth: 1,
+          padding: 12,
+          titleColor: '#fff',
+          bodyColor: '#e2e8f0',
+          cornerRadius: 10,
           callbacks: {
-            label: ctx => ' ' + ctx.parsed.y.toFixed(currentMetrica === 'reps' ? 0 : 1) + ' ' + cfg.unit
+            title: ctx => {
+              const b = barras[ctx[0].dataIndex];
+              return b ? `Carga: ${b.peso_label}` : '';
+            },
+            label: ctx => {
+              const b = barras[ctx.dataIndex];
+              if (!b) return '';
+              return [
+                ` Repeticiones: ${b.reps_max} reps`,
+                ` Fecha: ${b.fecha_label || (sesionActiva && sesionActiva.fecha_formateada)}`,
+                ` 👆 Toca para ver en calendario`
+              ];
+            }
           }
         }
       },
       scales: {
         x: {
-          ticks: { color: '#6b7280', font: { size: 10 }, maxTicksLimit: 8 },
-          grid: { color: 'rgba(255,255,255,.04)' },
+          ticks: {
+            color: '#cbd5e1',
+            font: { size: 11, weight: '700' }
+          },
+          grid: { display: false }
         },
         y: {
-          ticks: { color: '#6b7280', font: { size: 10 },
-            callback: v => v + ' ' + cfg.unit },
-          grid: { color: 'rgba(255,255,255,.06)' },
-          beginAtZero: currentMetrica === 'reps',
+          beginAtZero: true,
+          suggestedMax: Math.max(...datosReps, 5) + 2,
+          ticks: {
+            color: '#9ca3af',
+            font: { size: 10 },
+            stepSize: 2,
+            callback: v => v + ' reps'
+          },
+          grid: { color: 'rgba(255,255,255,.05)' }
         }
       }
     }
   });
 }
 
-// ── Renderizar tarjeta de resumen ──────────────────────────
+// ── Renderizar tarjeta de resumen de récords ──────────────────────────
 function renderSummary() {
-  if (!currentEjercicio || !currentGrupo) return;
-  const grupoData = GRAFICA_DATA[currentGrupo];
-  const puntos    = grupoData ? grupoData[currentEjercicio] : null;
-  const card      = document.getElementById('pmSummaryCard');
+  const card = document.getElementById('pmSummaryCard');
+  if (!card) return;
 
-  if (!puntos || puntos.length === 0) { card.style.display = 'none'; return; }
+  if (!currentResumenRecords) {
+    card.style.display = 'none';
+    return;
+  }
   card.style.display = 'grid';
 
-  const metricaKey = { peso: 'peso_max', reps: 'reps_max', volumen: 'volumen' }[currentMetrica];
-  const unit       = currentMetrica === 'reps' ? ' reps' : ' kg';
-  const decimals   = currentMetrica === 'reps' ? 0 : 1;
+  const rMax  = currentResumenRecords.peso_maximo;
+  const rReps = currentResumenRecords.mayor_reps;
 
-  const vals = puntos.map(p => parseFloat(p[metricaKey]) || 0);
-  const maxIdx = vals.indexOf(Math.max(...vals));
-
-  const fmtFecha = f => {
-    const d = new Date(f + 'T00:00:00');
-    return d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
-  };
-
-  document.getElementById('pmStatFirst').textContent     = vals[0].toFixed(decimals) + unit;
-  document.getElementById('pmStatFirstDate').textContent = fmtFecha(puntos[0].fecha);
-  document.getElementById('pmStatMax').textContent       = vals[maxIdx].toFixed(decimals) + unit;
-  document.getElementById('pmStatMaxDate').textContent   = fmtFecha(puntos[maxIdx].fecha);
-  document.getElementById('pmStatLast').textContent      = vals[vals.length-1].toFixed(decimals) + unit;
-  document.getElementById('pmStatLastDate').textContent  = fmtFecha(puntos[puntos.length-1].fecha);
-
-  // Color del máximo según métrica
-  const maxEl = document.getElementById('pmStatMax');
-  maxEl.style.color = currentMetrica === 'peso'    ? '#7dd3fc'
-                    : currentMetrica === 'reps'     ? '#38bdf8'
-                    : '#a78bfa';
+  if (rMax) {
+    document.getElementById('pmStatMax').textContent = rMax.peso > 0 ? `${parseFloat(rMax.peso).toFixed(1)} kg` : 'Corporal';
+    document.getElementById('pmStatMaxSub').textContent = `${rMax.reps} reps · ${rMax.fecha_fmt}`;
+  }
+  if (rReps) {
+    document.getElementById('pmStatReps').textContent = `${rReps.reps} reps`;
+    document.getElementById('pmStatRepsSub').textContent = (rReps.peso > 0 ? `${parseFloat(rReps.peso).toFixed(1)} kg` : 'Corporal') + ` · ${rReps.fecha_fmt}`;
+  }
 }
+
+// ── Gráfica interactiva de series en el Modal del Calendario ──────────
+window.chartsSesion = window.chartsSesion || {};
+function toggleGraficaSesion(idx) {
+  const wrap = document.getElementById('graficaWrap_' + idx);
+  if (!wrap) return;
+  const isHidden = (wrap.style.display === 'none' || wrap.style.display === '');
+  wrap.style.display = isHidden ? 'block' : 'none';
+
+  if (isHidden) {
+    const canvas = document.getElementById('canvasSesion_' + idx);
+    if (!canvas) return;
+    if (window.chartsSesion[idx]) {
+      window.chartsSesion[idx].destroy();
+      window.chartsSesion[idx] = null;
+    }
+    const ej = (window.ejerciciosDiaActual && window.ejerciciosDiaActual[idx]) ? window.ejerciciosDiaActual[idx] : null;
+    if (!ej || !ej.series || !ej.series.length) return;
+
+    const labels = ej.series.map((s, i) => {
+      const p = (s.peso !== null && s.peso !== undefined && parseFloat(s.peso) > 0) ? `${parseFloat(s.peso).toFixed(1)}kg` : 'Corp';
+      return [`S${s.numero || (i + 1)}`, p];
+    });
+    const dataReps = ej.series.map(s => parseInt(s.reps || 0));
+
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 130);
+    grad.addColorStop(0, 'rgba(168, 85, 247, 0.85)');
+    grad.addColorStop(1, 'rgba(138, 43, 226, 0.25)');
+
+    window.chartsSesion[idx] = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Repeticiones',
+          data: dataReps,
+          backgroundColor: grad,
+          borderColor: '#c084fc',
+          borderWidth: 1.5,
+          borderRadius: 6,
+          maxBarThickness: 36
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: c => {
+                const s = ej.series[c[0].dataIndex];
+                return s ? `Serie ${s.numero || (c[0].dataIndex + 1)} (${s.peso ? parseFloat(s.peso).toFixed(1) + ' kg' : 'Peso corporal'})` : '';
+              },
+              label: c => ` ${c.parsed.y} repeticiones logradas`
+            }
+          }
+        },
+        scales: {
+          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
+          y: { beginAtZero: true, ticks: { color: '#9ca3af', font: { size: 10 }, stepSize: 2 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+        }
+      }
+    });
+  }
+}
+
+// ── Renderizar Salón de Récords · 3 Series en Fila Horizontal ──
+function renderPodioTop3() {
+  const wrap = document.getElementById('pmHistorialMarcasWrap');
+  const list = document.getElementById('pmHistorialMarcasList');
+  if (!wrap || !list) return;
+
+  if (!currentTop3Sesiones || currentTop3Sesiones.length === 0) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+
+  const medallas = [
+    { pos: 'pos-1', icono: '🥇', label: '1ª Serie', color: '#fbbf24' },
+    { pos: 'pos-2', icono: '🥈', label: '2ª Serie', color: '#cbd5e1' },
+    { pos: 'pos-3', icono: '🥉', label: '3ª Serie', color: '#f59e0b' }
+  ];
+
+  let html = '';
+  for (let i = 0; i < 3; i++) {
+    const med = medallas[i];
+    const ses = currentTop3Sesiones[i] || null;
+    const isActive = (i === currentVersionIndex);
+
+    if (ses) {
+      const peso = (parseFloat(ses.peso_max) || 0) > 0 ? (parseFloat(ses.peso_max).toFixed(1) + ' kg') : 'Corporal';
+      const reps = (parseInt(ses.reps_en_max) || 0) + ' reps';
+      const fechaStr = ses.fecha_completa || ses.fecha_formateada || ses.fecha;
+
+      html += `
+        <div class="pm-version-card pm-serie-card ${med.pos} ${isActive ? 'active' : ''}" onclick="cambiarSerie(${i})" title="Toca para ver las cargas de esta serie">
+          <div class="pm-version-top pm-serie-top">
+            <span class="pm-version-badge pm-serie-badge">${med.icono}</span>
+            <span class="pm-version-tag pm-serie-tag ${med.pos}">${med.label}</span>
+          </div>
+          <div class="pm-version-val pm-serie-val">
+            <span>${peso}</span>
+            <span class="pm-serie-reps">× ${reps}</span>
+          </div>
+          <div class="pm-version-date pm-serie-date" title="${esc(fechaStr)}">
+            <i class="ti ti-calendar-event"></i> ${esc(fechaStr)}
+          </div>
+          <div class="pm-version-cal-link pm-serie-cal-link" onclick="event.stopPropagation(); if (typeof window.abrirModalDia === 'function') window.abrirModalDia('${esc(ses.fecha)}');">
+            <i class="ti ti-calendar"></i> Ver día
+          </div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="pm-version-card pm-serie-card disabled">
+          <div class="pm-version-top pm-serie-top">
+            <span class="pm-version-badge pm-serie-badge" style="filter:grayscale(1);opacity:.4;">${med.icono}</span>
+            <span class="pm-version-tag pm-serie-tag empty">${med.label}</span>
+          </div>
+          <div class="pm-version-val pm-serie-val" style="color:#6b7280;font-size:.82rem;">Por registrar</div>
+          <div class="pm-version-date pm-serie-date" style="color:#4b5563;">
+            <i class="ti ti-lock"></i> Próxima serie
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  list.innerHTML = html;
+}
+
+function cambiarSerie(idx) {
+  if (!currentTop3Sesiones || !currentTop3Sesiones[idx]) return;
+  currentVersionIndex = idx;
+  renderChartEjercicio(idx);
+  renderPodioTop3();
+}
+function cambiarVersion(idx) { cambiarSerie(idx); }
 
 // ── Utils ─────────────────────────────────────────────────
 function ucFirst(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+function esc(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ── Init ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
