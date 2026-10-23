@@ -52,7 +52,7 @@ main#mainContent{
   justify-content: center;
   padding: 16px;
   background: rgba(2, 4, 10, 0.46);
-  backdrop-filter: blur(2.5px);
+  backdrop-filter: blur(1px);
   -webkit-backdrop-filter: blur(2.5px);
   /* Scroll interno fluido cuando el wizard de registro o recuperación desborda la pantalla */
   overflow-y: auto;

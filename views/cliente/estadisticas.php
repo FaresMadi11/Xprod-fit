@@ -46,11 +46,11 @@ $grupoIconos = [
   max-width: 1240px;
   margin: 0 auto;
   box-sizing: border-box;
-  padding: 10px 12px calc(95px + env(safe-area-inset-bottom, 25px)) 12px;
+  padding: 8px 8px calc(90px + env(safe-area-inset-bottom, 20px)) 8px !important;
 }
 @media (min-width: 768px) {
   .xp-client-container {
-    padding: 24px 32px 60px 32px;
+    padding: 24px 32px 60px 32px !important;
   }
 }
 @media (min-width: 1024px) {
@@ -67,20 +67,10 @@ $grupoIconos = [
 }
 
 /* ── Header ── */
-.st-header {
-  padding: 24px 20px 16px;
-  display: flex; align-items: center; gap: 14px;
-}
-.st-header-icon {
-  width: 44px; height: 44px; border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
-  display: grid; place-items: center; font-size: 1.25rem; color: #fff; flex-shrink: 0;
-}
-.st-header-text h1 { font-size: 1.4rem; font-weight: 900; color: #fff; margin: 0; }
-.st-header-text p  { font-size: .78rem; color: #6b7280; margin: 2px 0 0; }
+.st-header { display: none; }
 
 /* ── Metric cards ── */
-.st-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 16px 20px; }
+.st-metrics { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 0 0 14px 0; }
 .st-metric-card {
   background: var(--card-glass); border: 1px solid rgba(255,255,255,.06);
   border-radius: 18px; padding: 14px 12px;
@@ -91,9 +81,9 @@ $grupoIconos = [
 .st-metric-lbl  { font-size: .62rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
 
 /* ── Section títulos ── */
-.st-section { padding: 0 16px; margin-bottom: 22px; }
+.st-section { padding: 0 !important; margin-bottom: 14px; }
 .st-section-title {
-  font-size: 1.1rem; font-weight: 800; color: #fff;
+  font-size: 1.05rem; font-weight: 800; color: #fff;
   margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
 }
 .st-section-sub { font-size: .75rem; color: #6b7280; margin-bottom: 14px; }
@@ -101,7 +91,7 @@ $grupoIconos = [
 /* ── Divider ── */
 .st-divider {
   height: 1px; background: rgba(255,255,255,.05);
-  margin: 6px 16px 22px;
+  margin: 6px 0 16px;
 }
 
 /* ── Cuadro con opacidad para el calendario ── */
@@ -110,8 +100,16 @@ $grupoIconos = [
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.07);
-  border-radius: 22px;
-  padding: 18px 16px 20px;
+  border-radius: 20px;
+  padding: 14px 12px 16px;
+  box-sizing: border-box;
+  width: 100%;
+}
+@media (min-width: 768px) {
+  .st-section-box {
+    padding: 18px 20px 22px;
+    border-radius: 24px;
+  }
 }
 
 /* ════════════════════════════════════
@@ -268,29 +266,47 @@ $grupoIconos = [
 .cal-mes { font-size: 1rem; font-weight: 800; color: #fff; display: block; }
 .cal-ano { font-size: .72rem; color: #6b7280; }
 
-/* Grid */
-.cal-grid { width: 100%; }
+/* Grid del Calendario */
+.cal-grid { width: 100%; box-sizing: border-box; }
 .cal-head-row {
-  display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 4px; margin-bottom: 6px; padding-left: 44px;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  margin-bottom: 6px !important;
+  padding: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.cal-head-spacer {
+  width: 28px !important;
+  flex-shrink: 0 !important;
+}
+.cal-head-cells {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 4px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 .cal-head-cell {
-  text-align: center; font-size: .68rem; font-weight: 800;
-  color: #4b5563; letter-spacing: .5px; text-transform: uppercase;
+  text-align: center; font-size: .72rem; font-weight: 800;
+  color: #64748b; letter-spacing: .5px; text-transform: uppercase;
 }
 
 /* Fila de semana */
 .cal-week {
-  display: flex; align-items: stretch; gap: 4px; margin-bottom: 4px;
+  display: flex !important; align-items: stretch !important; gap: 4px !important; margin-bottom: 4px !important;
+  width: 100% !important; box-sizing: border-box !important;
 }
 .cal-week-label {
-  width: 40px; flex-shrink: 0; font-size: .6rem; font-weight: 700;
-  color: #374151; text-transform: uppercase; letter-spacing: .3px;
+  width: 28px !important; flex-shrink: 0 !important; font-size: .56rem !important; font-weight: 700;
+  color: #475569; text-transform: uppercase; letter-spacing: .3px;
   display: flex; align-items: center; justify-content: center;
   writing-mode: vertical-lr; transform: rotate(180deg);
 }
 .cal-week-cells {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; flex: 1;
+  display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 4px !important; flex: 1 1 auto !important;
+  min-width: 0 !important;
 }
 
 /* Celda de día */
@@ -645,12 +661,41 @@ $grupoIconos = [
 <!-- ── CONTENEDOR PRINCIPAL CLIENTE (RESPONSIVE BENTO UI) ── -->
 <div class="xp-client-container">
 
-<!-- ── Header ── -->
-<div class="st-header">
-  <div class="st-header-icon"><i class="ti ti-chart-bar"></i></div>
-  <div class="st-header-text">
-    <h1>Estadísticas</h1>
-    <p>Tu progreso de entrenamiento</p>
+<!-- ── HEADER DE ESTADÍSTICAS (PREMIUM BENTO UI) ── -->
+<div class="sys-top-header premium-header">
+  <div class="user-info-group">
+    <div class="rl-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd)); display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35); font-size: 1.2rem;">
+      <i class="ti ti-chart-bar"></i>
+    </div>
+    <div class="user-text-wrap">
+      <h1 class="sys-top-title user-name-gradient" title="Estadísticas" style="font-size: 1.12rem !important; font-weight: 800; color: #fff; margin: 0; line-height: 1.25;">
+        <span class="user-name-text">Estadísticas</span>
+      </h1>
+      <p style="font-size: .74rem; font-weight: 500; color: #94a3af; margin: 2px 0 0; letter-spacing: 0.2px; line-height: 1.2;">
+        Tu progreso de entrenamiento
+      </p>
+    </div>
+  </div>
+  
+  <div class="header-actions">
+    <div class="sys-top-logo brand-glow">
+      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    </div>
+
+    <?php 
+      $unreadCliHdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'cliente');
+    ?>
+    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+      <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
+        <i class="ti ti-bell"></i>
+        <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
+      </button>
+    </div>
+
+    <!-- Botón Logout -->
+    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+      <i class="ti ti-logout"></i>
+    </a>
   </div>
 </div>
 
@@ -735,9 +780,12 @@ $grupoIconos = [
   <!-- Cabecera días -->
   <div class="cal-grid">
     <div class="cal-head-row">
-      <?php foreach(['L','M','X','J','V'] as $h): ?>
-      <div class="cal-head-cell"><?= $h ?></div>
-      <?php endforeach; ?>
+      <div class="cal-head-spacer"></div>
+      <div class="cal-head-cells">
+        <?php foreach(['L','M','X','J','V'] as $h): ?>
+        <div class="cal-head-cell"><?= $h ?></div>
+        <?php endforeach; ?>
+      </div>
     </div>
 
     <!-- Semanas -->
@@ -1317,31 +1365,54 @@ $grupoIconos = [
 ══════════════════════════════════════ -->
 <style>
 /* ── Sección peso corporal ── */
-.pw-section { padding: 0 16px; margin-bottom: 4px; }
+.pw-section { padding: 0 !important; margin-bottom: 14px; }
 .pw-header-row {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 4px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-bottom: 8px !important;
+  flex-wrap: nowrap !important;
+}
+.pw-header-row .st-section-title {
+  font-size: 1.02rem !important;
+  white-space: nowrap !important;
+  margin-bottom: 0 !important;
+  flex-shrink: 0 !important;
+}
+.pw-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
 }
 .pw-chart-wrap {
-  background: var(--card-glass); border: 1px solid rgba(255,255,255,.06);
-  border-radius: 18px; padding: 16px; margin-bottom: 14px;
+  background: transparent; border: none;
+  padding: 8px 0 0 0; margin-bottom: 0;
 }
 .pw-chart-meta {
-  display: flex; gap: 18px; margin-bottom: 12px;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 6px !important;
+  margin-bottom: 12px !important;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 8px 10px;
 }
-.pw-stat { display: flex; flex-direction: column; gap: 2px; }
-.pw-stat-val { font-size: 1.15rem; font-weight: 900; color: #fff; line-height: 1; }
-.pw-stat-lbl { font-size: .62rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
-.pw-stat-delta { font-size: .72rem; font-weight: 700; }
+.pw-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pw-stat-val { font-size: 1.05rem; font-weight: 900; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pw-stat-lbl { font-size: .6rem; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.pw-stat-delta { font-size: .76rem; font-weight: 800; }
 .pw-stat-delta.neg { color: #4ade80; }
 .pw-stat-delta.pos { color: #f87171; }
 .pw-stat-delta.neu { color: #6b7280; }
 .pw-btn-historial {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 12px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 10px; border-radius: 10px;
   background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09);
-  color: #9ca3af; font-size: .78rem; font-weight: 700; cursor: pointer;
-  transition: all .2s; text-decoration: none; white-space: nowrap;
+  color: #9ca3af; font-size: .72rem; font-weight: 700; cursor: pointer;
+  transition: all .2s; text-decoration: none; white-space: nowrap; flex-shrink: 0;
 }
 .pw-btn-historial:hover { background: rgba(255,255,255,.12); color: #fff; }
 .pw-empty {
@@ -1431,14 +1502,14 @@ $grupoIconos = [
 <div class="pw-section">
   <div class="st-section-box">
   <div class="pw-header-row">
-    <div class="st-section-title">
+    <div class="st-section-title" style="white-space:nowrap; margin-bottom:0; flex-shrink:0;">
       <i class="ti ti-scale" style="color:#fb923c"></i> Peso Corporal
     </div>
-    <div style="display:flex;gap:8px;">
-      <button class="pw-btn-historial" onclick="promptNuevoPeso()" style="padding:7px 10px; color:#fb923c; border-color:rgba(251,146,60,.3); background:rgba(251,146,60,.1)">
+    <div class="pw-header-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+      <button class="pw-btn-historial" onclick="promptNuevoPeso()" style="padding:6px 10px; color:#fb923c; border-color:rgba(251,146,60,.3); background:rgba(251,146,60,.1)">
         <i class="ti ti-plus"></i> Añadir
       </button>
-      <button class="pw-btn-historial" onclick="abrirHistorialPeso()" id="btnHistorialPeso">
+      <button class="pw-btn-historial" onclick="abrirHistorialPeso()" id="btnHistorialPeso" style="padding:6px 10px;">
         <i class="ti ti-list-details"></i> Historial
       </button>
     </div>
@@ -1825,15 +1896,18 @@ function cerrarHistorialPeso(event, force) {
 .pm-version-card,
 .pm-serie-card {
   background: rgba(255, 255, 255, 0.03);
+.pm-version-card,
+.pm-serie-card {
+  background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 8px 6px !important;
+  border-radius: 14px;
+  padding: 10px 8px !important;
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 3px;
+  justify-content: center;
+  gap: 6px;
   text-align: left;
   min-width: 0 !important;
   overflow: hidden;
@@ -1848,20 +1922,20 @@ function cerrarHistorialPeso(event, force) {
 .pm-version-card.pos-1.active,
 .pm-serie-card.pos-1.active {
   border-color: #fbbf24;
-  background: rgba(251, 191, 36, 0.08);
-  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.18);
+  background: rgba(251, 191, 36, 0.09);
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.22);
 }
 .pm-version-card.pos-2.active,
 .pm-serie-card.pos-2.active {
   border-color: #cbd5e1;
-  background: rgba(148, 163, 184, 0.08);
-  box-shadow: 0 4px 14px rgba(148, 163, 184, 0.18);
+  background: rgba(148, 163, 184, 0.09);
+  box-shadow: 0 4px 14px rgba(148, 163, 184, 0.22);
 }
 .pm-version-card.pos-3.active,
 .pm-serie-card.pos-3.active {
   border-color: #f59e0b;
-  background: rgba(217, 119, 6, 0.08);
-  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.18);
+  background: rgba(217, 119, 6, 0.09);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.22);
 }
 .pm-version-card.disabled,
 .pm-serie-card.disabled {
@@ -1875,21 +1949,21 @@ function cerrarHistorialPeso(event, force) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2px;
+  gap: 4px;
 }
 .pm-version-badge,
 .pm-serie-badge {
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1;
 }
 .pm-version-tag,
 .pm-serie-tag {
-  font-size: 0.55rem;
+  font-size: 0.58rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .3px;
-  padding: 2px 5px;
-  border-radius: 5px;
+  padding: 2px 6px;
+  border-radius: 6px;
   white-space: nowrap;
 }
 .pm-version-tag.pos-1, .pm-serie-tag.pos-1 { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
@@ -1899,54 +1973,24 @@ function cerrarHistorialPeso(event, force) {
 
 .pm-version-val,
 .pm-serie-val {
-  font-size: 0.86rem;
+  font-size: 0.95rem;
   font-weight: 900;
   color: #fff;
-  line-height: 1.18;
-  margin-top: 2px;
+  line-height: 1.15;
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 3px;
+  flex-direction: column;
+  gap: 2px;
+}
+.pm-serie-peso {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.3px;
 }
 .pm-serie-reps {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #cbd5e1;
-}
-.pm-version-date,
-.pm-serie-date {
-  font-size: 0.64rem;
-  color: #9ca3af;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.pm-version-cal-link,
-.pm-serie-cal-link {
-  font-size: 0.58rem;
-  color: #c084fc;
-  font-weight: 700;
-  margin-top: 2px;
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 4px;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.18s ease;
-}
-.pm-version-cal-link:hover,
-.pm-serie-cal-link:hover {
-  color: #e9d5ff;
-  text-decoration: underline;
 }
 
 </style>
@@ -2213,10 +2257,10 @@ function renderChartEjercicio(versionIdx = null) {
 
   const posEtiquetas = ['1ª Mejor Serie (Oro)', '2ª Serie (Plata)', '3ª Serie (Bronce)'];
   const posTxt = posEtiquetas[currentVersionIndex] || 'Serie Destacada';
-  const fechaTitulo = sesionActiva ? (sesionActiva.fecha_completa || sesionActiva.fecha_formateada) : '';
 
+  // La fecha aparece ÚNICAMENTE sobre las barras, no en el título de la tarjeta
   document.getElementById('chartTitleText').textContent =
-    `${currentEjercicio} — ${posTxt}${fechaTitulo ? ' · ' + fechaTitulo : ''}`;
+    `${currentEjercicio} — ${posTxt}`;
 
   const labels = barras.map(b => b.peso_label);
   const datosReps = barras.map(b => b.reps_max);
@@ -2231,7 +2275,7 @@ function renderChartEjercicio(versionIdx = null) {
   gradient.addColorStop(0, 'rgba(168, 85, 247, 0.9)');
   gradient.addColorStop(1, 'rgba(138, 43, 226, 0.35)');
 
-  // Plugin para imprimir la fecha flotando directamente arriba de cada barra
+  // Plugin para imprimir la pastilla interactiva de fecha directamente arriba de cada barra
   const fechaPlugin = {
     id: 'fechaEncimaBarra',
     afterDatasetsDraw(chart) {
@@ -2241,12 +2285,43 @@ function renderChartEjercicio(versionIdx = null) {
         meta.data.forEach((bar, index) => {
           const b = barras[index];
           const fechaTxt = (b && (b.fecha_label || (sesionActiva && sesionActiva.fecha_formateada))) || '';
+          const fechaIso = (b && (b.fecha_iso || (sesionActiva && sesionActiva.fecha))) || '';
           if (fechaTxt) {
             ctx.save();
-            ctx.fillStyle = '#cbd5e1';
             ctx.font = '700 10.5px sans-serif';
+            const txtWidth = ctx.measureText(fechaTxt).width;
+            const badgeW = Math.max(52, txtWidth + 16);
+            const badgeH = 20;
+            const badgeX = bar.x - badgeW / 2;
+            const badgeY = Math.max(bar.y - badgeH - 6, 8);
+
+            // Guardar bounding box interactivo en la barra para detección táctil
+            bar._dateBox = {
+              xMin: badgeX - 6,
+              xMax: badgeX + badgeW + 6,
+              yMin: badgeY - 6,
+              yMax: badgeY + badgeH + 6,
+              fecha_iso: fechaIso
+            };
+
+            // Pastilla con efecto glow sutil
+            ctx.fillStyle = 'rgba(30, 20, 50, 0.90)';
+            ctx.strokeStyle = 'rgba(192, 132, 252, 0.65)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 6);
+            } else {
+              ctx.rect(badgeX, badgeY, badgeW, badgeH);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            // Texto fecha
+            ctx.fillStyle = '#f8fafc';
             ctx.textAlign = 'center';
-            ctx.fillText(fechaTxt, bar.x, Math.max(bar.y - 8, 12));
+            ctx.textBaseline = 'middle';
+            ctx.fillText(fechaTxt, bar.x, badgeY + badgeH / 2 + 0.5);
             ctx.restore();
           }
         });
@@ -2271,19 +2346,71 @@ function renderChartEjercicio(versionIdx = null) {
     plugins: [fechaPlugin],
     options: {
       responsive: true,
+      layout: {
+        padding: { top: 32, left: 6, right: 6, bottom: 4 }
+      },
       interaction: { mode: 'index', intersect: false },
       onClick: (evt, elements) => {
-        if (elements && elements.length > 0) {
-          const idx = elements[0].index;
-          const b = barras[idx];
-          const fIso = (b && b.fecha_iso) || (sesionActiva && sesionActiva.fecha);
-          if (fIso && typeof window.abrirModalDia === 'function') {
-            window.abrirModalDia(fIso);
+        let targetFechaIso = null;
+
+        const clickX = evt.x !== undefined ? evt.x : (evt.native ? evt.native.offsetX : 0);
+        const clickY = evt.y !== undefined ? evt.y : (evt.native ? evt.native.offsetY : 0);
+
+        // 1. Detección si tocó directamente la pastilla flotante de fecha encima de la barra
+        if (mainChart) {
+          const meta = mainChart.getDatasetMeta(0);
+          if (meta && meta.data) {
+            for (let i = 0; i < meta.data.length; i++) {
+              const bar = meta.data[i];
+              if (bar && bar._dateBox) {
+                const db = bar._dateBox;
+                if (clickX >= db.xMin && clickX <= db.xMax && clickY >= db.yMin && clickY <= db.yMax) {
+                  targetFechaIso = db.fecha_iso;
+                  break;
+                }
+              }
+            }
           }
+        }
+
+        // 2. Detección si tocó la barra o la columna de la barra
+        if (!targetFechaIso) {
+          let barIdx = -1;
+          if (elements && elements.length > 0) {
+            barIdx = elements[0].index;
+          } else if (mainChart) {
+            const els = mainChart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
+            if (els && els.length > 0) {
+              barIdx = els[0].index;
+            }
+          }
+          if (barIdx >= 0 && barras[barIdx]) {
+            targetFechaIso = barras[barIdx].fecha_iso || (sesionActiva && sesionActiva.fecha);
+          }
+        }
+
+        // 3. Llevar al usuario directamente al día en el que se hizo esa serie
+        if (targetFechaIso && typeof window.abrirModalDia === 'function') {
+          window.abrirModalDia(targetFechaIso);
         }
       },
       onHover: (evt, elements) => {
-        evt.native.target.style.cursor = (elements && elements.length > 0) ? 'pointer' : 'default';
+        let isPointer = (elements && elements.length > 0);
+        if (!isPointer && mainChart) {
+          const mouseX = evt.x !== undefined ? evt.x : (evt.native ? evt.native.offsetX : 0);
+          const mouseY = evt.y !== undefined ? evt.y : (evt.native ? evt.native.offsetY : 0);
+          const meta = mainChart.getDatasetMeta(0);
+          if (meta && meta.data) {
+            for (let i = 0; i < meta.data.length; i++) {
+              const db = meta.data[i]._dateBox;
+              if (db && mouseX >= db.xMin && mouseX <= db.xMax && mouseY >= db.yMin && mouseY <= db.yMax) {
+                isPointer = true;
+                break;
+              }
+            }
+          }
+        }
+        evt.native.target.style.cursor = isPointer ? 'pointer' : 'default';
       },
       plugins: {
         legend: { display: false },
@@ -2303,10 +2430,11 @@ function renderChartEjercicio(versionIdx = null) {
             label: ctx => {
               const b = barras[ctx.dataIndex];
               if (!b) return '';
+              const fTxt = b.fecha_label || (sesionActiva && sesionActiva.fecha_formateada);
               return [
                 ` Repeticiones: ${b.reps_max} reps`,
-                ` Fecha: ${b.fecha_label || (sesionActiva && sesionActiva.fecha_formateada)}`,
-                ` 👆 Toca para ver en calendario`
+                ` Fecha: ${fTxt}`,
+                ` 👆 Toca la fecha para ver en calendario`
               ];
             }
           }
@@ -2454,23 +2582,16 @@ function renderPodioTop3() {
     if (ses) {
       const peso = (parseFloat(ses.peso_max) || 0) > 0 ? (parseFloat(ses.peso_max).toFixed(1) + ' kg') : 'Corporal';
       const reps = (parseInt(ses.reps_en_max) || 0) + ' reps';
-      const fechaStr = ses.fecha_completa || ses.fecha_formateada || ses.fecha;
 
       html += `
-        <div class="pm-version-card pm-serie-card ${med.pos} ${isActive ? 'active' : ''}" onclick="cambiarSerie(${i})" title="Toca para ver las cargas de esta serie">
+        <div class="pm-version-card pm-serie-card ${med.pos} ${isActive ? 'active' : ''}" onclick="cambiarSerie(${i})" title="Toca para ver el récord de esta serie en la gráfica">
           <div class="pm-version-top pm-serie-top">
             <span class="pm-version-badge pm-serie-badge">${med.icono}</span>
             <span class="pm-version-tag pm-serie-tag ${med.pos}">${med.label}</span>
           </div>
           <div class="pm-version-val pm-serie-val">
-            <span>${peso}</span>
+            <span class="pm-serie-peso">${peso}</span>
             <span class="pm-serie-reps">× ${reps}</span>
-          </div>
-          <div class="pm-version-date pm-serie-date" title="${esc(fechaStr)}">
-            <i class="ti ti-calendar-event"></i> ${esc(fechaStr)}
-          </div>
-          <div class="pm-version-cal-link pm-serie-cal-link" onclick="event.stopPropagation(); if (typeof window.abrirModalDia === 'function') window.abrirModalDia('${esc(ses.fecha)}');">
-            <i class="ti ti-calendar"></i> Ver día
           </div>
         </div>
       `;
@@ -2481,9 +2602,8 @@ function renderPodioTop3() {
             <span class="pm-version-badge pm-serie-badge" style="filter:grayscale(1);opacity:.4;">${med.icono}</span>
             <span class="pm-version-tag pm-serie-tag empty">${med.label}</span>
           </div>
-          <div class="pm-version-val pm-serie-val" style="color:#6b7280;font-size:.82rem;">Por registrar</div>
-          <div class="pm-version-date pm-serie-date" style="color:#4b5563;">
-            <i class="ti ti-lock"></i> Próxima serie
+          <div class="pm-version-val pm-serie-val" style="color:#6b7280;font-size:.82rem;">
+            <span>Por registrar</span>
           </div>
         </div>
       `;

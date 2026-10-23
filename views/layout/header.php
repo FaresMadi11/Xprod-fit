@@ -61,7 +61,9 @@ addSecurityHeaders();
   </script>
 </head>
 <body>
-<?php if ($rolUser): ?>
+<?php if ($rolUser): 
+  $unreadNav = contarNotificacionesNoLeidas((int)$_SESSION['user_id'], $rolUser);
+?>
 <nav class="xp-nav" id="mainNav">
   <div class="xp-nav-brand">
     <div class="brand-icon"><i class="ti ti-bolt"></i></div>
@@ -96,7 +98,7 @@ addSecurityHeaders();
         <span>Inicio</span>
       </a>
       <a href="<?= APP_URL ?>/cliente/rutinas" class="<?= str_contains($currentAction, 'rutin') ? 'active' : '' ?>">
-        <span class="nav-icon"><i class="ti ti-dumbbell"></i></span>
+        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;display:inline-block;"><rect x="2" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="5" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2.5"/><rect x="16" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="19" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/></svg></span>
         <span>Rutina</span>
       </a>
       <a href="<?= APP_URL ?>/cliente/estadisticas" class="<?= $currentAction === 'estadisticas' ? 'active' : '' ?>">
@@ -108,21 +110,6 @@ addSecurityHeaders();
         <span>Perfil</span>
       </a>
     <?php endif; ?>
-  </div>
-
-  <div class="xp-nav-user">
-    <?php
-      $unreadNav = contarNotificacionesNoLeidas((int)$_SESSION['user_id'], $rolUser);
-    ?>
-    <div class="notif-wrapper" style="position:relative;">
-      <button type="button" class="btn-notif-trigger xp-bell-trigger" id="btnNavNotif" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)">
-        <i class="ti ti-bell"></i>
-        <span class="xp-notif-badge" style="<?= $unreadNav > 0 ? '' : 'display:none;' ?>"><?= $unreadNav ?></span>
-      </button>
-    </div>
-    <a href="<?= APP_URL ?>/auth/logout" class="btn-logout" title="Cerrar sesión">
-      <i class="ti ti-logout"></i> Salir
-    </a>
   </div>
 </nav>
 

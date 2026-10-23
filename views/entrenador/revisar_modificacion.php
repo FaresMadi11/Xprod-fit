@@ -319,45 +319,89 @@ foreach ($dias as $d) {
       </div>
       <?php endif; ?>
 
-      <?php if (empty($b['ejercicios'])): ?>
-        <p style="color:var(--muted);font-size:.9rem">Esta solicitud no contiene ejercicios.</p>
-      <?php endif; ?>
+      <!-- ════ SELECTOR DE VISTA: NUEVA VS ORIGINAL ════ -->
+      <div style="display:flex;gap:8px;margin:18px 0 20px;background:rgba(255,255,255,0.04);padding:4px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+        <button type="button" class="btn-version-toggle active" id="btnVerNueva_<?= $bi ?>" onclick="mostrarVersion(<?= $bi ?>, 'nueva')" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;background:rgba(139,92,246,0.3);color:#fff;border:1px solid rgba(139,92,246,0.5);">
+          <i class="ti ti-sparkles"></i> Nueva Versión (Atleta)
+        </button>
+        <button type="button" class="btn-version-toggle" id="btnVerVieja_<?= $bi ?>" onclick="mostrarVersion(<?= $bi ?>, 'vieja')" style="flex:1;padding:8px 12px;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer;background:transparent;color:#94a3b8;border:1px solid transparent;">
+          <i class="ti ti-history"></i> Versión Original (Actual)
+        </button>
+      </div>
 
-      <!-- Tarjetas de ejercicios de la versión del atleta -->
-      <?php foreach ($b['ejercicios'] as $ej):
-        $changed = $hayPendientes && in_array((int)$ej['orden'], $ordenesCambiados);
-      ?>
-      <div class="exercise-item <?= $changed ? 'is-changed' : '' ?>" style="flex-direction:column;align-items:stretch;">
-        <div style="display:flex;gap:16px;align-items:center">
-          <div class="ex-num"><?= (int)$ej['orden'] ?></div>
-          <div class="ex-info" style="flex:1;">
-            <div class="ex-name" style="font-size:1rem;color:#fff;font-weight:700;">
-              <?= e($ej['nombre']) ?>
-              <?php if ($changed): ?><span class="ex-tag-new">Nuevo</span><?php endif; ?>
-            </div>
-            <div class="ex-meta" style="color:#b388ff;font-size:0.85rem;margin-top:2px;">
-              <?= (int)$ej['series'] ?> series × <?= e($ej['repeticiones']) ?> reps <?= !empty($ej['rir']) ? '· RIR ' . e($ej['rir']) : '' ?>
+      <!-- Contenedor Versión Nueva -->
+      <div id="wrapNueva_<?= $bi ?>">
+        <?php if (empty($b['ejercicios'])): ?>
+          <p style="color:var(--muted);font-size:.9rem">Esta solicitud no contiene ejercicios.</p>
+        <?php endif; ?>
+
+        <!-- Tarjetas de ejercicios de la versión del atleta -->
+        <?php foreach ($b['ejercicios'] as $ej):
+          $changed = $hayPendientes && in_array((int)$ej['orden'], $ordenesCambiados);
+        ?>
+        <div class="exercise-item <?= $changed ? 'is-changed' : '' ?>" style="flex-direction:column;align-items:stretch;">
+          <div style="display:flex;gap:16px;align-items:center">
+            <div class="ex-num"><?= (int)$ej['orden'] ?></div>
+            <div class="ex-info" style="flex:1;">
+              <div class="ex-name" style="font-size:1rem;color:#fff;font-weight:700;">
+                <?= e($ej['nombre']) ?>
+                <?php if ($changed): ?><span class="ex-tag-new">Nuevo</span><?php endif; ?>
+              </div>
+              <div class="ex-meta" style="color:#b388ff;font-size:0.85rem;margin-top:2px;">
+                <?= (int)$ej['series'] ?> series × <?= e($ej['repeticiones']) ?> reps <?= !empty($ej['rir']) ? '· RIR ' . e($ej['rir']) : '' ?>
+              </div>
             </div>
           </div>
+          <?php if (!empty($ej['nota_biomecanica'])): ?>
+          <div style="background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:12px;margin-top:12px;border-left:3px solid #8b5cf6;font-size:.85rem;color:#cbd5e1">
+            <strong style="color:#fff;"><i class="ti ti-microscope" aria-hidden="true" style="color:#a78bfa;"></i> Biomecánica / Fisiología:</strong> <?= nl2br(e($ej['nota_biomecanica'])) ?>
+          </div>
+          <?php endif; ?>
         </div>
-        <?php if (!empty($ej['nota_biomecanica'])): ?>
-        <div style="background:rgba(255,255,255,0.03);padding:10px 14px;border-radius:12px;margin-top:12px;border-left:3px solid #8b5cf6;font-size:.85rem;color:#cbd5e1">
-          <strong style="color:#fff;"><i class="ti ti-microscope" aria-hidden="true" style="color:#a78bfa;"></i> Biomecánica / Fisiología:</strong> <?= nl2br(e($ej['nota_biomecanica'])) ?>
-        </div>
-        <?php endif; ?>
+        <?php endforeach; ?>
       </div>
-      <?php endforeach; ?>
+
+      <!-- Contenedor Versión Vieja -->
+      <div id="wrapVieja_<?= $bi ?>" style="display:none">
+        <?php if (empty($b['ejercicios_padre'])): ?>
+          <p style="color:var(--muted);font-size:.9rem">No hay registros de ejercicios en la versión anterior.</p>
+        <?php endif; ?>
+
+        <?php foreach (($b['ejercicios_padre'] ?? []) as $ejP): ?>
+        <div class="exercise-item" style="flex-direction:column;align-items:stretch;opacity:0.9;">
+          <div style="display:flex;gap:16px;align-items:center">
+            <div class="ex-num" style="background:rgba(255,255,255,0.08);color:#cbd5e1;"><?= (int)$ejP['orden'] ?></div>
+            <div class="ex-info" style="flex:1;">
+              <div class="ex-name" style="font-size:1rem;color:#e2e8f0;font-weight:700;">
+                <?= e($ejP['nombre']) ?>
+              </div>
+              <div class="ex-meta" style="color:#94a3b8;font-size:0.85rem;margin-top:2px;">
+                <?= (int)$ejP['series'] ?> series × <?= e($ejP['repeticiones']) ?> reps <?= !empty($ejP['rir']) ? '· RIR ' . e($ejP['rir']) : '' ?>
+              </div>
+            </div>
+          </div>
+          <?php if (!empty($ejP['nota_biomecanica'])): ?>
+          <div style="background:rgba(255,255,255,0.02);padding:10px 14px;border-radius:12px;margin-top:12px;border-left:3px solid #64748b;font-size:.85rem;color:#94a3b8">
+            <strong style="color:#cbd5e1;"><i class="ti ti-microscope"></i> Biomecánica:</strong> <?= nl2br(e($ejP['nota_biomecanica'])) ?>
+          </div>
+          <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+      </div>
     </div>
     <?php endforeach; ?>
   </section>
   <?php endforeach; ?>
 </div>
 
-<!-- ════ BOTÓN DE ACCIÓN VERIFICAR / APROBAR ════ -->
-<div style="text-align:center;margin-top:32px;margin-bottom:24px;">
+<!-- ════ BOTONES DE ACCIÓN: RECHAZAR / ACEPTAR ════ -->
+<div style="display:flex;gap:16px;justify-content:center;margin-top:32px;margin-bottom:24px;flex-wrap:wrap;">
   <?php if ($hayPendientes): ?>
-    <button type="button" id="btnVerificarSolicitud" onclick="ejecutarAprobacionModificacion()" class="btn-verificar-action btn-verificar-active">
-      <i class="ti ti-check" aria-hidden="true"></i> ✓ Verificar y Aprobar Cambios
+    <button type="button" id="btnRechazarSolicitud" onclick="ejecutarRechazoModificacion()" class="btn-verificar-action" style="background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.35);padding:12px 28px;border-radius:99px;font-weight:700;cursor:pointer;">
+      <i class="ti ti-x" aria-hidden="true"></i> Rechazar
+    </button>
+    <button type="button" id="btnVerificarSolicitud" onclick="ejecutarAprobacionModificacion()" class="btn-verificar-action btn-verificar-active" style="padding:12px 28px;border-radius:99px;font-weight:700;cursor:pointer;">
+      <i class="ti ti-check" aria-hidden="true"></i> Aceptar y Aplicar
     </button>
   <?php else: ?>
     <button type="button" class="btn-verificar-action btn-verificar-locked" disabled>
@@ -485,6 +529,103 @@ async function ejecutarAprobacionModificacion() {
       });
     }
   });
+}
+
+function mostrarVersion(bi, tipo) {
+  const wrapNueva = document.getElementById('wrapNueva_' + bi);
+  const wrapVieja = document.getElementById('wrapVieja_' + bi);
+  const btnNueva = document.getElementById('btnVerNueva_' + bi);
+  const btnVieja = document.getElementById('btnVerVieja_' + bi);
+
+  if (tipo === 'nueva') {
+    if (wrapNueva) wrapNueva.style.display = 'block';
+    if (wrapVieja) wrapVieja.style.display = 'none';
+    if (btnNueva) {
+      btnNueva.classList.add('active');
+      btnNueva.style.background = 'rgba(139,92,246,0.3)';
+      btnNueva.style.color = '#fff';
+      btnNueva.style.borderColor = 'rgba(139,92,246,0.5)';
+    }
+    if (btnVieja) {
+      btnVieja.classList.remove('active');
+      btnVieja.style.background = 'transparent';
+      btnVieja.style.color = '#94a3b8';
+      btnVieja.style.borderColor = 'transparent';
+    }
+  } else {
+    if (wrapNueva) wrapNueva.style.display = 'none';
+    if (wrapVieja) wrapVieja.style.display = 'block';
+    if (btnVieja) {
+      btnVieja.classList.add('active');
+      btnVieja.style.background = 'rgba(139,92,246,0.3)';
+      btnVieja.style.color = '#fff';
+      btnVieja.style.borderColor = 'rgba(139,92,246,0.5)';
+    }
+    if (btnNueva) {
+      btnNueva.classList.remove('active');
+      btnNueva.style.background = 'transparent';
+      btnNueva.style.color = '#94a3b8';
+      btnNueva.style.borderColor = 'transparent';
+    }
+  }
+}
+
+async function ejecutarRechazoModificacion() {
+  const btn = document.getElementById('btnRechazarSolicitud');
+  if (!btn || btn.disabled) return;
+
+  const result = await Swal.fire({
+    title: '¿Rechazar modificación?',
+    text: 'Se descartará la propuesta del atleta y se mantendrá su rutina actual sin cambios.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, rechazar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#334155',
+    background: '#151c2e',
+    color: '#fff'
+  });
+
+  if (!result.isConfirmed) return;
+
+  const form = document.getElementById('approveForm');
+  const fd = new FormData(form);
+
+  btn.disabled = true;
+  const oldHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="ti ti-loader-2 cr-spin"></i> Rechazando...';
+
+  try {
+    const res = await fetch(APP + '/entrenador/rechazar-modificacion', {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Solicitud rechazada',
+        text: data.msg || 'La propuesta fue rechazada.',
+        timer: 1500,
+        showConfirmButton: false,
+        background: '#151c2e',
+        color: '#fff'
+      });
+      setTimeout(() => {
+        window.location.href = APP + '/entrenador/asistencias';
+      }, 1200);
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = oldHtml;
+      Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo rechazar la solicitud.', background: '#151c2e', color: '#fff' });
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = oldHtml;
+    Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo comunicar con el servidor.', background: '#151c2e', color: '#fff' });
+  }
 }
 </script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

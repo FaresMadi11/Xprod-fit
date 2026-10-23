@@ -1,9 +1,10 @@
 {
-  "1": "redirect",
+  "1": ".fileIsAccessible",
   "4": "EntrenadorController.php",
+  "6": "progreso.php",
   "7": "run_migration_v24.php",
-  "10": ".addOrEnqueueAnAddress",
   "20": "UsuarioModel",
+  "24": ".lang",
   "35": ".strpos",
   "60": "Product",
   "69": "core/helpers.php",

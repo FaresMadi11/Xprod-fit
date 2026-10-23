@@ -313,6 +313,13 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 .db-peso-side .delta-txt {
   font-size: .78rem; font-weight: 800; color: var(--text-purple, #b388ff); white-space: nowrap;
 }
+@media (max-width: 480px) {
+  .db-stat-value { font-size: 1.35rem; }
+  .db-peso-row { flex-wrap: wrap; gap: 4px; align-items: flex-end; }
+  .db-peso-side { text-align: left; width: 100%; display: flex; align-items: baseline; gap: 6px; margin-top: 2px; }
+  .db-peso-side .init-txt { font-size: 0.58rem; }
+  .db-peso-side .delta-txt { font-size: 0.74rem; }
+}
 
 /* ── Tarjeta de Frase Motivadora ── */
 .db-quote-card {
@@ -600,38 +607,72 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 }
 .goal-chip.goal-chip-otros .goal-chip-title {
   text-align: left;
+}
+
 /* ── Layout Contenedor Responsive (Bento UI) ── */
 .xp-client-container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   box-sizing: border-box;
-  padding: 12px 14px calc(95px + env(safe-area-inset-bottom, 20px)) 14px;
+  padding: 10px 8px calc(90px + env(safe-area-inset-bottom, 20px)) 8px !important;
 }
 @media (min-width: 768px) {
   .xp-client-container {
-    padding: 24px 32px 60px 32px;
+    padding: 24px 32px 60px 32px !important;
   }
 }
 
-/* ── Header adaptativo ── */
+/* ── Header adaptativo y compacto (UI-UX-PRO-MAX) ── */
 .sys-top-header.premium-header {
-  margin: 0 0 16px 0 !important;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  margin: 0 0 14px 0 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
   gap: 10px;
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
+  padding: 10px 14px !important;
+  border-radius: 18px !important;
+  background: var(--card-glass, rgba(18, 18, 23, 0.88)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+@media (min-width: 768px) {
+  .sys-top-header.premium-header {
+    padding: 14px 20px !important;
+    border-radius: 22px !important;
+    margin-bottom: 20px !important;
+  }
 }
 .user-info-group {
-  display: flex;
-  align-items: center;
+  display: flex !important;
+  align-items: center !important;
   gap: 10px;
   min-width: 0;
-  flex: 1;
+  flex: 1 1 auto;
   overflow: hidden;
+}
+.user-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+  font-size: 1.05rem !important;
+  font-weight: 800;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.35), rgba(18, 18, 23, 0.95)) !important;
+  border: 1.5px solid rgba(138, 43, 226, 0.45) !important;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+@media (min-width: 768px) {
+  .user-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.25rem !important;
+  }
 }
 .user-text-wrap {
   min-width: 0;
@@ -639,38 +680,62 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   overflow: hidden;
 }
 .sys-top-greet-new {
-  font-size: 0.68rem;
+  font-size: 0.64rem !important;
   font-weight: 700;
-  color: #9ca3af;
+  color: #94a3af !important;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0 0 2px 0;
+  letter-spacing: 0.6px;
+  margin: 0 0 1px 0 !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
 .user-name-gradient {
-  font-size: 1.15rem !important;
+  font-size: 1.02rem !important;
   font-weight: 800;
-  margin: 0;
+  margin: 0 !important;
   display: flex;
   align-items: center;
   gap: 4px;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
+  line-height: 1.25;
 }
 .user-name-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  display: inline-block;
 }
 .header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+.header-actions .db-icon-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 11px !important;
+  font-size: 1rem !important;
+  flex-shrink: 0 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+.header-actions .db-icon-btn:hover {
+  background: rgba(138, 43, 226, 0.25) !important;
+  border-color: rgba(138, 43, 226, 0.5) !important;
+  color: #fff !important;
+}
+@media (min-width: 768px) {
+  .header-actions .db-icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
 }
 
 /* ── Tarjetas adaptativas sin overflow ── */
@@ -695,6 +760,9 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
     gap: 18px;
     align-items: stretch;
     margin-bottom: 18px;
+  }
+  .db-bento-top-row.single-col {
+    grid-template-columns: 1fr !important;
   }
   .db-bento-top-row .hero-workout-card {
     margin: 0 !important;
@@ -734,12 +802,12 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
       <p class="sys-top-greet-new">Bienvenido de vuelta</p>
       <h1 class="sys-top-title user-name-gradient" title="<?= e($nomUser) ?>">
         <span class="user-name-text"><?= e($nomUser) ?></span>
-        <i class="ti ti-sparkles" style="color: #fbbf24; font-size:1.1rem; flex-shrink:0;"></i>
+        <i class="ti ti-sparkles" style="color: #fbbf24; font-size:1.05rem; flex-shrink:0;"></i>
       </h1>
     </div>
   </div>
   
-  <div class="header-actions">
+  <div class="header-actions" style="display: flex; flex-direction: row; align-items: center; gap: 8px; flex-shrink: 0;">
     <div class="sys-top-logo brand-glow">
       <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
     </div>
@@ -747,7 +815,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
     <?php 
       $unreadCliHdr = contarNotificacionesNoLeidas((int)$_SESSION['user_id'], 'cliente');
     ?>
-    <div class="notif-wrapper" style="position:relative;">
+    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
       <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
         <i class="ti ti-bell"></i>
         <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
@@ -755,78 +823,17 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
     </div>
 
     <!-- Botón Logout -->
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión">
+    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
       <i class="ti ti-logout"></i>
     </a>
   </div>
 </div>
 
-<!-- ── FILA SUPERIOR BENTO (HERO WORKOUT + STATS) ── -->
-<div class="db-bento-top-row">
-
-<!-- ── HERO BENTO WORKOUT CARD (UI-UX-PRO-MAX) ── -->
-<div class="hero-workout-card <?= (!$esRutinaDeHoy ? 'rest-day' : '') ?>">
-  <div class="hwc-header">
-    <?php if ($esRutinaDeHoy && $rutinaActiva): ?>
-      <div class="hwc-badge">
-        <span class="hwc-pulse-dot"></span>
-        <span>Rutina de Hoy · <?= e($nombreDiaHoy) ?></span>
-      </div>
-      <?php if ($sesionHoyCompletada): ?>
-        <span class="hwc-status-pill completed"><i class="ti ti-circle-check"></i> Completada</span>
-      <?php elseif ($numEjerciciosHoy > 0): ?>
-        <span class="hwc-status-pill"><i class="ti ti-barbell"></i> <?= $numEjerciciosHoy ?> ejercicios</span>
-      <?php endif; ?>
-    <?php else: ?>
-      <div class="hwc-badge rest">
-        <i class="ti ti-moon-stars"></i>
-        <span>Descanso Activo · <?= e($nombreDiaHoy) ?></span>
-      </div>
-      <span class="hwc-status-pill rest"><i class="ti ti-shield-check"></i> Recuperación</span>
-    <?php endif; ?>
-  </div>
-
-  <div class="hwc-body">
-    <?php if ($esRutinaDeHoy && $rutinaActiva): ?>
-      <h2 class="hwc-title"><?= e($rutinaActiva['nombre'] ?: ('Entrenamiento de ' . $nombreDiaHoy)) ?></h2>
-      <p class="hwc-desc">
-        <?= $sesionHoyCompletada 
-            ? '¡Excelente trabajo! Has completado el entrenamiento programado para hoy.' 
-            : 'Tienes tu sesión lista. Mantén la técnica estricta y supera tus marcas.' ?>
-      </p>
-    <?php elseif ($rutinaActiva): ?>
-      <h2 class="hwc-title">Día de Recuperación Muscular</h2>
-      <p class="hwc-desc">Hoy no tienes entrenamiento programado. Próxima rutina en agenda: <strong><?= e($rutinaActiva['nombre']) ?></strong>.</p>
-    <?php else: ?>
-      <h2 class="hwc-title">Planificación en Preparación</h2>
-      <p class="hwc-desc">Tu entrenador está estructurando tu programa de ejercicios personalizado.</p>
-    <?php endif; ?>
-  </div>
-
-  <div class="hwc-action">
-    <?php if ($esRutinaDeHoy && $rutinaActiva): ?>
-      <?php $urlTrain = APP_URL . "/cliente/rutina-dia?rutina=" . (int)$rutinaActiva['id'] . "&dia=" . (int)$diaHoy; ?>
-      <a href="<?= $urlTrain ?>" class="hwc-btn <?= $sesionHoyCompletada ? 'completed' : 'primary' ?>">
-        <span>
-          <i class="ti <?= $sesionHoyCompletada ? 'ti-check' : 'ti-player-play-filled' ?>"></i>
-          <?= $sesionHoyCompletada ? 'Ver / Editar Sesión Realizada' : 'Iniciar Entrenamiento' ?>
-        </span>
-        <i class="ti ti-chevron-right"></i>
-      </a>
-    <?php else: ?>
-      <a href="<?= APP_URL ?>/cliente/rutinas" class="hwc-btn secondary">
-        <span>
-          <i class="ti ti-calendar-event"></i>
-          Ver Agenda Semanal de Rutinas
-        </span>
-        <i class="ti ti-chevron-right"></i>
-      </a>
-    <?php endif; ?>
-  </div>
-</div>
+<!-- ── FILA SUPERIOR BENTO (STATS) ── -->
+<div class="db-bento-top-row single-col">
 
 <!-- ── STAT CARDS ── -->
-<div class="db-stats">
+<div class="db-stats" style="margin: 0 16px 16px;">
   <!-- Tarjeta de Frase Motivadora Diaria -->
   <div class="db-stat-card db-quote-card">
     <div class="db-stat-top">

@@ -1,13 +1,41 @@
 <?php
 $pageTitle = 'Configuracion';
 require __DIR__ . '/../layout/header.php';
-?><div class="page-header d-flex align-items-center gap-3">
-  <button onclick="history.back()" class="btn-xp btn-secondary" style="padding:8px 12px;flex-shrink:0">
-    <i class="ti ti-arrow-left"></i>
-  </button>
-  <div class="flex-fill">
-    <h2><i class="ti ti-settings" style="color:var(--accent)"></i> Configuracion</h2>
-    <p>Administra tu perfil y los atletas del sistema</p>
+?><!-- ── HEADER DE CONFIGURACIÓN (PREMIUM BENTO UI) ── -->
+<div class="sys-top-header premium-header">
+  <div class="user-info-group">
+    <div class="rl-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd)); display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35); font-size: 1.25rem;">
+      <i class="ti ti-settings"></i>
+    </div>
+    <div class="user-text-wrap">
+      <h1 class="sys-top-title user-name-gradient" title="Configuración" style="font-size: 1.12rem !important; font-weight: 800; color: #fff; margin: 0; line-height: 1.25;">
+        <span class="user-name-text">Configuración</span>
+      </h1>
+      <p style="font-size: .74rem; font-weight: 500; color: #94a3af; margin: 2px 0 0; letter-spacing: 0.2px; line-height: 1.2;">
+        Administra tu perfil y los atletas del sistema
+      </p>
+    </div>
+  </div>
+  
+  <div class="header-actions">
+    <div class="sys-top-logo brand-glow">
+      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    </div>
+
+    <?php 
+      $unread_hdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'entrenador');
+    ?>
+    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+      <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
+        <i class="ti ti-bell"></i>
+        <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
+      </button>
+    </div>
+
+    <!-- Botón Logout -->
+    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+      <i class="ti ti-logout"></i>
+    </a>
   </div>
 </div>
 
@@ -98,45 +126,66 @@ require __DIR__ . '/../layout/header.php';
 
 /* Body & Content */
 .drill-body {
-  padding: 24px;
+  padding: 16px;
   flex: 1;
   overflow-y: auto;
+}
+@media (max-width: 480px) {
+  .drill-body { padding: 12px; }
 }
 .drill-body::-webkit-scrollbar { width: 6px; }
 .drill-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
 
-/* Grid Categories */
+/* Grid Categories (2 columnas una al lado de la otra) */
 .cat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
+@media (min-width: 600px) {
+  .cat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+}
+
 .btn-categoria {
   background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16px;
-  padding: 12px 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
   cursor: pointer;
   transition: all 0.2s;
-  height: auto;
+  min-height: 52px;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-categoria * {
+  pointer-events: none;
 }
 .btn-categoria:hover {
-  background: rgba(139,92,246,0.1);
-  border-color: rgba(139,92,246,0.3);
-  transform: translateX(4px);
+  background: rgba(139,92,246,0.12);
+  border-color: rgba(139,92,246,0.35);
+  transform: translateY(-2px);
 }
+.btn-categoria:active { transform: scale(0.98); }
 .btn-categoria i {
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   color: var(--accent);
+  flex-shrink: 0;
 }
 .btn-categoria span {
   font-weight: 600;
   color: #fff;
-  font-size: 1rem;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Search Input */
@@ -153,42 +202,111 @@ require __DIR__ . '/../layout/header.php';
 }
 .drill-search:focus { border-color: var(--accent); }
 
-/* Exercise List */
+/* Exercise List (2 columnas una al lado de la otra) */
 .ej-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+@media (min-width: 600px) {
+  .ej-list {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+}
+
+.ej-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-.ej-card {
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  transition: all 0.2s;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 105px;
+  box-sizing: border-box;
+  position: relative;
 }
 .ej-card:hover {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(139,92,246,0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.ej-card:active { transform: scale(0.98); }
+
+.ej-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 .ej-thumb {
-  width: 50px; height: 50px;
-  border-radius: 12px;
+  width: 38px; height: 38px;
+  border-radius: 10px;
   background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
   position: relative;
 }
 .ej-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.ej-thumb i { font-size: 1.5rem; color: var(--muted); }
-.ej-info { flex: 1; min-width: 0; }
-.ej-name { font-weight: 600; color: #fff; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ej-badges { display: flex; gap: 6px; margin-top: 4px; }
-.ej-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); color: var(--muted); }
-.ej-actions { display: flex; gap: 8px; }
+.ej-thumb i { font-size: 1.25rem; color: var(--accent); }
+
+.ej-edit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(139,92,246,0.12);
+  color: var(--accent-light, #a78bfa);
+  border: 1px solid rgba(139,92,246,0.25);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.ej-card:hover .ej-edit-badge {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.ej-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.ej-name {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.85rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.1em;
+  word-break: break-word;
+}
+.ej-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+.ej-badge {
+  font-size: 0.65rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
 
 /* Drill Buttons */
 .btn-drill {
@@ -321,6 +439,7 @@ require __DIR__ . '/../layout/header.php';
       <div id="drillView3" class="drill-view" style="display: none;">
         <h4 id="nivel3Title" style="color:#fff; margin-bottom:20px; font-size:1.1rem;">Agregar Ejercicio</h4>
         <form id="formEjercicio" onsubmit="guardarEjercicio(event)" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
           <input type="hidden" id="ej_id" name="id" value="">
           
           <div class="sys-input-group">
@@ -381,6 +500,9 @@ require __DIR__ . '/../layout/header.php';
           <div style="margin-top:32px; padding-bottom: 24px; display:flex; flex-direction:column; gap:12px;">
             <button type="submit" class="btn-drill" id="btnGuardarEj">
               <i class="ti ti-device-floppy"></i> Guardar Ejercicio
+            </button>
+            <button type="button" onclick="volverNivel(activeNivelAnt)" class="btn-xp btn-secondary" style="width:100%; padding:14px; border-radius:14px; font-size:1rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:8px;">
+              <i class="ti ti-x"></i> Cancelar
             </button>
             <div id="ejDeleteWrap" style="display:none;">
               <button type="button" onclick="borrarEjercicioDesdeForm()" style="background:rgba(239,68,68,.1); color:#f87171; border:1px solid rgba(239,68,68,.2); display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border-radius:14px; font-size:1rem; width:100%; cursor:pointer; transition:all 0.2s;">
@@ -1110,11 +1232,11 @@ function eliminarAtleta(uid, nombre) {
 /* ══════════════════════════════════════════════════════
    CATÁLOGO DE EJERCICIOS DRILL-DOWN (SINGLE CARD)
 ══════════════════════════════════════════════════════ */
-const catalogoCompleto = <?= json_encode($catalogoPorGrupo) ?>;
-let activeCategoria = null;
-let activeNivelAnt = 1; // Para saber a dónde volver desde el Form
+window.catalogoCompleto = <?= json_encode($catalogoPorGrupo, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+window.activeCategoria = null;
+window.activeNivelAnt = 1; // Para saber a dónde volver desde el Form
 
-function irNivel(nivel) {
+window.irNivel = function(nivel) {
   document.querySelectorAll('.drill-view').forEach(el => el.style.display = 'none');
   const target = document.getElementById('drillView' + nivel);
   if (target) {
@@ -1130,285 +1252,359 @@ function irNivel(nivel) {
   const mainTitle = document.getElementById('globalHeaderTitle');
   
   if (nivel === 1) {
-      backBtn.style.display = 'none';
-      searchBar.style.display = 'block';
-      mainTitle.innerHTML = `<i class="ti ti-notebook" style="color:var(--accent);"></i> Catálogo de Ejercicios`;
-      // Ensure search results are hidden if empty
-      const qs = document.getElementById('drillSearch').value.trim();
-      if(qs.length < 2) {
-          document.getElementById('drillCategoriesGrid').style.display = 'block';
-          document.getElementById('drillSearchResults').style.display = 'none';
+      if (backBtn) backBtn.style.display = 'none';
+      if (searchBar) searchBar.style.display = 'block';
+      if (mainTitle) mainTitle.innerHTML = `<i class="ti ti-notebook" style="color:var(--accent);"></i> Catálogo de Ejercicios`;
+      const sInput = document.getElementById('drillSearch');
+      const qs = sInput ? sInput.value.trim() : '';
+      if (qs.length < 2) {
+          const catGrid = document.getElementById('drillCategoriesGrid');
+          if (catGrid) catGrid.style.display = 'block';
+          const sRes = document.getElementById('drillSearchResults');
+          if (sRes) sRes.style.display = 'none';
       }
   } else if (nivel === 2) {
-      backBtn.style.display = 'flex';
-      backBtn.onclick = () => volverNivel(1);
-      searchBar.style.display = 'block';
-      mainTitle.innerHTML = `<i class="ti ti-list" style="color:var(--accent);"></i> Ejercicios`;
-      document.getElementById('drillCategoriesGrid').style.display = 'none';
-      document.getElementById('drillSearchResults').style.display = 'none';
+      if (backBtn) {
+          backBtn.style.display = 'flex';
+          backBtn.onclick = () => window.volverNivel(1);
+      }
+      if (searchBar) searchBar.style.display = 'block';
+      if (mainTitle) mainTitle.innerHTML = `<i class="ti ti-list" style="color:var(--accent);"></i> Ejercicios`;
+      const catGrid = document.getElementById('drillCategoriesGrid');
+      if (catGrid) catGrid.style.display = 'none';
+      const sRes = document.getElementById('drillSearchResults');
+      if (sRes) sRes.style.display = 'none';
   } else if (nivel === 3) {
-      backBtn.style.display = 'flex';
-      backBtn.onclick = () => volverNivel(activeNivelAnt);
-      searchBar.style.display = 'none';
-      mainTitle.innerHTML = `<i class="ti ti-pencil" style="color:var(--accent);"></i> Modo Edición`;
+      if (backBtn) {
+          backBtn.style.display = 'flex';
+          backBtn.onclick = () => window.volverNivel(window.activeNivelAnt);
+      }
+      if (searchBar) searchBar.style.display = 'none';
+      if (mainTitle) mainTitle.innerHTML = `<i class="ti ti-pencil" style="color:var(--accent);"></i> Modo Edición`;
   }
-}
+};
 
-function volverNivel(nivel) {
-  irNivel(nivel);
-}
+window.volverNivel = function(nivel) {
+  window.irNivel(nivel);
+};
 
-function abrirCategoria(catId) {
-  activeCategoria = catId;
+window.abrirCategoria = function(catId) {
+  window.activeCategoria = catId;
   const dispName = catId === 'otro' ? 'Otros / Sin Grupo' : catId;
-  document.getElementById('nivel2Title').textContent = dispName;
+  const titleEl = document.getElementById('nivel2Title');
+  if (titleEl) titleEl.textContent = dispName;
   
   const listCont = document.getElementById('nivel2List');
+  if (!listCont) return;
   listCont.innerHTML = '';
   
   let ejerciciosCat = [];
-  // Agrupar
-  const normCat = catId.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  for (const group in catalogoCompleto) {
-      const gNorm = group.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      if (catId === 'otro') {
+  const normCat = (catId || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const catData = window.catalogoCompleto || {};
+  
+  for (const group in catData) {
+      const gNorm = (group || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      if (normCat === 'otro') {
           if (!group || gNorm === 'sin grupo' || gNorm === 'otro') {
-              ejerciciosCat = ejerciciosCat.concat(catalogoCompleto[group]);
+              ejerciciosCat = ejerciciosCat.concat(catData[group] || []);
           }
       } else {
           if (gNorm === normCat) {
-              ejerciciosCat = ejerciciosCat.concat(catalogoCompleto[group]);
+              ejerciciosCat = ejerciciosCat.concat(catData[group] || []);
           }
       }
   }
 
   if (ejerciciosCat.length === 0) {
       listCont.innerHTML = `
-        <div style="text-align:center; padding:30px 0; color:#6b7280;">
+        <div style="grid-column: 1 / -1; text-align:center; padding:30px 0; color:#6b7280;">
           <i class="ti ti-mood-empty" style="font-size:2.5rem; display:block; margin-bottom:12px; opacity:.4;"></i>
           <p>No hay ejercicios para esta categoría.</p>
         </div>`;
   } else {
-      ejerciciosCat.forEach(ej => listCont.appendChild(crearCardEjercicio(ej, 2)));
+      ejerciciosCat.forEach(ej => listCont.appendChild(window.crearCardEjercicio(ej, 2)));
   }
 
-  irNivel(2);
-}
+  window.irNivel(2);
+};
 
-function crearCardEjercicio(ej, nivelOrigen) {
+window.crearCardEjercicio = function(ej, nivelOrigen) {
   const card = document.createElement('div');
   card.className = 'ej-card';
-  card.style.cursor = 'pointer';
+  card.setAttribute('role', 'button');
+  card.setAttribute('tabindex', '0');
   
+  const appBase = window.APP || '';
   const imgHtml = ej.imagen_path 
-      ? `<img src="${APP}/${ej.imagen_path}" loading="lazy" alt="${ej.nombre || 'Ejercicio'}">`
-      : `<i class="ti ti-dumbbell"></i>`;
-
+      ? `<img src="${appBase}/${ej.imagen_path}" loading="lazy" alt="${ej.nombre || 'Ejercicio'}">`
+      : `<i class="ti ti-barbell"></i>`;
       
   let badges = '';
   if (ej.imagen_path || ej.video_path) badges += `<span class="ej-badge"><i class="ti ti-photo"></i> Media</span>`;
-  if (ej.video_url) badges += `<span class="ej-badge"><i class="ti ti-brand-youtube"></i> YouTube</span>`;
+  if (ej.video_url) badges += `<span class="ej-badge"><i class="ti ti-brand-youtube"></i> Video</span>`;
 
   card.innerHTML = `
-    <div class="ej-thumb">${imgHtml}</div>
-    <div class="ej-info">
-       <div class="ej-name">${String(ej.nombre).replace(/"/g, '&quot;')}</div>
-       <div class="ej-badges">${badges}</div>
+    <div class="ej-card-top">
+      <div class="ej-thumb">${imgHtml}</div>
+      <span class="ej-edit-badge"><i class="ti ti-pencil"></i> Editar</span>
     </div>
-    <div class="ej-actions">
-       <button class="sys-btn" style="padding:6px 12px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text);"><i class="ti ti-pencil"></i> Editar</button>
+    <div class="ej-info">
+       <div class="ej-name" title="${String(ej.nombre).replace(/"/g, '&quot;')}">${String(ej.nombre).replace(/"/g, '&quot;')}</div>
+       ${badges ? `<div class="ej-badges">${badges}</div>` : ''}
     </div>
   `;
-  card.onclick = () => editarEjercicio(ej.id, nivelOrigen);
+  card.onclick = () => window.editarEjercicio(ej.id, nivelOrigen);
+  card.onkeydown = (e) => { 
+    if (e.key === 'Enter' || e.key === ' ') { 
+      e.preventDefault(); 
+      window.editarEjercicio(ej.id, nivelOrigen); 
+    } 
+  };
   return card;
-}
+};
 
-function buscarGlobalCMS() {
-  const q = document.getElementById('drillSearch').value.toLowerCase();
+window.buscarGlobalCMS = function() {
+  const sInput = document.getElementById('drillSearch');
+  const q = sInput ? sInput.value.toLowerCase().trim() : '';
   const grid = document.getElementById('drillCategoriesGrid');
   const res = document.getElementById('drillSearchResults');
   
   if (q.length < 2) {
-    grid.style.display = 'block';
-    res.style.display = 'none';
+    if (grid) grid.style.display = 'block';
+    if (res) res.style.display = 'none';
     return;
   }
   
-  grid.style.display = 'none';
-  res.style.display = 'flex';
-  res.innerHTML = '';
+  if (grid) grid.style.display = 'none';
+  if (res) {
+    res.style.display = 'grid';
+    res.innerHTML = '';
+  }
   
   let found = 0;
-  for (const group in catalogoCompleto) {
-      catalogoCompleto[group].forEach(ej => {
-          if (ej.nombre.toLowerCase().includes(q)) {
-              res.appendChild(crearCardEjercicio(ej, 1));
+  const catData = window.catalogoCompleto || {};
+  for (const group in catData) {
+      (catData[group] || []).forEach(ej => {
+          if (ej.nombre && ej.nombre.toLowerCase().includes(q)) {
+              if (res) res.appendChild(window.crearCardEjercicio(ej, 1));
               found++;
           }
       });
   }
-  if (found === 0) {
-      res.innerHTML = `<div style="text-align:center; padding:20px; color:var(--muted);">No se encontraron ejercicios.</div>`;
+  if (found === 0 && res) {
+      res.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:20px; color:var(--muted);">No se encontraron ejercicios.</div>`;
   }
-}
+};
 
 /* ─── Formulario CRUD (Nivel 3) ─── */
-function abrirFormulario(modo) {
-  document.getElementById('formEjercicio').reset();
-  document.getElementById('ej_id').value = '';
-  document.getElementById('mediaFileName').style.display = 'none';
-  document.getElementById('pasosContainer').innerHTML = '';
-  document.getElementById('ejDeleteWrap').style.display = 'none';
-  agregarPaso(); // 1 paso por defecto
+window.abrirFormulario = function(modo) {
+  const form = document.getElementById('formEjercicio');
+  if (form) form.reset();
+  const ejId = document.getElementById('ej_id');
+  if (ejId) ejId.value = '';
+  const mLabel = document.getElementById('mediaFileName');
+  if (mLabel) mLabel.style.display = 'none';
+  const pCont = document.getElementById('pasosContainer');
+  if (pCont) pCont.innerHTML = '';
+  const delWrap = document.getElementById('ejDeleteWrap');
+  if (delWrap) delWrap.style.display = 'none';
+  window.agregarPaso(); // 1 paso por defecto
 
   const select = document.getElementById('ej_grupo');
-  select.value = "";
-  
-  if (modo === 'NUEVO_EN_CAT' && activeCategoria && activeCategoria !== 'otro') {
-      const activeNorm = activeCategoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      for (let i=0; i<select.options.length; i++) {
-          const optNorm = select.options[i].value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          if (optNorm === activeNorm) { select.selectedIndex = i; break; }
+  if (select) {
+      select.value = "";
+      if (modo === 'NUEVO_EN_CAT' && window.activeCategoria && window.activeCategoria !== 'otro') {
+          const activeNorm = window.activeCategoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          for (let i = 0; i < select.options.length; i++) {
+              const optNorm = select.options[i].value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+              if (optNorm === activeNorm) { select.selectedIndex = i; break; }
+          }
+          window.activeNivelAnt = 2;
+      } else {
+          window.activeNivelAnt = 1;
       }
-      activeNivelAnt = 2;
-  } else {
-      activeNivelAnt = 1;
   }
 
-  document.getElementById('nivel3Title').textContent = 'Nuevo Ejercicio';
-  document.getElementById('btnVolverForm').onclick = () => volverNivel(activeNivelAnt);
-  irNivel(3);
-}
+  const title3 = document.getElementById('nivel3Title');
+  if (title3) title3.textContent = 'Nuevo Ejercicio';
+  window.irNivel(3);
+};
 
-function findEjById(id) {
-  for (const group in catalogoCompleto) {
-      const ej = catalogoCompleto[group].find(e => e.id == id);
+window.findEjById = function(id) {
+  const catData = window.catalogoCompleto || {};
+  for (const group in catData) {
+      const ej = (catData[group] || []).find(e => e.id == id);
       if (ej) return ej;
   }
   return null;
-}
+};
 
-function editarEjercicio(id, nivelOrigen) {
-  const ej = findEjById(id);
-  if(!ej) return;
-  
-  document.getElementById('formEjercicio').reset();
-  document.getElementById('ej_id').value = ej.id;
-  document.getElementById('ej_nombre').value = ej.nombre;
-  document.getElementById('mediaFileName').style.display = 'none';
-  
-  const select = document.getElementById('ej_grupo');
-  select.value = "";
-  if (ej.grupo_muscular) {
-     const ejGroupNorm = ej.grupo_muscular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-     for (let i=0; i<select.options.length; i++) {
-        const optNorm = select.options[i].value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        if (optNorm === ejGroupNorm) { select.selectedIndex = i; break; }
-     }
+window.editarEjercicio = function(id, nivelOrigen) {
+  const ej = window.findEjById(id);
+  if (!ej) {
+      console.warn('Ejercicio no encontrado con ID:', id);
+      return;
   }
   
-  document.getElementById('ej_video_url').value = ej.video_url || '';
+  const form = document.getElementById('formEjercicio');
+  if (form) form.reset();
+  const ejId = document.getElementById('ej_id');
+  if (ejId) ejId.value = ej.id;
+  const ejNom = document.getElementById('ej_nombre');
+  if (ejNom) ejNom.value = ej.nombre || '';
+  
+  // Media info preview
+  const mediaLabel = document.getElementById('mediaFileName');
+  if (mediaLabel) {
+      if (ej.imagen_path) {
+          mediaLabel.style.display = 'inline-block';
+          mediaLabel.innerHTML = `<i class="ti ti-photo"></i> Actual: ${ej.imagen_path.split('/').pop()}`;
+      } else {
+          mediaLabel.style.display = 'none';
+      }
+  }
+  
+  const select = document.getElementById('ej_grupo');
+  if (select) {
+      select.value = "";
+      if (ej.grupo_muscular) {
+         const ejGroupNorm = ej.grupo_muscular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+         for (let i = 0; i < select.options.length; i++) {
+            const optNorm = select.options[i].value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (optNorm === ejGroupNorm) { select.selectedIndex = i; break; }
+         }
+      }
+  }
+  
+  const ejVid = document.getElementById('ej_video_url');
+  if (ejVid) ejVid.value = ej.video_url || '';
   
   // Parsear pasos
   const pCont = document.getElementById('pasosContainer');
-  pCont.innerHTML = '';
-  if (ej.descripcion) {
-      const lineas = ej.descripcion.split('\n');
-      lineas.forEach(l => {
-          const trim = l.replace(/^(Paso \d+:|-)\s*/i, '').trim();
-          if(trim) agregarPaso(trim);
-      });
+  if (pCont) {
+      pCont.innerHTML = '';
+      if (ej.descripcion) {
+          const lineas = ej.descripcion.split('\n');
+          lineas.forEach(l => {
+              const trim = l.replace(/^(Paso \d+:|-)\s*/i, '').trim();
+              if (trim) window.agregarPaso(trim);
+          });
+      }
+      if (pCont.children.length === 0) window.agregarPaso();
   }
-  if (pCont.children.length === 0) agregarPaso();
 
-  document.getElementById('nivel3Title').textContent = `Editar: ${ej.nombre}`;
+  const title3 = document.getElementById('nivel3Title');
+  if (title3) title3.textContent = `Editar: ${ej.nombre}`;
   
   const delWrap = document.getElementById('ejDeleteWrap');
-  delWrap.style.display = 'block';
-  delWrap.dataset.ejId = ej.id;
-  delWrap.dataset.ejNombre = ej.nombre;
+  if (delWrap) {
+      delWrap.style.display = 'block';
+      delWrap.dataset.ejId = ej.id;
+      delWrap.dataset.ejNombre = ej.nombre;
+  }
 
-  activeNivelAnt = nivelOrigen;
-  document.getElementById('btnVolverForm').onclick = () => volverNivel(nivelOrigen);
-  
-  irNivel(3);
-}
+  window.activeNivelAnt = nivelOrigen;
+  window.irNivel(3);
+};
 
 // Media select handle
-function handleMediaSelect(input) {
+window.handleMediaSelect = function(input) {
   const file = input.files[0];
   const label = document.getElementById('mediaFileName');
-  if (file) {
-      label.style.display = 'inline-block';
-      label.textContent = file.name;
-  } else {
-      label.style.display = 'none';
+  if (label) {
+      if (file) {
+          label.style.display = 'inline-block';
+          label.textContent = file.name;
+      } else {
+          label.style.display = 'none';
+      }
   }
-}
+};
 
 // Pasos Dinamicos
-function agregarPaso(texto = '') {
+window.agregarPaso = function(texto = '') {
   const cont = document.getElementById('pasosContainer');
+  if (!cont) return;
   const count = cont.children.length + 1;
   const div = document.createElement('div');
   div.className = 'paso-item';
   div.innerHTML = `
       <div class="paso-num">${count}</div>
       <textarea class="paso-input" rows="2" placeholder="Describe este paso...">${texto}</textarea>
-      <button type="button" class="paso-del" onclick="this.parentElement.remove(); reindexarPasos();" title="Eliminar paso"><i class="ti ti-trash"></i></button>
+      <button type="button" class="paso-del" onclick="this.parentElement.remove(); window.reindexarPasos();" title="Eliminar paso"><i class="ti ti-trash"></i></button>
   `;
   cont.appendChild(div);
-  reindexarPasos();
-}
+  window.reindexarPasos();
+};
 
-function reindexarPasos() {
+window.reindexarPasos = function() {
   const cont = document.getElementById('pasosContainer');
+  if (!cont) return;
   Array.from(cont.children).forEach((item, index) => {
-      item.querySelector('.paso-num').textContent = index + 1;
+      const num = item.querySelector('.paso-num');
+      if (num) num.textContent = index + 1;
   });
-}
+};
 
-function consolidarPasos() {
+window.consolidarPasos = function() {
   const inputs = document.querySelectorAll('#pasosContainer .paso-input');
   let lineas = [];
   inputs.forEach((inp, idx) => {
       const val = inp.value.trim();
-      if(val) lineas.push(`Paso ${idx+1}: ${val}`);
+      if (val) lineas.push(`Paso ${idx+1}: ${val}`);
   });
-  document.getElementById('ej_desc_legacy').value = lineas.join('\n');
-}
+  const legacy = document.getElementById('ej_desc_legacy');
+  if (legacy) legacy.value = lineas.join('\n');
+};
 
 window.guardarEjercicio = async function(e) {
   e.preventDefault();
-  consolidarPasos();
+  window.consolidarPasos();
   const form = document.getElementById('formEjercicio');
   const fd   = new FormData(form);
+  const token = fd.get('csrf_token') || window.CSRF || '';
+  if (!fd.get('csrf_token')) {
+      fd.append('csrf_token', token);
+  }
   const id   = fd.get('id');
-  const url  = id ? APP + '/entrenador/api-catalogo-editar' : APP + '/entrenador/api-catalogo-agregar';
+  const appBase = window.APP || '';
+  const url  = id ? (appBase + '/entrenador/api-catalogo-editar') : (appBase + '/entrenador/api-catalogo-agregar');
   const btn  = document.getElementById('btnGuardarEj');
   
-  btn.disabled = true;
-  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i> Guardando...';
+  if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i> Guardando...';
+  }
   
   try {
       const r = await fetch(url, { method:'POST', body: fd });
       const data = await r.json();
       if (data.ok) {
-          Swal.fire({ icon:'success', title:'¡Guardado!', text: data.msg, background:'#0f1219', color:'#fff', timer:1400, showConfirmButton:false })
-              .then(() => location.reload());
+          Swal.fire({ 
+              icon: 'success', 
+              title: '¡Guardado!', 
+              text: data.msg, 
+              background: '#0f1219', 
+              color: '#fff', 
+              timer: 1400, 
+              showConfirmButton: false 
+          }).then(() => location.reload());
       } else {
           Swal.fire({ icon:'error', title:'Error', text: data.msg, background:'#0f1219', color:'#fff' });
       }
   } catch(err) {
-      Swal.fire({ icon:'error', title:'Error', text: err.message, background:'#0f1219', color:'#fff' });
+      Swal.fire({ icon:'error', title:'Error', text: err.message || 'Error de conexión', background:'#0f1219', color:'#fff' });
   } finally {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar Ejercicio';
+      if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="ti ti-device-floppy"></i> Guardar Ejercicio';
+      }
   }
 };
 
 window.borrarEjercicioDesdeForm = async function() {
   const delWrap = document.getElementById('ejDeleteWrap');
+  if (!delWrap) return;
   const id = delWrap.dataset.ejId;
   const nombre = delWrap.dataset.ejNombre;
   if (!id) return;
@@ -1416,67 +1612,52 @@ window.borrarEjercicioDesdeForm = async function() {
   const res = await Swal.fire({
       title: '¿Eliminar ejercicio?',
       html: `Se eliminará <b>${nombre}</b> del catálogo permanentemente.`,
-      icon: 'warning', showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
-      confirmButtonColor:'#ef4444', background:'#0f1219', color:'#fff'
+      icon: 'warning', 
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar', 
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#ef4444', 
+      background: '#0f1219', 
+      color: '#fff'
   });
   if (!res.isConfirmed) return;
   
-  const fd = new FormData(); fd.append('id', id);
-  const r  = await fetch(APP + '/entrenador/api-catalogo-borrar', { method:'POST', body: fd });
-  const d  = await r.json();
-  if (d.ok) {
-      location.reload();
-  } else {
-      Swal.fire({ icon:'error', title:'Error', text: d.msg, background:'#0f1219', color:'#fff' });
+  const appBase = window.APP || '';
+  const token = window.CSRF || '';
+  const fd = new FormData(); 
+  fd.append('id', id);
+  fd.append('csrf_token', token);
+  
+  try {
+      const r  = await fetch(appBase + '/entrenador/api-catalogo-borrar', { method:'POST', body: fd });
+      const d  = await r.json();
+      if (d.ok) {
+          Swal.fire({
+              icon: 'success',
+              title: 'Eliminado',
+              text: d.msg,
+              background: '#0f1219',
+              color: '#fff',
+              timer: 1200,
+              showConfirmButton: false
+          }).then(() => location.reload());
+      } else {
+          Swal.fire({ icon:'error', title:'Error', text: d.msg, background:'#0f1219', color:'#fff' });
+      }
+  } catch(err) {
+      Swal.fire({ icon:'error', title:'Error', text: err.message, background:'#0f1219', color:'#fff' });
   }
 };
 
-// ── Funciones de Formulario (Nivel 3) ──
-window.abrirFormulario = function(modo, data = null) {
-    const form = document.getElementById('formEjercicio');
-    
-    if(form) {
-        form.reset();
-        document.getElementById('ej_id').value = '';
-        document.getElementById('pasosContainer').innerHTML = '';
-        document.getElementById('ejDeleteWrap').style.display = 'none';
-        document.getElementById('nivel3Title').textContent = 'Agregar Ejercicio';
-        document.getElementById('mediaFileName').style.display = 'none';
-    }
-    
-    // Auto-seleccionar el grupo muscular según la categoría actual
-    if (modo === 'NUEVO_EN_CAT' && activeCategoria) {
-        const select = document.getElementById('ej_grupo');
-        if (select) {
-            const nombreLimpio = activeCategoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            Array.from(select.options).forEach(opt => {
-                const optVal = opt.value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                if (optVal === nombreLimpio) {
-                    opt.selected = true;
-                }
-            });
-        }
-    }
-    
-    activeNivelAnt = 2; // Siempre venimos del Nivel 2 o Nivel 1 en search
-    irNivel(3);
-    
-    // Animate
-    const nivel3 = document.getElementById('drillNivel3');
-    nivel3.classList.remove('expand-anim');
-    void nivel3.offsetWidth;
-    nivel3.classList.add('expand-anim');
-};
-</script>
-<?php require __DIR__ . '/../layout/footer.php'; ?>
-
-
-<script>
+// ── Ajustes de Tienda (WhatsApp) ──
 function guardarAjustesWhatsApp() {
-  const fd = new FormData(document.getElementById("formAjustesWhatsApp"));
-  fd.append("csrf_token", CSRF);
-  fetch(APP + "/entrenador/guardar-ajustes-whatsapp", {
+  const form = document.getElementById("formAjustesWhatsApp");
+  if (!form) return;
+  const fd = new FormData(form);
+  const token = window.CSRF || '';
+  fd.append("csrf_token", token);
+  const appBase = window.APP || '';
+  fetch(appBase + "/entrenador/guardar-ajustes-whatsapp", {
     method: "POST", body: fd
   })
   .then(r => r.json())
@@ -1486,7 +1667,11 @@ function guardarAjustesWhatsApp() {
     } else {
       Swal.fire({icon:"error", title:"Error", text:data.msg});
     }
+  })
+  .catch(err => {
+    Swal.fire({icon:"error", title:"Error", text:err.message});
   });
 }
 </script>
+<?php require __DIR__ . '/../layout/footer.php'; ?>
 

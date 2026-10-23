@@ -59,46 +59,83 @@ if ($pesoPrimero && $pesoUltimo && $pesoPrimero['fecha'] !== $pesoUltimo['fecha'
     $difSign = $difPeso >= 0 ? '+' : '';
 }
 
-// -- Datos para calendario semanal ----------------------------
-$fechaSeleccionadaObj = new DateTime($fechaSeleccionada ?? date('Y-m-d'));
-$fechaHoyObj = new DateTime(); // Para saber cuÃ¡l es verdaderamente HOY
+// -- Datos para calendario mensual interactivo (Estándar módulo stats atleta) --
+$db = getDB();
+$mesesES = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
+            'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+$mesActual = (int)date('n');
+$anoActual = (int)date('Y');
+$fechaHoy   = date('Y-m-d');
 
-$diaHoyNum  = (int)$fechaSeleccionadaObj->format('N');  // 1=Lun, 7=Dom
-$mesNombre  = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][(int)$fechaSeleccionadaObj->format('n') - 1];
+$calMes = isset($_GET['mes']) ? (int)$_GET['mes'] : $mesActual;
+$calAno = isset($_GET['ano']) ? (int)$_GET['ano'] : $anoActual;
+if ($calMes < 1 || $calMes > 12) { $calMes = $mesActual; }
+if ($calAno < 2000 || $calAno > 2100) { $calAno = $anoActual; }
 
-// DÃ­as de la semana (Lun=1 ... Dom=7)
-$diasSemana = [];
-$startOfWeek = clone $fechaSeleccionadaObj;
-if ($startOfWeek->format('N') != 1) {
-    $startOfWeek->modify('last monday');
-}
-for ($d = 0; $d < 7; $d++) {
-    $curr = clone $startOfWeek;
-    $curr->modify("+$d days");
-    $diasSemana[] = [
-        'num'   => (int)$curr->format('N'),
-        'fecha' => (int)$curr->format('j'),
-        'ini'   => ['L','M','X','J','V','S','D'][$d],
-        'full'  => $curr->format('Y-m-d')
-    ];
+$mesPrevMes = $calMes - 1; $mesPrevAno = $calAno;
+if ($mesPrevMes < 1) { $mesPrevMes = 12; $mesPrevAno--; }
+$mesSigMes = $calMes + 1; $mesSigAno = $calAno;
+if ($mesSigMes > 12) { $mesSigMes = 1; $mesSigAno++; }
+
+// Fechas entrenadas reales en BD y rutinas programadas por día de la semana
+$fechasEntrenadas = obtenerFechasEntrenadasMes($db, (int)$cliente['id'], $calAno, $calMes);
+$rutinasProgMap   = obtenerRutinasProgramadasPorDia($db, (int)$cliente['id']);
+$diasProgramados  = array_keys($rutinasProgMap);
+
+// Construcción de semanas (Lunes a Domingo, 7 columnas completas)
+$primerDia = new DateTime(sprintf('%04d-%02d-01', $calAno, $calMes));
+$startCalendar = clone $primerDia;
+$dowFirst = (int)$primerDia->format('N'); // 1=Lun ... 7=Dom
+if ($dowFirst > 1) {
+    $startCalendar->modify('-' . ($dowFirst - 1) . ' days');
 }
 
-// DÃ­as de entrenamiento de la rutina del atleta (si tiene asignada)
-$diasRutina = [];
-if (!empty($rutinaHoy) && !empty($rutinaHoy['dias_semana'])) {
-    $diasRutina = array_map('intval', explode(',', $rutinaHoy['dias_semana']));
+$semanas = [];
+$cursor = clone $startCalendar;
+for ($w = 0; $w < 6; $w++) {
+    $semana = [];
+    $tieneDiaMes = false;
+    for ($d = 0; $d < 7; $d++) {
+        $diaClone = clone $cursor;
+        if ((int)$diaClone->format('n') === $calMes && (int)$diaClone->format('Y') === $calAno) {
+            $tieneDiaMes = true;
+        }
+        $semana[] = $diaClone;
+        $cursor->modify('+1 day');
+    }
+    if ($tieneDiaMes) {
+        $semanas[] = $semana;
+    }
 }
-// DÃ­as preferidos del atleta (campo dias_entrenamiento)
-$diasAtleta = [];
-if (!empty($diasEntrenamiento)) {
-    $diasAtleta = array_map('intval', explode(',', $diasEntrenamiento));
-}
-$diasActivos = array_unique(array_merge($diasRutina, $diasAtleta));
 
-// EstadÃ­sticas rÃ¡pidas
+// Estadísticas rápidas
 $rutinasTotal      = count($rutinas);
 $rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'completada'));
+
+// Datos de peso para tarjeta de peso (idéntico a cliente)
+$pesoHistorial = $pesoTodos ?? [];
+$pesoActual = !empty($pesoHistorial) ? (float)end($pesoHistorial)['peso_kg'] : (float)($cliente['peso_kg'] ?? 0);
+$pesoInicio = !empty($pesoHistorial) ? (float)reset($pesoHistorial)['peso_kg'] : (float)($cliente['peso_kg'] ?? 0);
+$delta = round($pesoActual - $pesoInicio, 2);
+$deltaClass = $delta < 0 ? 'neg' : ($delta > 0 ? 'pos' : 'neu');
+$deltaStr = ($delta > 0 ? '+' : '') . $delta . ' kg';
+
+// Grupos musculares para progreso
+$trenoSuperior = ['pecho', 'hombros', 'biceps', 'triceps', 'espalda', 'abdomen', 'antebrazos'];
+$trenoInferior = ['cuadriceps', 'femoral', 'gluteos', 'gemelos'];
+$grupoIconos = [
+    'pecho'       => 'ti-shield',
+    'hombros'     => 'ti-bolt',
+    'biceps'      => 'ti-arm',
+    'triceps'     => 'ti-flame',
+    'espalda'     => 'ti-layers-intersect',
+    'abdomen'     => 'ti-layout-grid',
+    'antebrazos'  => 'ti-hand-stop',
+    'cuadriceps'  => 'ti-run',
+    'femoral'     => 'ti-walk',
+    'gluteos'     => 'ti-flame',
+    'gemelos'     => 'ti-shoe',
+];
 ?>
 
 <!-- =Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â
@@ -346,6 +383,808 @@ $rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'c
 /* -- Empty state -- */
 .empty-state{text-align:center;padding:30px;color:#64748b;font-size:.85rem}
 .empty-state i{font-size:2rem;display:block;margin-bottom:10px;opacity:.4}
+
+/* ═════════════════════════════════════════════════════════════
+   ESTILOS STATS: PESO CORPORAL Y PROGRESO POR GRUPO MUSCULAR
+═════════════════════════════════════════════════════════════ */
+.pw-chart-wrap { background: transparent; border: none; padding: 4px 0 0 0; margin-bottom: 0; }
+.pw-chart-meta {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+  margin-bottom: 14px !important;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.pw-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pw-stat-val { font-size: 1.15rem; font-weight: 900; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pw-stat-lbl { font-size: .65rem; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.pw-stat-delta { font-size: .82rem; font-weight: 800; }
+.pw-stat-delta.neg { color: #4ade80; }
+.pw-stat-delta.pos { color: #f87171; }
+.pw-stat-delta.neu { color: #6b7280; }
+
+/* Tabs Tren Superior / Inferior */
+.st-tren-tabs {
+  display: flex; gap: 0; margin-bottom: 12px;
+  background: rgba(255,255,255,.04); border-radius: 12px; padding: 4px;
+  border: 1px solid rgba(255,255,255,.06);
+}
+.st-tren-tab {
+  flex: 1; padding: 8px; border: none; background: none;
+  border-radius: 9px; font-size: .82rem; font-weight: 700;
+  color: #94a3b8; cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.st-tren-tab.active {
+  background: rgba(255,255,255,.1); color: #fff;
+}
+.st-tren-tab.superior.active, .st-tren-tab.inferior.active {
+  background: rgba(138,43,226,.2); color: #b388ff; border: 1px solid rgba(138,43,226,.4);
+}
+
+/* Chips de grupos musculares */
+.st-grupo-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.st-grupo-chip {
+  padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03); color: #94a3b8;
+  font-size: .75rem; font-weight: 700; cursor: pointer;
+  transition: all .2s; display: flex; align-items: center; gap: 5px;
+  text-transform: capitalize;
+}
+.st-grupo-chip:hover { border-color: rgba(138,43,226,.4); color: #d8b4fe; }
+.st-grupo-chip.active-sup, .st-grupo-chip.active-inf {
+  background: rgba(138,43,226,.2); border-color: #8a2be2; color: #b388ff;
+  box-shadow: 0 0 10px rgba(138,43,226,.3);
+}
+
+/* Selector de ejercicios */
+.pm-ex-list {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; min-height: 36px;
+}
+.pm-ex-btn {
+  padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04); color: #cbd5e1;
+  font-size: .75rem; font-weight: 700; cursor: pointer;
+  transition: all .2s; white-space: nowrap;
+}
+.pm-ex-btn:hover { border-color: rgba(255,255,255,.2); color: #fff; }
+.pm-ex-btn.active {
+  background: rgba(138,43,226,.25); border-color: #8a2be2; color: #fff;
+  box-shadow: 0 0 8px rgba(138,43,226,.4);
+}
+.pm-ex-empty { font-size: .78rem; color: #64748b; padding: 6px 0; display: flex; align-items: center; gap: 6px; }
+
+/* Resumen del ejercicio (2 columnas de récord) */
+.pm-summary-card {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 14px;
+}
+.pm-summary-stat {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+}
+.pm-summary-lbl {
+  font-size: .62rem; color: #94a3b8; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.pm-summary-val {
+  font-size: 1.15rem; font-weight: 900; color: #fff; line-height: 1;
+}
+.pm-summary-sub { font-size: .68rem; color: #94a3b8; font-weight: 600; }
+
+/* Chart wrapper */
+.st-chart-wrap {
+  background: rgba(2,4,10,.6); border: 1px solid rgba(255,255,255,.06);
+  border-radius: 16px; padding: 16px 14px 12px; margin-bottom: 12px;
+  position: relative; min-height: 220px;
+}
+.st-chart-title {
+  font-size: .82rem; font-weight: 700; color: #e2e8f0;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+}
+.st-chart-empty {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 40px 20px; text-align: center;
+  color: #475569;
+}
+.st-chart-empty i { font-size: 2.2rem; margin-bottom: 8px; opacity: .4; }
+.st-chart-empty p { font-size: .82rem; color: #64748b; margin: 0; }
+
+/* Salón de Récords · 3 Mejores Series */
+.pm-series-wrap {
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 12px 14px;
+}
+.pm-series-header {
+  font-size: .72rem; font-weight: 800; color: #9ca3af;
+  text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+}
+.pm-series-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.pm-serie-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 10px 8px !important;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  text-align: left; min-width: 0 !important; overflow: hidden; position: relative;
+  box-sizing: border-box !important;
+}
+.pm-serie-card:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+.pm-serie-card.pos-1.active {
+  border-color: #fbbf24; background: rgba(251, 191, 36, 0.09);
+  box-shadow: 0 4px 14px rgba(251, 191, 36, 0.22);
+}
+.pm-serie-card.pos-2.active {
+  border-color: #cbd5e1; background: rgba(148, 163, 184, 0.09);
+  box-shadow: 0 4px 14px rgba(148, 163, 184, 0.22);
+}
+.pm-serie-card.pos-3.active {
+  border-color: #f59e0b; background: rgba(217, 119, 6, 0.09);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.22);
+}
+.pm-serie-card.disabled {
+  opacity: 0.45; cursor: default; border-style: dashed; background: rgba(255, 255, 255, 0.015);
+}
+.pm-serie-top { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.pm-serie-badge { font-size: 1.05rem; line-height: 1; }
+.pm-serie-tag {
+  font-size: 0.58rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .3px; padding: 2px 6px; border-radius: 6px; white-space: nowrap;
+}
+.pm-serie-tag.pos-1 { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.pm-serie-tag.pos-2 { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+.pm-serie-tag.pos-3 { background: rgba(217, 119, 6, 0.15); color: #f59e0b; }
+.pm-serie-tag.empty { background: rgba(255, 255, 255, 0.05); color: #6b7280; }
+.pm-serie-val {
+  font-size: 0.95rem; font-weight: 900; color: #fff; line-height: 1.15;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.pm-serie-peso { font-size: 1rem; font-weight: 900; color: #ffffff; letter-spacing: -0.3px; }
+.pm-serie-reps { font-size: 0.78rem; font-weight: 700; color: #cbd5e1; }
+
+/* ── Bento UI Calendar (Rutinas Perfil Entrenador) ── */
+.cal-section-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 18px 10px;
+  position: relative;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  width: 100%;
+}
+@media (max-width: 576px) {
+  .aurora-card {
+    padding: 14px 6px !important;
+  }
+  .cal-section-card {
+    padding: 12px 4px !important;
+    border-radius: 14px !important;
+  }
+}
+.cal-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.cal-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cal-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(138, 43, 226, 0.15);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  color: #c084fc;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+.cal-card-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0;
+}
+.cal-card-subtitle {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  display: block;
+  margin-top: 2px;
+}
+.cal-btn-asignar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #8a2be2, #9d4edd);
+  color: #fff !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35);
+  transition: all 0.2s ease;
+}
+.cal-btn-asignar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(138, 43, 226, 0.5);
+  color: #fff !important;
+}
+
+/* Navegación mes */
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.cal-nav-btn {
+  width: 36px; height: 36px; border-radius: 12px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.09);
+  display: grid; place-items: center; color: #9ca3af;
+  font-size: 1rem; text-decoration: none; transition: all .2s;
+}
+.cal-nav-btn:hover:not(.disabled) { background: rgba(255,255,255,.12); color: #fff; }
+.cal-nav-btn.disabled { opacity: .3; pointer-events: none; }
+.cal-nav-title { text-align: center; }
+.cal-mes { font-size: 1.05rem; font-weight: 800; color: #fff; display: block; }
+.cal-ano { font-size: .75rem; color: #94a3b8; }
+
+/* Grid del Calendario (7 columnas para semana completa L-D) */
+.cal-grid {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+}
+.cal-head-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  margin-bottom: 6px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.cal-head-spacer {
+  width: 20px !important;
+  flex-shrink: 0 !important;
+}
+.cal-head-cells {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 3px !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+.cal-head-cell {
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: .2px;
+  text-transform: uppercase;
+  overflow: hidden;
+}
+.cal-week {
+  display: flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  margin-bottom: 3px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.cal-week-label {
+  width: 20px !important;
+  flex-shrink: 0 !important;
+  font-size: .48rem !important;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+}
+.cal-week-cells {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 3px !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Celdas de día */
+.cal-cell {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  min-width: 0;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  position: relative;
+  transition: all .2s;
+  cursor: pointer;
+  box-sizing: border-box;
+  padding: 2px 0;
+}
+.cal-day-num {
+  font-size: .76rem;
+  font-weight: 700;
+  color: #d1d5db;
+  line-height: 1;
+}
+.cal-cell.fuera-mes { opacity: .28; }
+.cal-cell.hoy {
+  border-color: #8a2be2 !important;
+  background: rgba(138, 43, 226, 0.2) !important;
+}
+.cal-cell.hoy .cal-day-num { color: #fff; font-weight: 800; }
+.cal-cell.entrenado {
+  border-color: rgba(138,43,226,.35);
+  background: rgba(138,43,226,.12);
+}
+.cal-cell.entrenado .cal-day-num { color: #f1f5f9; font-weight: 700; }
+.cal-cell.entrenado:hover {
+  border-color: rgba(157,78,221,.7);
+  background: rgba(157,78,221,.22);
+  transform: scale(1.05);
+}
+.cal-cell.selected {
+  border-color: #c084fc !important;
+  background: rgba(138,43,226,.28) !important;
+  box-shadow: 0 0 0 2px rgba(138,43,226,.45);
+}
+.cal-cell.hoy.entrenado {
+  border-color: #a855f7 !important;
+  background: rgba(138, 43, 226, 0.3) !important;
+}
+.cal-cell.planificado {
+  border-color: rgba(251,191,36,.25);
+  background: rgba(251,191,36,.04);
+}
+.cal-cell.planificado .cal-day-num { color: #e2e8f0; }
+.cal-cell.planificado:hover {
+  border-color: rgba(251,191,36,.5);
+  background: rgba(251,191,36,.12);
+  transform: scale(1.05);
+}
+.cal-cell.clickable:hover {
+  border-color: rgba(255,255,255,.2);
+  background: rgba(255,255,255,.06);
+  transform: scale(1.03);
+}
+.cal-cell:focus-visible {
+  outline: 2px solid #8a2be2;
+  outline-offset: 2px;
+}
+.cal-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #a855f7;
+  box-shadow: 0 0 6px rgba(168, 85, 247, 0.9);
+  flex-shrink: 0;
+}
+.cal-cell.hoy .cal-dot { background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, 0.95); }
+.cal-dot-plan {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(251, 191, 36, 0.7);
+  box-shadow: 0 0 4px rgba(251, 191, 36, 0.5);
+  flex-shrink: 0;
+}
+.cal-legend {
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  margin-top: 18px; padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  flex-wrap: wrap; font-size: 0.72rem; color: #94a3b8; font-weight: 600;
+}
+.cal-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend-today {
+  width: 8px; height: 8px; border-radius: 2px;
+  border: 1px solid #8a2be2; background: rgba(138, 43, 226, 0.35);
+}
+
+/* ── Detalle de Rutina debajo del Calendario (Bento UI) ── */
+.cal-rutina-dia-inline {
+  margin-top: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 18px 20px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s ease;
+}
+.crdi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.crdi-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #8b5cf6;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: block;
+  margin-bottom: 2px;
+}
+.crdi-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+}
+.crdi-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(138, 43, 226, 0.18);
+  border: 1px solid rgba(138, 43, 226, 0.35);
+  color: #d8b4fe;
+}
+.crdi-badge.badge-completado {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #34d399;
+}
+.crdi-badge.badge-descanso {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+.crdi-badge.badge-sin-rutina {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #f87171;
+}
+
+.crdi-rutina-card {
+  background: rgba(138, 43, 226, 0.10);
+  border: 1px solid rgba(138, 43, 226, 0.25);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.crdi-rutina-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+}
+.crdi-rutina-stats {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  margin-top: 2px;
+}
+.crdi-ejercicios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.crdi-ejercicio-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.crdi-ej-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.crdi-ej-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.crdi-ej-nombre {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.crdi-ej-meta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 1px;
+}
+.crdi-ej-params {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  white-space: nowrap;
+  text-align: right;
+}
+.crdi-empty-box {
+  padding: 30px 20px;
+  text-align: center;
+  color: #9ca3af;
+}
+.crdi-empty-box i {
+  font-size: 2.2rem;
+  margin-bottom: 8px;
+  display: block;
+}
+.crdi-btn-asignar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #8a2be2;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  margin-top: 12px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+}
+.crdi-btn-asignar:hover {
+  background: #7922c7;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+/* ── MODAL DE DÍA (Bottom-Sheet Portal) ── */
+.dia-modal-backdrop {
+  position: fixed !important; inset: 0 !important; z-index: 999990 !important;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .3s ease, visibility 0s linear .3s;
+}
+.dia-modal-backdrop.open {
+  opacity: 1; visibility: visible; pointer-events: all;
+  transition: opacity .3s ease, visibility 0s;
+}
+.dia-modal {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 999999 !important;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  background: #15151a !important;
+  border-top: 1px solid rgba(138, 43, 226, 0.3);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 40px 20px;
+  box-shadow: 0 -16px 48px rgba(0,0,0,.65);
+  color: #e5e7eb;
+  translate: 0 100%;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: translate .35s cubic-bezier(.32,.72,0,1), opacity .25s ease, visibility 0s linear .35s;
+  outline: none;
+}
+.dia-modal.open {
+  translate: 0 0;
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transition: translate .35s cubic-bezier(.32,.72,0,1), opacity .25s ease, visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dia-modal, .dia-modal-backdrop { transition: none !important; }
+}
+.dia-modal-handle {
+  width: 40px; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,.18); margin: -12px auto 16px;
+}
+.dia-modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding-bottom: 14px; margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.dia-modal-title-wrap { flex: 1; min-width: 0; }
+.dia-modal-fecha {
+  font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1.2; margin: 0;
+}
+.dia-modal-sub {
+  font-size: .74rem; color: #9ca3af; margin-top: 8px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.dia-modal-badge {
+  font-size: .62rem; font-weight: 800; padding: 3px 10px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: .4px;
+  background: rgba(255,255,255,.07); color: #9ca3af;
+}
+.dia-modal-badge:empty { display: none; }
+.dia-modal-badge.modo-historial     { background: rgba(138,43,226,.18); color: #c4a3ff; }
+.dia-modal-badge.modo-hoy           { background: rgba(138,43,226,.30); color: #fff; }
+.dia-modal-badge.modo-planificacion { background: rgba(251,191,36,.15); color: #fbbf24; }
+.dia-modal-badge.est-completado     { background: rgba(74,222,128,.15); color: #4ade80; }
+.dia-modal-badge.est-parcial        { background: rgba(251,191,36,.15); color: #fbbf24; }
+.dia-modal-badge.est-pendiente      { background: rgba(167,139,250,.18); color: #c4b5fd; }
+.dia-modal-close {
+  width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  color: #cbd5e1; cursor: pointer; display: grid; place-items: center;
+  font-size: 1rem; transition: background .2s, color .2s;
+}
+.dia-modal-close:hover { background: rgba(255,255,255,.14); color: #fff; }
+.dia-modal-close:focus-visible, .dm-btn-rutina:focus-visible { outline: 2px solid #b388ff; outline-offset: 2px; }
+.dia-modal-body { padding: 0; }
+.dia-modal-loading {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; color: #9ca3af; font-size: .85rem; padding: 36px 0;
+}
+@keyframes spin-modal { to { transform: rotate(360deg); } }
+.dia-modal-spinner {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.12); border-top-color: #8a2be2;
+  animation: spin-modal .7s linear infinite;
+}
+.dia-modal-empty { text-align: center; padding: 28px 8px 8px; color: #9ca3af; }
+.dia-modal-empty i { font-size: 2.2rem; display: block; margin-bottom: 12px; color: #6d4aa8; }
+.dia-modal-empty p { font-size: .88rem; line-height: 1.5; margin: 0; }
+.dia-modal-empty .dm-btn-rutina { margin-top: 18px; }
+
+/* Contenido modal */
+.dm-rutina {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 12px;
+  background: rgba(138,43,226,.10); border: 1px solid rgba(138,43,226,.25); border-radius: 16px;
+}
+.dm-rutina > i { font-size: 1.4rem; color: #b388ff; flex-shrink: 0; }
+.dm-rutina-nombre { font-size: .95rem; font-weight: 800; color: #fff; overflow-wrap: anywhere; }
+.dm-rutina-fecha  { font-size: .72rem; color: #9ca3af; margin-top: 2px; }
+.dm-section-label {
+  font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+  color: #a78bfa; margin: 0 0 8px;
+}
+.dm-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
+.dm-stat {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px; padding: 10px 8px; text-align: center;
+}
+.dm-stat b { display: block; font-size: 1.05rem; font-weight: 900; color: #fff; }
+.dm-stat span { font-size: .6rem; color: #9ca3af; text-transform: uppercase; letter-spacing: .4px; font-weight: 700; }
+.dm-ejercicio {
+  margin-bottom: 16px; padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.dm-ejercicio:last-of-type { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+.dm-ex-name {
+  font-size: .92rem; font-weight: 800; color: #f1f5f9;
+  margin-bottom: 10px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+}
+.dm-equip, .dm-grupo-chip {
+  font-size: .6rem; font-weight: 800; padding: 3px 9px; border-radius: 20px;
+  display: inline-flex; align-items: center; gap: 4px; text-transform: capitalize;
+}
+.dm-equip { background: rgba(138,43,226,.2); color: #d8b4fe; border: 1px solid rgba(138,43,226,.35); }
+.dm-grupo-chip { background: rgba(255,255,255,.07); color: #9ca3af; }
+.dm-table { width: 100%; border-collapse: collapse; }
+.dm-table th {
+  font-size: .6rem; color: #6b7280; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .4px; padding: 0 0 6px; text-align: left;
+}
+.dm-table th:not(:first-child), .dm-table td:not(:first-child) { text-align: right; }
+.dm-table td {
+  font-size: .86rem; color: #cbd5e1; padding: 7px 0;
+  border-top: 1px solid rgba(255,255,255,.05); font-variant-numeric: tabular-nums;
+}
+.dm-table td:first-child { width: 48px; }
+.dm-table td.kg   { color: #fff; font-weight: 800; }
+.dm-table td.reps { color: #e2e8f0; font-weight: 700; }
+.dm-set-badge {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  font-size: .72rem; font-weight: 900;
+  background: rgba(139,92,246,.18); color: #a78bfa;
+}
+.dm-set-badge[data-t="calentamiento"] { background: rgba(251,191,36,.18);  color: #fbbf24; }
+.dm-set-badge[data-t="fallo"]         { background: rgba(248,113,113,.18); color: #f87171; }
+.dm-set-badge[data-t="drop"]          { background: rgba(96,165,250,.18);  color: #60a5fa; }
+.dm-plan-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.dm-plan-chip {
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px; padding: 5px 10px; font-size: .75rem; color: #9ca3af;
+}
+.dm-plan-chip span { color: #fff; font-weight: 800; }
+.dm-btn-rutina {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; box-sizing: border-box; padding: 14px; margin-top: 18px;
+  background: linear-gradient(135deg, #8a2be2, #9d4edd);
+  color: #fff; font-size: .92rem; font-weight: 800;
+  border: none; border-radius: 14px; cursor: pointer; text-decoration: none;
+  box-shadow: 0 6px 20px rgba(138,43,226,.4); transition: transform .2s, box-shadow .2s;
+}
+.dm-btn-rutina:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(138,43,226,.5); color: #fff; }
+.dm-grafica-toggle-btn {
+  background: rgba(138, 43, 226, 0.15);
+  border: 1px solid rgba(138, 43, 226, 0.35);
+  color: #c084fc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+.dm-grafica-toggle-btn:hover {
+  background: rgba(138, 43, 226, 0.3);
+  border-color: #c084fc;
+  color: #fff;
+}
+.dm-grafica-sesion-wrap {
+  animation: fadeIn 0.25s ease;
+}
 </style>
 
 <!-- =Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â=Â
@@ -356,76 +1195,74 @@ $rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'c
   <div class="col-lg-8">
     <div class="aurora-card" style="padding: 24px; margin-bottom: 24px; border-radius: 20px; overflow: hidden; position: relative;">
       <div class="aurora-glow" style="background:rgba(139,92,246,.07)"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap; position:relative; z-index:1;">
-  <button onclick="history.back()" class="btn-xp btn-secondary" style="padding:8px 12px;flex-shrink:0">
-    <i class="ti ti-arrow-left"></i>
-  </button>
-  <div style="flex:1;min-width:0">
-    <div class="atleta-bio" style="margin-bottom:0">
-      <div class="atleta-avatar"><?= mb_strtoupper(mb_substr($cliente['nombre'],0,1)) ?></div>
-      <div style="min-width:0">
-        <div class="atleta-name" title="<?= e($cliente['nombre']) ?>"><?= e($cliente['nombre']) ?></div>
-        <div class="atleta-detail"><?= e($cliente['email']) ?></div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center;">
+      <!-- Top Action Bar (Volver + Acciones) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;position:relative;z-index:2;gap:10px;">
+        <button onclick="history.back()" class="btn-xp btn-secondary" style="padding:8px 14px;border-radius:12px;display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;" title="Volver">
+          <i class="ti ti-arrow-left"></i>
+          <span>Volver</span>
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;">
           <?php if (($cliente['estado_cuenta'] ?? '') === 'pendiente'): ?>
-          <span class="atleta-meta-pill" style="border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,0.12);font-weight:700;"><i class="ti ti-clock"></i> Pendiente de activación</span>
+          <button type="button" class="btn-xp" style="padding:8px 14px;background:rgba(34,197,94,0.18);color:#4ade80;border:1px solid rgba(34,197,94,0.35);border-radius:12px;font-size:0.82rem;display:inline-flex;align-items:center;gap:6px;transition:all .2s;font-weight:600;" onclick="aprobarAtletaBtn(<?= (int)$cliente['id'] ?>, 'aprobar', this, event)" onmouseover="this.style.background='rgba(34,197,94,0.3)'" onmouseout="this.style.background='rgba(34,197,94,0.18)'" title="Activar cuenta de atleta">
+            <i class="ti ti-check"></i> <span class="d-none d-sm-inline">Activar Atleta</span>
+          </button>
+          <?php endif; ?>
+          <button type="button" class="btn-xp" style="padding:8px 14px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:12px;font-size:0.82rem;display:inline-flex;align-items:center;gap:6px;transition:all .2s;" onclick="eliminarAtletaPerfil(<?= (int)($cliente['usuario_id'] ?? 0) ?>, '<?= addslashes(e($cliente['nombre'])) ?>')" onmouseover="this.style.background='rgba(239,68,68,0.28)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" title="Eliminar atleta permanentemente">
+            <i class="ti ti-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Hero Atleta (Centrado, jerarquía limpia, sin comprimir) -->
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:20px;position:relative;z-index:2;">
+        <div class="atleta-avatar" style="width:64px;height:64px;font-size:1.6rem;margin-bottom:12px;background:linear-gradient(135deg,rgba(168,85,247,0.25),rgba(59,130,246,0.25));border:2px solid rgba(168,85,247,0.4);box-shadow:0 8px 24px rgba(139,92,246,0.25);">
+          <?= mb_strtoupper(mb_substr($cliente['nombre'],0,1)) ?>
+        </div>
+        <h2 style="font-size:1.35rem;font-weight:800;color:#f8fafc;margin:0 0 4px 0;letter-spacing:-0.02em;word-break:break-word;max-width:100%;">
+          <?= e($cliente['nombre']) ?>
+        </h2>
+        <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:12px;word-break:break-all;">
+          <?= e($cliente['email']) ?>
+        </div>
+
+        <!-- Meta Pills (Métricas físicas y días - sin duplicar metas) -->
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;align-items:center;max-width:100%;">
+          <?php if (($cliente['estado_cuenta'] ?? '') === 'pendiente'): ?>
+          <span class="atleta-meta-pill" style="border-color:#f59e0b;color:#f59e0b;background:rgba(245,158,11,0.12);font-weight:700;margin:0;"><i class="ti ti-clock"></i> Pendiente de activación</span>
           <?php endif; ?>
           <?php if($cliente['peso_kg']): ?>
-          <span class="atleta-meta-pill"><i class="ti ti-scale"></i> <?= $cliente['peso_kg'] ?> kg</span>
+          <span class="atleta-meta-pill" style="margin:0;"><i class="ti ti-scale"></i> <?= $cliente['peso_kg'] ?> kg</span>
           <?php endif; ?>
           <?php if($cliente['altura_cm']): ?>
-          <span class="atleta-meta-pill"><i class="ti ti-ruler"></i> <?= $cliente['altura_cm'] ?> cm</span>
+          <span class="atleta-meta-pill" style="margin:0;"><i class="ti ti-ruler"></i> <?= $cliente['altura_cm'] ?> cm</span>
           <?php endif; ?>
           <?php if(!empty($diasAtleta)): ?>
-          <span class="atleta-meta-pill"><i class="ti ti-calendar-week"></i> <?= count($diasAtleta) ?> d&iacute;as/semana</span>
-          <?php endif; ?>
-          <?php if(!empty($clienteObjetivos)): ?>
-            <?php foreach($clienteObjetivos as $obj): ?>
-            <span class="atleta-meta-pill" style="border-color:<?= e($obj['color']) ?>;color:#fff;background:rgba(138,43,226,0.12);">
-              <i class="ti <?= e($obj['icono']) ?>" style="color:<?= e($obj['color']) ?>"></i> <?= e($obj['nombre']) ?>
-            </span>
-            <?php endforeach; ?>
-          <?php elseif(!empty($cliente['objetivo'])): ?>
-            <span class="atleta-meta-pill"><i class="ti ti-target"></i> <?= e($cliente['objetivo']) ?></span>
-          <?php else: ?>
-            <span class="atleta-meta-pill" style="color:var(--muted);background:rgba(255,255,255,0.03);"><i class="ti ti-target-off"></i> Sin metas definidas</span>
+          <span class="atleta-meta-pill" style="margin:0;"><i class="ti ti-calendar-week"></i> <?= count($diasAtleta) ?> d&iacute;as/semana</span>
           <?php endif; ?>
         </div>
       </div>
-    </div>
-  </div>
-  <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;">
-    <?php if (($cliente['estado_cuenta'] ?? '') === 'pendiente'): ?>
-    <button type="button" class="btn-xp" style="padding:8px 14px;background:rgba(34,197,94,0.18);color:#4ade80;border:1px solid rgba(34,197,94,0.35);border-radius:10px;font-size:0.82rem;display:inline-flex;align-items:center;gap:6px;transition:all .2s;font-weight:600;" onclick="aprobarAtletaBtn(<?= (int)$cliente['id'] ?>, 'aprobar', this, event)" onmouseover="this.style.background='rgba(34,197,94,0.3)'" onmouseout="this.style.background='rgba(34,197,94,0.18)'" title="Activar cuenta de atleta">
-      <i class="ti ti-check"></i> <span class="d-none d-sm-inline">Activar Atleta</span>
-    </button>
-    <?php endif; ?>
-    <button type="button" class="btn-xp" style="padding:8px 14px;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:10px;font-size:0.82rem;display:inline-flex;align-items:center;gap:6px;transition:all .2s;" onclick="eliminarAtletaPerfil(<?= (int)($cliente['usuario_id'] ?? 0) ?>, '<?= addslashes(e($cliente['nombre'])) ?>')" onmouseover="this.style.background='rgba(239,68,68,0.28)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'" title="Eliminar atleta permanentemente">
-      <i class="ti ti-trash"></i> <span class="d-none d-sm-inline">Eliminar</span>
-    </button>
-  </div>
-</div>
 
-    <!-- Metas del Atleta con barra de progreso (Encuesta Onboarding) -->
+    <!-- Metas del Atleta con barra de progreso (Encuesta Onboarding - Único lugar) -->
     <?php if(!empty($clienteObjetivos)): ?>
     <div class="card-bento mb-3" style="padding:14px 18px;background:rgba(18,14,32,0.85);border:1px solid rgba(138,43,226,0.25);border-radius:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-size:0.82rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:7px;">
-          <i class="ti ti-target" style="color:#b388ff;font-size:1.05rem;"></i> Metas Seleccionadas en Registro
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;">
+        <div style="font-size:0.85rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:7px;min-width:0;">
+          <i class="ti ti-target" style="color:#b388ff;font-size:1.1rem;flex-shrink:0;"></i>
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Metas Seleccionadas en Registro</span>
         </div>
-        <span style="font-size:0.7rem;font-weight:700;color:#b388ff;background:rgba(138,43,226,0.15);padding:2px 8px;border-radius:999px;border:1px solid rgba(138,43,226,0.3);">
+        <span style="font-size:0.7rem;font-weight:700;color:#b388ff;background:rgba(138,43,226,0.15);padding:2px 8px;border-radius:999px;border:1px solid rgba(138,43,226,0.3);flex-shrink:0;white-space:nowrap;">
           <?= count($clienteObjetivos) ?> <?= count($clienteObjetivos) === 1 ? 'Objetivo' : 'Objetivos' ?>
         </span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;">
         <?php foreach($clienteObjetivos as $obj): ?>
-        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:10px 12px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;font-weight:600;color:#fff;">
-              <i class="ti <?= e($obj['icono']) ?>" style="color:<?= e($obj['color']) ?>"></i>
-              <span><?= e($obj['nombre']) ?></span>
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:10px;">
+            <div style="display:flex;align-items:center;gap:7px;font-size:0.82rem;font-weight:600;color:#fff;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              <i class="ti <?= e($obj['icono']) ?>" style="color:<?= e($obj['color']) ?>;flex-shrink:0;"></i>
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= e($obj['nombre']) ?>"><?= e($obj['nombre']) ?></span>
             </div>
-            <span style="font-size:0.7rem;color:#b388ff;font-weight:600;">En curso</span>
+            <span style="font-size:0.7rem;color:#b388ff;font-weight:600;background:rgba(138,43,226,0.12);padding:2px 8px;border-radius:999px;border:1px solid rgba(138,43,226,0.25);flex-shrink:0;white-space:nowrap;">En curso</span>
           </div>
           <div style="width:100%;height:6px;background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;">
             <div style="width:75%;height:100%;background:linear-gradient(90deg, #8a2be2, <?= e($obj['color']) ?>);border-radius:999px;box-shadow:0 0 8px rgba(138,43,226,0.5);"></div>
@@ -436,16 +1273,16 @@ $rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'c
     </div>
     <?php endif; ?>
 
-    <!-- SesiÃ³n activa (si existe) - pequeÃ±a alerta discreta -->
+    <!-- Sesión activa (si existe) - pequeña alerta discreta -->
     <?php if($sesActiva): ?>
     <div class="card-bento mb-3" style="border-color:rgba(74,222,128,.35);padding:12px 16px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:9px;height:9px;border-radius:50%;background:var(--success);animation:pulse 1.5s infinite;flex-shrink:0"></div>
         <div style="flex:1;font-size:.82rem">
-          <span style="font-weight:700;color:var(--success)">SesiÃ³n Activa</span>
-          <span style="color:var(--muted)"> Â· <?= e($sesActiva['rutina_nombre']) ?> desde <?= date('H:i', strtotime($sesActiva['inicio_en'])) ?></span>
+          <span style="font-weight:700;color:var(--success)">Sesión Activa</span>
+          <span style="color:var(--muted)"> · <?= e($sesActiva['rutina_nombre']) ?> desde <?= date('H:i', strtotime($sesActiva['inicio_en'])) ?></span>
         </div>
-        <button onclick="terminarSesionPerfil(<?= $sesActiva['id'] ?>)" class="btn-xp btn-danger" style="font-size:.75rem;padding:4px 10px">
+        <button onclick="terminarSesionPerfil(<?= (int)$sesActiva['id'] ?>)" class="btn-xp btn-danger" style="font-size:.75rem;padding:4px 10px">
           <i class="ti ti-player-stop"></i> Parar
         </button>
       </div>
@@ -455,8 +1292,8 @@ $rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'c
     <!-- Tabs (radio-inputs switcher) -->
     <div class="xpf-tabs" style="position:relative; z-index:1; margin-bottom: 0;">
       <label class="radio">
-        <input type="radio" name="xpf-tab-group" value="progreso" checked />
-        <span class="name"><i class="ti ti-trending-up"></i> Progreso</span>
+        <input type="radio" name="xpf-tab-group" value="stats" checked />
+        <span class="name"><i class="ti ti-chart-bar"></i> Stats</span>
       </label>
       <label class="radio">
         <input type="radio" name="xpf-tab-group" value="rutinas" />
@@ -468,257 +1305,241 @@ $rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'c
       </label>
     </div>
 
-    <!-- -- Tab: Progreso -- -->
-    <div class="xpf-panel active" id="panel-progreso">
+    <!-- -- Tab: Stats -- -->
+    <div class="xpf-panel active" id="panel-stats">
 
-      <!-- =Â=Â=Â TARJETA UNIFICADA DE PROGRESO =Â=Â=Â -->
-
-        <!-- Header con nombre + metricas -->
-        <div style="padding:20px 24px 14px;border-bottom:1px solid rgba(255,255,255,.06)">
-          <div style="margin-bottom:18px">
-            <div class="ac-title" style="font-size:1.15rem; font-weight:800; letter-spacing:-0.02em; color:#fff;">Evolución de Peso</div>
-            <div class="ac-sub" style="font-size:0.8rem; color:#94a3b8;">Actualizado hoy</div>
-          </div>
-          <div style="display:flex;gap:12px" class="ac-metrics">
-            <div class="ac-metric" style="flex:1; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.05); padding-right:16px; border-left:1px solid rgba(255,255,255,0.05);">
-              <div class="ac-metric-lbl" style="font-size:0.75rem; letter-spacing:0.05em; color:var(--muted); margin-bottom:4px;">PESO INICIAL</div>
-              <div class="ac-metric-val" style="font-size:1.4rem; font-weight:800; letter-spacing:-0.03em; color:#fff; margin:0;"><?= $pesoPrimero ? $pesoPrimero['peso_kg'].' kg' : (($cliente['peso_kg'] ?? '-').' kg') ?></div>
-              <?php if($difPeso != 0): ?>
-              <div class="ac-metric-diff <?= $difPeso < 0 ? 'diff-pos' : 'diff-neg' ?>" style="margin-top:6px;">
-                <?= $difSign.$difPeso ?> kg
-              </div>
-              <?php endif; ?>
-            </div>
-            <div class="ac-metric" style="flex:1; background:rgba(255,255,255,0.03); border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.05); padding-left:16px;">
-              <div class="ac-metric-lbl" style="font-size:0.75rem; letter-spacing:0.05em; color:var(--muted); margin-bottom:4px;">PESO ACTUAL</div>
-              <div class="ac-metric-val" style="font-size:1.4rem; font-weight:800; letter-spacing:-0.03em; color:#fff; margin:0;"><?= $pesoUltimo ? $pesoUltimo['peso_kg'].' kg' : (($cliente['peso_kg'] ?? '-').' kg') ?></div>
-            </div>
+      <!-- = = = 1. BLOQUE: EVOLUCIÓN DE PESO CORPORAL = = = -->
+      <div class="card-bento mb-3" style="padding:18px 20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:0.95rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:8px;">
+            <i class="ti ti-scale" style="color:#fb923c;font-size:1.15rem;"></i> Peso Corporal
           </div>
         </div>
 
-        <!-- Switcher de modo -->
-        <div style="padding:16px 24px; border-bottom:1px solid rgba(255,255,255,.04);">
-          <div style="display:flex; background:rgba(255,255,255,0.04); border-radius:10px; padding:4px;">
-            <button id="btnModoPeso" onclick="setModoGrafica('peso')"
-              style="flex:1; padding:8px 0; font-size:0.85rem; font-weight:600; border:none; cursor:pointer; border-radius:8px; transition:all 0.25s;
-                     background:rgba(139,92,246,0.8); color:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-              <i class="ti ti-activity-heartbeat"></i> Peso Corporal
-            </button>
-            <button id="btnModoCargas" onclick="setModoGrafica('cargas')"
-              style="flex:1; padding:8px 0; font-size:0.85rem; font-weight:600; border:none; cursor:pointer; border-radius:8px; transition:all 0.25s;
-                     background:transparent; color:#94a3b8; box-shadow:none;">
-              <i class="ti ti-barbell"></i> Cargas
-            </button>
+        <?php if (!empty($pesoHistorial)): ?>
+        <div class="pw-chart-wrap">
+          <div class="pw-chart-meta">
+            <div class="pw-stat">
+              <div class="pw-stat-val"><?= number_format($pesoActual, 2, '.', '') ?> kg</div>
+              <div class="pw-stat-lbl">Actual</div>
+            </div>
+            <div class="pw-stat">
+              <div class="pw-stat-val"><?= number_format($pesoInicio, 2, '.', '') ?> kg</div>
+              <div class="pw-stat-lbl">Inicio</div>
+            </div>
+            <div class="pw-stat">
+              <div class="pw-stat-val pw-stat-delta <?= $deltaClass ?>"><?= $deltaStr ?></div>
+              <div class="pw-stat-lbl">Variación</div>
+            </div>
           </div>
-        </div>
-
-        <!-- Panel: Peso Corporal -->
-        <div id="graficaPeso" style="padding:0 24px 20px">
-          <?php if(count($pesoTodos) >= 2): ?>
-          <div style="position:relative;height:200px;margin-top:14px">
+          <div style="position:relative;height:180px;width:100%;">
             <canvas id="canvasPesoCorporal"></canvas>
           </div>
-          <?php else: ?>
-          <div style="height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#64748b;font-size:.85rem">
-            <i class="ti ti-scale" style="font-size:2rem;margin-bottom:8px;opacity:.2"></i>
-            <span style="opacity:.6">Sin historial de peso registrado aún</span>
-          </div>
-          <?php endif; ?>
-        </div>
-
-        <!-- Panel: Cargas por Ejercicio -->
-        <div id="graficaCargas" style="display:none;padding:0 24px 20px">
-          <?php if(empty($ejerciciosFiltro)): ?>
-          <div class="empty-state" style="padding:30px 0">
-            <i class="ti ti-dumbbell"></i>
-            El atleta aÃºn no ha registrado pesos en sus sesiones.
-          </div>
-          <?php else: ?>
-          <div style="margin:14px 0 10px">
-            <select id="filtroEjercicio" onchange="cargarGraficaEjercicio()"
-              style="width:100%;padding:8px 12px;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid rgba(59,130,246,.25);color:#fff;font-size:.84rem">
-              <option value="">Selecciona un ejercicio...</option>
-              <?php foreach($ejerciciosFiltro as $ef): ?>
-              <option value="<?= $ef['id'] ?>"><?= e($ef['nombre']) ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
-          <div id="graficaEjInfo" style="display:none;margin-bottom:12px;
-               padding:10px 14px;border-radius:10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.18)">
-            <div style="display:flex;justify-content:space-around;text-align:center;gap:4px">
-              <div>
-                <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em">Inicio</div>
-                <div id="grafEjInicio" style="font-size:1.05rem;font-weight:800;color:#3b82f6">-</div>
-                <div id="grafEjFechaInicio" style="font-size:.66rem;color:#475569">-</div>
-              </div>
-              <div style="font-size:1.1rem;color:#334155;align-self:center">-></div>
-              <div>
-                <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em">Actual</div>
-                <div id="grafEjActual" style="font-size:1.05rem;font-weight:800;color:#f5f0e8">-</div>
-                <div id="grafEjFechaActual" style="font-size:.66rem;color:#475569">-</div>
-              </div>
-              <div style="width:1px;background:rgba(255,255,255,.06);margin:0 4px"></div>
-              <div>
-                <div style="font-size:.65rem;color:#64748b;text-transform:uppercase;letter-spacing:.04em">Diferencia</div>
-                <div id="grafEjDiff" style="font-size:1.05rem;font-weight:800;color:#4ade80">-</div>
-                <div id="grafEjDias" style="font-size:.66rem;color:#475569">-</div>
-              </div>
-            </div>
-          </div>
-          <div style="position:relative;height:180px">
-            <canvas id="canvasEjercicio"></canvas>
-          </div>
-          <?php endif; ?>
-        </div>
-
-        <!-- Botón Ver Estadísticas Completas -->
-        <div style="padding:0 24px 20px">
-          <a href="<?= APP_URL ?>/entrenador/estadisticas-cliente?id=<?= $cliente['id'] ?>" class="ac-btn">
-            <i class="ti ti-chart-dots-3"></i> Ver Estadísticas Completas
-          </a>
-        </div>
-
-    </div><!-- /panel-progreso -->
-
-    <!-- -- Tab: Rutinas -- -->
-    <div class="xpf-panel" id="panel-rutinas">
-      
-      <!-- Calendario Semanal Horizontal -->
-      <div style="display:flex; justify-content:space-between; margin-bottom: 24px; background:rgba(0,0,0,0.2); padding:8px; border-radius:16px; border:1px solid rgba(255,255,255,0.05);">
-        <?php foreach($diasSemana as $dia): 
-          $isActive = ($dia['full'] === $fechaSeleccionadaObj->format('Y-m-d'));
-          $isTodayReal = ($dia['full'] === $fechaHoyObj->format('Y-m-d'));
-          $hasRoutine = in_array($dia['num'], $diasActivos);
-        ?>
-        <a href="<?= APP_URL ?>/entrenador/perfil-cliente?id=<?= $cliente['id'] ?>&date=<?= $dia['full'] ?>#panel-rutinas"
-           style="display:flex; flex-direction:column; align-items:center; gap:6px; text-decoration:none; 
-                  padding:10px 0; width:13%; border-radius:12px; 
-                  background: <?= $isActive ? 'var(--accent)' : ($isTodayReal ? 'rgba(255,255,255,0.08)' : 'transparent') ?>;
-                  color: <?= $isActive ? '#fff' : ($isTodayReal ? '#fff' : 'rgba(255,255,255,0.4)') ?>;
-                  transition: all 0.2s;">
-          <span style="font-size:0.75rem; font-weight:600;"><?= $dia['ini'] ?></span>
-          <span style="font-size:1.1rem; font-weight:800;"><?= $dia['fecha'] ?></span>
-          <div style="width:5px; height:5px; border-radius:50%; background: <?= $hasRoutine ? ($isActive ? '#fff' : 'var(--accent)') : 'transparent' ?>; box-shadow: <?= $hasRoutine ? '0 0 5px '.($isActive ? '#fff' : 'var(--accent)') : 'none' ?>;"></div>
-        </a>
-        <?php endforeach; ?>
-      </div>
-
-      <div style="margin-bottom:16px" id="rutina-viewer">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h6 style="color:#e2e8f0;margin:0;font-size:.9rem;"><i class="ti ti-dumbbell"></i> Rutina del DÃ­a</h6>
-            <?php if(!empty($rutinaHoy)): ?>
-            <span style="font-size:.7rem; background:rgba(59,130,246,0.15); color:#38bdf8; padding:2px 8px; border-radius:12px; font-weight:600; border:1px solid rgba(56,189,248,0.3);">
-              <?= strtoupper(e($rutinaHoy['grupos_musculares'])) ?>
-            </span>
-            <?php endif; ?>
-        </div>
-
-        <?php if(!empty($rutinaHoy) && !empty($ejerciciosHoy)): ?>
-        <div class="rutina-hoy-panel glass-surface" style="padding:18px;">
-          <div class="rhp-header" style="margin-bottom:16px;">
-            <div class="rhp-dot" style="background:var(--accent); box-shadow: 0 0 10px var(--accent);"></div>
-            <div class="rhp-title" style="font-size:1rem;">
-              <?= e($rutinaHoy['descripcion'] ?: 'Rutina asignada') ?>
-              <span style="font-size:.75rem;color:rgba(255,255,255,0.5);font-weight:400;margin-left:6px; display:block; margin-top:2px;">
-                <?= count($ejerciciosHoy) ?> ejercicios Â· <?= $rutinaHoy['estado'] === 'completada' ? 'Completada' : 'En progreso' ?>
-              </span>
-            </div>
-          </div>
-          <?php foreach ($ejerciciosHoy as $ej): ?>
-          <div class="ej-row" data-ej-id="<?= $ej['id'] ?>" style="padding: 12px 0;">
-            <div>
-              <div class="ej-name" style="color:#fff; font-size:0.9rem; margin-bottom:2px;"><?= e($ej['nombre']) ?></div>
-              <div class="ej-series" style="color:rgba(255,255,255,0.6); font-size:0.8rem;">
-                <?= $ej['series'] ?> series x <?= e($ej['repeticiones']) ?> reps<?= $ej['rir'] ? ' Â· RIR '.$ej['rir'] : '' ?>
-              </div>
-            </div>
-            <?php if($ej['completado']): ?>
-            <span class="ej-reps-badge ej-done" id="badge-ej-<?= $ej['id'] ?>" style="background:rgba(52,211,153,0.15); color:#34d399; border:1px solid rgba(52,211,153,0.3); font-size:0.8rem; padding:4px 10px;">
-              <i class="ti ti-check"></i> <?= $ej['reps_realizadas'] ?> reps
-            </span>
-            <?php else: ?>
-            <span class="ej-reps-badge ej-pend" id="badge-ej-<?= $ej['id'] ?>" style="background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.1); font-size:0.8rem; padding:4px 10px;">
-              Pendiente
-            </span>
-            <?php endif; ?>
-          </div>
-          <?php endforeach; ?>
         </div>
         <?php else: ?>
-        <div class="empty-state glass-surface" style="padding:40px 20px; text-align:center; border-radius:18px;">
-            <i class="ti ti-calendar-off" style="font-size:2.5rem; color:rgba(255,255,255,0.2); margin-bottom:10px;"></i>
-            <div style="color:#e2e8f0; font-weight:600; font-size:1rem; margin-bottom:4px;">Día de Descanso</div>
-            <div style="color:rgba(255,255,255,0.5); font-size:0.85rem;">No hay rutinas programadas para este día.</div>
+        <div class="empty-state" style="padding:28px 16px;">
+          <i class="ti ti-scale" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.3;"></i>
+          <p style="font-size:0.85rem;margin:0;">No hay registros de peso aún para este atleta.</p>
         </div>
         <?php endif; ?>
       </div>
 
-      <div style="display:flex; align-items:center; justify-content:center; gap: 12px; margin-top:24px; margin-bottom:30px;">
-          <button class="ac-btn" onclick="abrirModalCalendarioRT()" style="flex:1; justify-content:center; background:rgba(255,255,255,0.05);">
-              <i class="ti ti-calendar-search"></i> Buscar Fechas Pasadas
-          </button>
-          <a href="<?= APP_URL ?>/entrenador/crear-rutina?atleta_id=<?= $cliente['id'] ?>" class="ac-btn" style="flex:1; justify-content:center; background:var(--accent); color:#fff; border:none;">
-            <i class="ti ti-plus"></i> Asignar Rutina
-          </a>
-      </div>
+      <!-- = = = 2. BLOQUE: PROGRESO POR GRUPO MUSCULAR & RÉCORDS = = = -->
+      <div class="card-bento mb-3" style="padding:18px 20px;">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:0.95rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:8px;">
+            <i class="ti ti-chart-area-line" style="color:var(--text-purple, #b388ff);font-size:1.15rem;"></i> Progreso por Grupo Muscular
+          </div>
+          <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">Mejores cargas y récords de fuerza alcanzados por el atleta</div>
+        </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px; flex-wrap: wrap; gap: 10px;">
-        <h6 style="color:var(--accent2);margin:0;font-size:.85rem"><i class="ti ti-history"></i> Historial Completo</h6>
-      </div>
-      
-      <?php if(empty($rutinas)): ?>
-      <div class="empty-state"><i class="ti ti-calendar-off"></i>Sin rutinas todavía</div>
-      <?php else: ?>
-      
-      <div class="hist-table-header">
-        <div>Fecha</div>
-        <div>Rutina</div>
-        <div>Músculos</div>
-        <div>Estado</div>
-        <div></div>
-      </div>
-      
-      <?php foreach($rutinas as $i => $rut): ?>
-      <?php $estadoMap=['completada'=>'success','en_progreso'=>'info','pendiente'=>'warn','inactiva'=>'info']; $badgeCls=$estadoMap[$rut['estado']]??'info'; ?>
-      <div class="hist-rutina">
-        <div class="hist-rutina-header" onclick="toggleHist(<?= $i ?>)">
-          <div class="hist-td-fecha">
-             <?= e(date('d/m/Y', strtotime($rut['creado_en']))) ?>
-          </div>
-          <div class="hist-td-name">
-            <span class="hist-rut-name"><?= e($rut['descripcion'] ?: 'Rutina #'.($i+1)) ?></span>
-            <span class="hist-rut-meta"><?= count($rut['ejercicios']) ?> ejercicios</span>
-          </div>
-          <div class="hist-td-musculos">
-             <?= e($rut['grupos_musculares']) ?>
-          </div>
-          <div class="hist-td-estado">
-             <span class="badge-xp badge-<?= $badgeCls ?>" style="font-size:.65rem;"><?= ucfirst(str_replace('_',' ',$rut['estado'])) ?></span>
-          </div>
-          <div class="hist-td-action">
-             <i class="ti ti-chevron-down" id="chev-<?= $i ?>" style="color:#64748b;transition:transform .25s"></i>
+        <!-- Tabs Tren Superior / Inferior -->
+        <div class="st-tren-tabs">
+          <button type="button" class="st-tren-tab superior active" id="tabSuperior" onclick="cambiarTren('superior')">
+            <i class="ti ti-arm"></i> Tren Superior
+          </button>
+          <button type="button" class="st-tren-tab inferior" id="tabInferior" onclick="cambiarTren('inferior')">
+            <i class="ti ti-run"></i> Tren Inferior
+          </button>
+        </div>
+
+        <!-- Chips grupo muscular - Superior -->
+        <div id="chipsSuperior" class="st-grupo-chips">
+          <?php foreach ($trenoSuperior as $g): ?>
+          <button type="button" class="st-grupo-chip <?= $g==='pecho' ? 'active-sup' : '' ?>"
+                  id="chipSup_<?= str_replace(['á','é','í','ó','ú'],['a','e','i','o','u'],$g) ?>"
+                  onclick="seleccionarGrupo('<?= e($g) ?>', 'superior')">
+            <i class="ti <?= $grupoIconos[$g] ?? 'ti-dumbbell' ?>"></i>
+            <?= ucfirst($g) ?>
+          </button>
+          <?php endforeach; ?>
+        </div>
+
+        <!-- Chips grupo muscular - Inferior -->
+        <div id="chipsInferior" class="st-grupo-chips" style="display:none">
+          <?php foreach ($trenoInferior as $g): ?>
+          <button type="button" class="st-grupo-chip"
+                  id="chipInf_<?= str_replace(['á','é','í','ó','ú'],['a','e','i','o','u'],$g) ?>"
+                  onclick="seleccionarGrupo('<?= e($g) ?>', 'inferior')">
+            <i class="ti <?= $grupoIconos[$g] ?? 'ti-dumbbell' ?>"></i>
+            <?= ucfirst($g) ?>
+          </button>
+          <?php endforeach; ?>
+        </div>
+
+        <!-- Selector de ejercicio individual -->
+        <div style="margin-bottom:8px;">
+          <div style="font-size:.65rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Ejercicio</div>
+          <div class="pm-ex-list" id="pmExList">
+            <span class="pm-ex-empty"><i class="ti ti-dots"></i> Selecciona un grupo muscular</span>
           </div>
         </div>
-        
-        <div class="hist-rut-body" id="hrb-<?= $i ?>">
-          <?php if(empty($rut['ejercicios'])): ?>
-          <p style="color:#64748b;font-size:.78rem;padding:4px 0">Sin ejercicios registrados.</p>
-          <?php else: ?>
-          <?php foreach ($rut['ejercicios'] as $ej): ?>
-          <div class="hist-ej-item">
-            <div class="hist-ej-name"><?= e($ej['nombre']) ?></div>
-            <div class="hist-ej-stat">
-              <?= $ej['series'] ?>x<?= e($ej['repeticiones']) ?>
-              <?php if($ej['series_hechas'] > 0): ?> Â· <span><?= $ej['series_hechas'] ?> hechas</span><?php if($ej['max_reps'] > 0): ?> Â· <span><?= $ej['max_reps'] ?> reps max</span><?php endif; ?><?php endif; ?>
-              <?php if(!empty($ej['max_peso']) && $ej['max_peso'] > 0): ?> Â· <span style="color:#2dd4bf"><?= $ej['max_peso'] ?> kg max</span><?php endif; ?>
+
+        <!-- Tarjetas de resumen de récords (2 Columnas) -->
+        <div class="pm-summary-card" id="pmSummaryCard" style="display:none;margin-top:12px;">
+          <div class="pm-summary-stat">
+            <div class="pm-summary-lbl"><i class="ti ti-trophy" style="color:#fbbf24"></i> Peso Máximo</div>
+            <div class="pm-summary-val" id="pmStatMax" style="color:var(--text-purple, #b388ff)">—</div>
+            <div class="pm-summary-sub" id="pmStatMaxSub"></div>
+          </div>
+          <div class="pm-summary-stat">
+            <div class="pm-summary-lbl"><i class="ti ti-flame" style="color:#f43f5e"></i> Mayor Reps</div>
+            <div class="pm-summary-val" id="pmStatReps" style="color:#f43f5e">—</div>
+            <div class="pm-summary-sub" id="pmStatRepsSub"></div>
+          </div>
+        </div>
+
+        <!-- Chart wrapper de Cargas -->
+        <div class="st-chart-wrap" id="chartWrap" style="margin-top:14px;">
+          <div class="st-chart-title" id="chartTitle">
+            <i class="ti ti-chart-bar"></i> <span id="chartTitleText">Selecciona un ejercicio</span>
+          </div>
+          <canvas id="mainChart" height="210"></canvas>
+          <div class="st-chart-empty" id="chartEmpty">
+            <i class="ti ti-chart-dots-3"></i>
+            <p id="chartEmptyMsg">Selecciona un grupo muscular y un ejercicio para ver el progreso del atleta.</p>
+          </div>
+        </div>
+
+        <!-- Salón de Récords · 3 Series en Fila Horizontal -->
+        <div class="pm-series-wrap" id="pmHistorialMarcasWrap" style="display:none;">
+          <div class="pm-series-header">
+            <span><i class="ti ti-medal" style="color:#fbbf24"></i> Salón de Récords · 3 Mejores Series</span>
+            <span id="pmMarcasCount" style="font-size:.65rem; color:#94a3b8; font-weight:700;">Toca una serie para ver su récord</span>
+          </div>
+          <div class="pm-series-grid" id="pmHistorialMarcasList"></div>
+        </div>
+      </div>
+
+    </div><!-- /panel-stats -->
+
+
+    <!-- -- Tab: Rutinas -- -->
+    <div class="xpf-panel" id="panel-rutinas">
+      <div class="cal-section-card">
+        <!-- Header con título y botón de acción -->
+        <div class="cal-card-header">
+          <div class="cal-card-title-group">
+            <div class="cal-card-icon"><i class="ti ti-calendar-event"></i></div>
+            <div>
+              <h5 class="cal-card-title">Calendario de Rutinas</h5>
+              <span class="cal-card-subtitle">Asistencias, historial de series y planificación</span>
+            </div>
+          </div>
+          <a href="<?= APP_URL ?>/entrenador/crear-rutina?atleta_id=<?= $cliente['id'] ?>" class="cal-btn-asignar">
+            <i class="ti ti-plus"></i> Asignar Rutina
+          </a>
+        </div>
+
+        <!-- Navegación de mes -->
+        <div class="cal-nav">
+          <a class="cal-nav-btn" href="?id=<?= $cliente['id'] ?>&mes=<?= $mesPrevMes ?>&ano=<?= $mesPrevAno ?>#panel-rutinas" aria-label="Mes anterior">
+            <i class="ti ti-chevron-left"></i>
+          </a>
+          <div class="cal-nav-title">
+            <span class="cal-mes"><?= $mesesES[$calMes] ?></span>
+            <span class="cal-ano"><?= $calAno ?></span>
+          </div>
+          <a class="cal-nav-btn <?= ($calMes === $mesActual && $calAno === $anoActual) ? 'disabled' : '' ?>"
+             href="?id=<?= $cliente['id'] ?>&mes=<?= $mesSigMes ?>&ano=<?= $mesSigAno ?>#panel-rutinas" aria-label="Mes siguiente">
+            <i class="ti ti-chevron-right"></i>
+          </a>
+        </div>
+
+        <!-- Cabecera de días (L, M, X, J, V, S, D) -->
+        <div class="cal-grid">
+          <div class="cal-head-row">
+            <div class="cal-head-spacer"></div>
+            <div class="cal-head-cells">
+              <?php foreach(['L','M','X','J','V','S','D'] as $h): ?>
+              <div class="cal-head-cell"><?= $h ?></div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <!-- Semanas -->
+          <?php foreach ($semanas as $sIdx => $semana): ?>
+          <div class="cal-week">
+            <div class="cal-week-label">Sem <?= $sIdx + 1 ?></div>
+            <div class="cal-week-cells">
+              <?php foreach ($semana as $dia):
+                $fechaStr   = $dia->format('Y-m-d');
+                $diaNum     = (int)$dia->format('j');
+                $esMes      = (int)$dia->format('n') === $calMes;
+                $esHoy      = $fechaStr === $fechaHoy;
+                $esFuturo   = $fechaStr >  $fechaHoy;
+                $entreno    = !$esFuturo && in_array($fechaStr, $fechasEntrenadas, true);
+                $programado = in_array((int)$dia->format('N'), $diasProgramados, true);
+                $clases = 'cal-cell clickable';
+                if (!$esMes)                          $clases .= ' fuera-mes';
+                if ($esHoy)                           $clases .= ' hoy';
+                if ($entreno)                         $clases .= ' entrenado';
+                elseif ($esFuturo && $programado)     $clases .= ' planificado';
+                $estadoTxt = $esHoy ? 'hoy' : ($esFuturo ? ($programado ? 'rutina programada' : 'sin rutina')
+                                                          : ($entreno ? 'entrenado' : 'sin actividad'));
+              ?>
+              <div class="<?= $clases ?>"
+                   data-fecha="<?= $fechaStr ?>"
+                   role="button" tabindex="0"
+                   aria-label="<?= htmlspecialchars(fechaES($fechaStr) . ', ' . $estadoTxt, ENT_QUOTES, 'UTF-8') ?>">
+                <span class="cal-day-num"><?= $diaNum ?></span>
+                <?php if ($entreno): ?>
+                  <span class="cal-dot" aria-hidden="true" title="Entrenamiento completado"></span>
+                <?php elseif (($esHoy || $esFuturo) && $programado): ?>
+                  <span class="cal-dot-plan" aria-hidden="true" title="Rutina programada"></span>
+                <?php endif; ?>
+              </div>
+              <?php endforeach; ?>
             </div>
           </div>
           <?php endforeach; ?>
-          <?php endif; ?>
         </div>
+
+        <!-- Leyenda visual sutil -->
+        <div class="cal-legend">
+          <div class="cal-legend-item"><span class="cal-dot"></span> Entrenado</div>
+          <div class="cal-legend-item"><span class="cal-dot-plan"></span> Programado</div>
+          <div class="cal-legend-item"><span class="cal-legend-today"></span> Hoy</div>
+        </div>
+
+        <!-- Detalle de Rutina del Día Seleccionado (Debajo del Calendario) -->
+        <div class="cal-rutina-dia-inline" id="calRutinaDiaInline">
+          <div class="crdi-header">
+            <div>
+              <span class="crdi-eyebrow">Rutina del Día Seleccionado</span>
+              <h3 class="crdi-title" id="crdiTituloFecha">Cargando...</h3>
+            </div>
+            <div id="crdiBadge" class="crdi-badge">Hoy</div>
+          </div>
+          <div class="crdi-content" id="crdiContent">
+            <div class="crdi-empty-box">
+              <div class="dia-modal-spinner" aria-hidden="true"></div>
+              <p style="margin-top:8px;">Consultando planificación del día...</p>
+            </div>
+          </div>
+        </div>
+
       </div>
-      <?php endforeach; ?>
-      <?php endif; ?>
     </div><!-- /panel-rutinas -->
 
     <!-- -- Tab: Pagos (dinámico · Fetch) -- -->
@@ -1109,448 +1930,1300 @@ $rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'c
   </div><!-- /col-lg-8 -->
 </div><!-- /row -->
 
+<!-- ── MODAL BOTTOM-SHEET DEL CALENDARIO (Portal JS a document.body) ── -->
+<div class="dia-modal-backdrop" id="diaModalBackdrop" aria-hidden="true" onclick="cerrarModalDia(event)"></div>
 
-<style>
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.6)}50%{box-shadow:0 0 0 8px rgba(74,222,128,0)}}
-
-/* =====================================================================
-   ESTILOS DEL BOTON "VER EN CALENDARIO" Y EL CALENDARIO (Soporte)
-   ===================================================================== */
-.button-calendar {
-  display: flex; justify-content: center; align-items: center;
-  gap: 6px;
-  background: #FF342B;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s;
-  color: #fff;
-}
-.button-calendar:hover { background: #e52e26; }
-.button-calendar:hover .svg-icon { animation: slope 1s linear infinite; }
-@keyframes slope {
-  0% {} 50% { transform: rotate(10deg); } 100% {}
-}
-
-.modal-calendar-overlay {
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.6); z-index: 9999;
-    display: none; align-items: center; justify-content: center;
-    backdrop-filter: blur(4px);
-}
-.modal-calendar-content {
-    max-width: 360px; width: 90%;
-    background: #0b1120; /* Adaptado al modo oscuro XP */
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 16px; padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    color: #fff;
-}
-.calendario-grid {
-    display: grid; grid-template-columns: repeat(7, 1fr);
-    gap: 5px; text-align: center;
-}
-.dia-nombre {
-    font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5);
-    padding-bottom: 5px;
-}
-.dia-cal {
-    padding: 8px 0; border-radius: 8px; cursor: pointer;
-    font-size: 0.85rem; color: #fff;
-    transition: background 0.2s;
-}
-.dia-cal:hover:not(.vacio) { background: rgba(255,255,255,0.1); }
-.dia-cal.vacio { cursor: default; }
-.dia-cal.seleccionado { background: var(--accent) !important; color: #000 !important; font-weight: bold; }
-.dia-cal.en-rango { background: rgba(94,234,212,0.15) !important; color: var(--accent); }
-</style>
-
-<!-- Modal Calendario -->
-<div class="modal-calendar-overlay" id="modalCalendarioRT" onclick="if(event.target===this)cerrarModalCalendarioRT()">
-    <div class="modal-calendar-content" onclick="event.stopPropagation()">
-        
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px; margin-bottom:15px;">
-            <h3 style="font-size:1.1rem; margin:0; font-weight:700; display:flex; align-items:center; gap:8px;">
-                <i class="ti ti-calendar" style="color:var(--accent)"></i> Rango de Fechas
-            </h3>
-            <button onclick="cerrarModalCalendarioRT()" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:rgba(255,255,255,0.5);"><i class="ti ti-x"></i></button>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <button onclick="cambiarMesCalendario(-1)" style="background:rgba(255,255,255,0.05);border:none;border-radius:6px;width:32px;height:32px;cursor:pointer;color:#fff;"><i class="ti ti-chevron-left"></i></button>
-            <strong id="mesAnoCalendario" style="font-size:0.95rem;"></strong>
-            <button onclick="cambiarMesCalendario(1)" style="background:rgba(255,255,255,0.05);border:none;border-radius:6px;width:32px;height:32px;cursor:pointer;color:#fff;"><i class="ti ti-chevron-right"></i></button>
-        </div>
-
-        <div class="calendario-grid">
-            <div class="dia-nombre">Do</div><div class="dia-nombre">Lu</div><div class="dia-nombre">Ma</div><div class="dia-nombre">Mi</div><div class="dia-nombre">Ju</div><div class="dia-nombre">Vi</div><div class="dia-nombre">Sa</div>
-            <div id="diasCalendario" style="display:contents;"></div>
-        </div>
-
-        <div style="margin-top:15px; font-size:0.75rem; color:rgba(255,255,255,0.5); text-align:center;" id="textoRangoSeleccionado">
-            Selecciona un dÃ­a inicial y uno final.
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button type="button" class="btn-xp btn-secondary" onclick="limpiarCalendarioRT()" style="flex:1;">Limpiar</button>
-            <button type="button" class="btn-xp btn-primary" id="btnVerCalendario" onclick="aplicarFiltroCalendario()" style="flex:1;" disabled>
-                <i class="ti ti-eye"></i> Filtrar
-            </button>
-        </div>
+<div class="dia-modal" id="diaModal"
+     role="dialog" aria-modal="true" aria-labelledby="diaModalFecha"
+     tabindex="-1">
+  <div class="dia-modal-handle" aria-hidden="true"></div>
+  <div class="dia-modal-header">
+    <div class="dia-modal-title-wrap">
+      <h2 class="dia-modal-fecha" id="diaModalFecha">Detalle del Día</h2>
+      <div class="dia-modal-sub">
+        <span class="dia-modal-badge" id="diaModalBadge"></span>
+        <span id="diaModalSub"></span>
+      </div>
     </div>
+    <button class="dia-modal-close" id="diaModalClose"
+            type="button" onclick="cerrarModalDia(null, true)"
+            aria-label="Cerrar detalle del día">
+      <i class="ti ti-x" aria-hidden="true"></i>
+    </button>
+  </div>
+  <div class="dia-modal-body" id="diaModalBody" aria-live="polite">
+    <div class="dia-modal-loading">
+      <div class="dia-modal-spinner" aria-hidden="true"></div>
+      <span>Cargando detalle...</span>
+    </div>
+  </div>
 </div>
 
-<!-- Chart.js CDN (antes del script inline) -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// -- Radio-Tabs --------------------------------------------
+// ── Variables base ─────────────────────────────────────────
+const CLIENTE_ID_STATS = <?= (int)$cliente['id'] ?>;
+const APP_URL_STATS    = (typeof APP !== 'undefined' ? APP : '<?= APP_URL ?>');
+const TREN_SUPERIOR    = <?= json_encode($trenoSuperior, JSON_UNESCAPED_UNICODE) ?>;
+const TREN_INFERIOR    = <?= json_encode($trenoInferior, JSON_UNESCAPED_UNICODE) ?>;
+
+// ── Radio-Tabs & Navegación de Paneles ────────────────────
 document.querySelectorAll('.xpf-tabs input[name="xpf-tab-group"]').forEach(radio => {
   radio.addEventListener('change', () => {
     document.querySelectorAll('.xpf-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + radio.value).classList.add('active');
+    const panel = document.getElementById('panel-' + radio.value);
+    if (panel) panel.classList.add('active');
+    if (radio.value === 'stats') {
+      if (mainChart) mainChart.resize();
+      if (chartPeso) chartPeso.resize();
+    }
   });
 });
 
-// -- Toggle historial de rutina ----------------------------
+// Sincronizar tab con el hash de la URL
+(function syncInitialTab() {
+  const hash = window.location.hash;
+  let targetTab = null;
+  if (hash === '#stats' || hash === '#progreso') targetTab = 'stats';
+  else if (hash === '#panel-rutinas' || hash === '#rutinas') targetTab = 'rutinas';
+  else if (hash === '#pagos') targetTab = 'pagos';
+
+  if (targetTab) {
+    const radio = document.querySelector(`.xpf-tabs input[value="${targetTab}"]`);
+    if (radio) {
+      radio.checked = true;
+      document.querySelectorAll('.xpf-panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById('panel-' + targetTab);
+      if (panel) panel.classList.add('active');
+    }
+  }
+})();
+
+// ── Toggle historial de rutina ────────────────────────────
 function toggleHist(i) {
   const body = document.getElementById('hrb-' + i);
   const chev = document.getElementById('chev-' + i);
+  if (!body) return;
   const open = body.classList.toggle('open');
-  chev.style.transform = open ? 'rotate(180deg)' : '';
+  if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
 }
 
-// -- GrÃ¡fica Peso Corporal (Chart.js) ---------------------
-window.addEventListener('load', function() {
+// ── Terminar sesión activa ────────────────────────────────
+function terminarSesionPerfil(sesId) {
+  Xp.confirm('¿Terminar sesión?', 'Se marcará la rutina como completada.', async () => {
+    const r = await Xp.post('entrenador/terminar-sesion', {sesion_id: sesId, notas: ''});
+    r.ok ? (Xp.toast('success', r.msg), setTimeout(() => location.reload(), 800)) : Xp.toast('error', r.msg);
+  });
+}
+
+// ── Gráfica Peso Corporal ─────────────────────────────────
+let chartPeso = null;
+function initGraficaPeso() {
   const canvas = document.getElementById('canvasPesoCorporal');
   if (!canvas) return;
   const pesoLabels = <?= json_encode(array_column($pesoTodos, 'fecha')) ?>;
   const pesoValues = <?= json_encode(array_map('floatval', array_column($pesoTodos, 'peso_kg'))) ?>;
-  if (pesoLabels.length < 2) return;
+  if (!pesoLabels || pesoLabels.length === 0) return;
 
   const ctx = canvas.getContext('2d');
   const grad = ctx.createLinearGradient(0, 0, 0, 170);
-  grad.addColorStop(0, 'rgba(45,212,191,0.4)');
-  grad.addColorStop(1, 'rgba(20,83,45,0.02)');
+  grad.addColorStop(0, 'rgba(251,146,60,0.35)');
+  grad.addColorStop(1, 'rgba(251,146,60,0.01)');
 
-  new Chart(ctx, {
+  chartPeso = new Chart(ctx, {
     type: 'line',
     data: {
       labels: pesoLabels,
       datasets: [{
         label: 'Peso (kg)',
         data: pesoValues,
-        borderColor: '#2dd4bf',
+        borderColor: '#fb923c',
         backgroundColor: grad,
-        pointBackgroundColor: '#2dd4bf',
-        pointBorderColor: '#0f172a',
+        pointBackgroundColor: '#fb923c',
+        pointBorderColor: '#0b0f19',
         pointBorderWidth: 2,
-        pointRadius: 5,
+        pointRadius: pesoValues.length === 1 ? 6 : 4,
         pointHoverRadius: 7,
         fill: true,
-        tension: 0.4,
-        borderWidth: 2,
+        tension: 0.35,
+        borderWidth: 2.5,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          display: true,
-          labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 18, boxHeight: 2 }
-        },
+        legend: { display: false },
         tooltip: {
-          backgroundColor: '#0f172a',
-          borderColor: 'rgba(45,212,191,.3)',
+          backgroundColor: '#0b0f19',
+          borderColor: 'rgba(251,146,60,0.4)',
           borderWidth: 1,
-          titleColor: '#64748b',
-          bodyColor: '#2dd4bf',
-          callbacks: { label: c => c.parsed.y + ' kg' }
+          padding: 10,
+          titleColor: '#94a3b8',
+          bodyColor: '#fb923c',
+          cornerRadius: 8,
+          callbacks: { label: c => ` ${c.parsed.y} kg` }
         }
       },
       scales: {
-        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.05)' } },
-        y: { ticks: { color: '#64748b', font: { size: 10 }, callback: v => v + ' kg' }, grid: { color: 'rgba(255,255,255,.05)' } }
+        x: {
+          ticks: { color: '#64748b', font: { size: 10 } },
+          grid: { color: 'rgba(255,255,255,.04)' }
+        },
+        y: {
+          ticks: {
+            color: '#64748b',
+            font: { size: 10 },
+            callback: v => v + ' kg'
+          },
+          grid: { color: 'rgba(255,255,255,.04)' }
+        }
       }
     }
   });
-});
-
-// -- Terminar sesiÃ³n activa --------------------------------
-function terminarSesionPerfil(sesId) {
-  Xp.confirm('Â¿Terminar sesiÃ³n?', 'Se marcarÃ¡ la rutina como completada.', async () => {
-    const r = await Xp.post('entrenador/terminar-sesion', {sesion_id: sesId, notas: ''});
-    r.ok ? (Xp.toast('success', r.msg), setTimeout(() => location.reload(), 800)) : Xp.toast('error', r.msg);
-  });
 }
 
-// -- GrÃ¡fica de ejercicio ----------------------------------
-let chartEj = null;
+// ── Estado de Progreso por Grupo Muscular ─────────────────
+let currentTren           = 'superior';
+let currentGrupo          = 'pecho';
+let currentEjercicio      = null;
+let currentEjercicioId    = null;
+let currentBarrasPesos    = [];
+let currentResumenRecords = null;
+let currentTop3Sesiones   = [];
+let currentVersionIndex   = 0;
+let mainChart             = null;
 
-async function cargarGraficaEjercicio() {
-  const sel = document.getElementById('filtroEjercicio');
-  const ejId = sel?.value;
-  if (!ejId) return;
+// ── Cambiar Tren Superior / Inferior ──────────────────────
+function cambiarTren(tren) {
+  currentTren = tren;
+  const tabSup = document.getElementById('tabSuperior');
+  const tabInf = document.getElementById('tabInferior');
+  const chipsSup = document.getElementById('chipsSuperior');
+  const chipsInf = document.getElementById('chipsInferior');
 
-  const clienteId = <?= $cliente['id'] ?>;
-  const url = `${APP}/entrenador/grafica-ejercicio?ejercicio_id=${ejId}&cliente_id=${clienteId}`;
+  if (tabSup) tabSup.classList.toggle('active', tren === 'superior');
+  if (tabInf) tabInf.classList.toggle('active', tren === 'inferior');
+  if (chipsSup) chipsSup.style.display = tren === 'superior' ? 'flex' : 'none';
+  if (chipsInf) chipsInf.style.display = tren === 'inferior' ? 'flex' : 'none';
+
+  const grupos = tren === 'superior' ? TREN_SUPERIOR : TREN_INFERIOR;
+  if (grupos && grupos.length) seleccionarGrupo(grupos[0], tren);
+}
+
+// ── Seleccionar Grupo Muscular ────────────────────────────
+async function seleccionarGrupo(grupo, tren) {
+  currentGrupo       = grupo;
+  currentEjercicio   = null;
+  currentEjercicioId = null;
+
+  document.querySelectorAll('.st-grupo-chip').forEach(c =>
+    c.classList.remove('active-sup', 'active-inf'));
+  const norm = grupo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const chip = document.getElementById(
+    (tren === 'superior' ? 'chipSup_' : 'chipInf_') + norm
+  );
+  if (chip) chip.classList.add(tren === 'superior' ? 'active-sup' : 'active-inf');
+
+  const list = document.getElementById('pmExList');
+  if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-loader ti-spin"></i> Cargando ejercicios registrados...</span>';
+
+  const canvas = document.getElementById('mainChart');
+  const empty  = document.getElementById('chartEmpty');
+  if (canvas) canvas.style.display = 'none';
+  if (empty)  empty.style.display  = 'flex';
+  const summaryCard = document.getElementById('pmSummaryCard');
+  if (summaryCard) summaryCard.style.display = 'none';
+  const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
+  if (marcasWrap) marcasWrap.style.display = 'none';
+  if (mainChart) { mainChart.destroy(); mainChart = null; }
 
   try {
-    const res = await fetch(url, {credentials: 'same-origin'});
+    const res = await fetch(`${APP_URL_STATS}/entrenador/api-progreso-ejercicios?cliente_id=${CLIENTE_ID_STATS}&grupo=${encodeURIComponent(grupo)}`);
     const data = await res.json();
-    if (!data.ok || !data.rows.length) {
-      Xp.toast('info', 'Sin datos para este ejercicio.');
+
+    if (!data.ok || !data.ejercicios || data.ejercicios.length === 0) {
+      if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
+      const emptyMsg = document.getElementById('chartEmptyMsg');
+      if (emptyMsg) emptyMsg.textContent = 'El atleta aún no tiene series completadas registradas en ' + ucFirst(grupo) + '.';
+      const titleText = document.getElementById('chartTitleText');
+      if (titleText) titleText.textContent = 'Progreso de ' + ucFirst(grupo);
       return;
     }
 
-    // Info del diff
-    const d = data.diff;
-    document.getElementById('graficaEjInfo').style.display = 'block';
-    document.getElementById('grafEjInicio').textContent    = d.pesoInicio + ' kg';
-    document.getElementById('grafEjFechaInicio').textContent = d.fechaInicio;
-    document.getElementById('grafEjActual').textContent    = d.pesoActual + ' kg';
-    document.getElementById('grafEjFechaActual').textContent = d.fechaActual;
-    const diffStr = (d.diffPeso >= 0 ? '+' : '') + d.diffPeso + ' kg';
-    document.getElementById('grafEjDiff').textContent = diffStr;
-    document.getElementById('grafEjDiff').style.color = d.diffPeso >= 0 ? '#4ade80' : '#f87171';
-    document.getElementById('grafEjDias').textContent = d.diffDias + ' dÃ­as';
+    let html = '';
+    data.ejercicios.forEach(ej => {
+      const safeName = (ej.nombre || '').replace(/'/g, "\\'");
+      const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
+      const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
+      html += `<button type="button" class="pm-ex-btn" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
+        data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
+    });
+    if (list) list.innerHTML = html;
 
-    // Chart.js
-    const labels = data.rows.map(r => r.fecha);
-    const valores = data.rows.map(r => parseFloat(r.peso_usado));
+    if (data.ejercicios.length > 0) {
+      seleccionarEjercicio(data.ejercicios[0].nombre, data.ejercicios[0].id || 0);
+    }
+  } catch (err) {
+    console.error('Error al cargar ejercicios de progreso:', err);
+    if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-alert-circle"></i> Error de conexión al cargar ejercicios</span>';
+    const emptyMsg = document.getElementById('chartEmptyMsg');
+    if (emptyMsg) emptyMsg.textContent = 'Error de conexión al cargar ejercicios.';
+  }
+}
 
-    const ctx = document.getElementById('canvasEjercicio').getContext('2d');
-    if (chartEj) chartEj.destroy();
+// ── Seleccionar Ejercicio Individual ──────────────────────
+async function seleccionarEjercicio(nombre, id) {
+  currentEjercicio   = nombre;
+  currentEjercicioId = id || null;
 
-    const grad = ctx.createLinearGradient(0, 0, 0, 160);
-    grad.addColorStop(0, 'rgba(59,130,246,0.4)');
-    grad.addColorStop(1, 'rgba(245,240,232,0)');
+  document.querySelectorAll('.pm-ex-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.ej === nombre);
+  });
 
-    chartEj = new Chart(ctx, {
-      type: 'line',
+  const canvas = document.getElementById('mainChart');
+  const empty  = document.getElementById('chartEmpty');
+  const titleText = document.getElementById('chartTitleText');
+  if (titleText) titleText.textContent = nombre + ' — Cargando historial...';
+
+  try {
+    let url = `${APP_URL_STATS}/entrenador/api-progreso-historial?cliente_id=${CLIENTE_ID_STATS}&ejercicio_nombre=${encodeURIComponent(nombre)}`;
+    if (id) url += '&ejercicio_id=' + id;
+
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (!data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
+      currentTop3Sesiones   = [];
+      currentBarrasPesos    = [];
+      currentResumenRecords = null;
+      if (canvas) canvas.style.display = 'none';
+      if (empty)  empty.style.display  = 'flex';
+      const emptyMsg = document.getElementById('chartEmptyMsg');
+      if (emptyMsg) emptyMsg.textContent = 'Sin datos suficientes de series completadas para ' + nombre;
+      if (titleText) titleText.textContent = nombre;
+      const summaryCard = document.getElementById('pmSummaryCard');
+      if (summaryCard) summaryCard.style.display = 'none';
+      const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
+      if (marcasWrap) marcasWrap.style.display = 'none';
+      if (mainChart) { mainChart.destroy(); mainChart = null; }
+      return;
+    }
+
+    currentBarrasPesos    = data.barras_pesos || [];
+    currentResumenRecords = data.resumen_records || null;
+    currentTop3Sesiones   = data.top3_sesiones || [];
+    currentVersionIndex   = 0;
+
+    renderChartEjercicio(0);
+    renderSummary();
+    renderPodioTop3();
+  } catch (err) {
+    console.error('Error al cargar historial del ejercicio:', err);
+    if (canvas) canvas.style.display = 'none';
+    if (empty)  empty.style.display  = 'flex';
+    const emptyMsg = document.getElementById('chartEmptyMsg');
+    if (emptyMsg) emptyMsg.textContent = 'Error al cargar el historial de marcas.';
+  }
+}
+
+// ── Renderizar Gráfica de Barras ──────────────────────────
+function renderChartEjercicio(versionIdx = null) {
+  if (versionIdx !== null && versionIdx !== undefined) {
+    currentVersionIndex = versionIdx;
+  }
+
+  const sesionActiva = (currentTop3Sesiones && currentTop3Sesiones[currentVersionIndex]) ? currentTop3Sesiones[currentVersionIndex] : null;
+  const barras = (sesionActiva && sesionActiva.barras && sesionActiva.barras.length > 0) ? sesionActiva.barras : currentBarrasPesos;
+
+  if (!currentEjercicio || !barras || barras.length === 0) return;
+  const canvas = document.getElementById('mainChart');
+  const empty  = document.getElementById('chartEmpty');
+  if (!canvas) return;
+
+  canvas.style.display = 'block';
+  if (empty) empty.style.display = 'none';
+
+  const posEtiquetas = ['1ª Mejor Serie (Oro)', '2ª Serie (Plata)', '3ª Serie (Bronce)'];
+  const posTxt = posEtiquetas[currentVersionIndex] || 'Serie Destacada';
+
+  const titleText = document.getElementById('chartTitleText');
+  if (titleText) titleText.textContent = `${currentEjercicio} — ${posTxt}`;
+
+  const labels = barras.map(b => b.peso_label);
+  const datosReps = barras.map(b => b.reps_max);
+
+  if (mainChart) {
+    mainChart.destroy();
+    mainChart = null;
+  }
+
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  gradient.addColorStop(0, 'rgba(168, 85, 247, 0.9)');
+  gradient.addColorStop(1, 'rgba(138, 43, 226, 0.35)');
+
+  const fechaPlugin = {
+    id: 'fechaEncimaBarra',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((dataset, i) => {
+        const meta = chart.getDatasetMeta(i);
+        meta.data.forEach((bar, index) => {
+          const b = barras[index];
+          const fechaTxt = (b && (b.fecha_label || (sesionActiva && sesionActiva.fecha_formateada))) || '';
+          const fechaIso = (b && (b.fecha_iso || (sesionActiva && sesionActiva.fecha))) || '';
+          if (fechaTxt) {
+            ctx.save();
+            ctx.font = '700 10.5px sans-serif';
+            const txtWidth = ctx.measureText(fechaTxt).width;
+            const badgeW = Math.max(52, txtWidth + 16);
+            const badgeH = 20;
+            const badgeX = bar.x - badgeW / 2;
+            const badgeY = Math.max(bar.y - badgeH - 6, 8);
+
+            bar._dateBox = {
+              xMin: badgeX - 6,
+              xMax: badgeX + badgeW + 6,
+              yMin: badgeY - 6,
+              yMax: badgeY + badgeH + 6,
+              fecha_iso: fechaIso
+            };
+
+            ctx.fillStyle = 'rgba(30, 20, 50, 0.90)';
+            ctx.strokeStyle = 'rgba(192, 132, 252, 0.65)';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === 'function') {
+              ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 6);
+            } else {
+              ctx.rect(badgeX, badgeY, badgeW, badgeH);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(fechaTxt, bar.x, badgeY + badgeH / 2 + 0.5);
+            ctx.restore();
+          }
+        });
+      });
+    }
+  };
+
+  mainChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Repeticiones Logradas',
+        data: datosReps,
+        backgroundColor: gradient,
+        borderColor: '#c084fc',
+        borderWidth: 1.5,
+        borderRadius: 8,
+        maxBarThickness: 46
+      }]
+    },
+    plugins: [fechaPlugin],
+    options: {
+      responsive: true,
+      layout: {
+        padding: { top: 32, left: 6, right: 6, bottom: 4 }
+      },
+      interaction: { mode: 'index', intersect: false },
+      onClick: (evt, elements) => {
+        let targetFechaIso = null;
+        const clickX = evt.x !== undefined ? evt.x : (evt.native ? evt.native.offsetX : 0);
+        const clickY = evt.y !== undefined ? evt.y : (evt.native ? evt.native.offsetY : 0);
+
+        if (mainChart) {
+          const meta = mainChart.getDatasetMeta(0);
+          if (meta && meta.data) {
+            for (let i = 0; i < meta.data.length; i++) {
+              const bar = meta.data[i];
+              if (bar && bar._dateBox) {
+                const db = bar._dateBox;
+                if (clickX >= db.xMin && clickX <= db.xMax && clickY >= db.yMin && clickY <= db.yMax) {
+                  targetFechaIso = db.fecha_iso;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        if (!targetFechaIso) {
+          let barIdx = -1;
+          if (elements && elements.length > 0) {
+            barIdx = elements[0].index;
+          } else if (mainChart) {
+            const els = mainChart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
+            if (els && els.length > 0) barIdx = els[0].index;
+          }
+          if (barIdx >= 0 && barras[barIdx]) {
+            targetFechaIso = barras[barIdx].fecha_iso || (sesionActiva && sesionActiva.fecha);
+          }
+        }
+
+        if (targetFechaIso) {
+          window.location.href = `${APP_URL_STATS}/entrenador/perfil-cliente?id=${CLIENTE_ID_STATS}&date=${targetFechaIso}#panel-rutinas`;
+        }
+      },
+      onHover: (evt, elements) => {
+        let isPointer = (elements && elements.length > 0);
+        if (!isPointer && mainChart) {
+          const mouseX = evt.x !== undefined ? evt.x : (evt.native ? evt.native.offsetX : 0);
+          const mouseY = evt.y !== undefined ? evt.y : (evt.native ? evt.native.offsetY : 0);
+          const meta = mainChart.getDatasetMeta(0);
+          if (meta && meta.data) {
+            for (let i = 0; i < meta.data.length; i++) {
+              const db = meta.data[i]._dateBox;
+              if (db && mouseX >= db.xMin && mouseX <= db.xMax && mouseY >= db.yMin && mouseY <= db.yMax) {
+                isPointer = true;
+                break;
+              }
+            }
+          }
+        }
+        if (evt.native && evt.native.target) {
+          evt.native.target.style.cursor = isPointer ? 'pointer' : 'default';
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15, 15, 20, 0.95)',
+          borderColor: 'rgba(168, 85, 247, 0.4)',
+          borderWidth: 1,
+          padding: 12,
+          titleColor: '#fff',
+          bodyColor: '#e2e8f0',
+          cornerRadius: 10,
+          callbacks: {
+            title: ctx => {
+              const b = barras[ctx[0].dataIndex];
+              return b ? `Carga: ${b.peso_label}` : '';
+            },
+            label: ctx => {
+              const b = barras[ctx.dataIndex];
+              if (!b) return '';
+              const fTxt = b.fecha_label || (sesionActiva && sesionActiva.fecha_formateada);
+              return [
+                ` Repeticiones: ${b.reps_max} reps`,
+                ` Fecha: ${fTxt}`,
+                ` 👆 Clic para ver rutina en esa fecha`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#cbd5e1',
+            font: { size: 11, weight: '700' }
+          },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.max(...datosReps, 5) + 2,
+          ticks: {
+            color: '#9ca3af',
+            font: { size: 10 },
+            stepSize: 2,
+            callback: v => v + ' reps'
+          },
+          grid: { color: 'rgba(255,255,255,.05)' }
+        }
+      }
+    }
+  });
+}
+
+// ── Renderizar Resumen de Récords ─────────────────────────
+function renderSummary() {
+  const card = document.getElementById('pmSummaryCard');
+  if (!card) return;
+
+  if (!currentResumenRecords) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'grid';
+
+  const rMax  = currentResumenRecords.peso_maximo;
+  const rReps = currentResumenRecords.mayor_reps;
+
+  const statMax = document.getElementById('pmStatMax');
+  const statMaxSub = document.getElementById('pmStatMaxSub');
+  const statReps = document.getElementById('pmStatReps');
+  const statRepsSub = document.getElementById('pmStatRepsSub');
+
+  if (rMax && statMax && statMaxSub) {
+    statMax.textContent = rMax.peso > 0 ? `${parseFloat(rMax.peso).toFixed(1)} kg` : 'Corporal';
+    statMaxSub.textContent = `${rMax.reps} reps · ${rMax.fecha_fmt}`;
+  }
+  if (rReps && statReps && statRepsSub) {
+    statReps.textContent = `${rReps.reps} reps`;
+    statRepsSub.textContent = (rReps.peso > 0 ? `${parseFloat(rReps.peso).toFixed(1)} kg` : 'Corporal') + ` · ${rReps.fecha_fmt}`;
+  }
+}
+
+// ── Renderizar Salón de Récords (Podio Top 3) ──────────────
+function renderPodioTop3() {
+  const wrap = document.getElementById('pmHistorialMarcasWrap');
+  const list = document.getElementById('pmHistorialMarcasList');
+  if (!wrap || !list) return;
+
+  if (!currentTop3Sesiones || currentTop3Sesiones.length === 0) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+
+  const medallas = [
+    { pos: 'pos-1', icono: '🥇', label: '1ª Serie' },
+    { pos: 'pos-2', icono: '🥈', label: '2ª Serie' },
+    { pos: 'pos-3', icono: '🥉', label: '3ª Serie' }
+  ];
+
+  let html = '';
+  for (let i = 0; i < 3; i++) {
+    const med = medallas[i];
+    const ses = currentTop3Sesiones[i] || null;
+    const isActive = (i === currentVersionIndex);
+
+    if (ses) {
+      const peso = (parseFloat(ses.peso_max) || 0) > 0 ? (parseFloat(ses.peso_max).toFixed(1) + ' kg') : 'Corporal';
+      const reps = (parseInt(ses.reps_en_max) || 0) + ' reps';
+
+      html += `
+        <div class="pm-serie-card ${med.pos} ${isActive ? 'active' : ''}" onclick="cambiarSerie(${i})" title="Toca para ver el récord de esta serie en la gráfica">
+          <div class="pm-serie-top">
+            <span class="pm-serie-badge">${med.icono}</span>
+            <span class="pm-serie-tag ${med.pos}">${med.label}</span>
+          </div>
+          <div class="pm-serie-val">
+            <span class="pm-serie-peso">${peso}</span>
+            <span class="pm-serie-reps">× ${reps}</span>
+          </div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="pm-serie-card disabled">
+          <div class="pm-serie-top">
+            <span class="pm-serie-badge" style="filter:grayscale(1);opacity:.4;">${med.icono}</span>
+            <span class="pm-serie-tag empty">${med.label}</span>
+          </div>
+          <div class="pm-serie-val" style="color:#6b7280;font-size:.82rem;">
+            <span>Por registrar</span>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  list.innerHTML = html;
+}
+
+function cambiarSerie(idx) {
+  if (!currentTop3Sesiones || !currentTop3Sesiones[idx]) return;
+  currentVersionIndex = idx;
+  renderChartEjercicio(idx);
+  renderPodioTop3();
+}
+
+function ucFirst(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+// ── Inicialización al cargar la página ────────────────────
+function initStatsDashboard() {
+  initGraficaPeso();
+  seleccionarGrupo('pecho', 'superior');
+}
+if (document.readyState === 'complete') {
+  initStatsDashboard();
+} else {
+  window.addEventListener('load', initStatsDashboard);
+}
+
+
+// ============================================================
+// LOGICA DEL CALENDARIO INTERACTIVO Y MODAL BOTTOM-SHEET
+// ============================================================
+(function() {
+  'use strict';
+
+  const FECHA_HOY = <?= json_encode($fechaHoy, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+  const DIAS_LARGOS  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  let activeFetchAbort = null;
+  let ultimoElementoFoco = null;
+
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function formatoFechaLarga(fechaStr) {
+    if (!fechaStr || !/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) return fechaStr;
+    const parts = fechaStr.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    const diaNom = DIAS_LARGOS[d.getDay()];
+    const diaNum = parts[2];
+    const mesNom = MESES_LARGOS[parts[1] - 1];
+    const anoNum = parts[0];
+    return `${diaNom}, ${diaNum} de ${mesNom} de ${anoNum}`;
+  }
+
+  // PORTAL JS: Mover backdrop y sheet a document.body para evitar clipping de fixed/overflow
+  function asegurarPortalBody() {
+    const backdrop = document.getElementById('diaModalBackdrop');
+    const modal    = document.getElementById('diaModal');
+    if (backdrop && backdrop.parentElement !== document.body) {
+      document.body.appendChild(backdrop);
+    }
+    if (modal && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', asegurarPortalBody);
+  } else {
+    asegurarPortalBody();
+  }
+
+  function badgeSerieTexto(tipo, num) {
+    const t = String(tipo || 'normal').toLowerCase();
+    if (t === 'calentamiento') return 'W';
+    if (t === 'fallo')         return 'F';
+    if (t === 'drop')          return 'D';
+    return String(num || 1);
+  }
+
+  function badgeSerieTitulo(tipo, num) {
+    const t = String(tipo || 'normal').toLowerCase();
+    if (t === 'calentamiento') return 'Serie de Calentamiento (W)';
+    if (t === 'fallo')         return 'Serie al Fallo (F)';
+    if (t === 'drop')          return 'Drop Set (D)';
+    return 'Serie ' + (num || 1);
+  }
+
+  async function abrirModalDia(fecha) {
+    if (!fecha) return;
+    asegurarPortalBody();
+
+    ultimoElementoFoco = document.activeElement;
+
+    // Resaltar celda seleccionada en el calendario
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+    const celda = document.querySelector(`.cal-cell[data-fecha="${fecha}"]`);
+    if (celda) celda.classList.add('selected');
+
+    const backdrop = document.getElementById('diaModalBackdrop');
+    const modal    = document.getElementById('diaModal');
+    const fechaEl  = document.getElementById('diaModalFecha');
+    const badgeEl  = document.getElementById('diaModalBadge');
+    const subEl    = document.getElementById('diaModalSub');
+    const bodyEl   = document.getElementById('diaModalBody');
+
+    fechaEl.textContent = formatoFechaLarga(fecha);
+    subEl.textContent   = '';
+    badgeEl.textContent = '';
+    badgeEl.className   = 'dia-modal-badge';
+
+    if (fecha < FECHA_HOY) {
+      badgeEl.textContent = 'Historial';
+      badgeEl.classList.add('modo-historial');
+    } else if (fecha === FECHA_HOY) {
+      badgeEl.textContent = 'Hoy';
+      badgeEl.classList.add('modo-hoy');
+    } else {
+      badgeEl.textContent = 'Planificación';
+      badgeEl.classList.add('modo-planificacion');
+    }
+
+    bodyEl.innerHTML = `
+      <div class="dia-modal-loading">
+        <div class="dia-modal-spinner" aria-hidden="true"></div>
+        <span>Consultando registros...</span>
+      </div>
+    `;
+
+    backdrop.classList.add('open');
+    modal.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => { modal.focus(); }, 100);
+
+    if (activeFetchAbort) {
+      activeFetchAbort.abort();
+    }
+    activeFetchAbort = new AbortController();
+
+    try {
+      const url = `${APP_URL_STATS}/entrenador/api-dia-detalle?cliente_id=${CLIENTE_ID_STATS}&fecha=${encodeURIComponent(fecha)}`;
+      const res = await fetch(url, { credentials: 'same-origin', signal: activeFetchAbort.signal });
+      const data = await res.json();
+      renderModalDia(fecha, data);
+    } catch(err) {
+      if (err.name === 'AbortError') return;
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-wifi-off" aria-hidden="true"></i>
+          <p>No se pudo conectar con el servidor para consultar este día.</p>
+          <button type="button" class="dm-btn-rutina" style="max-width:220px;margin:16px auto 0;" onclick="window.abrirModalDia('${esc(fecha)}')">
+            <i class="ti ti-reload" aria-hidden="true"></i> Reintentar
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  function renderModalDia(fecha, data) {
+    const badgeEl = document.getElementById('diaModalBadge');
+    const subEl   = document.getElementById('diaModalSub');
+    const bodyEl  = document.getElementById('diaModalBody');
+
+    if (!data || !data.ok) {
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <p>${esc((data && data.msg) || 'Error al obtener los datos del día.')}</p>
+        </div>
+      `;
+      return;
+    }
+
+    badgeEl.className = 'dia-modal-badge';
+    if (data.modo === 'historial') {
+      badgeEl.classList.add('modo-historial');
+      badgeEl.textContent = 'Historial';
+    } else if (data.modo === 'hoy') {
+      badgeEl.classList.add('modo-hoy');
+      badgeEl.textContent = (data.estado === 'completado') ? 'Hoy · Completado'
+                          : (data.estado === 'parcial'    ? 'Hoy · En Progreso' : 'Hoy');
+    } else {
+      badgeEl.classList.add('modo-planificacion');
+      badgeEl.textContent = 'Planificación';
+    }
+
+    if (data.estado === 'sin_actividad') {
+      subEl.textContent = 'Sin entrenamiento registrado';
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-calendar-off" aria-hidden="true"></i>
+          <p>No se registró actividad ni rutina completada en esta fecha.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (data.estado === 'sin_rutina') {
+      subEl.textContent = 'Día libre / Sin rutina';
+      bodyEl.innerHTML = `
+        <div class="dia-modal-empty">
+          <i class="ti ti-moon-stars" aria-hidden="true"></i>
+          <p>${data.modo === 'hoy' ? 'El atleta no tiene una rutina programada para hoy.' : 'No hay rutina asignada para este día de la semana.'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (data.estado === 'completado' || data.estado === 'parcial') {
+      const resumen = data.resumen || {};
+      const numEjs  = resumen.ejercicios || (data.ejercicios ? data.ejercicios.length : 0);
+      const numSets = resumen.series || 0;
+
+      subEl.textContent = `${numEjs} ejercicio${numEjs !== 1 ? 's' : ''} · ${numSets} serie${numSets !== 1 ? 's' : ''}`;
+
+      let html = '';
+      const rutinaNombre = (data.rutina && data.rutina.nombre) ? data.rutina.nombre : 'Entrenamiento Registrado';
+      html += `
+        <div class="dm-rutina">
+          <i class="ti ti-flame" aria-hidden="true"></i>
+          <div style="flex:1;min-width:0;">
+            <div class="dm-rutina-nombre">${esc(rutinaNombre)}</div>
+            <div class="dm-rutina-fecha">${esc(formatoFechaLarga(fecha))}</div>
+          </div>
+        </div>
+      `;
+
+      html += `
+        <div class="dm-stats">
+          <div class="dm-stat">
+            <b>${numEjs}</b>
+            <span>Ejercicios</span>
+          </div>
+          <div class="dm-stat">
+            <b>${numSets}</b>
+            <span>Series</span>
+          </div>
+        </div>
+      `;
+
+      const lista = data.ejercicios || [];
+      window.ejerciciosDiaActual = lista;
+
+      if (window.chartsSesion) {
+        Object.values(window.chartsSesion).forEach(c => { if (c) c.destroy(); });
+      }
+      window.chartsSesion = {};
+
+      lista.forEach((ej, index) => {
+        const equip = ej.equipamiento ? esc(ej.equipamiento) : null;
+        const grupo = ej.grupo_muscular ? esc(ej.grupo_muscular) : null;
+        const tieneSeries = ej.series && ej.series.length > 0;
+
+        html += `
+          <div class="dm-ejercicio">
+            <div class="dm-ex-name">
+              <i class="ti ti-barbell" style="color:var(--text-purple,#b388ff);font-size:.95rem" aria-hidden="true"></i>
+              <span style="flex:1;min-width:0">${esc(ej.nombre)}</span>
+              ${equip ? `<span class="dm-equip"><i class="ti ti-tools" aria-hidden="true"></i>${equip}</span>` : ''}
+              ${grupo ? `<span class="dm-grupo-chip">${grupo}</span>` : ''}
+              ${tieneSeries ? `<button type="button" class="dm-grafica-toggle-btn" onclick="toggleGraficaSesion(${index})" title="Ver gráfica de la sesión"><i class="ti ti-chart-bar"></i> Gráfica</button>` : ''}
+            </div>
+            <table class="dm-table">
+              <thead>
+                <tr>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Peso</th>
+                  <th scope="col">Reps</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        (ej.series || []).forEach(s => {
+          const badgeTxt = badgeSerieTexto(s.tipo, s.numero);
+          const badgeTit = badgeSerieTitulo(s.tipo, s.numero);
+          const repsVal  = (s.reps !== null && s.reps !== undefined) ? `${s.reps} reps` : '—';
+          const pesoVal  = (s.peso !== null && s.peso !== undefined) ? `${parseFloat(s.peso).toFixed(1)} kg` : '—';
+
+          html += `
+            <tr>
+              <td>
+                <span class="dm-set-badge" data-t="${esc(s.tipo)}" title="${esc(badgeTit)}">
+                  ${esc(badgeTxt)}
+                </span>
+              </td>
+              <td class="kg">${esc(pesoVal)}</td>
+              <td class="reps">${esc(repsVal)}</td>
+            </tr>
+          `;
+        });
+
+        html += `
+              </tbody>
+            </table>
+
+            ${tieneSeries ? `
+            <div class="dm-grafica-sesion-wrap" id="graficaWrap_${index}" style="display:none;margin-top:10px;padding:12px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:12px;">
+              <div style="font-size:0.75rem;font-weight:700;color:#c084fc;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                <i class="ti ti-chart-bar"></i> Rendimiento por serie en este día (Repeticiones)
+              </div>
+              <canvas id="canvasSesion_${index}" height="130"></canvas>
+            </div>
+            ` : ''}
+
+          </div>
+        `;
+      });
+
+      if (data.accion && data.accion.url) {
+        html += `
+          <a href="${esc(data.accion.url)}" class="dm-btn-rutina">
+            <i class="ti ti-edit" aria-hidden="true"></i> ${esc(data.accion.label || 'Ver / Editar Rutina')}
+          </a>
+        `;
+      }
+
+      bodyEl.innerHTML = html;
+      return;
+    }
+
+    if (data.modo === 'hoy' && data.estado === 'pendiente') {
+      const rutinaNombre = (data.rutina && data.rutina.nombre) ? data.rutina.nombre : 'Rutina de Hoy';
+      subEl.textContent = 'Rutina de hoy · Pendiente de realizar';
+
+      let html = `
+        <div class="dm-rutina">
+          <i class="ti ti-clock-play" aria-hidden="true" style="color:#fbbf24"></i>
+          <div style="flex:1;min-width:0;">
+            <div class="dm-rutina-nombre">${esc(rutinaNombre)}</div>
+            <div class="dm-rutina-fecha">Programada para hoy</div>
+          </div>
+        </div>
+        <p class="dm-section-label">Ejercicios programados para hoy:</p>
+      `;
+
+      const lista = data.ejercicios || [];
+      lista.forEach(ej => {
+        const equip = ej.equipamiento ? esc(ej.equipamiento) : null;
+        const grupo = ej.grupo_muscular ? esc(ej.grupo_muscular) : null;
+
+        html += `
+          <div class="dm-ejercicio">
+            <div class="dm-ex-name">
+              <i class="ti ti-circle-dot" style="color:#a78bfa;font-size:.85rem" aria-hidden="true"></i>
+              <span style="flex:1;min-width:0">${esc(ej.nombre)}</span>
+              ${equip ? `<span class="dm-equip"><i class="ti ti-tools" aria-hidden="true"></i>${equip}</span>` : ''}
+              ${grupo ? `<span class="dm-grupo-chip">${grupo}</span>` : ''}
+            </div>
+            <div class="dm-plan-grid">
+              <div class="dm-plan-chip">Series: <span>${esc(ej.series_total || 0)}</span></div>
+              <div class="dm-plan-chip">Reps: <span>${esc(ej.repeticiones || '—')}</span></div>
+              ${ej.rir ? `<div class="dm-plan-chip">RIR: <span>${esc(ej.rir)}</span></div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      if (data.accion && data.accion.url) {
+        html += `
+          <a href="${esc(data.accion.url)}" class="dm-btn-rutina">
+            <i class="ti ti-edit" aria-hidden="true"></i> ${esc(data.accion.label || 'Editar rutina asignada')}
+          </a>
+        `;
+      }
+
+      bodyEl.innerHTML = html;
+      return;
+    }
+
+    if (data.modo === 'planificacion') {
+      const rutinaNombre = (data.rutina && data.rutina.nombre) ? data.rutina.nombre : 'Rutina Programada';
+      subEl.textContent = 'Rutina asignada para este día';
+
+      let html = `
+        <div class="dm-rutina" style="background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.25)">
+          <i class="ti ti-calendar-event" aria-hidden="true" style="color:#fbbf24"></i>
+          <div style="flex:1;min-width:0;">
+            <div class="dm-rutina-nombre">${esc(rutinaNombre)}</div>
+            <div class="dm-rutina-fecha">${esc(formatoFechaLarga(fecha))}</div>
+          </div>
+        </div>
+        <p class="dm-section-label">Planificación de ejercicios:</p>
+      `;
+
+      const lista = data.ejercicios || [];
+      lista.forEach(ej => {
+        const equip = ej.equipamiento ? esc(ej.equipamiento) : null;
+        const grupo = ej.grupo_muscular ? esc(ej.grupo_muscular) : null;
+
+        html += `
+          <div class="dm-ejercicio">
+            <div class="dm-ex-name">
+              <i class="ti ti-notes" style="color:#fbbf24;font-size:.85rem" aria-hidden="true"></i>
+              <span style="flex:1;min-width:0">${esc(ej.nombre)}</span>
+              ${equip ? `<span class="dm-equip"><i class="ti ti-tools" aria-hidden="true"></i>${equip}</span>` : ''}
+              ${grupo ? `<span class="dm-grupo-chip">${grupo}</span>` : ''}
+            </div>
+            <div class="dm-plan-grid">
+              <div class="dm-plan-chip">Objetivo: <span>${esc(ej.series_total || 0)} series</span></div>
+              <div class="dm-plan-chip">Reps: <span>${esc(ej.repeticiones || '—')}</span></div>
+              ${ej.rir ? `<div class="dm-plan-chip">RIR: <span>${esc(ej.rir)}</span></div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+
+      bodyEl.innerHTML = html;
+      return;
+    }
+  }
+
+  function cerrarModalDia(event, force) {
+    if (!force && event) {
+      const modal = document.getElementById('diaModal');
+      if (modal && modal.contains(event.target)) return;
+    }
+
+    if (activeFetchAbort) {
+      activeFetchAbort.abort();
+      activeFetchAbort = null;
+    }
+
+    const backdrop = document.getElementById('diaModalBackdrop');
+    const modal    = document.getElementById('diaModal');
+    if (backdrop) {
+      backdrop.classList.remove('open');
+      backdrop.setAttribute('aria-hidden', 'true');
+    }
+    if (modal) {
+      modal.classList.remove('open');
+    }
+
+    document.body.style.overflow = '';
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+    // Mantener celda seleccionada inline
+    const celdaActual = document.querySelector(`.cal-cell[data-fecha="${fechaGlobalInline}"]`);
+    if (celdaActual) celdaActual.classList.add('selected');
+
+    if (ultimoElementoFoco && typeof ultimoElementoFoco.focus === 'function') {
+      try { ultimoElementoFoco.focus(); } catch(_) {}
+    }
+  }
+
+  let fechaGlobalInline = FECHA_HOY;
+
+  // Carga y renderiza el detalle de la rutina debajo del calendario
+  async function cargarDetalleDiaInline(fecha) {
+    fechaGlobalInline = fecha;
+    const container = document.getElementById('calRutinaDiaInline');
+    const titleEl   = document.getElementById('crdiTituloFecha');
+    const badgeEl   = document.getElementById('crdiBadge');
+    const contentEl = document.getElementById('crdiContent');
+    if (!container || !contentEl) return;
+
+    titleEl.textContent = formatoFechaLarga(fecha);
+    contentEl.innerHTML = `
+      <div class="crdi-empty-box" style="padding:20px;">
+        <div class="dia-modal-spinner" aria-hidden="true"></div>
+        <p style="font-size:0.85rem;margin-top:8px;">Cargando rutina del día...</p>
+      </div>
+    `;
+
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+    const celda = document.querySelector(`.cal-cell[data-fecha="${fecha}"]`);
+    if (celda) celda.classList.add('selected');
+
+    try {
+      const url = `${APP_URL_STATS}/entrenador/api-dia-detalle?cliente_id=${CLIENTE_ID_STATS}&fecha=${encodeURIComponent(fecha)}`;
+      const res = await fetch(url, { credentials: 'same-origin' });
+      const data = await res.json();
+
+      if (!data || !data.ok) {
+        badgeEl.className = 'crdi-badge badge-sin-rutina';
+        badgeEl.textContent = 'Error';
+        contentEl.innerHTML = `<div class="crdi-empty-box"><i class="ti ti-alert-triangle" style="color:#f87171"></i><p>${esc(data?.msg || 'Error al consultar el día')}</p></div>`;
+        return;
+      }
+
+      badgeEl.className = 'crdi-badge';
+      if (data.estado === 'completado') {
+        badgeEl.classList.add('badge-completado');
+        badgeEl.innerHTML = '<i class="ti ti-circle-check"></i> Completado';
+      } else if (data.estado === 'sin_rutina' || data.estado === 'sin_actividad') {
+        const dt = new Date(fecha + 'T00:00:00');
+        const dow = dt.getDay();
+        if (dow === 0 || dow === 6) {
+          badgeEl.classList.add('badge-descanso');
+          badgeEl.innerHTML = '<i class="ti ti-moon-stars"></i> Descanso';
+        } else {
+          badgeEl.classList.add('badge-sin-rutina');
+          badgeEl.innerHTML = '<i class="ti ti-calendar-off"></i> Sin Rutina';
+        }
+      } else {
+        badgeEl.innerHTML = '<i class="ti ti-barbell"></i> Programado';
+      }
+
+      if (data.rutina && Array.isArray(data.ejercicios) && data.ejercicios.length > 0) {
+        const numEjs = data.ejercicios.length;
+        const numSets = data.resumen?.series || data.ejercicios.reduce((acc, e) => acc + parseInt(e.series_total || 0), 0);
+        let html = `
+          <div class="crdi-rutina-card">
+            <div>
+              <div class="crdi-rutina-name"><i class="ti ti-flame" style="color:#d8b4fe;margin-right:4px;"></i> ${esc(data.rutina.nombre)}</div>
+              <div class="crdi-rutina-stats">${numEjs} ejercicio${numEjs !== 1 ? 's' : ''} &middot; ${numSets} serie${numSets !== 1 ? 's' : ''} programadas</div>
+            </div>
+            <button type="button" class="crdi-btn-asignar" style="margin-top:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);" onclick="abrirModalDia('${esc(fecha)}')">
+              <i class="ti ti-maximize"></i> Ver Completo
+            </button>
+          </div>
+          <div class="crdi-ejercicios-list">
+        `;
+
+        data.ejercicios.forEach((ej, idx) => {
+          const setsVal = ej.series_total || ej.series?.length || 1;
+          const repsVal = ej.repeticiones || ej.series?.[0]?.reps || '10';
+          const rirVal  = ej.rir != null ? ` · RIR ${ej.rir}` : '';
+          const impVal  = ej.tipo_implemento ? ` · ${esc(ej.tipo_implemento)}` : '';
+          html += `
+            <div class="crdi-ejercicio-item">
+              <div class="crdi-ej-left">
+                <span class="crdi-ej-num">${idx + 1}</span>
+                <div>
+                  <div class="crdi-ej-nombre">${esc(ej.nombre)}</div>
+                  <div class="crdi-ej-meta">${esc(ej.grupo_muscular || 'General')}${impVal}</div>
+                </div>
+              </div>
+              <div class="crdi-ej-params">
+                ${setsVal} series &times; ${repsVal} reps${rirVal}
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        contentEl.innerHTML = html;
+      } else {
+        const dt = new Date(fecha + 'T00:00:00');
+        const dow = dt.getDay();
+        if (dow === 0 || dow === 6) {
+          contentEl.innerHTML = `
+            <div class="crdi-empty-box">
+              <i class="ti ti-moon-stars" style="color:#38bdf8;"></i>
+              <h4 style="color:#fff;font-size:0.95rem;margin:0 0 4px;">Día de Descanso Programado</h4>
+              <p style="font-size:0.8rem;margin:0;">El atleta no tiene entrenamiento asignado para este día.</p>
+              <a href="${APP_URL_STATS}/entrenador/crear-rutina?atleta_id=${CLIENTE_ID_STATS}" class="crdi-btn-asignar" style="background:rgba(56,189,248,0.2);border:1px solid rgba(56,189,248,0.35);color:#7dd3fc;">
+                <i class="ti ti-plus"></i> Programar Rutina Especial
+              </a>
+            </div>
+          `;
+        } else {
+          contentEl.innerHTML = `
+            <div class="crdi-empty-box">
+              <i class="ti ti-calendar-off" style="color:#f87171;"></i>
+              <h4 style="color:#fff;font-size:0.95rem;margin:0 0 4px;">Sin Rutina Programada</h4>
+              <p style="font-size:0.8rem;margin:0;">No hay rutina asignada para este día de entrenamiento.</p>
+              <a href="${APP_URL_STATS}/entrenador/crear-rutina?atleta_id=${CLIENTE_ID_STATS}" class="crdi-btn-asignar">
+                <i class="ti ti-plus"></i> Asignar Rutina a este Atleta
+              </a>
+            </div>
+          `;
+        }
+      }
+    } catch (err) {
+      contentEl.innerHTML = `<div class="crdi-empty-box"><i class="ti ti-wifi-off"></i><p>Error de conexión al cargar la rutina.</p></div>`;
+    }
+  }
+
+  // Delegación de eventos en el calendario
+  document.addEventListener('click', function(e) {
+    const celda = e.target.closest('.cal-cell[data-fecha]');
+    if (celda) {
+      e.preventDefault();
+      const fecha = celda.getAttribute('data-fecha');
+      cargarDetalleDiaInline(fecha);
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      const modal = document.getElementById('diaModal');
+      if (modal && modal.classList.contains('open')) {
+        cerrarModalDia(null, true);
+        return;
+      }
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      const celda = document.activeElement && document.activeElement.closest('.cal-cell[data-fecha]');
+      if (celda) {
+        e.preventDefault();
+        cargarDetalleDiaInline(celda.getAttribute('data-fecha'));
+      }
+    }
+  });
+
+  // Inicializar automáticamente la rutina de Hoy debajo del calendario
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('calRutinaDiaInline')) {
+      cargarDetalleDiaInline(FECHA_HOY);
+    }
+  });
+
+  // Si se navegó con parámetro ?date=... o hash, cargar fecha solicitada
+  window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    const dateParam = params.get('date');
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      cargarDetalleDiaInline(dateParam);
+    } else if (document.getElementById('calRutinaDiaInline')) {
+      cargarDetalleDiaInline(FECHA_HOY);
+    }
+  });
+
+  window.abrirModalDia  = abrirModalDia;
+  window.cerrarModalDia = cerrarModalDia;
+  window.cargarDetalleDiaInline = cargarDetalleDiaInline;
+})();
+
+// ── Gráfica interactiva de series en el Modal del Calendario ──────────
+window.chartsSesion = window.chartsSesion || {};
+function toggleGraficaSesion(idx) {
+  const wrap = document.getElementById('graficaWrap_' + idx);
+  if (!wrap) return;
+  const isHidden = (wrap.style.display === 'none' || wrap.style.display === '');
+  wrap.style.display = isHidden ? 'block' : 'none';
+
+  if (isHidden) {
+    const canvas = document.getElementById('canvasSesion_' + idx);
+    if (!canvas) return;
+    if (window.chartsSesion[idx]) {
+      window.chartsSesion[idx].destroy();
+      window.chartsSesion[idx] = null;
+    }
+    const ej = (window.ejerciciosDiaActual && window.ejerciciosDiaActual[idx]) ? window.ejerciciosDiaActual[idx] : null;
+    if (!ej || !ej.series || !ej.series.length) return;
+
+    const labels = ej.series.map((s, i) => {
+      const p = (s.peso !== null && s.peso !== undefined && parseFloat(s.peso) > 0) ? `${parseFloat(s.peso).toFixed(1)}kg` : 'Corp';
+      return [`S${s.numero || (i + 1)}`, p];
+    });
+    const dataReps = ej.series.map(s => parseInt(s.reps || 0));
+
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 130);
+    grad.addColorStop(0, 'rgba(168, 85, 247, 0.85)');
+    grad.addColorStop(1, 'rgba(138, 43, 226, 0.25)');
+
+    window.chartsSesion[idx] = new Chart(canvas, {
+      type: 'bar',
       data: {
-        labels,
+        labels: labels,
         datasets: [{
-          label: d.nombre,
-          data: valores,
-          borderColor: '#3b82f6',
+          label: 'Repeticiones',
+          data: dataReps,
           backgroundColor: grad,
-          pointBackgroundColor: '#f5f0e8',
-          pointBorderColor: '#3b82f6',
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          fill: true,
-          tension: 0.4,
-          borderWidth: 2,
+          borderColor: '#c084fc',
+          borderWidth: 1.5,
+          borderRadius: 6,
+          maxBarThickness: 36
         }]
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0a0b0e',
-            borderColor: 'rgba(59,130,246,.3)',
-            borderWidth: 1,
-            titleColor: '#94a3b8',
-            bodyColor: '#f5f0e8',
-            callbacks: { label: ctx => ctx.parsed.y + ' kg' }
+            callbacks: {
+              title: c => {
+                const s = ej.series[c[0].dataIndex];
+                return s ? `Serie ${s.numero || (c[0].dataIndex + 1)} (${s.peso ? parseFloat(s.peso).toFixed(1) + ' kg' : 'Peso corporal'})` : '';
+              },
+              label: c => ` ${c.parsed.y} repeticiones logradas`
+            }
           }
         },
         scales: {
-          x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,.04)' } },
-          y: { ticks: { color: '#64748b', font: { size: 10 }, callback: v => v + ' kg' }, grid: { color: 'rgba(255,255,255,.04)' } }
+          x: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#9ca3af', font: { size: 10 }, stepSize: 2 },
+            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+          }
         }
       }
     });
-  } catch(e) {
-    Xp.toast('error', 'Error cargando datos.');
   }
 }
-
-// -- Switcher modo grafica ---------------------------------
-function setModoGrafica(modo) {
-  const panelPeso    = document.getElementById('graficaPeso');
-  const panelCargas  = document.getElementById('graficaCargas');
-  const btnPeso      = document.getElementById('btnModoPeso');
-  const btnCargas    = document.getElementById('btnModoCargas');
-
-  if (modo === 'peso') {
-    panelPeso.style.display   = 'block';
-    panelCargas.style.display = 'none';
-    btnPeso.style.background  = 'rgba(139,92,246,0.8)';
-    btnPeso.style.color       = '#fff';
-    btnPeso.style.boxShadow   = '0 2px 8px rgba(0,0,0,0.2)';
-    btnCargas.style.background = 'transparent';
-    btnCargas.style.color      = '#94a3b8';
-    btnCargas.style.boxShadow  = 'none';
-  } else {
-    panelPeso.style.display   = 'none';
-    panelCargas.style.display = 'block';
-    btnPeso.style.background  = 'transparent';
-    btnPeso.style.color       = '#94a3b8';
-    btnPeso.style.boxShadow   = 'none';
-    btnCargas.style.background = 'rgba(139,92,246,0.8)';
-    btnCargas.style.color      = '#fff';
-    btnCargas.style.boxShadow  = '0 2px 8px rgba(0,0,0,0.2)';
-  }
-}
-
-// ============================================================
-// LOGICA DEL CALENDARIO (FILTRO DE RANGO DE FECHAS)
-// ============================================================
-let calFechaActual = new Date();
-let calSeleccion1 = null;
-let calSeleccion2 = null;
-
-// Inicializar con variables PHP si existen
-<?php if(isset($_GET['f1'])): ?>
-calSeleccion1 = new Date("<?= $_GET['f1'] ?>T00:00:00");
-calFechaActual = new Date("<?= $_GET['f1'] ?>T00:00:00");
-<?php endif; ?>
-<?php if(isset($_GET['f2'])): ?>
-calSeleccion2 = new Date("<?= $_GET['f2'] ?>T00:00:00");
-<?php endif; ?>
-
-function abrirModalCalendarioRT() {
-    renderizarCalendarioRT();
-    document.getElementById('modalCalendarioRT').style.display = 'flex';
-}
-
-function cerrarModalCalendarioRT() {
-    document.getElementById('modalCalendarioRT').style.display = 'none';
-}
-
-function cambiarMesCalendario(delta) {
-    calFechaActual.setMonth(calFechaActual.getMonth() + delta);
-    renderizarCalendarioRT();
-}
-
-function renderizarCalendarioRT() {
-    const mesNombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-    document.getElementById('mesAnoCalendario').textContent = `${mesNombres[calFechaActual.getMonth()]} ${calFechaActual.getFullYear()}`;
-
-    const diasContenedor = document.getElementById('diasCalendario');
-    diasContenedor.innerHTML = '';
-
-    const primerDia = new Date(calFechaActual.getFullYear(), calFechaActual.getMonth(), 1).getDay();
-    const diasEnMes = new Date(calFechaActual.getFullYear(), calFechaActual.getMonth() + 1, 0).getDate();
-
-    for (let i = 0; i < primerDia; i++) {
-        diasContenedor.innerHTML += `<div class="dia-cal vacio"></div>`;
-    }
-
-    let fIni = null, fFin = null;
-    if (calSeleccion1) {
-        fIni = calSeleccion1;
-        if (calSeleccion2) {
-            fFin = calSeleccion2;
-            if (fIni > fFin) { fIni = calSeleccion2; fFin = calSeleccion1; }
-        }
-    }
-
-    for (let dia = 1; dia <= diasEnMes; dia++) {
-        const fechaDia = new Date(calFechaActual.getFullYear(), calFechaActual.getMonth(), dia);
-        fechaDia.setHours(0,0,0,0);
-        
-        let clases = "dia-cal";
-        
-        if (fIni && fechaDia.getTime() === fIni.getTime()) clases += " seleccionado";
-        else if (fFin && fechaDia.getTime() === fFin.getTime()) clases += " seleccionado";
-        else if (fIni && fFin && fechaDia > fIni && fechaDia < fFin) clases += " en-rango";
-
-        diasContenedor.innerHTML += `<div class="${clases}" onclick="clickDiaCalendario(${calFechaActual.getFullYear()}, ${calFechaActual.getMonth()}, ${dia})">${dia}</div>`;
-    }
-
-    actualizarTextoRango();
-}
-
-function clickDiaCalendario(ano, mes, dia) {
-    const fechaClick = new Date(ano, mes, dia);
-    fechaClick.setHours(0,0,0,0);
-
-    if (!calSeleccion1 || (calSeleccion1 && calSeleccion2)) {
-        calSeleccion1 = fechaClick;
-        calSeleccion2 = null;
-    } else {
-        calSeleccion2 = fechaClick;
-    }
-    
-    renderizarCalendarioRT();
-}
-
-function actualizarTextoRango() {
-    const btnVer = document.getElementById('btnVerCalendario');
-    const txt = document.getElementById('textoRangoSeleccionado');
-
-    if (!calSeleccion1) {
-        txt.textContent = "Selecciona un dÃ­a inicial y uno final.";
-        btnVer.disabled = true;
-    } else if (calSeleccion1 && !calSeleccion2) {
-        btnVer.disabled = false;
-        txt.textContent = `DÃ­a seleccionado: ${calSeleccion1.toLocaleDateString('es-VE')}. (Clickea otro para un rango)`;
-    } else {
-        let fIni = calSeleccion1, fFin = calSeleccion2;
-        if (fIni > fFin) { fIni = calSeleccion2; fFin = calSeleccion1; }
-        txt.textContent = `Rango: ${fIni.toLocaleDateString('es-VE')} al ${fFin.toLocaleDateString('es-VE')}`;
-        btnVer.disabled = false;
-    }
-}
-
-function formatearFechaISO(fecha) {
-    if (!fecha) return null;
-    const a = fecha.getFullYear();
-    const m = String(fecha.getMonth() + 1).padStart(2, '0');
-    const d = String(fecha.getDate()).padStart(2, '0');
-    return `${a}-${m}-${d}`;
-}
-
-function limpiarCalendarioRT() {
-    calSeleccion1 = null;
-    calSeleccion2 = null;
-    window.location.href = '<?= APP_URL ?>/entrenador/perfil-cliente?id=<?= $cliente['id'] ?>#panel-rutinas';
-}
-
-function aplicarFiltroCalendario() {
-    let fIni = calSeleccion1, fFin = calSeleccion2;
-    
-    if (fIni && !fFin) {
-        fFin = fIni;
-    } else if (fIni && fFin && fIni > fFin) {
-        fIni = calSeleccion2; fFin = calSeleccion1;
-    }
-
-    const iso1 = formatearFechaISO(fIni);
-    const iso2 = formatearFechaISO(fFin);
-    
-    window.location.href = `<?= APP_URL ?>/entrenador/perfil-cliente?id=<?= $cliente['id'] ?>&date=${iso1}&f1=${iso1}&f2=${iso2}#panel-rutinas`;
-}
-
-// Real-time Rutina Sync (Polling)
-setInterval(async () => {
-    const rutinasTab = document.getElementById('panel-rutinas');
-    if (!rutinasTab || !rutinasTab.classList.contains('active')) return;
-
-    try {
-        const req = await fetch('<?= APP_URL ?>/index.php?route=entrenador/api-rutina-live&id=<?= $cliente['id'] ?>&date=<?= $fechaSeleccionada ?>');
-        const res = await req.json();
-        if (res.success && res.data.ejercicios) {
-            for (const [ejId, status] of Object.entries(res.data.ejercicios)) {
-                const badge = document.getElementById('badge-ej-' + ejId);
-                if (badge) {
-                    if (status.completado) {
-                        badge.className = 'ej-reps-badge ej-done';
-                        badge.innerHTML = '<i class="ti ti-check"></i> ' + status.reps + ' reps';
-                    } else {
-                        badge.className = 'ej-reps-badge ej-pend';
-                        badge.innerHTML = 'Pendiente';
-                    }
-                }
-            }
-        }
-    } catch(e) { console.error('Error polling rutina live', e); }
-}, 3000); // 3 second polling for snappy "real-time" feel
 
 /* ── Eliminar Atleta desde Perfil ── */
 function eliminarAtletaPerfil(uid, nombre) {

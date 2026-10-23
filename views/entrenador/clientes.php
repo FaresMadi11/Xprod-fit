@@ -2,34 +2,62 @@
 
 <?php $totalPendientes = count($modificacionesPendientes ?? []); ?>
 
-<!-- ── PAGE HEADER ─────────────────────────────────────── -->
-<div class="cl-header">
-  <div class="cl-header-top">
-    <div class="cl-title-group">
-      <span class="cl-eyebrow">Directorio</span>
-      <h1 class="cl-title">
-        Mis Atletas
-        <span class="cl-count-badge"><?= count($clientes) ?></span>
-      </h1>
+<!-- ── HEADER DE ATLETAS (PREMIUM BENTO UI) ── -->
+<div class="sys-top-header premium-header">
+  <div class="user-info-group">
+    <div class="rl-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd)); display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35); font-size: 1.25rem;">
+      <i class="ti ti-users"></i>
     </div>
-    <a href="<?= APP_URL ?>/entrenador/registrar-cliente" class="cl-add-btn">
+    <div class="user-text-wrap">
+      <h1 class="sys-top-title user-name-gradient" title="Mis Atletas" style="font-size: 1.12rem !important; font-weight: 800; color: #fff; margin: 0; line-height: 1.25;">
+        <span class="user-name-text">Mis Atletas</span>
+        <span class="cl-count-badge" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: rgba(138,43,226,0.25); color: #d8b4fe; border: 1px solid rgba(138,43,226,0.4);"><?= count($clientes) ?></span>
+      </h1>
+      <p style="font-size: .74rem; font-weight: 500; color: #94a3af; margin: 2px 0 0; letter-spacing: 0.2px; line-height: 1.2;">
+        Directorio y gestión de atletas
+      </p>
+    </div>
+  </div>
+  
+  <div class="header-actions">
+    <div class="sys-top-logo brand-glow">
+      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    </div>
+
+    <?php 
+      $unread_hdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'entrenador');
+    ?>
+    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+      <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
+        <i class="ti ti-bell"></i>
+        <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
+      </button>
+    </div>
+
+    <!-- Botón Logout -->
+    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+      <i class="ti ti-logout"></i>
+    </a>
+  </div>
+</div>
+
+<!-- ── BARRA DE BÚSQUEDA Y ACCIÓN ─────────────────────── -->
+<div class="cl-header" style="border-bottom:none; margin-bottom:16px; padding-bottom:0;">
+  <div class="d-flex align-items-center gap-2">
+    <div class="cl-search-wrap flex-fill" id="clSearchWrap">
+      <span class="cl-search-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"/></svg>
+      </span>
+      <input type="search" class="cl-search-input" id="clSearch" placeholder="Buscar atleta..." autocomplete="off" oninput="buscarAtleta(this.value)">
+      <button class="cl-search-clear" id="clSearchClear" onclick="limpiarBusqueda()" style="display:none" aria-label="Limpiar búsqueda">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <a href="<?= APP_URL ?>/entrenador/registrar-cliente" class="cl-add-btn" style="flex-shrink:0; height:42px; display:inline-flex; align-items:center; border-radius:12px;">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 5v14m-7-7h14"/></svg>
       <span class="cl-add-label">Nuevo</span>
     </a>
   </div>
-
-  <!-- Buscador -->
-  <div class="cl-search-wrap" id="clSearchWrap">
-    <span class="cl-search-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0Z"/></svg>
-    </span>
-    <input type="search" class="cl-search-input" id="clSearch" placeholder="Buscar atleta..." autocomplete="off" oninput="buscarAtleta(this.value)">
-    <button class="cl-search-clear" id="clSearchClear" onclick="limpiarBusqueda()" style="display:none" aria-label="Limpiar búsqueda">
-      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
-  </div>
-
-
 </div>
 
 <?php if(!empty($solicitudesPendientes)): ?>

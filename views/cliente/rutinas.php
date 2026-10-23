@@ -11,19 +11,94 @@ $diaHoyNum  = (int)date('N');
 /* ── Reset ── */
 .xp-main { padding: 0 !important; }
 
-/* ── Header de página ── */
-.rl-header {
-  padding: 24px 20px 12px;
-  display: flex; align-items: center; gap: 14px;
+/* ── Header adaptativo y compacto Bento UI (UI-UX-PRO-MAX) ── */
+.sys-top-header.premium-header {
+  margin: 12px 16px 14px 16px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 10px;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 14px !important;
+  border-radius: 18px !important;
+  background: var(--card-glass, rgba(18, 18, 23, 0.88)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
-.rl-header-icon {
-  width: 44px; height: 44px; border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
-  display: grid; place-items: center;
-  font-size: 1.3rem; color: #fff; flex-shrink: 0;
+.user-info-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
 }
-.rl-header-text h1 { font-size: 1.4rem; font-weight: 900; color: #fff; margin: 0; }
-.rl-header-text p  { font-size: .78rem; color: #6b7280; margin: 2px 0 0; }
+.user-text-wrap {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.user-name-gradient {
+  font-size: 1.05rem !important;
+  font-weight: 800;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.25;
+}
+.user-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  display: inline-block;
+}
+.header-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+.header-actions .db-icon-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 11px !important;
+  font-size: 1rem !important;
+  flex-shrink: 0 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+  display: grid !important;
+  place-items: center !important;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.header-actions .db-icon-btn:hover {
+  background: rgba(138, 43, 226, 0.25) !important;
+  border-color: rgba(138, 43, 226, 0.5) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+@media (min-width: 768px) {
+  .sys-top-header.premium-header {
+    padding: 14px 20px !important;
+    border-radius: 22px !important;
+    margin: 16px 20px 20px 20px !important;
+  }
+  .header-actions .db-icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+  }
+}
 
 /* ── Sección "Hoy" ── */
 .rl-section-label {
@@ -158,12 +233,41 @@ $diaHoyNum  = (int)date('N');
 @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
 </style>
 
-<!-- ── Header ── -->
-<div class="rl-header">
-  <div class="rl-header-icon"><i class="ti ti-dumbbell"></i></div>
-  <div class="rl-header-text">
-    <h1>Mis Rutinas</h1>
-    <p><?= date('l, d \d\e F', strtotime('today')) ?></p>
+<!-- ── HEADER DE BIENVENIDA / AGENDA (PREMIUM BENTO UI) ── -->
+<div class="sys-top-header premium-header">
+  <div class="user-info-group">
+    <div class="rl-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd)); display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="5" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2.5"/><rect x="16" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="19" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/></svg>
+    </div>
+    <div class="user-text-wrap">
+      <h1 class="sys-top-title user-name-gradient" title="Mis Rutinas" style="font-size: 1.12rem !important; font-weight: 800; color: #fff; margin: 0; line-height: 1.25;">
+        <span class="user-name-text">Mis Rutinas</span>
+      </h1>
+      <p style="font-size: .74rem; font-weight: 500; color: #94a3af; margin: 2px 0 0; text-transform: capitalize; letter-spacing: 0.2px; line-height: 1.2;">
+        <?= date('l, d \d\e F', strtotime('today')) ?>
+      </p>
+    </div>
+  </div>
+  
+  <div class="header-actions">
+    <div class="sys-top-logo brand-glow">
+      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    </div>
+
+    <?php 
+      $unreadCliHdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'cliente');
+    ?>
+    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+      <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
+        <i class="ti ti-bell"></i>
+        <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
+      </button>
+    </div>
+
+    <!-- Botón Logout -->
+    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+      <i class="ti ti-logout"></i>
+    </a>
   </div>
 </div>
 
@@ -229,7 +333,8 @@ function showDay(dayNum) {
 
 <?php
 function renderRutinaCard(array $r, array $diasNombre, bool $esHoy): string {
-    $desc    = e($r['descripcion'] ?: 'Rutina de entrenamiento');
+    $desc    = 'Entrenamiento';
+    $nota    = !empty($r['descripcion']) ? e($r['descripcion']) : '';
     $trainer = e($r['entrenador']);
     $estado  = $r['estado'];
     $id      = (int)$r['id'];
@@ -245,6 +350,9 @@ function renderRutinaCard(array $r, array $diasNombre, bool $esHoy): string {
   <?php endif; ?>
 
   <div class="rl-card-name"><?= $desc ?></div>
+  <?php if ($nota): ?>
+  <div class="rl-card-note" style="font-size:0.8rem; color:var(--muted); margin-top:-4px; margin-bottom:8px;"><?= $nota ?></div>
+  <?php endif; ?>
   <div class="rl-card-trainer">
     <i class="ti ti-user-circle"></i> <?= $trainer ?>
   </div>

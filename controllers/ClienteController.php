@@ -17,10 +17,13 @@ match($action) {
     'dashboard'               => cliDashboard(),
     'rutinas'                 => cliRutinaLista(),
     'rutina-dia'              => cliRutinaDia(),
-    'guardar-sesion'          => cliGuardarSesion(),
-    'guardar-serie'           => cliGuardarSerie(),
-    'marcar-rutina'           => cliMarcarRutina(),
-    'estadisticas'            => cliEstadisticas(),
+    'guardar-sesion'                => cliGuardarSesion(),
+    'guardar-serie'                 => cliGuardarSerie(),
+    'marcar-rutina'                 => cliMarcarRutina(),
+    'iniciar-rutina'                => cliIniciarRutina(),
+    'solicitar-modificacion-atleta' => cliSolicitarModificacionAtleta(),
+    'guardar-modificacion-directa'  => cliGuardarModificacionDirecta(),
+    'estadisticas'                  => cliEstadisticas(),
     'api-dia-detalle'         => cliApiDiaDetalle(),
     'api-peso-historial'      => cliApiPesoHistorial(),
     'api-editar-peso'         => cliApiEditarPeso(),
@@ -92,21 +95,11 @@ function cliDashboard(): void {
     }
 
     $esRutinaDeHoy = ($rutinaHoy !== null);
-    $rutinaActiva = $rutinaHoy;
+    $rutinaActiva = $rutinaHoy; // ESTRICTO: NO FALLBACK A RUTINA DE OTRO DÍA
 
-    // Si no hay rutina programada para el día actual, cargar la más reciente activa
-    if (!$rutinaActiva) {
-        $stRut = $db->prepare(
-            "SELECT r.id, r.descripcion AS nombre, r.dias_semana, r.estado
-             FROM rutinas r
-             WHERE r.cliente_id = ?
-             AND r.estado = 'en_progreso'
-             AND (r.es_modificacion IS NULL OR r.es_modificacion = 0 OR r.estado_modificacion = 'aprobada')
-             ORDER BY r.creado_en DESC LIMIT 1"
-        );
-        $stRut->execute([$clienteId]);
-        $rutinaActiva = $stRut->fetch() ?: null;
-    }
+    // Determinar si hoy es día de descanso o falta rutina
+    $estadoDiaHoy = obtenerEstadoDiasSemanaAtleta($db, $clienteId)[$diaHoy] ?? null;
+    $esDescansoHoy = ($estadoDiaHoy && $estadoDiaHoy['color'] === 'azul');
 
     $numEjerciciosHoy = 0;
     $sesionHoyCompletada = false;
@@ -126,20 +119,6 @@ function cliDashboard(): void {
             ");
             $stSesHoy->execute([$rutinaActiva['id'], $clienteId]);
             $sesionHoyCompletada = (bool)$stSesHoy->fetch();
-
-            // O si todos los ejercicios de la rutina tienen series completadas hoy
-            if (!$sesionHoyCompletada && $numEjerciciosHoy > 0) {
-                $stDoneEjs = $db->prepare("
-                    SELECT COUNT(DISTINCT ejercicio_id) FROM sesion_series
-                    WHERE cliente_id = ? AND fecha = CURDATE() AND completado = 1
-                      AND ejercicio_id IN (SELECT id FROM ejercicios WHERE rutina_id = ?)
-                ");
-                $stDoneEjs->execute([$clienteId, $rutinaActiva['id']]);
-                $hechos = (int)$stDoneEjs->fetchColumn();
-                if ($hechos >= $numEjerciciosHoy) {
-                    $sesionHoyCompletada = true;
-                }
-            }
         } catch (\Throwable $e) {
             error_log('[Xprod Fit] Error verificando sesión de hoy: ' . $e->getMessage());
         }
@@ -323,6 +302,8 @@ function cliRutinaDia(): void {
                 "SELECT e.id, e.nombre, e.series, e.repeticiones, e.rir, e.nota_biomecanica, e.orden,
                         COALESCE(e.tipo_implemento, 'barra') AS tipo_implemento,
                         COALESCE(e.unidad_carga, 'kg')       AS unidad_carga,
+                        COALESCE(ce.categoria_id, 0)         AS categoria_id,
+                        COALESCE(ce.grupo_muscular, '')      AS grupo_muscular,
                         COALESCE(s.completado, 0) AS completado, COALESCE(s.reps_realizadas, 0) AS reps_realizadas,
                         s.peso_usado,
                         COALESCE(e.imagen_path, ce.imagen_path) AS imagen_path,
@@ -410,10 +391,12 @@ function cliRutinaDia(): void {
             // Sesión activa de hoy
             $stSes = $db->prepare(
                 "SELECT id FROM sesiones_asistencia
-                 WHERE rutina_id = ? AND cliente_id = ? AND estado = 'iniciada' LIMIT 1"
+                 WHERE rutina_id = ? AND cliente_id = ? AND estado = 'iniciada' 
+                   AND DATE(inicio_en) = CURDATE() LIMIT 1"
             );
             $stSes->execute([$rutinaId, $clienteId]);
             $sesActiva = $stSes->fetch() ?: null;
+            $sesionIniciada = !empty($sesActiva);
 
             // Comprobar si el entrenamiento de hoy ya fue completado
             $stHoyComp = $db->prepare(
@@ -424,19 +407,24 @@ function cliRutinaDia(): void {
             );
             $stHoyComp->execute([$rutinaId, $clienteId]);
             $sesionHoyCompletada = (bool)$stHoyComp->fetch();
-            if (!$sesionHoyCompletada && !empty($ejercicios)) {
-                $ejCompletados = count(array_filter($ejercicios, fn($e) => $e['series_completadas'] >= $e['series']));
-                if ($ejCompletados >= count($ejercicios) && $ejCompletados > 0) {
-                    $sesionHoyCompletada = true;
-                }
-            }
         } else {
             $rutinaId = 0; // Fallback to empty state
             $sesionHoyCompletada = false;
+            $sesionIniciada = false;
         }
     }
 
-    $catalogo = $db->query("SELECT id, nombre FROM catalogo_ejercicios ORDER BY nombre")->fetchAll();
+    $catalogo = $db->query("
+        SELECT c.id, c.nombre, c.categoria_id, c.grupo_muscular,
+               COALESCE(c.tipo_implemento, 'barra') AS tipo_implemento,
+               COALESCE(c.unidad_carga, 'kg')       AS unidad_carga,
+               COALESCE(cm.nombre, c.grupo_muscular, 'General') AS categoria_nombre
+        FROM catalogo_ejercicios c
+        LEFT JOIN categorias_musculares cm ON cm.id = c.categoria_id
+        ORDER BY categoria_nombre, c.nombre
+    ")->fetchAll();
+
+    $categorias = $db->query("SELECT id, grupo, nombre, icono FROM categorias_musculares ORDER BY orden")->fetchAll();
     $pageTitle = 'Agenda Semanal';
     require BASE_DIR . '/views/cliente/rutina_dia.php';
 }
@@ -460,6 +448,29 @@ function cliGuardarSerie(): void {
         if ($ejercicioId < 1 || $numSerie < 1 || $numSerie > 50) {
             http_response_code(422);
             jsonOut(false, 'Datos inválidos.');
+        }
+
+        $accion = strtolower(trim((string)($_POST['accion'] ?? 'guardar')));
+        if ($accion === 'desmarcar') {
+            $db->beginTransaction();
+            $db->prepare("DELETE FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE() AND numero_serie = ?")
+               ->execute([$ejercicioId, $clienteId, $numSerie]);
+
+            $stCheck = $db->prepare("SELECT COUNT(*) FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE() AND completado = 1");
+            $stCheck->execute([$ejercicioId, $clienteId]);
+            $quedan = (int)$stCheck->fetchColumn();
+
+            if ($quedan === 0) {
+                $db->prepare("DELETE FROM sesiones WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE()")
+                   ->execute([$ejercicioId, $clienteId]);
+            } else {
+                $db->prepare("UPDATE sesiones SET reps_realizadas = (SELECT MAX(reps_realizadas) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=CURDATE()), peso_usado = (SELECT MAX(peso_usado) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=CURDATE()) WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE()")
+                   ->execute([$ejercicioId, $clienteId, $ejercicioId, $clienteId, $ejercicioId, $clienteId]);
+            }
+
+            $db->commit();
+            jsonOut(true, 'Serie desmarcada.', ['desmarcado' => true]);
+            return;
         }
 
         // Obtener configuración del ejercicio
@@ -671,6 +682,219 @@ function cliMarcarRutina(): void {
     }
 
     jsonOut(true, '¡Rutina completada!');
+}
+
+/*─────────────────────────────────────────────────────────────
+  INICIAR RUTINA (AJAX)
+─────────────────────────────────────────────────────────────*/
+function cliIniciarRutina(): void {
+    csrfCheck();
+    $db        = getDB();
+    $clienteId = (int)$_SESSION['cliente_id'];
+    $rutinaId  = (int)($_POST['rutina_id'] ?? 0);
+
+    if (!$rutinaId) {
+        jsonOut(false, 'ID de rutina no válido.');
+    }
+
+    sincronizarSesionAsistencia($db, $clienteId, $rutinaId, 'iniciada', false);
+    jsonOut(true, '¡Rutina iniciada!');
+}
+
+/*─────────────────────────────────────────────────────────────
+  SOLICITAR MODIFICACIÓN DE RUTINA (PRE-INICIO - AJAX)
+─────────────────────────────────────────────────────────────*/
+function cliSolicitarModificacionAtleta(): void {
+    csrfCheck();
+    $db        = getDB();
+    $clienteId = (int)$_SESSION['cliente_id'];
+    $userId    = (int)$_SESSION['user_id'];
+    $rutinaId  = (int)($_POST['rutina_id'] ?? 0);
+    $tipoMod   = trim((string)($_POST['tipo_modificacion'] ?? 'temporal'));
+    if (!in_array($tipoMod, ['temporal', 'permanente'], true)) {
+        $tipoMod = 'temporal';
+    }
+    $rawEjercicios = $_POST['ejercicios'] ?? '[]';
+    $ejercicios    = json_decode($rawEjercicios, true);
+
+    if (!$rutinaId || !is_array($ejercicios) || empty($ejercicios)) {
+        jsonOut(false, 'Debes enviar al menos un ejercicio para la modificación.');
+    }
+
+    try {
+        $db->beginTransaction();
+
+        $stPadre = $db->prepare("SELECT descripcion, dias_semana FROM rutinas WHERE id = ? AND cliente_id = ?");
+        $stPadre->execute([$rutinaId, $clienteId]);
+        $padre = $stPadre->fetch();
+        if (!$padre) {
+            $db->rollBack();
+            jsonOut(false, 'Rutina no encontrada.');
+        }
+
+        $desc = 'Modificación de rutina (' . ($tipoMod === 'permanente' ? 'Permanente' : 'Solo por hoy') . ')';
+        $diasSemana = $padre['dias_semana'] ?? '';
+
+        $stIns = $db->prepare("
+            INSERT INTO rutinas (cliente_id, descripcion, dias_semana, estado, es_modificacion, estado_modificacion, tipo_modificacion, rutina_padre_id, creado_en)
+            VALUES (?, ?, ?, 'pendiente', 1, 'pendiente', ?, ?, NOW())
+        ");
+        $stIns->execute([$clienteId, $desc, $diasSemana, $tipoMod, $rutinaId]);
+        $nuevaRutinaId = (int)$db->lastInsertId();
+
+        $stEj = $db->prepare("
+            INSERT INTO ejercicios (rutina_id, nombre, series, repeticiones, rir, nota_biomecanica, tipo_implemento, unidad_carga, orden)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $orden = 1;
+        foreach ($ejercicios as $ej) {
+            $nom = trim((string)($ej['nombre'] ?? ''));
+            if (!$nom) continue;
+            $series = max(1, (int)($ej['series'] ?? 3));
+            $reps   = trim((string)($ej['repeticiones'] ?? '10-12'));
+            $rir    = isset($ej['rir']) && $ej['rir'] !== '' ? trim((string)$ej['rir']) : null;
+            $nota   = trim((string)($ej['nota_biomecanica'] ?? ''));
+            $imp    = trim((string)($ej['tipo_implemento'] ?? 'barra'));
+            $uni    = trim((string)($ej['unidad_carga'] ?? 'kg'));
+
+            $stEj->execute([$nuevaRutinaId, $nom, $series, $reps, $rir, $nota, $imp, $uni, $orden++]);
+        }
+
+        // Notificar al entrenador asignado
+        $stCli = $db->prepare("SELECT c.entrenador_id, u.nombre AS atleta_nombre FROM clientes c JOIN usuarios u ON c.usuario_id = u.id WHERE c.id = ?");
+        $stCli->execute([$clienteId]);
+        $cliInfo = $stCli->fetch();
+
+        if ($cliInfo && !empty($cliInfo['entrenador_id'])) {
+            $entId = (int)$cliInfo['entrenador_id'];
+            $atletaNom = $cliInfo['atleta_nombre'] ?: 'Un atleta';
+            $tipoLabel = $tipoMod === 'permanente' ? 'Permanente' : 'Solo por hoy';
+            registrarNotificacionSistema([
+                'remitente_id'     => $userId,
+                'destinatario_id'  => $entId,
+                'rol_destinatario' => 'entrenador',
+                'tipo_evento'      => 'solicitud_modificacion',
+                'referencia_id'    => $nuevaRutinaId,
+                'cliente_id'       => $clienteId,
+                'entrenador_id'    => $entId,
+                'mensaje'          => "{$atletaNom} solicitó modificar su rutina ({$tipoLabel}).",
+                'enlace'           => APP_URL . "/entrenador/revisar-modificacion?id={$nuevaRutinaId}",
+                'metadatos'        => ['solicitud_id' => $nuevaRutinaId, 'cliente_id' => $clienteId]
+            ]);
+        }
+
+        $db->commit();
+        jsonOut(true, 'Solicitud de modificación enviada al entrenador.');
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[cliSolicitarModificacionAtleta] ' . $e->getMessage());
+        jsonOut(false, 'Error al procesar la solicitud: ' . $e->getMessage());
+    }
+}
+
+/*─────────────────────────────────────────────────────────────
+  GUARDAR MODIFICACIÓN DIRECTA (POST-INICIO / EN VIVO - AJAX)
+─────────────────────────────────────────────────────────────*/
+function cliGuardarModificacionDirecta(): void {
+    csrfCheck();
+    $db            = getDB();
+    $clienteId     = (int)$_SESSION['cliente_id'];
+    $userId        = (int)$_SESSION['user_id'];
+    $rutinaId      = (int)($_POST['rutina_id'] ?? 0);
+    $rawEjercicios = $_POST['ejercicios'] ?? '[]';
+    $ejercicios    = json_decode($rawEjercicios, true);
+
+    if (!$rutinaId || !is_array($ejercicios) || empty($ejercicios)) {
+        jsonOut(false, 'Debes enviar al menos un ejercicio.');
+    }
+
+    try {
+        $db->beginTransaction();
+
+        $stCheck = $db->prepare("SELECT id FROM rutinas WHERE id = ? AND cliente_id = ?");
+        $stCheck->execute([$rutinaId, $clienteId]);
+        if (!$stCheck->fetch()) {
+            $db->rollBack();
+            jsonOut(false, 'Rutina no encontrada.');
+        }
+
+        // Obtener ids de ejercicios actuales
+        $stCurrent = $db->prepare("SELECT id FROM ejercicios WHERE rutina_id = ?");
+        $stCurrent->execute([$rutinaId]);
+        $currentIds = $stCurrent->fetchAll(PDO::FETCH_COLUMN);
+
+        $keptIds = [];
+        $orden = 1;
+
+        $stUp = $db->prepare("
+            UPDATE ejercicios 
+            SET nombre = ?, series = ?, repeticiones = ?, rir = ?, nota_biomecanica = ?, tipo_implemento = ?, unidad_carga = ?, orden = ?
+            WHERE id = ? AND rutina_id = ?
+        ");
+        $stIns = $db->prepare("
+            INSERT INTO ejercicios (rutina_id, nombre, series, repeticiones, rir, nota_biomecanica, tipo_implemento, unidad_carga, orden)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        foreach ($ejercicios as $ej) {
+            $ejId = (int)($ej['id'] ?? 0);
+            $nom = trim((string)($ej['nombre'] ?? ''));
+            if (!$nom) continue;
+            $series = max(1, (int)($ej['series'] ?? 3));
+            $reps = trim((string)($ej['repeticiones'] ?? '10-12'));
+            $rir = isset($ej['rir']) && $ej['rir'] !== '' ? trim((string)$ej['rir']) : null;
+            $nota = trim((string)($ej['nota_biomecanica'] ?? ''));
+            $imp = trim((string)($ej['tipo_implemento'] ?? 'barra'));
+            $uni = trim((string)($ej['unidad_carga'] ?? 'kg'));
+
+            if ($ejId > 0 && in_array($ejId, $currentIds)) {
+                $stUp->execute([$nom, $series, $reps, $rir, $nota, $imp, $uni, $orden, $ejId, $rutinaId]);
+                $keptIds[] = $ejId;
+            } else {
+                $stIns->execute([$rutinaId, $nom, $series, $reps, $rir, $nota, $imp, $uni, $orden]);
+                $keptIds[] = (int)$db->lastInsertId();
+            }
+            $orden++;
+        }
+
+        // Eliminar ejercicios quitados
+        $toDelete = array_diff($currentIds, $keptIds);
+        if (!empty($toDelete)) {
+            $phDel = implode(',', array_fill(0, count($toDelete), '?'));
+            $stDel = $db->prepare("DELETE FROM ejercicios WHERE id IN ($phDel) AND rutina_id = ?");
+            $stDel->execute(array_merge(array_values($toDelete), [$rutinaId]));
+        }
+
+        // Notificación informativa al entrenador (aviso, no pregunta)
+        $stCli = $db->prepare("SELECT c.entrenador_id, u.nombre AS atleta_nombre FROM clientes c JOIN usuarios u ON c.usuario_id = u.id WHERE c.id = ?");
+        $stCli->execute([$clienteId]);
+        $cliInfo = $stCli->fetch();
+
+        if ($cliInfo && !empty($cliInfo['entrenador_id'])) {
+            $entId = (int)$cliInfo['entrenador_id'];
+            $atletaNom = $cliInfo['atleta_nombre'] ?: 'Un atleta';
+            registrarNotificacionSistema([
+                'remitente_id'     => $userId,
+                'destinatario_id'  => $entId,
+                'rol_destinatario' => 'entrenador',
+                'tipo_evento'      => 'aviso_modificacion_en_vivo',
+                'referencia_id'    => $rutinaId,
+                'cliente_id'       => $clienteId,
+                'entrenador_id'    => $entId,
+                'mensaje'          => "{$atletaNom} modificó ejercicios de su rutina en vivo.",
+                'enlace'           => APP_URL . "/entrenador/asistencias",
+                'metadatos'        => ['rutina_id' => $rutinaId, 'cliente_id' => $clienteId]
+            ]);
+        }
+
+        $db->commit();
+        jsonOut(true, 'Cambios guardados en tu rutina.');
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[cliGuardarModificacionDirecta] ' . $e->getMessage());
+        jsonOut(false, 'Error al guardar los cambios: ' . $e->getMessage());
+    }
 }
 
 /*âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ

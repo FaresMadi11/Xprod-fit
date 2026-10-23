@@ -18,6 +18,7 @@
    BANNER PRINCIPAL (bottom bar)
 ══════════════════════════════════════════ */
 #xp-cookie-banner {
+    display: none;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -35,6 +36,7 @@
 }
 
 #xp-cookie-banner.visible {
+    display: block;
     transform: translateY(0);
 }
 

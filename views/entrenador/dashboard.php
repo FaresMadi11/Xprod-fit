@@ -5,186 +5,36 @@
     <div class="user-avatar">
        <?= strtoupper(substr($nomUser, 0, 1)) ?>
     </div>
-    <div>
+    <div class="user-text-wrap">
       <p class="sys-top-greet-new">Bienvenido de vuelta</p>
-      <h1 class="sys-top-title user-name-gradient">
-        <?= e($nomUser) ?>
-        <i class="ti ti-sparkles" style="color: #fbbf24; font-size:1.2rem; margin-left: 4px;"></i>
+      <h1 class="sys-top-title user-name-gradient" title="<?= e($nomUser) ?>">
+        <span class="user-name-text"><?= e($nomUser) ?></span>
+        <i class="ti ti-sparkles" style="color: #fbbf24; font-size:1.05rem; flex-shrink:0;"></i>
       </h1>
     </div>
   </div>
   
-  <div class="header-actions" style="display: flex; align-items: center; gap: 10px;">
-    <div class="sys-top-logo brand-glow" style="margin:0; margin-right:4px;">
+  <div class="header-actions">
+    <div class="sys-top-logo brand-glow">
       <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
     </div>
 
     <?php 
-      $unread_hdr = contarNotificacionesNoLeidas((int)$_SESSION['user_id'], 'entrenador');
+      $unread_hdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'entrenador');
     ?>
-    <div class="notif-wrapper" style="position:relative;">
-      <button type="button" class="db-icon-btn xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)">
+    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+      <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
         <i class="ti ti-bell"></i>
         <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
       </button>
     </div>
 
     <!-- Botón Logout -->
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión">
+    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
       <i class="ti ti-logout"></i>
     </a>
   </div>
 </div>
-
-<style>
-/* ── PREMIUM HEADER UPGRADE ──────────────────────────────── */
-.premium-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 100;
-    overflow: visible;
-    background: var(--card-glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--card-border);
-    border-radius: 24px;
-    margin-bottom: 24px !important;
-    box-shadow: var(--shadow-sm);
-}
-
-.user-info-group {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-
-.user-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, var(--bg3), var(--card));
-    border: 1px solid var(--border);
-    display: grid;
-    place-items: center;
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--text);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
-
-.sys-top-greet-new {
-    margin: 0;
-    font-size: 0.75rem;
-    color: #94a3b8;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-}
-
-.user-name-gradient {
-    margin: 0;
-    font-size: 1.4rem !important;
-    font-weight: 800;
-    background: linear-gradient(to right, var(--text), var(--text2));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    display: flex;
-    align-items: center;
-}
-
-.header-actions-glass {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: rgba(255, 255, 255, 0.03);
-    padding: 6px 6px 6px 16px;
-    border-radius: 100px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.brand-glow {
-    font-size: 1.1rem !important;
-    font-weight: 800;
-    color: #f8fafc !important;
-    letter-spacing: -0.5px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0 !important;
-}
-
-.brand-glow span {
-    color: var(--accent);
-}
-
-.icon-glow {
-    color: var(--text);
-    /* Se quitó el brillo a petición */
-}
-
-.header-divider {
-    width: 1px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.btn-logout-glass {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: var(--input-bg);
-    color: var(--text2);
-    display: grid;
-    place-items: center;
-    font-size: 1.1rem;
-    text-decoration: none;
-    transition: all 0.3s ease;
-}
-
-.btn-logout-glass:hover {
-    background: rgba(248, 113, 113, 0.15);
-    color: #f87171;
-    transform: rotate(90deg);
-}
-
-@media (max-width: 768px) {
-    .premium-header {
-        padding: 12px 14px;
-        border-radius: 20px;
-        gap: 10px;
-    }
-    .user-avatar {
-        width: 38px;
-        height: 38px;
-        font-size: 1.1rem;
-        border-radius: 12px;
-    }
-    .user-name-gradient {
-        font-size: 1.1rem !important;
-    }
-    .sys-top-greet-new {
-        font-size: 0.65rem;
-    }
-    .header-actions-glass {
-        padding: 4px 4px 4px 10px;
-        gap: 10px;
-    }
-    .brand-glow {
-        font-size: 0.95rem !important;
-    }
-    .btn-logout-glass {
-        width: 32px;
-        height: 32px;
-        font-size: 1rem;
-    }
-    .header-divider { height: 20px; }
-}
-</style>
 
 <!-- Stats rápidas -->
 <div class="dash-stat-grid">

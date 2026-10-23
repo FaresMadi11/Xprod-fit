@@ -13,13 +13,26 @@ function sinAcentos(string $s): string {
     return str_replace($from, $to, $s);
 }
 
-/** Respuesta JSON estándar y termina */
+/** Obtiene y decodifica de forma segura el payload JSON enviado en la petición */
+function getJsonPayload(): array {
+    $raw = file_get_contents('php://input');
+    if (!$raw) return [];
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+/** Respuesta JSON estándar y termina (compatible con ok/msg y success/message) */
 function jsonOut(bool $ok, string $msg, array $extra = [], int $status = 200): never {
     if (!headers_sent()) {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
     }
-    echo json_encode(array_merge(['ok' => $ok, 'msg' => $msg], $extra), JSON_UNESCAPED_UNICODE);
+    echo json_encode(array_merge([
+        'ok'      => $ok,
+        'success' => $ok,
+        'msg'     => $msg,
+        'message' => $msg
+    ], $extra), JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -567,5 +580,8 @@ function sincronizarSesionAsistencia(PDO $db, int $clienteId, int $rutinaId, str
         return (int)$db->lastInsertId();
     }
 }
+
+// Cargar lógica de progreso y estadísticas de ejercicios
+require_once __DIR__ . '/progreso.php';
 
 

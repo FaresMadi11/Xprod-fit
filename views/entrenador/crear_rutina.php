@@ -236,6 +236,52 @@
   border-color: var(--accent);
   transform: scale(1.08);
 }
+.cr-day-label.is-assigned {
+  background: rgba(52, 211, 153, 0.12) !important;
+  border-color: rgba(52, 211, 153, 0.5) !important;
+  color: #34d399 !important;
+  cursor: not-allowed !important;
+  opacity: 0.75;
+  position: relative;
+}
+.cr-day-label.is-assigned::after {
+  content: '✓';
+  position: absolute;
+  bottom: 2px;
+  right: 5px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  color: #34d399;
+}
+.cr-day-label.is-rest {
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.08);
+}
+.cr-day-label.is-missing {
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+  background: rgba(248, 113, 113, 0.08);
+}
+.cr-days-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 0.73rem;
+  color: #9ca3af;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.cr-days-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.cr-days-legend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
 .cr-label-text {
   font-size: .85rem;
   font-weight: 600;
@@ -475,6 +521,37 @@
   text-transform: uppercase;
   color: var(--muted);
   text-align: center;
+}
+.rir-toggle-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  user-select: none;
+  transition: opacity .15s;
+}
+.rir-toggle-header:hover { opacity: .9; }
+.rir-status-pill {
+  font-size: .58rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(139,92,246,.25);
+  color: #c4b5fd;
+  font-weight: 800;
+}
+.ex-block.rir-disabled .rir-status-pill {
+  background: rgba(239,68,68,.2);
+  color: #f87171;
+}
+.ex-block.rir-disabled .rir-toggle-header {
+  opacity: .5;
+  text-decoration: line-through;
+}
+.ex-block.rir-disabled .set-input-rir {
+  opacity: .2;
+  pointer-events: none;
+  background: rgba(255,255,255,.02) !important;
 }
 
 .set-row {
@@ -1007,16 +1084,22 @@
       <input type="hidden" id="selectAtleta" name="cliente_id" value="<?= $atleta_id ?? '' ?>">
     </div>
 
-    <!-- Título de la rutina -->
-    <input
-      type="text"
-      class="cr-title-input"
-      id="rutinaTitle"
-      placeholder="Título de la Rutina…"
-      maxlength="150"
-      aria-label="Título de la rutina"
-      autocomplete="off"
-    >
+    <?php if (!empty($rutinaEditar)): ?>
+    <!-- Forma de Edición (solo cuando se edita una rutina ya creada) -->
+    <div style="margin-bottom:18px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:14px;padding:14px 16px;">
+      <label style="display:block;font-size:0.88rem;font-weight:700;color:#c4b5fd;margin-bottom:8px;">
+        <i class="ti ti-adjustments-horizontal"></i> ¿Forma de edición?
+      </label>
+      <div style="display:flex;gap:18px;align-items:center;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.88rem;color:#e2e8f0;cursor:pointer;">
+          <input type="radio" name="forma_edicion" id="formaEdicionTemporal" value="temporal" checked style="accent-color:#8b5cf6;width:17px;height:17px;"> Solo por hoy
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.88rem;color:#e2e8f0;cursor:pointer;">
+          <input type="radio" name="forma_edicion" id="formaEdicionPermanente" value="permanente" style="accent-color:#8b5cf6;width:17px;height:17px;"> Permanente
+        </label>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <div class="cr-details-group">
       <div>
@@ -1030,6 +1113,11 @@
           <input type="checkbox" id="dia_<?= $i ?>" class="cr-day-toggle" value="<?= $i+1 ?>">
           <label for="dia_<?= $i ?>" class="cr-day-label" title="<?= $diasNombres[$i] ?>"><?= $letra ?></label>
           <?php endforeach; ?>
+        </div>
+        <div class="cr-days-legend">
+          <div class="cr-days-legend-item"><span class="cr-days-legend-dot" style="background:#34d399"></span> Con Rutina (Ocupado)</div>
+          <div class="cr-days-legend-item"><span class="cr-days-legend-dot" style="background:#f87171"></span> Falta Programar</div>
+          <div class="cr-days-legend-item"><span class="cr-days-legend-dot" style="background:#38bdf8"></span> Descanso</div>
         </div>
       </div>
       
@@ -1733,7 +1821,9 @@ function addExercise(exOrName) {
       <div class="set-col-label">SERIE</div>
       <div class="set-col-label label-weight" id="colWeight_${idx}">${labelColWeight}</div>
       <div class="set-col-label">REPS</div>
-      <div class="set-col-label">RIR &#9660;</div>
+      <div class="set-col-label rir-toggle-header" onclick="toggleRirExercise(${idx})" role="button" tabindex="0" title="Toca para activar/desactivar RIR opcional">
+        RIR <span class="rir-status-pill">ON</span>
+      </div>
     </div>
 
     <div class="sets-body" id="setsBody_${idx}" role="list" aria-label="Series"></div>
@@ -2207,7 +2297,6 @@ function guardarNuevoOrdenCompacto() {
 ═══════════════════════════════════════════════════ */
 document.getElementById('btnGuardar').addEventListener('click', async () => {
   const btn         = document.getElementById('btnGuardar');
-  const titulo      = document.getElementById('rutinaTitle').value.trim();
   const clienteId   = document.getElementById('selectAtleta').value;
   const descripcion = document.getElementById('rutinaDesc').value.trim();
   const dias        = Array.from(document.querySelectorAll('.cr-day-toggle:checked')).map(el => parseInt(el.value));
@@ -2215,11 +2304,6 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
   if (!clienteId) {
     if (typeof Xp !== 'undefined') Xp.toast('warning','Selecciona un atleta antes de guardar.');
     document.getElementById('selectAtleta').focus();
-    return;
-  }
-  if (!titulo) {
-    if (typeof Xp !== 'undefined') Xp.toast('warning','Ponle un nombre a la rutina.');
-    document.getElementById('rutinaTitle').focus();
     return;
   }
   const blocks = document.querySelectorAll('#exerciseCanvas .ex-block');
@@ -2257,7 +2341,7 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
         tipo_serie    : badge?.dataset.type || 'normal',
         kg_objetivo   : pesoVal,
         reps_objetivo : (repsInput && repsInput.value !== '') ? parseInt(repsInput.value, 10) : null,
-        rir           : (rirInput && rirInput.value !== '') ? parseInt(rirInput.value, 10) : null,
+        rir           : (rirInput && rirInput.value !== '') ? parseInt(rirInput.value, 10) : 2,
       });
     });
 
@@ -2292,7 +2376,7 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
       method  : 'POST',
       headers : { 'Content-Type': 'application/json' },
       body    : JSON.stringify({
-        titulo,
+        titulo     : 'Entrenamiento',
         cliente_id : clienteId,
         descripcion,
         dias,
@@ -2336,9 +2420,137 @@ function selectAtleta(id, nombre) {
   document.getElementById('selectAtleta').value = id;
   document.getElementById('atletaSelectedText').textContent = nombre;
   document.querySelectorAll('.cr-select-option').forEach(el => el.classList.remove('selected'));
-  document.querySelector('.cr-select-option[data-value="'+id+'"]').classList.add('selected');
+  const opt = document.querySelector('.cr-select-option[data-value="'+id+'"]');
+  if (opt) opt.classList.add('selected');
   toggleAtletaDropdown();
+  cargarDiasAtleta(id);
 }
+
+// Cargar estado de días de la semana del atleta para colorear y deshabilitar colisiones
+async function cargarDiasAtleta(clienteId) {
+  if (!clienteId) {
+    resetearDiasSelector();
+    return;
+  }
+  try {
+    const res = await fetch(`<?= APP_URL ?>/entrenador/api-dias-atleta?id=${clienteId}`);
+    const data = await res.json();
+    if (!data.ok || !data.dias) return;
+
+    for (let d = 1; d <= 7; d++) {
+      const info = data.dias[d];
+      const chk = document.getElementById(`dia_${d - 1}`);
+      const lbl = document.querySelector(`label[for="dia_${d - 1}"]`);
+      if (!chk || !lbl) continue;
+
+      lbl.classList.remove('is-assigned', 'is-rest', 'is-missing');
+
+      if (info && info.color === 'verde') {
+        chk.checked = false;
+        chk.disabled = true;
+        lbl.classList.add('is-assigned');
+        lbl.title = `${info.nombre}: Ya asignado a "${info.rutina_nombre || 'otra rutina'}". No se permite más de una rutina por día.`;
+        lbl.onclick = (e) => {
+          if (chk.disabled) {
+            e.preventDefault();
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'info',
+              title: `${info.nombre} ya tiene rutina`,
+              text: `El atleta ya entrena "${info.rutina_nombre || 'otra rutina'}" este día.`,
+              showConfirmButton: false,
+              timer: 3000,
+              background: '#141724',
+              color: '#fff'
+            });
+          }
+        };
+      } else {
+        chk.disabled = false;
+        lbl.onclick = null;
+        if (info && info.color === 'azul') {
+          lbl.classList.add('is-rest');
+          lbl.title = `${info.nombre}: Día de descanso (puedes seleccionarlo si deseas asignarle rutina)`;
+        } else if (info && info.color === 'rojo') {
+          lbl.classList.add('is-missing');
+          lbl.title = `${info.nombre}: Falta programar rutina`;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error al cargar días del atleta:', err);
+  }
+}
+
+function resetearDiasSelector() {
+  for (let d = 0; d < 7; d++) {
+    const chk = document.getElementById(`dia_${d}`);
+    const lbl = document.querySelector(`label[for="dia_${d}"]`);
+    if (chk) chk.disabled = false;
+    if (lbl) {
+      lbl.classList.remove('is-assigned', 'is-rest', 'is-missing');
+      lbl.title = '';
+      lbl.onclick = null;
+    }
+  }
+}
+
+// Inicializar días si ya hay un atleta seleccionado
+const RUTINA_EDITAR = <?= json_encode($rutinaEditar ?? null) ?>;
+const EJERCICIOS_EDITAR = <?= json_encode($ejerciciosEditar ?? []) ?>;
+
+function toggleRirExercise(idx) {
+  const block = document.querySelector(`.ex-block[data-idx="${idx}"]`);
+  if (!block) return;
+  const isOff = block.classList.toggle('rir-disabled');
+  const pill = block.querySelector('.rir-status-pill');
+  if (pill) {
+    pill.textContent = isOff ? 'OFF' : 'ON';
+  }
+  if (isOff) {
+    block.querySelectorAll('.set-input-rir').forEach(inp => inp.value = '');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const initCid = document.getElementById('selectAtleta') ? document.getElementById('selectAtleta').value : '';
+  if (initCid) {
+    cargarDiasAtleta(initCid);
+  }
+
+  // Pre-carga de rutina en modo edición
+  if (RUTINA_EDITAR) {
+    const titleInp = document.getElementById('rutinaTitulo');
+    if (titleInp && RUTINA_EDITAR.descripcion) {
+      titleInp.value = RUTINA_EDITAR.descripcion;
+    }
+    if (RUTINA_EDITAR.dias_semana) {
+      const diasArr = RUTINA_EDITAR.dias_semana.split(',').map(s => parseInt(s.trim()));
+      diasArr.forEach(d => {
+        const chk = document.getElementById(`dia_${d}`);
+        if (chk) chk.checked = true;
+      });
+    }
+    if (Array.isArray(EJERCICIOS_EDITAR) && EJERCICIOS_EDITAR.length > 0) {
+      EJERCICIOS_EDITAR.forEach((ej, i) => {
+        setTimeout(() => {
+          addExercise({
+            id: ej.id,
+            nombre: ej.nombre,
+            nota_default: ej.nota_biomecanica || '',
+            tipo_implemento: ej.tipo_implemento || 'barra',
+            unidad_carga: ej.unidad_carga || 'kg',
+            series: parseInt(ej.series || 3),
+            repeticiones: ej.repeticiones || '10-12',
+            rir: ej.rir || '',
+          });
+        }, i * 60);
+      });
+    }
+  }
+});
+
 // Cerrar clickeando afuera
 document.addEventListener('click', e => {
   const sel = document.getElementById('customAtletaSelect');
