@@ -36,6 +36,8 @@ match($action) {
 // ══════════════════════════════════════════════════════════════
 
 function authLogin(string $vistaInicial = 'login'): void {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
     if (!empty($_SESSION['user_id'])) {
         $rol = $_SESSION['rol'] ?? '';
         if ($rol === 'entrenador') {
@@ -70,6 +72,18 @@ function authRecuperar(): void {
 // ══════════════════════════════════════════════════════════════
 
 function authDoLogin(): void {
+    $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+           || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+           || (!empty($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'));
+
+    $fail = function(string $msg, array $extra = []) use ($isAjax): never {
+        if (!$isAjax) {
+            setFlash('error', $msg);
+            redirect('auth/login');
+        }
+        jsonOut(false, $msg, array_merge(['success' => false, 'mensaje' => $msg], $extra));
+    };
+
     // ── 1. Rate Limiting (antes de cualquier procesamiento) ──
     rateLimitCheck('auth/do-login');
 
@@ -82,19 +96,13 @@ function authDoLogin(): void {
     $pass    = (string)($_POST['password'] ?? '');
 
     if (empty($usuario) || empty($pass)) {
-        jsonOut(false, 'Por favor completa todos los campos.', [
-            'success' => false,
-            'mensaje' => 'Por favor completa todos los campos.',
-        ]);
+        $fail('Por favor completa todos los campos.');
     }
 
     // ── 4. Validar longitud mínima/máxima para evitar ataques con inputs enormes ──
     if (strlen($pass) < 4 || strlen($pass) > 1000) {
         rateLimitFail('auth/do-login');
-        jsonOut(false, 'Credenciales incorrectas.', [
-            'success' => false,
-            'mensaje' => 'Credenciales incorrectas.',
-        ]);
+        $fail('Credenciales incorrectas.');
     }
 
     try {
@@ -102,8 +110,6 @@ function authDoLogin(): void {
         $user = $um->findByUsernameOrEmail($usuario);
 
         // ── 5. Verificar credenciales con timing seguro ──
-        // Siempre ejecutar password_verify aunque el usuario no exista
-        // para prevenir timing attacks (user enumeration)
         $dummyHash = '$2y$12$invalidhashtopreventtimingattacksxxxxxxxxxxxxxxxxxxx';
         $hashToVerify = $user['password_hash'] ?? $dummyHash;
 
@@ -111,34 +117,24 @@ function authDoLogin(): void {
         file_put_contents(BASE_DIR . '/scratch/login_debug.txt', "User found: " . ($user ? 'Yes' : 'No') . "\nPass verify: " . ($pwdVerify ? 'Yes' : 'No') . "\n", FILE_APPEND);
 
         if (!$user || !$pwdVerify) {
-            // Penalizar fallo: cuenta doble en el rate limiter
             rateLimitFail('auth/do-login');
-
-            jsonOut(false, 'Credenciales incorrectas.', [
-                'success' => false,
-                'mensaje' => 'Credenciales incorrectas.',
-            ]);
+            $fail('Credenciales incorrectas.');
         }
 
         // ── 6. Credenciales correctas: limpiar rate limit ──
         rateLimitReset('auth/do-login');
 
         // ── 6.1 ONBOARDING GATE: validación inquebrantable de Stand-by ──
-        // Si estado_cuenta === 'pendiente', bloquea el inicio de sesión, no crea sesión y devuelve status 'standby'
         $bloqueo = UsuarioModel::mensajeBloqueo($user);
         if ($bloqueo !== null) {
             $estadoCuenta = (string)($user['estado_cuenta'] ?? 'pendiente');
-            jsonOut(false, $bloqueo, [
-                'success'       => false,
+            $fail($bloqueo, [
                 'status'        => $estadoCuenta === 'pendiente' ? 'standby' : 'rejected',
-                'mensaje'       => $bloqueo,
                 'estado_cuenta' => $estadoCuenta,
             ]);
         }
 
         // ── 7. Login exitoso: establecer sesión ──
-
-        // Regenerar session ID para prevenir session fixation tras login
         session_regenerate_id(true);
 
         $_SESSION['user_id'] = (int)$user['id'];
@@ -147,13 +143,15 @@ function authDoLogin(): void {
         $_SESSION['rol']     = $user['rol'];
         $_SESSION['_login_at'] = time();
 
-        // Renovar hash de contraseña si usa algoritmo antiguo
         if (password_needs_rehash($user['password_hash'], PASSWORD_BCRYPT, ['cost' => 12])) {
-            // Solo actualizar si el usuario la volvió a ingresar
             $um->updatePasswordHash((int)$user['id'], password_hash($pass, PASSWORD_BCRYPT, ['cost' => 12]));
         }
 
         $dest = $user['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard';
+
+        if (!$isAjax) {
+            redirect($dest);
+        }
 
         jsonOut(true, 'Login exitoso', [
             'success'  => true,
@@ -162,10 +160,7 @@ function authDoLogin(): void {
 
     } catch (\Throwable $e) {
         error_log('[Xprod Fit][Auth] Error en do-login: ' . $e->getMessage());
-        jsonOut(false, 'Error interno. Intente luego.', [
-            'success' => false,
-            'mensaje' => 'Error interno. Intente luego.',
-        ]);
+        $fail('Error interno. Intente luego.');
     }
 }
 

@@ -78,9 +78,10 @@ $mesSigMes = $calMes + 1; $mesSigAno = $calAno;
 if ($mesSigMes > 12) { $mesSigMes = 1; $mesSigAno++; }
 
 // Fechas entrenadas reales en BD y rutinas programadas por día de la semana
-$fechasEntrenadas = obtenerFechasEntrenadasMes($db, (int)$cliente['id'], $calAno, $calMes);
-$rutinasProgMap   = obtenerRutinasProgramadasPorDia($db, (int)$cliente['id']);
-$diasProgramados  = array_keys($rutinasProgMap);
+$fechasEntrenadas   = obtenerFechasEntrenadasMes($db, (int)$cliente['id'], $calAno, $calMes);
+$fechasIncompletas  = obtenerFechasIncompletasMes($db, (int)$cliente['id'], $calAno, $calMes);
+$rutinasProgMap     = obtenerRutinasProgramadasPorDia($db, (int)$cliente['id']);
+$diasProgramados    = array_keys($rutinasProgMap);
 
 // Construcción de semanas (Lunes a Domingo, 7 columnas completas)
 $primerDia = new DateTime(sprintf('%04d-%02d-01', $calAno, $calMes));
@@ -799,7 +800,20 @@ $grupoIconos = [
   box-shadow: 0 0 6px rgba(168, 85, 247, 0.9);
   flex-shrink: 0;
 }
+.cal-dot.incompleto {
+  background: #f97316;
+  box-shadow: 0 0 6px rgba(249, 115, 22, 0.9);
+}
+.cal-cell.incompleto {
+  background: rgba(249, 115, 22, 0.08);
+  border-color: rgba(249, 115, 22, 0.28);
+}
+.cal-cell.incompleto .cal-day-num {
+  color: #fdba74;
+  font-weight: 700;
+}
 .cal-cell.hoy .cal-dot { background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, 0.95); }
+.cal-cell.hoy .cal-dot.incompleto { background: #fb923c; box-shadow: 0 0 6px rgba(251, 146, 60, 0.95); }
 .cal-dot-plan {
   width: 4px;
   height: 4px;
@@ -873,6 +887,11 @@ $grupoIconos = [
   background: rgba(52, 211, 153, 0.15);
   border-color: rgba(52, 211, 153, 0.35);
   color: #34d399;
+}
+.crdi-badge.badge-incompleta {
+  background: rgba(249, 115, 22, 0.18);
+  border-color: rgba(249, 115, 22, 0.4);
+  color: #fb923c;
 }
 .crdi-badge.badge-descanso {
   background: rgba(56, 189, 248, 0.15);
@@ -1062,11 +1081,21 @@ $grupoIconos = [
 }
 .dia-modal-badge:empty { display: none; }
 .dia-modal-badge.modo-historial     { background: rgba(138,43,226,.18); color: #c4a3ff; }
+.dia-modal-badge.modo-incompleta    { background: rgba(249,115,22,.2); color: #fb923c; border: 1px solid rgba(249,115,22,.35); display: inline-flex; align-items: center; gap: 4px; }
 .dia-modal-badge.modo-hoy           { background: rgba(138,43,226,.30); color: #fff; }
 .dia-modal-badge.modo-planificacion { background: rgba(251,191,36,.15); color: #fbbf24; }
 .dia-modal-badge.est-completado     { background: rgba(74,222,128,.15); color: #4ade80; }
 .dia-modal-badge.est-parcial        { background: rgba(251,191,36,.15); color: #fbbf24; }
 .dia-modal-badge.est-pendiente      { background: rgba(167,139,250,.18); color: #c4b5fd; }
+
+.dm-incompleta-banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.3);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; color: #fdba74;
+}
+.dm-incompleta-banner i { font-size: 1.25rem; color: #f97316; flex-shrink: 0; margin-top: 1px; }
+.dm-incompleta-banner strong { display: block; font-size: 0.88rem; color: #ffedd5; margin-bottom: 2px; }
+.dm-incompleta-banner p { font-size: 0.78rem; color: #fed7aa; margin: 0; line-height: 1.35; }
 .dia-modal-close {
   width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
   background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
@@ -1488,22 +1517,26 @@ $grupoIconos = [
                 $esMes      = (int)$dia->format('n') === $calMes;
                 $esHoy      = $fechaStr === $fechaHoy;
                 $esFuturo   = $fechaStr >  $fechaHoy;
+                $incompleto = !$esFuturo && in_array($fechaStr, $fechasIncompletas, true);
                 $entreno    = !$esFuturo && in_array($fechaStr, $fechasEntrenadas, true);
                 $programado = in_array((int)$dia->format('N'), $diasProgramados, true);
                 $clases = 'cal-cell clickable';
                 if (!$esMes)                          $clases .= ' fuera-mes';
                 if ($esHoy)                           $clases .= ' hoy';
-                if ($entreno)                         $clases .= ' entrenado';
+                if ($incompleto)                      $clases .= ' incompleto';
+                elseif ($entreno)                     $clases .= ' entrenado';
                 elseif ($esFuturo && $programado)     $clases .= ' planificado';
                 $estadoTxt = $esHoy ? 'hoy' : ($esFuturo ? ($programado ? 'rutina programada' : 'sin rutina')
-                                                          : ($entreno ? 'entrenado' : 'sin actividad'));
+                                                          : ($incompleto ? 'rutina incompleta' : ($entreno ? 'entrenado' : 'sin actividad')));
               ?>
               <div class="<?= $clases ?>"
                    data-fecha="<?= $fechaStr ?>"
                    role="button" tabindex="0"
                    aria-label="<?= htmlspecialchars(fechaES($fechaStr) . ', ' . $estadoTxt, ENT_QUOTES, 'UTF-8') ?>">
                 <span class="cal-day-num"><?= $diaNum ?></span>
-                <?php if ($entreno): ?>
+                <?php if ($incompleto): ?>
+                  <span class="cal-dot incompleto" aria-hidden="true" title="Rutina incompleta"></span>
+                <?php elseif ($entreno): ?>
                   <span class="cal-dot" aria-hidden="true" title="Entrenamiento completado"></span>
                 <?php elseif (($esHoy || $esFuturo) && $programado): ?>
                   <span class="cal-dot-plan" aria-hidden="true" title="Rutina programada"></span>
@@ -1518,6 +1551,7 @@ $grupoIconos = [
         <!-- Leyenda visual sutil -->
         <div class="cal-legend">
           <div class="cal-legend-item"><span class="cal-dot"></span> Entrenado</div>
+          <div class="cal-legend-item"><span class="cal-dot incompleto"></span> Incompleta</div>
           <div class="cal-legend-item"><span class="cal-dot-plan"></span> Programado</div>
           <div class="cal-legend-item"><span class="cal-legend-today"></span> Hoy</div>
         </div>
@@ -1776,8 +1810,23 @@ $grupoIconos = [
         return m ? `${parseInt(m[3],10)} ${MESES[parseInt(m[2],10)-1]} ${m[1]}` : '—';
       };
       const ESTADO = { pagado:{ok:true,label:'Pagado'}, pendiente:{ok:false,label:'Pendiente'}, vencido:{ok:false,label:'Vencido'} };
-      const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
-      const toast = (icon, title) => { if (window.Swal) Swal.fire({ toast:true, position:'top-end', icon, title, showConfirmButton:false, timer:2600 }); };
+      const toast = (icon, title) => {
+        if (window.Swal) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: icon,
+            title: title,
+            showConfirmButton: false,
+            showCancelButton: false,
+            showDenyButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: '#121217',
+            color: '#fff'
+          });
+        }
+      };
 
       async function api(url, opts) {
         const res = await fetch(url, Object.assign({ credentials:'same-origin', headers:{ 'Accept':'application/json', 'X-CSRF-Token':CSRF } }, opts));
@@ -1959,8 +2008,13 @@ $grupoIconos = [
   </div>
 </div>
 
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js Local con fallback CDN -->
+<script src="<?= APP_URL ?>/assets/vendor/chartjs/chart.min.js"></script>
+<script>
+  if (typeof Chart === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');
+  }
+</script>
 
 <script>
 // ── Variables base ─────────────────────────────────────────
@@ -2713,12 +2767,17 @@ if (document.readyState === 'complete') {
 
     badgeEl.className = 'dia-modal-badge';
     if (data.modo === 'historial') {
-      badgeEl.classList.add('modo-historial');
-      badgeEl.textContent = 'Historial';
+      if (data.estado === 'incompleta') {
+        badgeEl.classList.add('modo-incompleta');
+        badgeEl.innerHTML = '<i class="ti ti-clock-pause"></i> Rutina incompleta';
+      } else {
+        badgeEl.classList.add('modo-historial');
+        badgeEl.textContent = 'Historial';
+      }
     } else if (data.modo === 'hoy') {
       badgeEl.classList.add('modo-hoy');
       badgeEl.textContent = (data.estado === 'completado') ? 'Hoy · Completado'
-                          : (data.estado === 'parcial'    ? 'Hoy · En Progreso' : 'Hoy');
+                          : (data.estado === 'parcial' || data.estado === 'incompleta' ? 'Hoy · En Progreso' : 'Hoy');
     } else {
       badgeEl.classList.add('modo-planificacion');
       badgeEl.textContent = 'Planificación';
@@ -2746,7 +2805,7 @@ if (document.readyState === 'complete') {
       return;
     }
 
-    if (data.estado === 'completado' || data.estado === 'parcial') {
+    if (data.estado === 'completado' || data.estado === 'parcial' || data.estado === 'incompleta') {
       const resumen = data.resumen || {};
       const numEjs  = resumen.ejercicios || (data.ejercicios ? data.ejercicios.length : 0);
       const numSets = resumen.series || 0;
@@ -2764,6 +2823,19 @@ if (document.readyState === 'complete') {
           </div>
         </div>
       `;
+
+      if (data.estado === 'incompleta') {
+        const plan = (data.resumen && data.resumen.series_planificadas) ? data.resumen.series_planificadas : 0;
+        html += `
+          <div class="dm-incompleta-banner">
+            <i class="ti ti-clock-pause"></i>
+            <div>
+              <strong>Rutina incompleta</strong>
+              <p>El atleta no terminó la rutina: completó <b>${numSets}</b> ${plan ? `de <b>${plan}</b>` : ''} series planificadas.</p>
+            </div>
+          </div>
+        `;
+      }
 
       html += `
         <div class="dm-stats">
@@ -3021,6 +3093,9 @@ if (document.readyState === 'complete') {
       if (data.estado === 'completado') {
         badgeEl.classList.add('badge-completado');
         badgeEl.innerHTML = '<i class="ti ti-circle-check"></i> Completado';
+      } else if (data.estado === 'incompleta') {
+        badgeEl.classList.add('badge-incompleta');
+        badgeEl.innerHTML = '<i class="ti ti-clock-pause"></i> Rutina incompleta';
       } else if (data.estado === 'sin_rutina' || data.estado === 'sin_actividad') {
         const dt = new Date(fecha + 'T00:00:00');
         const dow = dt.getDay();
@@ -3031,6 +3106,9 @@ if (document.readyState === 'complete') {
           badgeEl.classList.add('badge-sin-rutina');
           badgeEl.innerHTML = '<i class="ti ti-calendar-off"></i> Sin Rutina';
         }
+      } else if (data.estado === 'parcial') {
+        badgeEl.classList.add('badge-incompleta');
+        badgeEl.innerHTML = '<i class="ti ti-clock-play"></i> En Progreso';
       } else {
         badgeEl.innerHTML = '<i class="ti ti-barbell"></i> Programado';
       }
@@ -3038,11 +3116,24 @@ if (document.readyState === 'complete') {
       if (data.rutina && Array.isArray(data.ejercicios) && data.ejercicios.length > 0) {
         const numEjs = data.ejercicios.length;
         const numSets = data.resumen?.series || data.ejercicios.reduce((acc, e) => acc + parseInt(e.series_total || 0), 0);
-        let html = `
-          <div class="crdi-rutina-card">
+        const planSets = data.resumen?.series_planificadas || 0;
+        let html = '';
+        if (data.estado === 'incompleta') {
+          html += `
+            <div class="dm-incompleta-banner" style="margin-bottom:12px;">
+              <i class="ti ti-clock-pause"></i>
+              <div>
+                <strong>Rutina incompleta</strong>
+                <p>El atleta dejó esta sesión a medias: completó <b>${numSets}</b> ${planSets ? `de <b>${planSets}</b>` : ''} series planificadas.</p>
+              </div>
+            </div>
+          `;
+        }
+        html += `
+          <div class="crdi-rutina-card"${data.estado === 'incompleta' ? ' style="border-color:rgba(249,115,22,0.35);background:rgba(249,115,22,0.08);"' : ''}>
             <div>
-              <div class="crdi-rutina-name"><i class="ti ti-flame" style="color:#d8b4fe;margin-right:4px;"></i> ${esc(data.rutina.nombre)}</div>
-              <div class="crdi-rutina-stats">${numEjs} ejercicio${numEjs !== 1 ? 's' : ''} &middot; ${numSets} serie${numSets !== 1 ? 's' : ''} programadas</div>
+              <div class="crdi-rutina-name"><i class="ti ti-flame" style="color:${data.estado === 'incompleta' ? '#fb923c' : '#d8b4fe'};margin-right:4px;"></i> ${esc(data.rutina.nombre)}</div>
+              <div class="crdi-rutina-stats">${numEjs} ejercicio${numEjs !== 1 ? 's' : ''} &middot; ${data.estado === 'incompleta' ? `${numSets} series completadas (de ${planSets || '—'})` : `${numSets} serie${numSets !== 1 ? 's' : ''} ${data.estado === 'completado' ? 'completadas' : 'programadas'}`}</div>
             </div>
             <button type="button" class="crdi-btn-asignar" style="margin-top:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);" onclick="abrirModalDia('${esc(fecha)}')">
               <i class="ti ti-maximize"></i> Ver Completo

@@ -4,12 +4,24 @@
 declare(strict_types=1);
 
 /**
+ * Obtener la URI de redirección de OAuth 2.0 garantizando coincidencia exacta con Google Console.
+ */
+function getGoogleRedirectUri(): string {
+    $envUri = env('GOOGLE_REDIRECT_URI', '');
+    if (!empty($envUri)) {
+        return rtrim($envUri, '/');
+    }
+    $base = rtrim(str_replace(' ', '%20', APP_URL), '/');
+    return $base . '/auth/google-callback';
+}
+
+/**
  * PASO 1: Redirigir al usuario a Google para autenticación.
  * Ruta: GET /auth/google
  */
 function googleRedirect(): void {
     $clientId    = env('GOOGLE_CLIENT_ID', '');
-    $redirectUri = APP_URL . '/auth/google-callback';
+    $redirectUri = getGoogleRedirectUri();
 
     if (empty($clientId) || $clientId === 'PENDIENTE_CONFIGURAR') {
         setFlash('error', 'Google OAuth no está configurado aún. Usa el login tradicional.');
@@ -29,7 +41,7 @@ function googleRedirect(): void {
         'state'         => $state,
         'access_type'   => 'online',
         'prompt'        => 'select_account', // Forzar selección de cuenta
-    ]);
+    ], '', '&', PHP_QUERY_RFC3986);
 
     header('Location: https://accounts.google.com/o/oauth2/v2/auth?' . $params);
     exit;
@@ -191,7 +203,7 @@ function googleCallback(): void {
 function googleExchangeCode(string $code): array {
     $clientId     = env('GOOGLE_CLIENT_ID', '');
     $clientSecret = env('GOOGLE_CLIENT_SECRET', '');
-    $redirectUri  = APP_URL . '/auth/google-callback';
+    $redirectUri  = getGoogleRedirectUri();
 
     $postData = http_build_query([
         'code'          => $code,
@@ -199,7 +211,7 @@ function googleExchangeCode(string $code): array {
         'client_secret' => $clientSecret,
         'redirect_uri'  => $redirectUri,
         'grant_type'    => 'authorization_code',
-    ]);
+    ], '', '&', PHP_QUERY_RFC3986);
 
     $ch = curl_init('https://oauth2.googleapis.com/token');
     curl_setopt_array($ch, [
@@ -247,7 +259,7 @@ function googleDecodeIdToken(string $idToken): array {
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 10,
-        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYPEER => false, // Fix para XAMPP local
     ]);
 
     $response = curl_exec($ch);

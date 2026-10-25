@@ -21,6 +21,8 @@ match($action) {
     'guardar-serie'                 => cliGuardarSerie(),
     'marcar-rutina'                 => cliMarcarRutina(),
     'iniciar-rutina'                => cliIniciarRutina(),
+    'posponer-rutina'               => cliPosponerRutina(),
+    'cancelar-aplazamiento'         => cliCancelarAplazamiento(),
     'solicitar-modificacion-atleta' => cliSolicitarModificacionAtleta(),
     'guardar-modificacion-directa'  => cliGuardarModificacionDirecta(),
     'estadisticas'                  => cliEstadisticas(),
@@ -92,6 +94,35 @@ function cliDashboard(): void {
         );
         $stRut->execute([$clienteId, $diaHoy]);
         $rutinaHoy = $stRut->fetch() ?: null;
+    }
+
+    // Comprobar si hoy es el día destino de una rutina aplazada
+    if (!$rutinaHoy) {
+        $stAplDest = $db->prepare("
+            SELECT rutina_id FROM rutinas_aplazamientos 
+            WHERE cliente_id = ? AND fecha_destino = CURDATE() AND estado = 'activo'
+            LIMIT 1
+        ");
+        $stAplDest->execute([$clienteId]);
+        $rAplId = (int)$stAplDest->fetchColumn();
+        if ($rAplId > 0) {
+            $stAplActiva = $db->prepare("SELECT r.id, r.descripcion AS nombre, r.dias_semana, r.estado FROM rutinas r WHERE r.id = ? AND r.cliente_id = ?");
+            $stAplActiva->execute([$rAplId, $clienteId]);
+            $rutinaHoy = $stAplActiva->fetch() ?: null;
+        }
+    }
+
+    // Si la rutina programada para hoy fue aplazada para otro día, hoy pasa a descanso
+    if ($rutinaHoy) {
+        $stAplOrig = $db->prepare("
+            SELECT id FROM rutinas_aplazamientos 
+            WHERE cliente_id = ? AND rutina_id = ? AND fecha_origen = CURDATE() AND estado = 'activo'
+            LIMIT 1
+        ");
+        $stAplOrig->execute([$clienteId, $rutinaHoy['id']]);
+        if ($stAplOrig->fetchColumn()) {
+            $rutinaHoy = null;
+        }
     }
 
     $esRutinaDeHoy = ($rutinaHoy !== null);
@@ -223,11 +254,10 @@ function cliRutinaDia(): void {
     $diaReq    = (int)($_GET['dia'] ?? 0);
 
     $diaHoy = (int)date('N');
-    $diaActivo = ($diaReq >= 1 && $diaReq <= 5) ? $diaReq : (($diaHoy >= 1 && $diaHoy <= 5) ? $diaHoy : 1);
 
     // Obtener las rutinas activas para armar los tabs (persistencia cíclica activa ordenada por fecha DESC)
     $stTodas = $db->prepare(
-        "SELECT id, dias_semana FROM rutinas 
+        "SELECT id, dias_semana, " . cliSqlNombreRutina('rutinas') . " AS nombre, descripcion FROM rutinas 
          WHERE cliente_id = ? 
            AND estado = 'en_progreso'
            AND (es_modificacion IS NULL OR es_modificacion = 0 OR estado_modificacion = 'aprobada')
@@ -237,15 +267,104 @@ function cliRutinaDia(): void {
     $todasRutinas = $stTodas->fetchAll();
 
     $rutinaPorDia = [];
+    $diasConRutinaConfigurada = [];
     foreach ($todasRutinas as $r) {
         $dArr = $r['dias_semana'] ? explode(',', $r['dias_semana']) : [];
         foreach ($dArr as $d) {
             $d = (int)$d;
-            if ($d >= 1 && $d <= 5 && !isset($rutinaPorDia[$d])) {
-                $rutinaPorDia[$d] = (int)$r['id'];
+            if ($d >= 1 && $d <= 7) {
+                $diasConRutinaConfigurada[$d] = true;
+                if (!isset($rutinaPorDia[$d])) {
+                    $rutinaPorDia[$d] = (int)$r['id'];
+                }
             }
         }
     }
+
+    // Comprobar aplazamientos activos de rutinas para este atleta
+    $stAplazados = $db->prepare("
+        SELECT id, rutina_id, fecha_origen, fecha_destino, dia_destino 
+        FROM rutinas_aplazamientos 
+        WHERE cliente_id = ? AND estado = 'activo'
+    ");
+    $stAplazados->execute([$clienteId]);
+    $aplazamientosActivos = $stAplazados->fetchAll();
+
+    $diasNombres = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+    $hoyFecha = date('Y-m-d');
+    $aplazamientosPorDiaDestino = [];
+    $aplazamientosPorDiaOrigen  = [];
+
+    foreach ($aplazamientosActivos as &$ap) {
+        $dDest = (int)$ap['dia_destino'];
+        $ap['nombre_dia_destino'] = $diasNombres[$dDest] ?? "Día $dDest";
+
+        // Determinar el día de la semana de origen exacto
+        $dOrig = (int)(new DateTimeImmutable($ap['fecha_origen']))->format('N');
+        $stR = $db->prepare("SELECT dias_semana FROM rutinas WHERE id = ?");
+        $stR->execute([$ap['rutina_id']]);
+        $diasSemanaR = explode(',', (string)$stR->fetchColumn());
+        $diasSemanaR = array_map('intval', array_filter($diasSemanaR));
+
+        if (!in_array($dOrig, $diasSemanaR, true) && !empty($diasSemanaR)) {
+            if (in_array(5, $diasSemanaR, true) && $dOrig === 6) {
+                $dOrig = 5;
+            } elseif (in_array($diaHoy, $diasSemanaR, true)) {
+                $dOrig = $diaHoy;
+            } else {
+                $dOrig = end($diasSemanaR);
+            }
+        }
+        $ap['dia_origen'] = $dOrig;
+        $ap['nombre_dia_origen'] = $diasNombres[$dOrig] ?? "Día $dOrig";
+
+        if ($dDest >= 1 && $dDest <= 7) {
+            $aplazamientosPorDiaDestino[$dDest] = $ap;
+            // La rutina aplazada se vincula a su día destino para que esté disponible allí
+            $rutinaPorDia[$dDest] = (int)$ap['rutina_id'];
+        }
+
+        if ($dOrig >= 1 && $dOrig <= 7) {
+            $aplazamientosPorDiaOrigen[$dOrig] = $ap;
+            // En el día de origen la rutina fue aplazada: NO debe figurar activa para entrenar en este día
+            if (isset($rutinaPorDia[$dOrig]) && $rutinaPorDia[$dOrig] === (int)$ap['rutina_id']) {
+                unset($rutinaPorDia[$dOrig]);
+            }
+        }
+    }
+    unset($ap);
+
+    // DÍAS A MOSTRAR EN LOS TABS: EXCLUSIVAMENTE DÍAS QUE TIENEN RUTINA O APLAZAMIENTO
+    $diasTabs = array_keys($diasConRutinaConfigurada);
+    foreach ($aplazamientosActivos as $ap) {
+        $dDest = (int)$ap['dia_destino'];
+        if ($dDest >= 1 && $dDest <= 7 && !in_array($dDest, $diasTabs, true)) {
+            $diasTabs[] = $dDest;
+        }
+        if (!empty($ap['dia_origen']) && !in_array($ap['dia_origen'], $diasTabs, true)) {
+            $diasTabs[] = $ap['dia_origen'];
+        }
+    }
+
+    if (empty($diasTabs)) {
+        $diasTabs = [1, 2, 3, 4, 5];
+    } else {
+        $diasTabs = array_values(array_unique($diasTabs));
+        sort($diasTabs);
+    }
+
+    // Determinar día activo respetando exclusivamente los tabs disponibles
+    if ($diaReq >= 1 && $diaReq <= 7 && in_array($diaReq, $diasTabs, true)) {
+        $diaActivo = $diaReq;
+    } elseif (in_array($diaHoy, $diasTabs, true)) {
+        $diaActivo = $diaHoy;
+    } else {
+        $diaActivo = $diasTabs[0] ?? 1;
+    }
+
+    // Aplazamiento de origen activo para el día actualmente visualizado (el aviso solo aparece en este día)
+    $aplazamientoOrigenActivo = $aplazamientosPorDiaOrigen[$diaActivo] ?? null;
+    $aplazamientoHoyActivo    = $aplazamientoOrigenActivo ?? (!empty($aplazamientosActivos) ? $aplazamientosActivos[0] : null);
 
     // Comprobar si hoy se entrenó o completó alguna rutina
     $stHoyRut = $db->prepare("
@@ -267,19 +386,16 @@ function cliRutinaDia(): void {
     }
 
     // Si hoy hubo actividad en una rutina específica, vincularla al día de hoy
-    if ($rutinaHoyEntrenada > 0 && $diaHoy >= 1 && $diaHoy <= 5) {
+    if ($rutinaHoyEntrenada > 0 && $diaHoy >= 1 && $diaHoy <= 7) {
         $rutinaPorDia[$diaHoy] = $rutinaHoyEntrenada;
         if (!$rutinaId && $diaActivo === $diaHoy) {
             $rutinaId = $rutinaHoyEntrenada;
         }
     }
 
-    // Si no se pasó rutina específica, intentamos cargar la del día activo
+    // Cargar la rutina del día activo (sin fallback a otras rutinas para evitar mostrar rutinas en días no asignados)
     if (!$rutinaId && isset($rutinaPorDia[$diaActivo])) {
         $rutinaId = $rutinaPorDia[$diaActivo];
-    }
-    if (!$rutinaId && !empty($todasRutinas)) {
-        $rutinaId = (int)$todasRutinas[0]['id'];
     }
 
     $rutina = null;
@@ -424,7 +540,34 @@ function cliRutinaDia(): void {
         ORDER BY categoria_nombre, c.nombre
     ")->fetchAll();
 
-    $categorias = $db->query("SELECT id, grupo, nombre, icono FROM categorias_musculares ORDER BY orden")->fetchAll();
+    // Construir los próximos días disponibles para el carrusel de aplazamiento
+    $proximosDiasDisponibles = [];
+    $hoyTimestamp = strtotime($hoyFecha);
+    for ($i = 1; $i <= 6; $i++) {
+        $f = date('Y-m-d', strtotime("+$i day", $hoyTimestamp));
+        $dNum = (int)date('N', strtotime($f));
+        $rIdProg = $rutinaPorDia[$dNum] ?? null;
+        $rNomProg = '';
+        if ($rIdProg) {
+            foreach ($todasRutinas as $tr) {
+                if ((int)$tr['id'] === (int)$rIdProg) {
+                    $rNomProg = !empty($tr['nombre']) ? $tr['nombre'] : (!empty($tr['descripcion']) ? $tr['descripcion'] : "Rutina #{$tr['id']}");
+                    break;
+                }
+            }
+        }
+        $esSeleccionado = ($aplazamientoHoyActivo && $aplazamientoHoyActivo['fecha_destino'] === $f);
+        $proximosDiasDisponibles[] = [
+            'fecha'          => $f,
+            'dia_num'        => $dNum,
+            'dia_nombre'     => ($i === 1) ? 'Mañana' : ($diasNombres[$dNum] ?? ''),
+            'dia_semana'     => $diasNombres[$dNum] ?? '',
+            'fecha_corta'    => date('j M', strtotime($f)),
+            'rutina_nombre'  => $rNomProg,
+            'es_seleccionado'=> $esSeleccionado
+        ];
+    }
+
     $pageTitle = 'Agenda Semanal';
     require BASE_DIR . '/views/cliente/rutina_dia.php';
 }
@@ -445,6 +588,16 @@ function cliGuardarSerie(): void {
             $tipoSerie = 'normal';
         }
 
+        // Sanitizar fecha real del entrenamiento (preserva fecha en caso de sync offline)
+        $fechaEntrenamiento = trim((string)($_POST['fecha_entrenamiento'] ?? ''));
+        $hoy = date('Y-m-d');
+        $fechaReal = $hoy;
+        if ($fechaEntrenamiento && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaEntrenamiento)) {
+            if ($fechaEntrenamiento <= $hoy && $fechaEntrenamiento >= date('Y-m-d', strtotime('-14 days'))) {
+                $fechaReal = $fechaEntrenamiento;
+            }
+        }
+
         if ($ejercicioId < 1 || $numSerie < 1 || $numSerie > 50) {
             http_response_code(422);
             jsonOut(false, 'Datos inválidos.');
@@ -453,19 +606,19 @@ function cliGuardarSerie(): void {
         $accion = strtolower(trim((string)($_POST['accion'] ?? 'guardar')));
         if ($accion === 'desmarcar') {
             $db->beginTransaction();
-            $db->prepare("DELETE FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE() AND numero_serie = ?")
-               ->execute([$ejercicioId, $clienteId, $numSerie]);
+            $db->prepare("DELETE FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ? AND numero_serie = ?")
+               ->execute([$ejercicioId, $clienteId, $fechaReal, $numSerie]);
 
-            $stCheck = $db->prepare("SELECT COUNT(*) FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE() AND completado = 1");
-            $stCheck->execute([$ejercicioId, $clienteId]);
+            $stCheck = $db->prepare("SELECT COUNT(*) FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ? AND completado = 1");
+            $stCheck->execute([$ejercicioId, $clienteId, $fechaReal]);
             $quedan = (int)$stCheck->fetchColumn();
 
             if ($quedan === 0) {
-                $db->prepare("DELETE FROM sesiones WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE()")
-                   ->execute([$ejercicioId, $clienteId]);
+                $db->prepare("DELETE FROM sesiones WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ?")
+                   ->execute([$ejercicioId, $clienteId, $fechaReal]);
             } else {
-                $db->prepare("UPDATE sesiones SET reps_realizadas = (SELECT MAX(reps_realizadas) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=CURDATE()), peso_usado = (SELECT MAX(peso_usado) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=CURDATE()) WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = CURDATE()")
-                   ->execute([$ejercicioId, $clienteId, $ejercicioId, $clienteId, $ejercicioId, $clienteId]);
+                $db->prepare("UPDATE sesiones SET reps_realizadas = (SELECT MAX(reps_realizadas) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=?), peso_usado = (SELECT MAX(peso_usado) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=?) WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ?")
+                   ->execute([$ejercicioId, $clienteId, $fechaReal, $ejercicioId, $clienteId, $fechaReal, $ejercicioId, $clienteId, $fechaReal]);
             }
 
             $db->commit();
@@ -550,7 +703,7 @@ function cliGuardarSerie(): void {
              SELECT e.id, r.id, " . cliSqlNombreRutina('r') . ", e.nombre,
                     (SELECT c.equipamiento FROM catalogo_ejercicios c
                       WHERE c.nombre = e.nombre AND c.equipamiento IS NOT NULL LIMIT 1),
-                    r.cliente_id, CURDATE(), ?, ?, ?, 1, ?, ?, ?, ?, ?
+                    r.cliente_id, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?
                FROM ejercicios e
                JOIN rutinas r ON r.id = e.rutina_id
               WHERE e.id = ? AND r.cliente_id = ?
@@ -565,7 +718,7 @@ function cliGuardarSerie(): void {
                 kg_real         = VALUES(kg_real)"
         );
         $stSerie->execute([
-            $numSerie, $reps, $pesoUsado, $tipoSerie,
+            $fechaReal, $numSerie, $reps, $pesoUsado, $tipoSerie,
             $tipoImplemento, $unidadCarga, $pesoPorLado, $kgReal,
             $ejercicioId, $clienteId
         ]);
@@ -576,23 +729,23 @@ function cliGuardarSerie(): void {
             jsonOut(false, 'Ese ejercicio no pertenece a tus rutinas.');
         }
 
-        // Actualizar también sesiones (resumen: max reps de las series guardadas hoy)
+        // Actualizar también sesiones (resumen: max reps de las series guardadas en fechaReal)
         $db->prepare(
             "INSERT INTO sesiones (ejercicio_id, cliente_id, reps_realizadas, peso_usado, completado, fecha)
-             SELECT ?, ?, MAX(reps_realizadas), MAX(peso_usado), 1, CURDATE()
-             FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=CURDATE()
+             SELECT ?, ?, MAX(reps_realizadas), MAX(peso_usado), 1, ?
+             FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=?
              ON DUPLICATE KEY UPDATE
-               reps_realizadas=(SELECT MAX(reps_realizadas) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=CURDATE()),
-               peso_usado=(SELECT MAX(peso_usado) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=CURDATE()),
+               reps_realizadas=(SELECT MAX(reps_realizadas) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=?),
+               peso_usado=(SELECT MAX(peso_usado) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=?),
                completado=1"
-        )->execute([$ejercicioId, $clienteId, $ejercicioId, $clienteId, $ejercicioId, $clienteId, $ejercicioId, $clienteId]);
+        )->execute([$ejercicioId, $clienteId, $fechaReal, $ejercicioId, $clienteId, $fechaReal, $ejercicioId, $clienteId, $fechaReal, $ejercicioId, $clienteId, $fechaReal]);
 
         // Sincronizar sesión de asistencia como iniciada si aún no está completada
         $stRutId = $db->prepare("SELECT rutina_id FROM ejercicios WHERE id = ?");
         $stRutId->execute([$ejercicioId]);
         $ejRutinaId = (int)$stRutId->fetchColumn();
         if ($ejRutinaId > 0) {
-            sincronizarSesionAsistencia($db, $clienteId, $ejRutinaId, 'iniciada', false);
+            sincronizarSesionAsistencia($db, $clienteId, $ejRutinaId, 'iniciada', false, $fechaReal);
         }
 
         $db->commit();
@@ -639,6 +792,16 @@ function cliMarcarRutina(): void {
 
     if (!$rutinaId) jsonOut(false, 'ID inválido.');
 
+    // Sanitizar fecha real del entrenamiento (preserva fecha en caso de sync offline)
+    $fechaEntrenamiento = trim((string)($_POST['fecha_entrenamiento'] ?? ''));
+    $hoy = date('Y-m-d');
+    $fechaReal = $hoy;
+    if ($fechaEntrenamiento && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaEntrenamiento)) {
+        if ($fechaEntrenamiento <= $hoy && $fechaEntrenamiento >= date('Y-m-d', strtotime('-14 days'))) {
+            $fechaReal = $fechaEntrenamiento;
+        }
+    }
+
     // PERSISTENCIA CÍCLICA SEMANAL:
     // La rutina asignada JAMÁS debe borrarse, desasignarse ni marcarse en un estado que la oculte.
     // Se mantiene activa ('en_progreso') para que la próxima semana el atleta la repita.
@@ -646,8 +809,17 @@ function cliMarcarRutina(): void {
         "UPDATE rutinas SET estado='en_progreso' WHERE id = ? AND cliente_id = ?"
     )->execute([$rutinaId, $clienteId]);
 
-    // Registrar o finalizar la sesión de asistencia de HOY como completada de forma atómica y centralizada
-    sincronizarSesionAsistencia($db, $clienteId, $rutinaId, 'completada', true);
+    // Registrar o finalizar la sesión de asistencia de fechaReal como completada de forma atómica y centralizada
+    sincronizarSesionAsistencia($db, $clienteId, $rutinaId, 'completada', true, $fechaReal);
+
+    // Si esta rutina estaba pospuesta para esta fecha, marcar el aplazamiento como completado
+    try {
+        $db->prepare("
+            UPDATE rutinas_aplazamientos 
+            SET estado = 'completado' 
+            WHERE cliente_id = ? AND rutina_id = ? AND fecha_destino = ? AND estado = 'activo'
+        ")->execute([$clienteId, $rutinaId, $fechaReal]);
+    } catch (\Throwable $e) {}
 
     // Notificar al entrenador asignado
     try {
@@ -697,8 +869,168 @@ function cliIniciarRutina(): void {
         jsonOut(false, 'ID de rutina no válido.');
     }
 
-    sincronizarSesionAsistencia($db, $clienteId, $rutinaId, 'iniciada', false);
+    $fechaEntrenamiento = trim((string)($_POST['fecha_entrenamiento'] ?? ''));
+    $hoy = date('Y-m-d');
+    $fechaReal = $hoy;
+    if ($fechaEntrenamiento && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaEntrenamiento)) {
+        if ($fechaEntrenamiento <= $hoy && $fechaEntrenamiento >= date('Y-m-d', strtotime('-14 days'))) {
+            $fechaReal = $fechaEntrenamiento;
+        }
+    }
+
+    sincronizarSesionAsistencia($db, $clienteId, $rutinaId, 'iniciada', false, $fechaReal);
     jsonOut(true, '¡Rutina iniciada!');
+}
+
+/*─────────────────────────────────────────────────────────────
+  POSPONER RUTINA TEMPORALMENTE (AJAX)
+─────────────────────────────────────────────────────────────*/
+function cliPosponerRutina(): void {
+    csrfCheck();
+    $db = getDB();
+    $clienteId = (int)$_SESSION['cliente_id'];
+    $rutinaId = (int)($_POST['rutina_id'] ?? 0);
+    $fechaDestino = trim((string)($_POST['fecha_destino'] ?? ''));
+
+    if (!$rutinaId || !$fechaDestino || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaDestino)) {
+        jsonOut(false, 'Parámetros inválidos para posponer la rutina.');
+    }
+
+    $hoy = date('Y-m-d');
+    if ($fechaDestino <= $hoy) {
+        jsonOut(false, 'La fecha de aplazamiento debe ser posterior al día de hoy.');
+    }
+
+    // Verificar que la rutina pertenezca al cliente
+    $stVer = $db->prepare("SELECT id, descripcion, dias_semana FROM rutinas WHERE id = ? AND cliente_id = ?");
+    $stVer->execute([$rutinaId, $clienteId]);
+    $rut = $stVer->fetch();
+    if (!$rut) {
+        jsonOut(false, 'Rutina no encontrada.');
+    }
+
+    $diaDestino = (int)(new DateTimeImmutable($fechaDestino))->format('N');
+
+    try {
+        $db->beginTransaction();
+
+        // Cancelar aplazamientos activos previos desde hoy para esta rutina
+        $db->prepare("
+            UPDATE rutinas_aplazamientos 
+            SET estado = 'cancelado' 
+            WHERE cliente_id = ? AND rutina_id = ? AND fecha_origen = ? AND estado = 'activo'
+        ")->execute([$clienteId, $rutinaId, $hoy]);
+
+        // Registrar el nuevo aplazamiento temporal
+        $db->prepare("
+            INSERT INTO rutinas_aplazamientos (cliente_id, rutina_id, fecha_origen, fecha_destino, dia_destino, estado)
+            VALUES (?, ?, ?, ?, ?, 'activo')
+        ")->execute([$clienteId, $rutinaId, $hoy, $fechaDestino, $diaDestino]);
+
+        $db->commit();
+        jsonOut(true, 'Rutina aplazada correctamente.', [
+            'fecha_destino' => $fechaDestino,
+            'dia_destino'   => $diaDestino
+        ]);
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[cliPosponerRutina] Error: ' . $e->getMessage());
+        jsonOut(false, 'Error al guardar el aplazamiento de la rutina.');
+    }
+}
+
+/*─────────────────────────────────────────────────────────────
+  CANCELAR APLAZAMIENTO DE RUTINA (AJAX)
+─────────────────────────────────────────────────────────────*/
+function cliCancelarAplazamiento(): void {
+    csrfCheck();
+    $db = getDB();
+    $clienteId = (int)$_SESSION['cliente_id'];
+    $rutinaId = (int)($_POST['rutina_id'] ?? 0);
+    $aplazamientoId = (int)($_POST['aplazamiento_id'] ?? 0);
+
+    try {
+        $db->beginTransaction();
+
+        // Buscar información previa del aplazamiento activo
+        $aplInfo = null;
+        if ($aplazamientoId > 0) {
+            $stInfo = $db->prepare("SELECT id, rutina_id, fecha_origen, fecha_destino, dia_destino FROM rutinas_aplazamientos WHERE id = ? AND cliente_id = ? AND estado = 'activo'");
+            $stInfo->execute([$aplazamientoId, $clienteId]);
+            $aplInfo = $stInfo->fetch(PDO::FETCH_ASSOC);
+        }
+        if (!$aplInfo && $rutinaId > 0) {
+            $stInfo = $db->prepare("SELECT id, rutina_id, fecha_origen, fecha_destino, dia_destino FROM rutinas_aplazamientos WHERE cliente_id = ? AND rutina_id = ? AND estado = 'activo' ORDER BY id DESC LIMIT 1");
+            $stInfo->execute([$clienteId, $rutinaId]);
+            $aplInfo = $stInfo->fetch(PDO::FETCH_ASSOC);
+        }
+        if (!$aplInfo) {
+            $stInfo = $db->prepare("SELECT id, rutina_id, fecha_origen, fecha_destino, dia_destino FROM rutinas_aplazamientos WHERE cliente_id = ? AND estado = 'activo' ORDER BY id DESC LIMIT 1");
+            $stInfo->execute([$clienteId]);
+            $aplInfo = $stInfo->fetch(PDO::FETCH_ASSOC);
+        }
+
+        $targetId = $aplInfo ? (int)$aplInfo['id'] : $aplazamientoId;
+
+        if ($targetId > 0) {
+            $st = $db->prepare("
+                UPDATE rutinas_aplazamientos 
+                SET estado = 'cancelado' 
+                WHERE id = ? AND cliente_id = ?
+            ");
+            $st->execute([$targetId, $clienteId]);
+        }
+        
+        if ($rutinaId > 0) {
+            $st = $db->prepare("
+                UPDATE rutinas_aplazamientos 
+                SET estado = 'cancelado' 
+                WHERE cliente_id = ? AND rutina_id = ? AND estado = 'activo'
+            ");
+            $st->execute([$clienteId, $rutinaId]);
+        }
+
+        // Failsafe: Si no había targetId ni rutinaId o si quedaron otros aplazamientos activos huérfanos
+        if ($targetId <= 0 && $rutinaId <= 0) {
+            $st = $db->prepare("
+                UPDATE rutinas_aplazamientos 
+                SET estado = 'cancelado' 
+                WHERE cliente_id = ? AND estado = 'activo'
+            ");
+            $st->execute([$clienteId]);
+        }
+
+        $db->commit();
+
+        $diaOrigenNum = null;
+        if ($aplInfo && !empty($aplInfo['fecha_origen'])) {
+            $diaOrigenNum = (int)(new DateTimeImmutable($aplInfo['fecha_origen']))->format('N');
+        }
+
+        $rutIdTarget = (int)($aplInfo['rutina_id'] ?? $rutinaId);
+        if ($rutIdTarget > 0) {
+            $stR = $db->prepare("SELECT dias_semana FROM rutinas WHERE id = ?");
+            $stR->execute([$rutIdTarget]);
+            $diasSemanaR = explode(',', (string)$stR->fetchColumn());
+            $diasSemanaR = array_map('intval', array_filter($diasSemanaR));
+            if (!empty($diasSemanaR) && !in_array($diaOrigenNum, $diasSemanaR, true)) {
+                if (in_array(5, $diasSemanaR, true) && ($diaOrigenNum === 6 || $diaOrigenNum === 7)) {
+                    $diaOrigenNum = 5;
+                } else {
+                    $diaOrigenNum = reset($diasSemanaR);
+                }
+            }
+        }
+
+        jsonOut(true, 'Aplazamiento revertido. La rutina vuelve a su día asignado.', [
+            'dia_origen' => $diaOrigenNum,
+            'rutina_id'  => $rutIdTarget
+        ]);
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[cliCancelarAplazamiento] Error: ' . $e->getMessage());
+        jsonOut(false, 'Error al cancelar el aplazamiento.');
+    }
 }
 
 /*─────────────────────────────────────────────────────────────
@@ -1907,17 +2239,36 @@ function cliApiDiaDetalle(): void {
             $hist = cliHistorialDia($db, $clienteId, $fecha);
 
             if ($hist['series'] > 0) {
-                $estado     = 'completado';
-                $accion     = null;
+                $estado       = 'completado';
+                $accion       = null;
                 $planificadas = 0;
+
+                // Calcular total de series planificadas para las rutinas entrenadas en este día
+                $rutinasIds = array_filter(array_column($hist['rutinas'], 'id'));
+                if (!empty($rutinasIds)) {
+                    $inIds = implode(',', array_map('intval', $rutinasIds));
+                    $stPlan = $db->query("SELECT COALESCE(SUM(series), 0) FROM ejercicios WHERE rutina_id IN ($inIds)");
+                    $planificadas = (int)$stPlan->fetchColumn();
+                }
+
+                // Consultar estado de sesión en sesiones_asistencia
+                $stAsis = $db->prepare("
+                    SELECT estado FROM sesiones_asistencia 
+                    WHERE cliente_id = ? AND DATE(inicio_en) = ? 
+                    ORDER BY id DESC LIMIT 1
+                ");
+                $stAsis->execute([$clienteId, $fecha]);
+                $estadoAsis = (string)($stAsis->fetchColumn() ?: '');
 
                 if ($modo === 'hoy') {
                     $prog = cliRutinasProgramadasPorDia($db, $clienteId)[$dow] ?? null;
                     if ($prog) {
-                        $stPlan = $db->prepare('SELECT COALESCE(SUM(series), 0) FROM ejercicios WHERE rutina_id = ?');
-                        $stPlan->execute([$prog['id']]);
-                        $planificadas = (int)$stPlan->fetchColumn();
-                        if ($planificadas > $hist['series']) {
+                        if ($planificadas === 0) {
+                            $stPlan = $db->prepare('SELECT COALESCE(SUM(series), 0) FROM ejercicios WHERE rutina_id = ?');
+                            $stPlan->execute([$prog['id']]);
+                            $planificadas = (int)$stPlan->fetchColumn();
+                        }
+                        if ($planificadas > $hist['series'] && $estadoAsis !== 'completada') {
                             $estado = 'parcial';
                             $accion = [
                                 'label' => 'Continuar entrenando',
@@ -1925,12 +2276,17 @@ function cliApiDiaDetalle(): void {
                             ];
                         }
                     }
+                } else {
+                    // Modo HISTORIAL: Si quedaron series pendientes o la sesión no se completó
+                    if (($planificadas > 0 && $hist['series'] < $planificadas) || $estadoAsis === 'incompleta' || ($estadoAsis !== 'completada' && $hist['series'] > 0)) {
+                        $estado = 'incompleta';
+                    }
                 }
 
                 cliJson(array_merge($base, [
                     'accion'  => $accion,
                     'estado'  => $estado,
-                    'rutina'  => ['nombre' => implode(' Â· ', array_column($hist['rutinas'], 'nombre'))],
+                    'rutina'  => ['nombre' => implode(' · ', array_column($hist['rutinas'], 'nombre'))],
                     'resumen' => [
                         'ejercicios'          => count($hist['ejercicios']),
                         'series'              => $hist['series'],

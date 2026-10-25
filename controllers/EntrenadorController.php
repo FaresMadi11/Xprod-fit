@@ -997,16 +997,16 @@ function entAsistencias(): void {
 
     // ── Panel 1: Verificar (Completadas en la fecha seleccionada)
     $stVerificar = $db->prepare(
-        "SELECT sa.id, sa.fin_en, sa.notas, sa.verificada, u.nombre AS atleta_nombre, c.id AS cliente_id, r.descripcion AS rutina_desc
+        "SELECT sa.id, sa.fin_en, sa.notas, sa.verificada, sa.estado, u.nombre AS atleta_nombre, c.id AS cliente_id, r.descripcion AS rutina_desc
          FROM sesiones_asistencia sa
          JOIN clientes c ON sa.cliente_id = c.id
          JOIN usuarios u ON c.usuario_id = u.id
          JOIN rutinas r ON sa.rutina_id = r.id
          WHERE (? IS NOT NULL) 
-           AND sa.estado = 'completada' 
-           AND DATE(sa.fin_en) = ?
+           AND (sa.estado = 'completada' OR sa.estado = 'incompleta')
+           AND DATE(COALESCE(sa.fin_en, sa.inicio_en)) = ?
            AND (sa.verificada = 0 OR sa.verificada IS NULL)
-         ORDER BY sa.fin_en DESC"
+         ORDER BY COALESCE(sa.fin_en, sa.inicio_en) DESC"
     );
     $stVerificar->execute([$entId, $fechaSeleccionada]);
     $atletasVerificar = $stVerificar->fetchAll();
@@ -1214,7 +1214,7 @@ function entAsistenciasData(): void {
 
     // ── Verificar ──
     $stV = $db->prepare(
-        "SELECT sa.id, sa.fin_en, sa.notas, sa.verificada,
+        "SELECT sa.id, sa.fin_en, sa.notas, sa.verificada, sa.estado,
                 u.nombre AS atleta_nombre, c.id AS cliente_id,
                 r.descripcion AS rutina_desc
          FROM sesiones_asistencia sa
@@ -1222,10 +1222,10 @@ function entAsistenciasData(): void {
          JOIN usuarios u ON c.usuario_id = u.id
          JOIN rutinas r ON sa.rutina_id = r.id
          WHERE (? IS NOT NULL) 
-           AND sa.estado = 'completada'
-           AND DATE(sa.fin_en) = ?
+           AND (sa.estado = 'completada' OR sa.estado = 'incompleta')
+           AND DATE(COALESCE(sa.fin_en, sa.inicio_en)) = ?
            AND (sa.verificada = 0 OR sa.verificada IS NULL)
-         ORDER BY sa.fin_en DESC"
+         ORDER BY COALESCE(sa.fin_en, sa.inicio_en) DESC"
     );
     $stV->execute([$entId, $fechaSeleccionada]);
     $verificar = $stV->fetchAll();

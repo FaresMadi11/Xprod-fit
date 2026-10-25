@@ -14,12 +14,14 @@ $diaHoyNum  = (int)date('N');
 /* ── Header adaptativo y compacto Bento UI (UI-UX-PRO-MAX) ── */
 .sys-top-header.premium-header {
   margin: 12px 16px 14px 16px !important;
+  width: calc(100% - 32px) !important;
+  max-width: calc(100% - 32px) !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   gap: 10px;
   min-width: 0;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
   padding: 10px 14px !important;
   border-radius: 18px !important;
   background: var(--card-glass, rgba(18, 18, 23, 0.88)) !important;
@@ -60,43 +62,11 @@ $diaHoyNum  = (int)date('N');
   min-width: 0;
   display: inline-block;
 }
-.header-actions {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 8px !important;
-  flex-shrink: 0 !important;
-}
-.header-actions .db-icon-btn {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 11px !important;
-  font-size: 1rem !important;
-  flex-shrink: 0 !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #fff !important;
-  display: grid !important;
-  place-items: center !important;
-  text-decoration: none !important;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.header-actions .db-icon-btn:hover {
-  background: rgba(138, 43, 226, 0.25) !important;
-  border-color: rgba(138, 43, 226, 0.5) !important;
-  color: #fff !important;
-  transform: translateY(-1px);
-}
 @media (min-width: 768px) {
   .sys-top-header.premium-header {
     padding: 14px 20px !important;
     border-radius: 22px !important;
     margin: 16px 20px 20px 20px !important;
-  }
-  .header-actions .db-icon-btn {
-    width: 38px !important;
-    height: 38px !important;
   }
 }
 
@@ -250,24 +220,26 @@ $diaHoyNum  = (int)date('N');
   </div>
   
   <div class="header-actions">
-    <div class="sys-top-logo brand-glow">
-      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    <div id="xpPwaSyncPill" class="xp-pwa-header-pill online" title="Conectado a la red">
+      <span class="xp-status-dot"></span><span class="xp-status-text">Online</span>
     </div>
 
     <?php 
       $unreadCliHdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'cliente');
     ?>
-    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
-      <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
-        <i class="ti ti-bell"></i>
-        <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
-      </button>
-    </div>
+    <div class="header-action-buttons">
+      <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+        <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
+          <i class="ti ti-bell"></i>
+          <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
+        </button>
+      </div>
 
-    <!-- Botón Logout -->
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
-      <i class="ti ti-logout"></i>
-    </a>
+      <!-- Botón Logout -->
+      <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+        <i class="ti ti-logout"></i>
+      </a>
+    </div>
   </div>
 </div>
 

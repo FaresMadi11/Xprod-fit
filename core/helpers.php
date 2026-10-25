@@ -539,8 +539,17 @@ function iconoPorTipoEvento(string $tipoEvento, string $mensaje = ''): string {
  * Sincroniza atómicamente la sesión de asistencia diaria del atleta en sesiones_asistencia.
  * Garantiza integridad de datos: entrenador_id correcto, verificación y estados iniciada/completada.
  */
-function sincronizarSesionAsistencia(PDO $db, int $clienteId, int $rutinaId, string $estado = 'iniciada', bool $completar = false): int {
-    // 1. Obtener entrenador del cliente o de la rutina
+function sincronizarSesionAsistencia(PDO $db, int $clienteId, int $rutinaId, string $estado = 'iniciada', bool $completar = false, ?string $fecha = null): int {
+    // 1. Sanitizar fecha (respetar la fecha real del entrenamiento si vino de sincronización offline)
+    $hoy = date('Y-m-d');
+    $fechaReal = $hoy;
+    if ($fecha && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+        if ($fecha <= $hoy && $fecha >= date('Y-m-d', strtotime('-14 days'))) {
+            $fechaReal = $fecha;
+        }
+    }
+
+    // 2. Obtener entrenador del cliente o de la rutina
     $stEnt = $db->prepare("
         SELECT COALESCE(r.entrenador_id, c.entrenador_id, 1) AS entrenador_id 
         FROM clientes c
@@ -550,33 +559,37 @@ function sincronizarSesionAsistencia(PDO $db, int $clienteId, int $rutinaId, str
     $stEnt->execute([$rutinaId, $clienteId]);
     $entrenadorId = (int)($stEnt->fetchColumn() ?: 1);
 
-    // 2. Buscar si ya existe una sesión para hoy
+    // 3. Buscar si ya existe una sesión para la fecha dada
     $stExist = $db->prepare("
         SELECT id, estado FROM sesiones_asistencia 
-        WHERE cliente_id = ? AND rutina_id = ? AND DATE(inicio_en) = CURDATE() 
+        WHERE cliente_id = ? AND rutina_id = ? AND DATE(inicio_en) = ? 
         ORDER BY id DESC LIMIT 1
     ");
-    $stExist->execute([$clienteId, $rutinaId]);
+    $stExist->execute([$clienteId, $rutinaId, $fechaReal]);
     $existente = $stExist->fetch(PDO::FETCH_ASSOC);
+
+    $horaFin = ($fechaReal === $hoy) ? date('Y-m-d H:i:s') : "{$fechaReal} 20:00:00";
+    $horaInicio = ($fechaReal === $hoy) ? date('Y-m-d H:i:s') : "{$fechaReal} 18:30:00";
+
+    $estadoFinal = ($completar || $estado === 'completada') ? 'completada' : ($estado === 'incompleta' ? 'incompleta' : 'iniciada');
 
     if ($existente) {
         $sesId = (int)$existente['id'];
-        if ($completar || $estado === 'completada') {
+        if ($estadoFinal === 'completada' || $estadoFinal === 'incompleta') {
             $db->prepare("
                 UPDATE sesiones_asistencia 
-                SET estado = 'completada', fin_en = NOW() 
+                SET estado = ?, fin_en = ? 
                 WHERE id = ?
-            ")->execute([$sesId]);
+            ")->execute([$estadoFinal, $horaFin, $sesId]);
         }
         return $sesId;
     } else {
-        $estadoFinal = ($completar || $estado === 'completada') ? 'completada' : 'iniciada';
-        $finSql = ($estadoFinal === 'completada') ? 'NOW()' : 'NULL';
+        $finValor = ($estadoFinal === 'completada' || $estadoFinal === 'incompleta') ? $horaFin : null;
         $stIns = $db->prepare("
             INSERT INTO sesiones_asistencia (rutina_id, cliente_id, entrenador_id, estado, inicio_en, fin_en, verificada)
-            VALUES (?, ?, ?, ?, NOW(), " . ($estadoFinal === 'completada' ? "NOW()" : "NULL") . ", 0)
+            VALUES (?, ?, ?, ?, ?, ?, 0)
         ");
-        $stIns->execute([$rutinaId, $clienteId, $entrenadorId, $estadoFinal]);
+        $stIns->execute([$rutinaId, $clienteId, $entrenadorId, $estadoFinal, $horaInicio, $finValor]);
         return (int)$db->lastInsertId();
     }
 }

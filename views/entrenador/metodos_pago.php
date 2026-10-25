@@ -1,51 +1,54 @@
 <?php $pageTitle = 'Métodos de Pago'; require __DIR__ . '/../layout/header.php'; ?>
 
 <style>
-/* ══════════════════════════════════════
-   MÉTODOS DE PAGO – Modern Minimal
-══════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════
+   MÉTODOS DE PAGO – Premium Bento UI (Sistema Morado Unificado)
+   ══════════════════════════════════════════════════════════════════ */
 
 /* ── Form Card ── */
 .mp-form-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 24px;
-  padding: 32px 28px;
-  backdrop-filter: blur(12px);
+  background: rgba(18, 18, 23, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 28px 24px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
 }
 .mp-form-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 28px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .mp-form-title i {
-  width: 32px; height: 32px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent2), #6366f1);
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
   display: grid; place-items: center;
-  font-size: .95rem; color: #fff;
+  font-size: 1.1rem; color: #fff;
+  box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35);
 }
 
 /* ── Floating Label Inputs ── */
 .mp-field {
   position: relative;
-  margin-bottom: 6px;
+  margin-bottom: 12px;
 }
 .mp-field input,
 .mp-field select,
 .mp-field textarea {
   width: 100%;
-  padding: 18px 16px 8px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  padding: 20px 16px 8px;
+  background: rgba(26, 26, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 14px;
-  color: var(--text);
-  font-family: 'Inter', sans-serif;
-  font-size: .88rem;
+  color: #fff;
+  font-family: inherit;
+  font-size: .9rem;
   font-weight: 500;
   transition: all .2s ease;
   outline: none;
@@ -53,135 +56,134 @@
 }
 .mp-field textarea {
   resize: vertical;
-  min-height: 72px;
-}
-html[data-theme="light"] .mp-field select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  min-height: 80px;
 }
 .mp-field select {
   cursor: pointer;
   padding-right: 36px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
 }
 .mp-field select option {
-  background: var(--bg);
-  color: var(--text);
+  background: #121217;
+  color: #fff;
   padding: 10px;
 }
 .mp-field label {
   position: absolute;
   left: 16px;
-  top: 6px;
-  font-size: .65rem;
-  font-weight: 600;
-  color: var(--muted);
+  top: 7px;
+  font-size: .66rem;
+  font-weight: 700;
+  color: #94a3af;
   text-transform: uppercase;
-  letter-spacing: .8px;
+  letter-spacing: .06em;
   pointer-events: none;
   transition: all .2s ease;
 }
 .mp-field input:focus,
 .mp-field select:focus,
 .mp-field textarea:focus {
-  border-color: rgba(94,234,212,0.4);
-  background: rgba(94,234,212,0.03);
-  box-shadow: 0 0 0 3px rgba(94,234,212,0.06);
+  border-color: rgba(168, 85, 247, 0.6);
+  background: rgba(138, 43, 226, 0.08);
+  box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.22);
 }
 .mp-field input:focus + label,
 .mp-field select:focus + label,
 .mp-field textarea:focus + label {
-  color: var(--accent);
+  color: var(--accent-light, #b388ff);
 }
 
 /* ── Two-column row ── */
 .mp-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
 
 /* ── Divider ── */
 .mp-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
-  margin: 8px 0 14px;
-}
-html[data-theme="light"] .mp-divider {
-  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.06), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  margin: 10px 0 16px;
 }
 
 /* ── Submit button ── */
 .mp-submit {
   width: 100%;
-  padding: 14px;
-  border-radius: 14px;
+  padding: 13px;
+  border-radius: 12px;
   border: none;
-  background: linear-gradient(135deg, var(--accent), #38bdf8);
-  color: #0b0e1a;
-  font-family: 'Inter', sans-serif;
-  font-size: .9rem;
+  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
+  color: #ffffff;
+  font-family: inherit;
+  font-size: .92rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all .25s cubic-bezier(.4,0,.2,1);
+  transition: all .2s cubic-bezier(.4,0,.2,1);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   margin-top: 8px;
-  letter-spacing: .2px;
+  box-shadow: 0 4px 18px rgba(138, 43, 226, 0.38);
 }
 .mp-submit:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(94,234,212,0.2);
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(138, 43, 226, 0.55);
 }
 .mp-submit:active { transform: translateY(0); }
 .mp-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
 /* ── Method Cards (List) ── */
 .mp-list-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .mp-list-title i {
-  width: 32px; height: 32px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent), #0ea5e9);
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
   display: grid; place-items: center;
-  font-size: .95rem; color: #0b0e1a;
+  font-size: 1.1rem; color: #fff;
+  box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35);
 }
 .mp-method-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(18, 18, 23, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
   padding: 20px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   transition: all .22s cubic-bezier(.4,0,.2,1);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 .mp-method-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0;
-  width: 3px; height: 100%;
-  background: linear-gradient(180deg, var(--accent), var(--accent2));
+  width: 4px; height: 100%;
+  background: linear-gradient(180deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
   border-radius: 0 4px 4px 0;
   opacity: 0;
   transition: opacity .2s;
 }
 .mp-method-card:hover {
-  border-color: rgba(94,234,212,0.2);
-  transform: translateX(4px);
+  border-color: rgba(168, 85, 247, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 .mp-method-card:hover::before { opacity: 1; }
 
@@ -189,30 +191,36 @@ html[data-theme="light"] .mp-divider {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 .mp-method-type {
-  font-weight: 700;
-  font-size: .95rem;
-  color: var(--accent);
+  font-weight: 800;
+  font-size: .98rem;
+  color: #fff;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .mp-method-type i {
-  font-size: 1rem;
-  opacity: .7;
+  font-size: 1.15rem;
+  color: var(--accent-light, #b388ff);
+}
+.badge-xp-price {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-weight: 700;
+  font-size: .82rem;
+  border-radius: 8px;
+  padding: 3px 10px;
 }
 
 .mp-method-actions {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
-html[data-theme="light"] .mp-method-actions {
-  border-top-color: rgba(0,0,0,0.05);
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 .mp-btn-action {
   flex: 1;
@@ -220,66 +228,83 @@ html[data-theme="light"] .mp-method-actions {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px;
-  border-radius: 12px;
-  font-size: .8rem;
-  font-weight: 600;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: .82rem;
+  font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
   border: none;
-  transition: var(--trans);
+  transition: all .2s ease;
 }
-.mp-btn-edit { background: rgba(129,140,248,0.15); color: var(--accent2); }
-.mp-btn-edit:hover { background: var(--accent2); color: #fff; }
-.mp-btn-del { background: rgba(248,113,113,0.15); color: var(--danger); }
-.mp-btn-del:hover { background: var(--danger); color: #fff; }
+.mp-btn-edit {
+  background: rgba(138, 43, 226, 0.15);
+  border: 1px solid rgba(138, 43, 226, 0.35);
+  color: #d8b4fe;
+}
+.mp-btn-edit:hover {
+  background: rgba(138, 43, 226, 0.3);
+  color: #fff;
+}
+.mp-btn-del {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  color: #f87171;
+}
+.mp-btn-del:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fff;
+}
 
 .mp-method-detail {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: .82rem;
-  color: var(--muted);
+  gap: 8px;
+  font-size: .84rem;
+  color: #cbd5e1;
   padding: 3px 0;
 }
 .mp-method-detail i {
-  font-size: .9rem;
-  opacity: .6;
-  width: 16px;
+  font-size: .95rem;
+  color: var(--accent-light, #b388ff);
+  width: 18px;
   text-align: center;
   flex-shrink: 0;
 }
 .mp-method-note {
-  font-size: .78rem;
-  color: var(--muted);
+  font-size: .8rem;
+  color: #94a3b8;
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  border-top: 1px solid rgba(255,255,255,0.06);
   font-style: italic;
-}
-html[data-theme="light"] .mp-method-note {
-  border-top-color: rgba(0,0,0,0.05);
 }
 
 .mp-empty {
   text-align: center;
   padding: 48px 20px;
-  color: var(--muted);
+  background: rgba(18, 18, 23, 0.88);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  color: #94a3b8;
 }
 .mp-empty i {
   font-size: 2.5rem;
   display: block;
   margin-bottom: 12px;
-  opacity: .25;
+  opacity: .35;
+  color: var(--accent-light, #b388ff);
 }
 .mp-empty p {
   font-size: .9rem;
+  margin: 0;
 }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .mp-form-card { padding: 24px 18px; border-radius: 20px; }
-  .mp-row { grid-template-columns: 1fr; }
-  .mp-method-card { padding: 16px; border-radius: 14px; }
+  .mp-form-card { padding: 22px 18px; border-radius: 18px; }
+  .mp-row { grid-template-columns: 1fr; gap: 0; }
+  .mp-method-card { padding: 16px; border-radius: 16px; }
 }
 
 /* Hidden by default */
@@ -288,13 +313,43 @@ html[data-theme="light"] .mp-method-note {
 }
 </style>
 
-<div class="page-header d-flex align-items-center gap-3">
-  <button onclick="history.back()" class="btn-xp btn-secondary" style="padding:8px 12px;flex-shrink:0">
-    <i class="ti ti-arrow-left"></i>
-  </button>
-  <div class="flex-fill">
-    <h2><i class="ti ti-wallet" style="color:var(--accent)"></i> Métodos de Pago</h2>
-    <p>Configura cómo tus atletas te pagan</p>
+<!-- ── HEADER DE MÉTODOS DE PAGO (PREMIUM BENTO UI) ── -->
+<div class="sys-top-header premium-header">
+  <div class="user-info-group">
+    <div class="rl-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd)); display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35); font-size: 1.25rem;">
+      <i class="ti ti-wallet"></i>
+    </div>
+    <div class="user-text-wrap">
+      <h1 class="sys-top-title user-name-gradient" title="Métodos de Pago" style="font-size: 1.12rem !important; font-weight: 800; color: #fff; margin: 0; line-height: 1.25;">
+        <span class="user-name-text">Métodos de Pago</span>
+      </h1>
+      <p style="font-size: .74rem; font-weight: 500; color: #94a3af; margin: 2px 0 0; letter-spacing: 0.2px; line-height: 1.2;">
+        Configura cómo tus atletas te pagan
+      </p>
+    </div>
+  </div>
+  
+  <div class="header-actions">
+    <div id="xpPwaSyncPill" class="xp-pwa-header-pill online" title="Conectado a la red">
+      <span class="xp-status-dot"></span><span class="xp-status-text">Online</span>
+    </div>
+
+    <?php 
+      $unread_hdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'entrenador');
+    ?>
+    <div class="header-action-buttons">
+      <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+        <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
+          <i class="ti ti-bell"></i>
+          <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
+        </button>
+      </div>
+
+      <!-- Botón Volver a Configuración -->
+      <a href="<?= APP_URL ?>/entrenador/configuracion" class="db-icon-btn" title="Volver a Configuración" aria-label="Volver" style="flex-shrink: 0;">
+        <i class="ti ti-arrow-left"></i>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -427,7 +482,7 @@ html[data-theme="light"] .mp-method-note {
             <?= e($m['tipo']) ?>
           </span>
           <?php if($m['monto_dolares'] > 0): ?>
-            <span class="badge-xp badge-success">$<?= number_format($m['monto_dolares'], 2) ?> USD</span>
+            <span class="badge-xp-price">$<?= number_format($m['monto_dolares'], 2) ?> USD</span>
           <?php endif; ?>
         </div>
         

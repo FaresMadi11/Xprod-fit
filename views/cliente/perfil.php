@@ -290,6 +290,9 @@ $apellidoAtleta = $partesNombre[1] ?? '';
           <span class="profile-hero-badge-dot"></span> Activo
         </span>
         <div class="profile-hero-actions">
+          <button class="profile-hero-btn btn-hero-install" type="button" onclick="instalarXprodApp()" title="Descargar e instalar App">
+            <i class="ti ti-device-mobile-down"></i><span>Instalar App</span>
+          </button>
           <button class="profile-hero-btn" onclick="typeof window.Xp!=='undefined'?Xp.toast('info','Manual pr&oacute;ximamente'):alert('Pr&oacute;ximamente')">
             <i class="ti ti-book"></i> Manual de Usuario
           </button>
@@ -335,6 +338,23 @@ $apellidoAtleta = $partesNombre[1] ?? '';
     </ul>
 
   </div><!-- end .profile-unified-card -->
+
+  <!-- ── BANNER / CARD BENTO DE INSTALACIÓN PWA ── -->
+  <div class="xp-pwa-install-card">
+    <div class="xp-pwa-install-left">
+      <div class="xp-pwa-install-icon-wrap" aria-hidden="true">
+        <i class="ti ti-device-mobile-down"></i>
+      </div>
+      <div class="xp-pwa-install-info">
+        <span class="xp-pwa-install-badge"><span class="badge-dot"></span> App Oficial & Offline</span>
+        <h3 class="xp-pwa-install-title">Descargar Xprod Fit en tu dispositivo</h3>
+      </div>
+    </div>
+    <button type="button" class="xp-pwa-install-btn" onclick="instalarXprodApp()">
+      <i class="ti ti-download"></i>
+      <span>Instalar App</span>
+    </button>
+  </div>
 
 <?php if(!empty($proximoPago)): ?>
 <style>

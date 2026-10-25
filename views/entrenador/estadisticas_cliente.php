@@ -32,7 +32,13 @@
 </div>
 
 <?php if(!empty($pesoHistorial) || !empty($sesiones)): ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<!-- Chart.js Local con fallback CDN -->
+<script src="<?= APP_URL ?>/assets/vendor/chartjs/chart.min.js"></script>
+<script>
+  if (typeof Chart === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');
+  }
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 <?php if(!empty($pesoHistorial)): ?>

@@ -3,8 +3,15 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Acceso – Xprod Fit</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.11.0/dist/tabler-icons.min.css" rel="stylesheet">
+<meta name="theme-color" content="#02040a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Xprod Fit">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="<?= APP_URL ?>/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/assets/img/favicon.svg">
+<link rel="apple-touch-icon" href="<?= APP_URL ?>/assets/img/apple-touch-icon.png">
+<link rel="stylesheet" href="<?= APP_URL ?>/assets/vendor/tabler-icons/tabler-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#02040a;min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow-x:hidden;overflow-y:auto;position:relative;}
@@ -52,7 +59,7 @@ main#mainContent{
   justify-content: center;
   padding: 16px;
   background: rgba(2, 4, 10, 0.46);
-  backdrop-filter: blur(1px);
+  backdrop-filter: blur(2.5px);
   -webkit-backdrop-filter: blur(2.5px);
   /* Scroll interno fluido cuando el wizard de registro o recuperación desborda la pantalla */
   overflow-y: auto;
@@ -77,7 +84,7 @@ main#mainContent{
 
 /* ── Fields (Touch targets & Typography) ── */
 .field{
-  background:transparent;
+  background:#00000066;
   border:1px solid rgba(255,255,255,0.15);
   border-radius:12px;
   padding:14px 16px; 
@@ -1475,7 +1482,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <?php endif; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="<?= APP_URL ?>/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
 <script>
 window.APP       = '<?= APP_URL ?>';
@@ -1507,13 +1514,22 @@ if (motionOK) {
   });
 }
 
-// ── Toast ──
-const Toast = Swal.mixin({
-  toast:true, position:'top-end', showConfirmButton:false, timer:3200,
-  background:'#111827', color:'#fff', timerProgressBar:true,
-});
+// ── Toast Defensivo ──
+const Toast = {
+  fire(opts) {
+    if (typeof Swal !== 'undefined') {
+      return Swal.mixin({
+        toast: true, position: 'top-end', showConfirmButton: false, timer: 3200,
+        background: '#111827', color: '#fff', timerProgressBar: true,
+      }).fire(opts);
+    } else {
+      console.log('[Toast]', opts.title || opts.text || '');
+    }
+  }
+};
 
 function setBtn(btn, loading, orig) {
+  if (!btn) return;
   btn.disabled = loading;
   btn.innerHTML = loading ? '<span class="spin"></span> Procesando...' : orig;
 }
@@ -1523,10 +1539,20 @@ async function postApi(endpoint, body) {
   const cleanBase = (typeof APP !== 'undefined' && APP ? APP : window.location.origin + window.location.pathname.replace(/\/views\/.*$/i, '').replace(/\/auth\/.*$/i, '')).replace(/\/+$/, '');
   const rawUrl = decodeURI(cleanBase) + '/' + endpoint.replace(/^\/+/, '');
   const url = encodeURI(rawUrl);
-  const r = await fetch(url, { method:'POST', body:fd });
+  const r = await fetch(url, { 
+    method: 'POST', 
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body: fd 
+  });
   const txt = await r.text();
   try {
-    return JSON.parse(txt);
+    const json = JSON.parse(txt);
+    // Si el servidor detectó desincronización de token CSRF tras logout previo, auto-refrescar
+    if (json && !json.ok && json.msg && json.msg.toLowerCase().includes('csrf')) {
+      Toast.fire({ icon: 'warning', title: 'Renovando sesión segura...' });
+      setTimeout(() => window.location.reload(), 800);
+    }
+    return json;
   } catch(e) {
     throw new Error('Respuesta inválida del servidor (' + r.status + ')');
   }

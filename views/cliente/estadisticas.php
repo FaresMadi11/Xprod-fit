@@ -1,6 +1,15 @@
 <?php
 $pageTitle = 'Mis Estadísticas';
 require __DIR__ . '/../layout/header.php';
+?>
+<!-- Chart.js Local (0ms de latencia, 100% Offline Compatible) con fallback -->
+<script src="<?= APP_URL ?>/assets/vendor/chartjs/chart.min.js"></script>
+<script>
+  if (typeof Chart === 'undefined') {
+    document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>');
+  }
+</script>
+<?php
 
 // Paleta de colores para gráficas (hasta 8 ejercicios)
 $chartColors = [
@@ -464,12 +473,22 @@ $grupoIconos = [
 }
 .dia-modal-badge:empty { display: none; }
 .dia-modal-badge.modo-historial     { background: rgba(138,43,226,.18); color: #c4a3ff; }
+.dia-modal-badge.modo-incompleta    { background: rgba(249,115,22,.2); color: #fb923c; border: 1px solid rgba(249,115,22,.35); display: inline-flex; align-items: center; gap: 4px; }
 .dia-modal-badge.modo-hoy           { background: rgba(138,43,226,.30); color: #fff; }
 .dia-modal-badge.modo-planificacion { background: rgba(251,191,36,.15); color: #fbbf24; }
 .dia-modal-badge.est-completado     { background: rgba(74,222,128,.15); color: #4ade80; }
 .dia-modal-badge.est-parcial        { background: rgba(251,191,36,.15); color: #fbbf24; }
 .dia-modal-badge.est-pendiente      { background: rgba(167,139,250,.18); color: #c4b5fd; }
 .dia-modal-badge.est-programado     { background: rgba(251,191,36,.12); color: #fbbf24; }
+
+.dm-incompleta-banner {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.3);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; color: #fdba74;
+}
+.dm-incompleta-banner i { font-size: 1.25rem; color: #f97316; flex-shrink: 0; margin-top: 1px; }
+.dm-incompleta-banner strong { display: block; font-size: 0.88rem; color: #ffedd5; margin-bottom: 2px; }
+.dm-incompleta-banner p { font-size: 0.78rem; color: #fed7aa; margin: 0; line-height: 1.35; }
 .dia-modal-close {
   width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
   background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
@@ -678,24 +697,26 @@ $grupoIconos = [
   </div>
   
   <div class="header-actions">
-    <div class="sys-top-logo brand-glow">
-      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    <div id="xpPwaSyncPill" class="xp-pwa-header-pill online" title="Conectado a la red">
+      <span class="xp-status-dot"></span><span class="xp-status-text">Online</span>
     </div>
 
     <?php 
       $unreadCliHdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'cliente');
     ?>
-    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
-      <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
-        <i class="ti ti-bell"></i>
-        <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
-      </button>
-    </div>
+    <div class="header-action-buttons">
+      <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+        <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
+          <i class="ti ti-bell"></i>
+          <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
+        </button>
+      </div>
 
-    <!-- Botón Logout -->
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
-      <i class="ti ti-logout"></i>
-    </a>
+      <!-- Botón Logout -->
+      <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+        <i class="ti ti-logout"></i>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -1043,8 +1064,13 @@ $grupoIconos = [
     // Actualizar badges según modo y estado devuelto por el backend
     badgeEl.className = 'dia-modal-badge';
     if (data.modo === 'historial') {
-      badgeEl.classList.add('modo-historial');
-      badgeEl.textContent = 'Historial';
+      if (data.estado === 'incompleta') {
+        badgeEl.classList.add('modo-incompleta');
+        badgeEl.innerHTML = '<i class="ti ti-clock-pause"></i> Rutina incompleta';
+      } else {
+        badgeEl.classList.add('modo-historial');
+        badgeEl.textContent = 'Historial';
+      }
     } else if (data.modo === 'hoy') {
       badgeEl.classList.add('modo-hoy');
       badgeEl.textContent = (data.estado === 'completado') ? 'Hoy · Completado'
@@ -1078,8 +1104,8 @@ $grupoIconos = [
       return;
     }
 
-    // CASO A & B: Entrenamiento registrado (completado o parcial)
-    if (data.estado === 'completado' || data.estado === 'parcial') {
+    // CASO A & B: Entrenamiento registrado (completado, parcial o incompleto)
+    if (data.estado === 'completado' || data.estado === 'parcial' || data.estado === 'incompleta') {
       const resumen = data.resumen || {};
       const numEjs  = resumen.ejercicios || (data.ejercicios ? data.ejercicios.length : 0);
       const numSets = resumen.series || 0;
@@ -1099,6 +1125,19 @@ $grupoIconos = [
           </div>
         </div>
       `;
+
+      if (data.estado === 'incompleta') {
+        const plan = (data.resumen && data.resumen.series_planificadas) ? data.resumen.series_planificadas : 0;
+        html += `
+          <div class="dm-incompleta-banner">
+            <i class="ti ti-clock-pause"></i>
+            <div>
+              <strong>Rutina incompleta</strong>
+              <p>Esta sesión se dejó a medias: se completaron <b>${numSets}</b> ${plan ? `de <b>${plan}</b>` : ''} series planificadas.</p>
+            </div>
+          </div>
+        `;
+      }
 
       // Tarjetas Bento de resumen rápido
       html += `
@@ -1576,11 +1615,22 @@ $grupoIconos = [
 <script>
 // ── Datos peso para la gráfica ────────────────────────────
 const PESO_HISTORIAL = <?= json_encode($pesoHistorial, JSON_UNESCAPED_UNICODE) ?>;
+let pesoChartInstance = null;
 
-// ── Gráfica de peso corporal ──────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ── Gráfica de peso corporal (con soporte offline y reintento resiliente) ──
+function initPesoChart() {
   const canvas = document.getElementById('pesoChart');
   if (!canvas || !PESO_HISTORIAL.length) return;
+
+  if (typeof Chart === 'undefined') {
+    setTimeout(initPesoChart, 120);
+    return;
+  }
+
+  if (pesoChartInstance) {
+    pesoChartInstance.destroy();
+    pesoChartInstance = null;
+  }
 
   const labels = PESO_HISTORIAL.map(r => {
     const d = new Date(r.fecha + 'T00:00:00');
@@ -1588,7 +1638,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const datos = PESO_HISTORIAL.map(r => parseFloat(r.peso_kg));
 
-  new Chart(canvas, {
+  pesoChartInstance = new Chart(canvas, {
     type: 'line',
     data: {
       labels,
@@ -1623,7 +1673,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
-});
+}
+document.addEventListener('DOMContentLoaded', initPesoChart);
 
 
 // ── Modal historial de peso ──────────────────────────────
@@ -2088,7 +2139,6 @@ function cerrarHistorialPeso(event, force) {
 <!-- ── Padding inferior seguro para la barra de navegación ── -->
 <div style="height: calc(95px + env(safe-area-inset-bottom, 25px));"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 // ── Configuración inicial ─────────────────────────────────
 const TREN_SUPERIOR = <?= json_encode($trenoSuperior, JSON_UNESCAPED_UNICODE) ?>;
@@ -2153,10 +2203,25 @@ async function seleccionarGrupo(grupo, tren) {
   if (mainChart) { mainChart.destroy(); mainChart = null; }
 
   try {
-    const res = await fetch(APP + '/cliente/api-progreso-ejercicios?grupo=' + encodeURIComponent(grupo));
-    const data = await res.json();
+    let data = null;
+    try {
+      const res = await fetch(APP + '/cliente/api-progreso-ejercicios?grupo=' + encodeURIComponent(grupo));
+      data = await res.json();
+      if (data && data.ok) {
+        try { localStorage.setItem('xprod_st_ej_' + grupo, JSON.stringify(data)); } catch(e){}
+      }
+    } catch(fetchErr) {
+      console.warn('[Offline] Error en fetch de ejercicios de grupo, consultando caché local...', fetchErr);
+    }
 
-    if (!data.ok || !data.ejercicios || data.ejercicios.length === 0) {
+    if (!data || !data.ok) {
+      const cached = localStorage.getItem('xprod_st_ej_' + grupo);
+      if (cached) {
+        try { data = JSON.parse(cached); } catch(e){}
+      }
+    }
+
+    if (!data || !data.ok || !data.ejercicios || data.ejercicios.length === 0) {
       list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
       document.getElementById('chartEmptyMsg').textContent =
         'Aún no tienes series completadas registradas en ' + ucFirst(grupo) + '.';
@@ -2186,7 +2251,7 @@ async function seleccionarGrupo(grupo, tren) {
   }
 }
 
-// ── Seleccionar ejercicio individual (Fetch Historial) ────
+// ── Seleccionar ejercicio individual (Fetch Historial con Soporte Offline) ────
 async function seleccionarEjercicio(nombre, id) {
   currentEjercicio   = nombre;
   currentEjercicioId = id || null;
@@ -2204,10 +2269,25 @@ async function seleccionarEjercicio(nombre, id) {
     let url = APP + '/cliente/api-progreso-historial?ejercicio_nombre=' + encodeURIComponent(nombre);
     if (id) url += '&ejercicio_id=' + id;
 
-    const res  = await fetch(url);
-    const data = await res.json();
+    let data = null;
+    try {
+      const res  = await fetch(url);
+      data = await res.json();
+      if (data && data.ok) {
+        try { localStorage.setItem('xprod_st_hist_' + nombre, JSON.stringify(data)); } catch(e){}
+      }
+    } catch(fetchErr) {
+      console.warn('[Offline] Error en fetch de historial de ejercicio, consultando caché local...', fetchErr);
+    }
 
-    if (!data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
+    if (!data || !data.ok) {
+      const cached = localStorage.getItem('xprod_st_hist_' + nombre);
+      if (cached) {
+        try { data = JSON.parse(cached); } catch(e){}
+      }
+    }
+
+    if (!data || !data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
       currentTop3Sesiones   = [];
       currentBarrasPesos    = [];
       currentResumenRecords = null;
@@ -2239,7 +2319,7 @@ async function seleccionarEjercicio(nombre, id) {
   }
 }
 
-// ── Renderizar gráfica de barras de la Versión Seleccionada ──
+// ── Renderizar gráfica de barras de la Versión Seleccionada (Resiliente y Offline) ──
 function renderChartEjercicio(versionIdx = null) {
   if (versionIdx !== null && versionIdx !== undefined) {
     currentVersionIndex = versionIdx;
@@ -2264,6 +2344,12 @@ function renderChartEjercicio(versionIdx = null) {
 
   const labels = barras.map(b => b.peso_label);
   const datosReps = barras.map(b => b.reps_max);
+
+  if (typeof Chart === 'undefined') {
+    console.warn('[renderChartEjercicio] Chart.js aún cargándose, reintentando...');
+    setTimeout(() => renderChartEjercicio(versionIdx), 120);
+    return;
+  }
 
   if (mainChart) {
     mainChart.destroy();

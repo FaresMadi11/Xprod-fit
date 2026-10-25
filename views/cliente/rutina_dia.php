@@ -14,20 +14,27 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
 
 .xp-client-container {
   width: 100%;
-  max-width: 920px;
-  margin: 0 auto;
+  max-width: 100% !important;
+  margin: 0;
   box-sizing: border-box;
   padding: 0 0 calc(95px + env(safe-area-inset-bottom, 25px)) 0;
+  transition: opacity 0.15s ease;
+}
+.xp-client-container.is-loading-ajax {
+  opacity: 0.6;
+  pointer-events: none;
 }
 /* ── Header adaptativo y compacto Bento UI (UI-UX-PRO-MAX) ── */
 .sys-top-header.premium-header {
   margin: 12px 16px 14px 16px !important;
+  width: calc(100% - 32px) !important;
+  max-width: calc(100% - 32px) !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
   gap: 10px;
   min-width: 0;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
   padding: 10px 14px !important;
   border-radius: 18px !important;
   background: var(--card-glass, rgba(18, 18, 23, 0.88)) !important;
@@ -39,95 +46,129 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
 .user-info-group {
   display: flex !important;
   align-items: center !important;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   flex: 1 1 auto;
-  overflow: hidden;
+  overflow: visible;
 }
 .user-text-wrap {
   min-width: 0;
   flex: 1;
-  overflow: hidden;
-}
-.sys-top-greet-new {
-  font-size: 0.64rem !important;
-  font-weight: 700;
-  color: #94a3af !important;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin: 0 0 1px 0 !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
+  overflow: visible;
 }
 .user-name-gradient {
-  font-size: 1.05rem !important;
+  font-size: clamp(0.98rem, 3.2vw, 1.25rem) !important;
   font-weight: 800;
   margin: 0 !important;
   display: flex;
   align-items: center;
-  gap: 4px;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
   line-height: 1.25;
+  color: #fff;
 }
 .user-name-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
   min-width: 0;
   display: inline-block;
+  line-height: 1.2;
 }
-.header-actions {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 8px !important;
-  flex-shrink: 0 !important;
-}
-.header-actions .db-icon-btn {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 11px !important;
-  font-size: 1rem !important;
-  flex-shrink: 0 !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  color: #fff !important;
-  display: grid !important;
-  place-items: center !important;
-  text-decoration: none !important;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.header-actions .db-icon-btn:hover {
-  background: rgba(138, 43, 226, 0.25) !important;
-  border-color: rgba(138, 43, 226, 0.5) !important;
-  color: #fff !important;
-  transform: translateY(-1px);
-}
+
 @media (min-width: 768px) {
   .xp-client-container {
-    padding: 24px 28px 60px 28px;
+    padding: 20px 24px 60px 24px !important;
+    max-width: 100% !important;
   }
   .sys-top-header.premium-header {
     padding: 14px 20px !important;
     border-radius: 22px !important;
     margin: 0 0 20px 0 !important;
+    width: 100%;
   }
-  .header-actions .db-icon-btn {
-    width: 38px !important;
-    height: 38px !important;
-  }
+
   .rl-tabs {
-    padding: 0 0 16px 0 !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 0 0 18px 0 !important;
+    width: 100% !important;
+  }
+  .rl-tab {
+    flex: 1;
+    max-width: 200px;
+    text-align: center;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+    font-size: 0.95rem !important;
   }
   .wd-topbar {
     border-radius: 20px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
     border: 1px solid rgba(255,255,255,.08);
+    width: 100%;
+  }
+  .wd-ex-card {
+    border-radius: 22px !important;
+    margin-bottom: 20px !important;
+    width: 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .xp-client-container {
+    padding: 24px 36px 60px 36px !important;
+  }
+  .wd-series-table {
+    margin-top: 10px;
+  }
+  .wd-series-table th {
+    font-size: 0.85rem !important;
+    padding: 12px 16px !important;
+  }
+  .wd-series-table td {
+    padding: 12px 16px !important;
+  }
+  .wd-input-reps,
+  .wd-input-kg {
+    font-size: 1rem !important;
+    padding: 10px 14px !important;
+    max-width: 140px !important;
+    border-radius: 12px !important;
+  }
+}
+
+
+/* ── Interactive Focus & Hover Animations (GPU Accelerated) ── */
+.wd-serie-row {
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+.wd-serie-row:focus-within {
+  background: rgba(168, 85, 247, 0.08) !important;
+}
+.wd-input-reps:focus,
+.wd-input-kg:focus {
+  border-color: rgba(168, 85, 247, 0.55) !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.22) !important;
+  outline: none !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wd-ex-card {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.2s ease;
+  }
+  .wd-ex-card:hover {
+    transform: translate3d(0, -2px, 0);
+    border-color: rgba(168, 85, 247, 0.35) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 18px rgba(168, 85, 247, 0.12) !important;
+  }
+  .wd-btn-iniciar-sesion {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  }
+  .wd-btn-iniciar-sesion:hover {
+    transform: translate3d(0, -2px, 0);
+    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
   }
 }
 
@@ -669,34 +710,42 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
   color: #fff; transform: translateY(-1px);
 }
 
-/* ── Banner de Inicio de Rutina (Pre-sesión) ── */
+/* ── Contenedor Iniciar Rutina (Solitario, sin avisos ni textos al lado) ── */
 .wd-start-session-banner {
-  margin: 14px 16px; padding: 14px 16px;
-  background: linear-gradient(135deg, rgba(138,43,226,.15), rgba(56,189,248,.08));
-  border: 1px solid rgba(138,43,226,.32);
+  margin: 14px 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
   border-radius: 18px;
-  display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.25);
-}
-.wd-start-session-text { min-width: 0; flex: 1; }
-.wd-start-session-title {
-  font-size: .92rem; font-weight: 800; color: #fff;
-  display: flex; align-items: center; gap: 6px;
-}
-.wd-start-session-title i { color: #f59e0b; font-size: 1.1rem; }
-.wd-start-session-sub {
-  font-size: .74rem; color: #cbd5e1; margin-top: 3px; line-height: 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
 }
 .wd-btn-iniciar-sesion {
-  padding: 12px 20px; border-radius: 14px;
+  width: 100%;
+  padding: 14px 22px;
+  border-radius: 16px;
   background: linear-gradient(135deg, #10b981, #059669);
-  border: none; color: #fff; font-size: .88rem; font-weight: 900;
-  display: flex; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0;
-  box-shadow: 0 4px 18px rgba(16,185,129,.35);
-  transition: all .2s;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #fff;
+  font-size: .95rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(16,185,129,.35);
+  transition: all .25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .wd-btn-iniciar-sesion:hover {
-  transform: translateY(-2px); box-shadow: 0 6px 24px rgba(16,185,129,.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 26px rgba(16,185,129,.5);
+}
+.wd-btn-iniciar-sesion:active {
+  transform: scale(0.98);
 }
 
 /* ── Elementos Bloqueados Pre-Sesión ── */
@@ -853,6 +902,383 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
   transition: border-color 0.2s;
 }
 .drill-search-mini:focus { border-color: var(--accent-primary, #8a2be2); }
+
+/* ── Botón Minimalista de Posponer / Aplazar Rutina ── */
+.wd-btn-posponer-toggle {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  color: #9ca3af; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.05rem; cursor: pointer; flex-shrink: 0;
+  transition: all .2s ease;
+  margin-right: 4px;
+}
+.wd-btn-posponer-toggle:hover {
+  background: rgba(138,43,226,.18);
+  border-color: rgba(138,43,226,.35);
+  color: #c084fc;
+  transform: scale(1.04);
+}
+.wd-btn-posponer-toggle.is-active {
+  background: rgba(245, 158, 11, .2);
+  border-color: rgba(245, 158, 11, .45);
+  color: #fbbf24;
+}
+
+/* ── Banner de Rutina Aplazada Destacado ── */
+.wd-rutina-aplazada-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(217, 119, 6, 0.08));
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 18px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  animation: fadeInBanner .2s ease;
+}
+@keyframes fadeInBanner {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.wd-aplazada-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+.wd-aplazada-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.22);
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.wd-aplazada-text {
+  min-width: 0;
+}
+.wd-aplazada-text strong {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #fef3c7;
+  letter-spacing: -0.01em;
+}
+.wd-aplazada-text span {
+  display: block;
+  font-size: 0.78rem;
+  color: #fde68a;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+.btn-aplazada-revertir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.22);
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  color: #fef3c7;
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn-aplazada-revertir:hover {
+  background: rgba(245, 158, 11, 0.38);
+  border-color: rgba(245, 158, 11, 0.65);
+  transform: translateY(-1px);
+}
+
+/* ── Tarjeta Bento de Día Trasladado ── */
+.wd-dia-trasladado-box {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px dashed rgba(245, 158, 11, 0.35);
+  border-radius: 20px;
+  padding: 36px 20px;
+  text-align: center;
+  margin: 16px 0 28px;
+}
+.wd-dt-icon-wrap {
+  width: 54px; height: 54px; border-radius: 16px;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.7rem; margin: 0 auto 14px;
+}
+.wd-dt-title {
+  font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0 0 8px;
+}
+.wd-dt-desc {
+  font-size: 0.88rem; color: #9ca3af; max-width: 440px; margin: 0 auto 20px; line-height: 1.5;
+}
+.wd-dt-btns {
+  display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
+}
+.btn-dt-ir {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: linear-gradient(135deg, #8a2be2, #6b21a8);
+  color: #fff !important; padding: 10px 18px; border-radius: 12px;
+  font-size: 0.88rem; font-weight: 700; text-decoration: none;
+  transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 4px 14px rgba(138,43,226,0.3);
+}
+.btn-dt-ir:hover { transform: translateY(-2px); color: #fff !important; }
+.btn-dt-revertir {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #fbbf24; padding: 10px 18px; border-radius: 12px;
+  font-size: 0.88rem; font-weight: 700; cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.btn-dt-revertir:hover {
+  background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #f59e0b;
+}
+
+/* ── Modal Posponer Rutina (Bottom Sheet / Floating) ── */
+.modal-posponer {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(100%);
+  width: 100%;
+  max-width: 480px;
+  z-index: 1000000 !important;
+  background: #141418 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px 28px !important;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.75);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.25s ease;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  box-sizing: border-box;
+}
+.modal-posponer.active {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+  visibility: visible;
+}
+.modal-posponer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.modal-posponer-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.25), rgba(59, 130, 246, 0.25));
+  border: 1px solid rgba(138, 43, 226, 0.4);
+  color: #c084fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+.modal-posponer-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+.modal-posponer-sub {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* Carrusel Horizontal de una sola fila */
+.wd-carousel-dias-wrap {
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.wd-carousel-dias {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 4px 2px 12px;
+  -webkit-overflow-scrolling: touch;
+}
+.wd-carousel-dias::-webkit-scrollbar {
+  height: 4px;
+}
+.wd-carousel-dias::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+/* Tarjetas del carrusel */
+.wd-dia-card {
+  flex: 0 0 120px;
+  scroll-snap-align: start;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  transition: all 0.22s ease;
+  user-select: none;
+}
+.wd-dia-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+}
+.wd-dia-card.selected {
+  background: linear-gradient(135deg, rgba(138, 43, 226, 0.2), rgba(59, 130, 246, 0.15));
+  border-color: var(--accent-primary, #8a2be2);
+  box-shadow: 0 4px 18px rgba(138, 43, 226, 0.3);
+}
+.wd-dia-badge-top {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #c4b5fd;
+  margin-bottom: 4px;
+}
+.wd-dia-card.selected .wd-dia-badge-top {
+  color: #fff;
+}
+.wd-dia-fecha {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+.wd-dia-rutina {
+  width: 100%;
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+.wd-dia-rutina .has-rutina {
+  color: #93c5fd;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px 4px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.12);
+}
+.wd-dia-rutina .is-descanso {
+  color: #9ca3af;
+  display: block;
+  padding: 2px 4px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+}
+.wd-dia-check {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-primary, #8a2be2);
+  color: #fff;
+  font-size: 0.7rem;
+  align-items: center;
+  justify-content: center;
+}
+.wd-dia-card.selected .wd-dia-check {
+  display: flex;
+}
+
+/* Modal posponer footer */
+.modal-posponer-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-posponer-confirmar {
+  width: 100%;
+  padding: 13px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd));
+  border: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(138, 43, 226, 0.35);
+}
+.btn-posponer-confirmar:hover:not(:disabled) {
+  opacity: 0.94;
+  transform: translateY(-1px);
+}
+.btn-posponer-confirmar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-posponer-cancelar {
+  width: 100%;
+  padding: 11px;
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-posponer-cancelar:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.55);
+}
+.btn-posponer-cerrar {
+  width: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-posponer-cerrar:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
 </style>
 
 <!-- ── CONTENEDOR PRINCIPAL CLIENTE (RESPONSIVE BENTO UI) ── -->
@@ -864,76 +1290,139 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
     <div class="rl-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, var(--accent-primary, #8a2be2), var(--accent-hover, #9d4edd)); display: grid; place-items: center; color: #fff; flex-shrink: 0; box-shadow: 0 4px 14px rgba(138, 43, 226, 0.35);">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="5" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2.5"/><rect x="16" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="19" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/></svg>
     </div>
+    <?php 
+      $diasES = ['Sunday'=>'Domingo','Monday'=>'Lunes','Tuesday'=>'Martes','Wednesday'=>'Miércoles','Thursday'=>'Jueves','Friday'=>'Viernes','Saturday'=>'Sábado'];
+      $mesesES = ['January'=>'Enero','February'=>'Febrero','March'=>'Marzo','April'=>'Abril','May'=>'Mayo','June'=>'Junio','July'=>'Julio','August'=>'Agosto','September'=>'Septiembre','October'=>'Octubre','November'=>'Noviembre','December'=>'Diciembre'];
+      $diaHdr = $diasES[date('l')] ?? date('l');
+      $mesHdr = $mesesES[date('F')] ?? date('F');
+      $fechaCompleta = $diaHdr . ', ' . date('d') . ' de ' . $mesHdr;
+    ?>
     <div class="user-text-wrap">
       <h1 class="sys-top-title user-name-gradient" title="Agenda Semanal" style="font-size: 1.12rem !important; font-weight: 800; color: #fff; margin: 0; line-height: 1.25;">
         <span class="user-name-text">Agenda Semanal</span>
       </h1>
-      <p style="font-size: .74rem; font-weight: 500; color: #94a3af; margin: 2px 0 0; text-transform: capitalize; letter-spacing: 0.2px; line-height: 1.2;">
-        <?= date('l, d \d\e F', strtotime('today')) ?>
+      <p style="font-size: .74rem; font-weight: 500; color: #94a3af; margin: 2px 0 0; letter-spacing: 0.2px; line-height: 1.2;">
+        <?= e($fechaCompleta) ?>
       </p>
     </div>
   </div>
   
   <div class="header-actions">
-    <div class="sys-top-logo brand-glow">
-      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    <div id="xpPwaSyncPill" class="xp-pwa-header-pill online" title="Conectado a la red">
+      <span class="xp-status-dot"></span><span class="xp-status-text">Online</span>
     </div>
 
     <?php 
       $unreadCliHdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'cliente');
     ?>
-    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
-      <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
-        <i class="ti ti-bell"></i>
-        <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
-      </button>
-    </div>
+    <div class="header-action-buttons">
+      <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+        <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
+          <i class="ti ti-bell"></i>
+          <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
+        </button>
+      </div>
 
-    <!-- Botón Logout -->
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
-      <i class="ti ti-logout"></i>
-    </a>
+      <!-- Botón Logout -->
+      <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+        <i class="ti ti-logout"></i>
+      </a>
+    </div>
   </div>
-</div>
+</div><!-- end sys-top-header -->
+
+<?php 
+  // Cálculos iniciales de progreso de la rutina
+  $totalEj       = !empty($rutina['ejercicios']) ? count($rutina['ejercicios']) : 0;
+  $ejConProgreso = !empty($rutina['ejercicios']) ? count(array_filter($rutina['ejercicios'], fn($e) => $e['series_completadas'] > 0)) : 0;
+  $ejCompletados = !empty($rutina['ejercicios']) ? count(array_filter($rutina['ejercicios'], fn($e) => $e['series_completadas'] >= $e['series'])) : 0;
+  $pct           = $totalEj > 0 ? round(($ejCompletados / $totalEj) * 100) : 0;
+  $badgeClass    = ['pendiente'=>'badge-pendiente','en_progreso'=>'badge-en_progreso','completada'=>'badge-completada'][$rutina['estado'] ?? ''] ?? 'badge-pendiente';
+?>
 
 <!-- Tabs de días -->
 <div class="rl-tabs">
   <?php 
-  // Rutina de fallback: la primera rutina disponible del cliente
-  $primeraRutina = !empty($todasRutinas) ? (int)$todasRutinas[0]['id'] : 0;
-  for($i=1; $i<=5; $i++): 
+  $diasTabs = $diasTabs ?? [1, 2, 3, 4, 5];
+  foreach ($diasTabs as $i): 
     $rId = $rutinaPorDia[$i] ?? 0;
-    // Si es el día de hoy y no tiene rutina asignada, usar cualquier rutina disponible
-    if (!$rId && $i === $diaHoy && $primeraRutina) $rId = $primeraRutina;
     $url = APP_URL . '/cliente/rutina-dia?dia=' . $i . ($rId ? '&rutina=' . $rId : '');
     $esDiaHoy = ($i === $diaHoy);
-    $tieneRutina = !empty($rutinaPorDia[$i]);
+    $esDestinoAplazado = isset($aplazamientosPorDiaDestino[$i]);
+    $esOrigenAplazado  = isset($aplazamientosPorDiaOrigen[$i]);
   ?>
     <a href="<?= $url ?>" class="rl-tab <?= $i === $diaActivo ? 'active' : '' ?>" 
-       style="<?= $esDiaHoy ? 'border-color:var(--accent-primary, #8a2be2);' : '' ?>">
-      <?= $diasNombre[$i] ?>
+       style="<?= $esDiaHoy ? 'border-color:var(--accent-primary, #8a2be2);' : '' ?>"
+       title="<?= $esDestinoAplazado ? 'Rutina aplazada para este día' : ($esOrigenAplazado ? 'Rutina trasladada' : '') ?>">
+      <?= $diasNombre[$i] ?? "Día $i" ?>
+      <?php if ($esDestinoAplazado): ?>
+        <i class="ti ti-arrow-back-up" style="font-size: .8rem; vertical-align: middle; margin-left: 2px; color: #fbbf24;" title="Rutina aplazada para este día"></i>
+      <?php elseif ($esOrigenAplazado): ?>
+        <i class="ti ti-calendar-share" style="font-size: .75rem; vertical-align: middle; margin-left: 2px; opacity: .7;" title="Rutina trasladada"></i>
+      <?php endif; ?>
       <?php if ($esDiaHoy): ?><span style="display:block;width:4px;height:4px;border-radius:50%;background: #ffffffff;margin:2px auto 0;"></span><?php endif; ?>
     </a>
-  <?php endfor; ?>
+  <?php endforeach; ?>
 </div>
 
-<?php if (!$rutinaId || empty($rutina)): ?>
+<?php if (!empty($aplazamientoOrigenActivo)): ?>
+<!-- Banner de Rutina Aplazada Destacado (Exclusivo en el día en que antes estaba la rutina) -->
+<div class="wd-rutina-aplazada-banner" id="bannerRutinaAplazada">
+  <div class="wd-aplazada-content">
+    <div class="wd-aplazada-icon">
+      <i class="ti ti-arrow-back-up"></i>
+    </div>
+    <div class="wd-aplazada-text">
+      <strong>Rutina aplazada</strong>
+      <span>Movida temporalmente para el <b><?= htmlspecialchars($aplazamientoOrigenActivo['nombre_dia_destino']) ?></b> (<?= date('d/m', strtotime($aplazamientoOrigenActivo['fecha_destino'])) ?>)</span>
+    </div>
+  </div>
+  <div class="wd-aplazada-actions">
+    <button type="button" class="btn-aplazada-revertir" 
+            data-btn-revertir="1"
+            data-rutina-id="<?= (int)$aplazamientoOrigenActivo['rutina_id'] ?>" 
+            data-aplazamiento-id="<?= (int)$aplazamientoOrigenActivo['id'] ?>"
+            onclick="ejecutarCancelarAplazamiento(<?= (int)$aplazamientoOrigenActivo['rutina_id'] ?>, <?= (int)$aplazamientoOrigenActivo['id'] ?>, this)" 
+            title="Revertir y hacerla hoy">
+      <i class="ti ti-rotate-clockwise"></i> Revertir
+    </button>
+  </div>
+</div>
+
+<!-- Tarjeta Bento informativa en el día original de la rutina trasladada -->
+<div class="wd-dia-trasladado-box">
+  <div class="wd-dt-icon-wrap">
+    <i class="ti ti-calendar-share"></i>
+  </div>
+  <h3 class="wd-dt-title">Rutina trasladada al <?= htmlspecialchars($aplazamientoOrigenActivo['nombre_dia_destino']) ?></h3>
+  <p class="wd-dt-desc">
+    La sesión programada para el <?= htmlspecialchars($aplazamientoOrigenActivo['nombre_dia_origen']) ?> fue movida para el <b><?= htmlspecialchars($aplazamientoOrigenActivo['nombre_dia_destino']) ?></b> (<?= date('d/m', strtotime($aplazamientoOrigenActivo['fecha_destino'])) ?>). Si deseas entrenarla hoy, puedes revertir el cambio.
+  </p>
+  <div class="wd-dt-btns">
+    <a href="<?= APP_URL ?>/cliente/rutina-dia?dia=<?= (int)$aplazamientoOrigenActivo['dia_destino'] ?>&rutina=<?= (int)$aplazamientoOrigenActivo['rutina_id'] ?>" class="btn-dt-ir">
+      <i class="ti ti-arrow-right"></i> Ver rutina en <?= htmlspecialchars($aplazamientoOrigenActivo['nombre_dia_destino']) ?>
+    </a>
+    <button type="button" class="btn-dt-revertir" 
+            data-btn-revertir="1"
+            data-rutina-id="<?= (int)$aplazamientoOrigenActivo['rutina_id'] ?>" 
+            data-aplazamiento-id="<?= (int)$aplazamientoOrigenActivo['id'] ?>"
+            onclick="ejecutarCancelarAplazamiento(<?= (int)$aplazamientoOrigenActivo['rutina_id'] ?>, <?= (int)$aplazamientoOrigenActivo['id'] ?>, this)">
+      <i class="ti ti-rotate-clockwise"></i> Revertir aplazamiento
+    </button>
+  </div>
+</div>
+<?php elseif (!$rutinaId || empty($rutina)): ?>
   <div style="text-align: center; padding: 60px 24px; color: #4b5563;">
     <i class="ti ti-calendar-off" style="font-size: 3rem; display: block; margin-bottom: 14px; color: #1f2937;"></i>
     <p style="font-size: .9rem;">Día de descanso. ¡Recupérate!</p>
   </div>
 <?php else: 
-  $diasArr    = $rutina['dias'] ?? [];
-  $totalEj       = count($rutina['ejercicios']);
-  $ejConProgreso = count(array_filter($rutina['ejercicios'], fn($e) => $e['series_completadas'] > 0));
-  $ejCompletados = count(array_filter($rutina['ejercicios'], fn($e) => $e['series_completadas'] >= $e['series']));
-  $pct = $totalEj > 0 ? round(($ejCompletados / $totalEj) * 100) : 0;
-  $badgeClass = ['pendiente'=>'badge-pendiente','en_progreso'=>'badge-en_progreso','completada'=>'badge-completada'][$rutina['estado']] ?? 'badge-pendiente';
+  $diasArr = $rutina['dias'] ?? [];
 ?>
 
-<!-- ── Sticky Top Bar ── -->
+<!-- ── Sticky Top Bar / Monitor de Sesión ── -->
 <div class="wd-topbar">
-  <!-- Barra de progreso con botón de edición minimalista (Punto 7) -->
+  <!-- Barra de progreso con botón de edición minimalista -->
   <div class="wd-progress-row">
     <div class="wd-progress-track">
       <div class="wd-progress-fill" id="globalProgressBar" style="width:<?= $pct ?>%"></div>
@@ -941,6 +1430,11 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
     <div class="wd-progress-label" id="globalProgressLabel">
       <?= $ejCompletados ?>/<?= $totalEj ?>
     </div>
+    <?php if ($rutinaId && empty($sesionHoyCompletada)): ?>
+    <button type="button" class="wd-btn-posponer-toggle <?= !empty($aplazamientoOrigenActivo) ? 'is-active' : '' ?>" id="btnPosponerRutina" onclick="abrirModalPosponerRutina()" title="<?= !empty($aplazamientoOrigenActivo) ? 'Gestionar rutina aplazada' : 'Mover rutina para otro día' ?>" aria-label="Mover rutina para otro día">
+      <i class="ti ti-arrow-back-up"></i>
+    </button>
+    <?php endif; ?>
     <button type="button" class="wd-btn-edit-toggle" id="btnToggleEdicion" onclick="toggleModoEdicion()" title="Editar rutina" aria-label="Editar rutina">
       <i class="ti ti-pencil"></i>
     </button>
@@ -948,53 +1442,45 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
 </div>
 
 <?php if ($diaActivo === $diaHoyNum && empty($sesionHoyCompletada) && empty($sesionIniciada)): ?>
-<!-- Banner Iniciar Rutina (Puntos 3 & 8) -->
+<!-- Iniciar Rutina (Solitario, sin avisos al lado) -->
 <div class="wd-start-session-banner" id="bannerIniciarSesion">
-  <div class="wd-start-session-text">
-    <div class="wd-start-session-title"><i class="ti ti-flame"></i> ¿Listo para tu entrenamiento?</div>
-    <div class="wd-start-session-sub">Inicia la rutina para registrar tus repeticiones y cargas de hoy.</div>
-  </div>
-  <button type="button" class="wd-btn-iniciar-sesion" id="btnIniciarRutina" onclick="iniciarRutinaAtleta()">
+  <button type="button" class="wd-btn-iniciar-sesion btn-shimmer" id="btnIniciarRutina" onclick="iniciarRutinaAtleta()">
     <i class="ti ti-player-play-filled"></i> Iniciar Rutina
   </button>
 </div>
 <?php endif; ?>
 
+    <!-- ════ VISTA REORDENAR COMPACTA FULL-SCREEN (IMAGE_27 / IMAGE_28) ════ -->
+    <div id="vista-reordenar-wrap" role="dialog" aria-modal="true" aria-label="Reordenar ejercicios">
+      <div class="reorder-compact-header">
+        <button type="button" class="reorder-back-btn" onclick="cancelarReordenarCompacto()" aria-label="Volver">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+        <h3 class="reorder-compact-title">Reordenar</h3>
+        <div style="width: 38px;"></div>
+      </div>
 
+      <div class="reorder-scroll-container">
+        <div id="lista-compacta-reordenar"></div>
+      </div>
 
+      <div class="reorder-compact-footer">
+        <button type="button" class="reorder-btn-listo" id="btnListoReordenar" onclick="guardarNuevoOrdenCompacto()">
+          Listo
+        </button>
+      </div>
+    </div>
 
-<!-- ════ VISTA REORDENAR COMPACTA FULL-SCREEN (IMAGE_27 / IMAGE_28) ════ -->
-<div id="vista-reordenar-wrap" role="dialog" aria-modal="true" aria-label="Reordenar ejercicios">
-  <div class="reorder-compact-header">
-    <button type="button" class="reorder-back-btn" onclick="cancelarReordenarCompacto()" aria-label="Volver">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
-    </button>
-    <h3 class="reorder-compact-title">Reordenar</h3>
-    <div style="width: 38px;"></div>
-  </div>
-
-  <div class="reorder-scroll-container">
-    <div id="lista-compacta-reordenar"></div>
-  </div>
-
-  <div class="reorder-compact-footer">
-    <button type="button" class="reorder-btn-listo" id="btnListoReordenar" onclick="guardarNuevoOrdenCompacto()">
-      Listo
-    </button>
-  </div>
-</div>
-
-<!-- ── Lista de ejercicios ── -->
-<div class="wd-exercise-list" id="ejerciciosList">
-<?php foreach ($rutina['ejercicios'] as $idx => $ej):
-  $totalSeries = (int)$ej['series'];
-  $completadas = (int)$ej['series_completadas'];
-  $todosCompletos = ($completadas >= $totalSeries);
-  $cardClass = $todosCompletos ? 'done' : ($completadas > 0 ? 'active' : '');
-
+    <!-- ── Lista de ejercicios ── -->
+    <div class="wd-exercise-list" id="ejerciciosList">
+    <?php foreach ($rutina['ejercicios'] as $idx => $ej):
+      $totalSeries = (int)$ej['series'];
+      $completadas = (int)$ej['series_completadas'];
+      $todosCompletos = ($completadas >= $totalSeries);
+      $cardClass = $todosCompletos ? 'done' : ($completadas > 0 ? 'active' : '');
   // Clasificación de implemento y unidad
   $imp = $ej['tipo_implemento'] ?? 'barra';
   $uni = $ej['unidad_carga'] ?? 'kg';
@@ -1012,7 +1498,7 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
   ];
   $implInfo = $implLabels[$imp] ?? $implLabels['barra'];
 ?>
-<div class="wd-ex-card <?= $cardClass ?>" id="exCard<?= $ej['id'] ?>" data-implemento="<?= $imp ?>" data-unidad="<?= $uni ?>" data-categoria-id="<?= (int)($ej['categoria_id'] ?? 0) ?>" data-categoria-nombre="<?= strtolower(e($ej['grupo_muscular'] ?? '')) ?>">
+<div class="wd-ex-card <?= $cardClass ?> bento-in bento-hover-lift" id="exCard<?= $ej['id'] ?>" data-implemento="<?= $imp ?>" data-unidad="<?= $uni ?>" data-categoria-id="<?= (int)($ej['categoria_id'] ?? 0) ?>" data-categoria-nombre="<?= strtolower(e($ej['grupo_muscular'] ?? '')) ?>">
 
   <!-- Header clickeable con paridad visual y botón de opciones -->
   <div class="wd-ex-header" onclick="toggleAcordeon(<?= $ej['id'] ?>)" id="exHeader<?= $ej['id'] ?>">
@@ -1280,6 +1766,60 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
       <i class="ti ti-plus"></i> Agregar Ejercicio
     </button>
   </div>
+<!-- ════ MODAL POSPONER RUTINA (CARRUSEL HORIZONTAL DE DÍAS) ════ -->
+<div class="modal-posponer" id="modalPosponerRutina" role="dialog" aria-modal="true" aria-label="Mover rutina para otro día">
+  <div class="bs-handle"></div>
+  <div class="modal-posponer-header">
+    <div class="modal-posponer-icon">
+      <i class="ti ti-arrow-back-up"></i>
+    </div>
+    <div>
+      <h3 class="modal-posponer-title">¿Mover rutina para otro día?</h3>
+      <p class="modal-posponer-sub">Selecciona el día al que deseas moverla temporalmente:</p>
+    </div>
+  </div>
+
+  <div class="wd-carousel-dias-wrap">
+    <div class="wd-carousel-dias" id="carouselDiasPosponer">
+      <?php if (!empty($proximosDiasDisponibles)): ?>
+        <?php foreach ($proximosDiasDisponibles as $diaOpt): ?>
+          <div class="wd-dia-card <?= !empty($diaOpt['es_seleccionado']) ? 'selected' : '' ?>"
+               data-fecha="<?= $diaOpt['fecha'] ?>"
+               onclick="seleccionarDiaPosponer('<?= $diaOpt['fecha'] ?>', this)">
+            <div class="wd-dia-badge-top"><?= htmlspecialchars($diaOpt['dia_nombre']) ?></div>
+            <div class="wd-dia-fecha"><?= htmlspecialchars($diaOpt['fecha_corta']) ?></div>
+            <div class="wd-dia-rutina">
+              <?php if (!empty($diaOpt['rutina_nombre'])): ?>
+                <span class="has-rutina" title="<?= htmlspecialchars($diaOpt['rutina_nombre']) ?>">
+                  <i class="ti ti-barbell"></i> <?= htmlspecialchars($diaOpt['rutina_nombre']) ?>
+                </span>
+              <?php else: ?>
+                <span class="is-descanso"><i class="ti ti-bed"></i> Descanso</span>
+              <?php endif; ?>
+            </div>
+            <div class="wd-dia-check"><i class="ti ti-check"></i></div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <div class="modal-posponer-footer">
+    <?php if (!empty($aplazamientoHoyActivo)): ?>
+      <button type="button" class="btn-posponer-cancelar" 
+              data-rutina-id="<?= (int)$aplazamientoHoyActivo['rutina_id'] ?>" 
+              data-aplazamiento-id="<?= (int)$aplazamientoHoyActivo['id'] ?>"
+              onclick="ejecutarCancelarAplazamiento(<?= (int)$aplazamientoHoyActivo['rutina_id'] ?>, <?= (int)$aplazamientoHoyActivo['id'] ?>, this)">
+        <i class="ti ti-rotate-clockwise"></i> Revertir aplazamiento (Hacerla hoy)
+      </button>
+    <?php endif; ?>
+    <button type="button" class="btn-posponer-confirmar" id="btnConfirmarPosponer" onclick="ejecutarPosponerRutina()" <?= empty($aplazamientoHoyActivo) ? 'disabled' : '' ?>>
+      <i class="ti ti-calendar-share"></i> Confirmar aplazamiento
+    </button>
+    <button type="button" class="btn-posponer-cerrar" onclick="cerrarModalPosponerRutina()">
+      Cerrar
+    </button>
+  </div>
 </div>
 
 <!-- ════ BACKDROP CONTROLADO (BLUR SIN SCROLL DOM) ════ -->
@@ -1503,21 +2043,50 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
     </div>
   </div>
 </div>
+<?php endif; ?>
+
+<script id="xpPageState" type="application/json">
+<?= json_encode([
+  'rutinaId' => (int)($rutina['id'] ?? 0),
+  'totalEj'  => (int)($totalEj ?? 0),
+  'fechaSesion' => date('Y-m-d'),
+  'aplazamientoActivoFecha' => !empty($aplazamientoOrigenActivo) ? $aplazamientoOrigenActivo['fecha_destino'] : (!empty($aplazamientosActivos[0]) ? $aplazamientosActivos[0]['fecha_destino'] : null),
+  'sesionIniciada' => !empty($sesionIniciada),
+  'sesionHoyCompletada' => !empty($sesionHoyCompletada),
+  'ejMap' => (object)array_reduce($rutina['ejercicios'] ?? [], function($acc, $ej) {
+      $acc[(string)$ej['id']] = ['total' => (int)$ej['series'], 'comp' => (int)$ej['series_completadas']];
+      return $acc;
+  }, [])
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>
+</script>
 </div><!-- end xp-client-container -->
 
 <script>
-const RUTINA_ID = <?= $rutina['id'] ?>;
-const TOTAL_EJ  = <?= $totalEj ?>;
+window.RUTINA_ID = <?= (int)($rutina['id'] ?? 0) ?>;
+window.TOTAL_EJ  = <?= (int)($totalEj ?? 0) ?>;
+window.FECHA_SESION_ACTUAL = '<?= date("Y-m-d") ?>';
+window.aplazamientoActivoFecha = <?= !empty($aplazamientoOrigenActivo) ? json_encode($aplazamientoOrigenActivo['fecha_destino']) : (!empty($aplazamientosActivos[0]) ? json_encode($aplazamientosActivos[0]['fecha_destino']) : 'null') ?>;
+window.fechaPosponerSeleccionada = window.aplazamientoActivoFecha;
 window.sesionIniciada = <?= !empty($sesionIniciada) ? 'true' : 'false' ?>;
 window.sesionHoyCompletada = <?= !empty($sesionHoyCompletada) ? 'true' : 'false' ?>;
-let modoEdicionActivo = false;
-let hayCambiosPendientes = false;
+window.modoEdicionActivo = false;
+window.hayCambiosPendientes = false;
 
 // Mapa de ejercicios: id -> { series totales, series completadas }
-let ejMap = {};
-<?php foreach ($rutina['ejercicios'] as $ej): ?>
-ejMap[<?= $ej['id'] ?>] = { total: <?= (int)$ej['series'] ?>, comp: <?= (int)$ej['series_completadas'] ?> };
+window.ejMap = {
+<?php foreach ($rutina['ejercicios'] ?? [] as $ej): ?>
+  <?= $ej['id'] ?>: { total: <?= (int)$ej['series'] ?>, comp: <?= (int)$ej['series_completadas'] ?> },
 <?php endforeach; ?>
+};
+
+var RUTINA_ID = window.RUTINA_ID;
+var TOTAL_EJ  = window.TOTAL_EJ;
+var FECHA_SESION_ACTUAL = window.FECHA_SESION_ACTUAL;
+var aplazamientoActivoFecha = window.aplazamientoActivoFecha;
+var fechaPosponerSeleccionada = window.fechaPosponerSeleccionada;
+var modoEdicionActivo = window.modoEdicionActivo;
+var hayCambiosPendientes = window.hayCambiosPendientes;
+var ejMap = window.ejMap;
 
 /* ── 0. Alternar Modo Edición (Punto 7) ── */
 function toggleModoEdicion() {
@@ -1644,61 +2213,89 @@ function actualizarBotonesModoEdicion() {
   }
 }
 
-/* ── Iniciar Rutina (Puntos 3 & 8) ── */
+/* ── Iniciar Rutina (Puntos 3 & 8 + PWA Offline Mode) ── */
 async function iniciarRutinaAtleta() {
   const btn = document.getElementById('btnIniciarRutina');
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i> Iniciando...';
   }
+
+  const unlockUI = () => {
+    window.sesionIniciada = true;
+
+    // Animar y retirar banner de inicio
+    const banner = document.getElementById('bannerIniciarSesion');
+    if (banner) {
+      banner.style.transition = 'all .3s ease';
+      banner.style.opacity = '0';
+      banner.style.transform = 'translateY(-10px)';
+      setTimeout(() => banner.remove(), 320);
+    }
+
+    // Desbloquear inputs de repeticiones y cargas
+    document.querySelectorAll('.locked-pre-session').forEach(inp => {
+      inp.disabled = false;
+      inp.classList.remove('locked-pre-session');
+    });
+
+    // Habilitar botones de check de series
+    document.querySelectorAll('.pre-session-btn').forEach(btnSerie => {
+      btnSerie.disabled = false;
+      btnSerie.classList.remove('pre-session-btn');
+      btnSerie.title = 'Guardar serie';
+    });
+
+    // Mostrar botón "Rutina Terminada" en el footer si no existe
+    const finishWrap = document.querySelector('.wd-finish-wrap');
+    if (finishWrap && !document.getElementById('btnFinish')) {
+      const btnTerminar = document.createElement('button');
+      btnTerminar.className = 'wd-btn-finish';
+      btnTerminar.id = 'btnFinish';
+      btnTerminar.onclick = () => marcarRutina(RUTINA_ID);
+      btnTerminar.innerHTML = '<i class="ti ti-trophy-filled"></i> Rutina Terminada';
+      finishWrap.appendChild(btnTerminar);
+    }
+
+    // Actualizar botones según estado de edición
+    actualizarBotonesModoEdicion();
+    actualizarBarraCambios();
+  };
+
+  // 1. Manejo offline directo
+  if (!navigator.onLine) {
+    if (window.XpSync) {
+      XpSync.enqueue({
+        url: APP + '/cliente/iniciar-rutina',
+        data: { rutina_id: RUTINA_ID, fecha_entrenamiento: FECHA_SESION_ACTUAL },
+        label: 'Iniciar entrenamiento'
+      });
+    }
+    unlockUI();
+    Swal.fire({
+      icon: 'info',
+      title: '¡Rutina iniciada (Modo Gym Offline)!',
+      text: 'Entrena con tranquilidad. Tus series se guardarán en tu teléfono y se sincronizarán al conectarte.',
+      timer: 2800,
+      showConfirmButton: false,
+      background: '#121216',
+      color: '#fff'
+    });
+    return;
+  }
+
+  // 2. Modo con conexión
   try {
     const fd = new FormData();
     fd.append('rutina_id', RUTINA_ID);
+    fd.append('fecha_entrenamiento', FECHA_SESION_ACTUAL);
     fd.append('csrf_token', CSRF);
 
     const res = await fetch(APP + '/cliente/iniciar-rutina', { method: 'POST', body: fd });
     const data = await res.json();
 
     if (data.ok) {
-      window.sesionIniciada = true;
-
-      // Animar y retirar banner de inicio
-      const banner = document.getElementById('bannerIniciarSesion');
-      if (banner) {
-        banner.style.transition = 'all .3s ease';
-        banner.style.opacity = '0';
-        banner.style.transform = 'translateY(-10px)';
-        setTimeout(() => banner.remove(), 320);
-      }
-
-      // Desbloquear inputs de repeticiones y cargas
-      document.querySelectorAll('.locked-pre-session').forEach(inp => {
-        inp.disabled = false;
-        inp.classList.remove('locked-pre-session');
-      });
-
-      // Habilitar botones de check de series
-      document.querySelectorAll('.pre-session-btn').forEach(btnSerie => {
-        btnSerie.disabled = false;
-        btnSerie.classList.remove('pre-session-btn');
-        btnSerie.title = 'Guardar serie';
-      });
-
-      // Mostrar botón "Rutina Terminada" en el footer si no existe
-      const finishWrap = document.querySelector('.wd-finish-wrap');
-      if (finishWrap && !document.getElementById('btnFinish')) {
-        const btnTerminar = document.createElement('button');
-        btnTerminar.className = 'wd-btn-finish';
-        btnTerminar.id = 'btnFinish';
-        btnTerminar.onclick = () => marcarRutina(RUTINA_ID);
-        btnTerminar.innerHTML = '<i class="ti ti-trophy-filled"></i> Rutina Terminada';
-        finishWrap.appendChild(btnTerminar);
-      }
-
-      // Actualizar botones según estado de edición
-      actualizarBotonesModoEdicion();
-      actualizarBarraCambios();
-
+      unlockUI();
       Swal.fire({
         icon: 'success',
         title: '¡Rutina iniciada!',
@@ -1716,13 +2313,27 @@ async function iniciarRutinaAtleta() {
       Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo iniciar la rutina.', background: '#121216', color: '#fff' });
     }
   } catch (err) {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="ti ti-player-play-filled"></i> Iniciar Rutina';
+    console.warn('[PWA] Error de red iniciando rutina, encolando localmente...', err);
+    if (window.XpSync) {
+      XpSync.enqueue({
+        url: APP + '/cliente/iniciar-rutina',
+        data: { rutina_id: RUTINA_ID, fecha_entrenamiento: FECHA_SESION_ACTUAL },
+        label: 'Iniciar entrenamiento'
+      });
     }
-    console.error(err);
+    unlockUI();
+    Swal.fire({
+      icon: 'info',
+      title: '¡Rutina iniciada (Sin Red)!',
+      text: 'Conexión débil detectada. El entrenamiento continuará guardándose localmente.',
+      timer: 2500,
+      showConfirmButton: false,
+      background: '#121216',
+      color: '#fff'
+    });
   }
 }
+
 
 /* ── Acordeón ── */
 function toggleAcordeon(ejId) {
@@ -1771,7 +2382,7 @@ function actualizarMancuernaAtleta(ejId, numSerie, input) {
   }
 }
 
-/* ── Guardar o Desmarcar serie individual (Punto 4) ── */
+/* ── Guardar o Desmarcar serie individual (Punto 4 + PWA Offline Mode) ── */
 async function guardarSerie(ejId, numSerie, btn) {
   const card = document.getElementById('exCard' + ejId);
   const tipoImp = card ? (card.dataset.implemento || 'barra') : 'barra';
@@ -1785,49 +2396,73 @@ async function guardarSerie(ejId, numSerie, btn) {
     btn.disabled = true;
     btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i>';
 
+    const applyUnmarkUI = () => {
+      row.classList.remove('completada');
+      btn.classList.remove('saved');
+      btn.innerHTML = '<i class="ti ti-check"></i>';
+      btn.title = 'Guardar serie';
+      btn.disabled = false;
+
+      const pip = document.getElementById('pip' + ejId + '_' + numSerie);
+      if (pip) pip.classList.remove('done');
+
+      // Desbloquear inputs si estuvieran deshabilitados
+      const repsInput = document.getElementById('reps_' + ejId + '_' + numSerie);
+      const pesoInput = document.getElementById('peso_' + ejId + '_' + numSerie);
+      if (repsInput) { repsInput.disabled = false; repsInput.focus(); }
+      if (pesoInput) { pesoInput.disabled = false; }
+
+      if (ejMap[ejId] && ejMap[ejId].comp > 0) {
+        ejMap[ejId].comp--;
+      }
+      actualizarEstadoEjercicio(ejId);
+      actualizarProgreso();
+
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('info', 'Serie desmarcada');
+      }
+    };
+
+    if (!navigator.onLine) {
+      if (window.XpSync) {
+        XpSync.enqueue({
+          url: APP + '/cliente/guardar-serie',
+          data: { ejercicio_id: ejId, numero_serie: numSerie, accion: 'desmarcar', fecha_entrenamiento: FECHA_SESION_ACTUAL },
+          label: 'Desmarcar serie ' + numSerie
+        });
+      }
+      applyUnmarkUI();
+      return;
+    }
+
     try {
       const body = new FormData();
       body.append('ejercicio_id', ejId);
       body.append('numero_serie', numSerie);
       body.append('accion', 'desmarcar');
+      body.append('fecha_entrenamiento', FECHA_SESION_ACTUAL);
       body.append('csrf_token', CSRF);
 
       const res  = await fetch(APP + '/cliente/guardar-serie', { method: 'POST', body });
       const data = await res.json();
 
       if (data.ok && data.desmarcado) {
-        row.classList.remove('completada');
-        btn.classList.remove('saved');
-        btn.innerHTML = '<i class="ti ti-check"></i>';
-        btn.title = 'Guardar serie';
-        btn.disabled = false;
-
-        const pip = document.getElementById('pip' + ejId + '_' + numSerie);
-        if (pip) pip.classList.remove('done');
-
-        // Desbloquear inputs si estuvieran deshabilitados
-        const repsInput = document.getElementById('reps_' + ejId + '_' + numSerie);
-        const pesoInput = document.getElementById('peso_' + ejId + '_' + numSerie);
-        if (repsInput) { repsInput.disabled = false; repsInput.focus(); }
-        if (pesoInput) { pesoInput.disabled = false; }
-
-        if (ejMap[ejId] && ejMap[ejId].comp > 0) {
-          ejMap[ejId].comp--;
-        }
-        actualizarEstadoEjercicio(ejId);
-        actualizarProgreso();
-
-        if (typeof Xp !== 'undefined' && Xp.toast) {
-          Xp.toast('info', 'Serie desmarcada');
-        }
+        applyUnmarkUI();
       } else {
         btn.disabled = false;
         btn.innerHTML = '<i class="ti ti-check"></i>';
         Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo desmarcar.', background: '#111', color: '#fff' });
       }
     } catch(e) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="ti ti-check"></i>';
+      // Fallback a outbox si la red se corta
+      if (window.XpSync) {
+        XpSync.enqueue({
+          url: APP + '/cliente/guardar-serie',
+          data: { ejercicio_id: ejId, numero_serie: numSerie, accion: 'desmarcar', fecha_entrenamiento: FECHA_SESION_ACTUAL },
+          label: 'Desmarcar serie ' + numSerie
+        });
+      }
+      applyUnmarkUI();
     }
     return;
   }
@@ -1855,10 +2490,55 @@ async function guardarSerie(ejId, numSerie, btn) {
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i>';
 
-  try {
-    const badge = row ? row.querySelector('.set-badge') : null;
-    const tipoSerie = badge ? (badge.dataset.type || 'normal') : 'normal';
+  const badge = row ? row.querySelector('.set-badge') : null;
+  const tipoSerie = badge ? (badge.dataset.type || 'normal') : 'normal';
 
+  const applySaveUI = (isOffline = false) => {
+    row.classList.add('completada');
+
+    const pip = document.getElementById('pip' + ejId + '_' + numSerie);
+    if (pip) pip.classList.add('done');
+
+    btn.classList.add('saved');
+    btn.innerHTML = '<i class="ti ti-check"></i>';
+    btn.title = 'Click para desmarcar serie';
+    btn.disabled = false;
+
+    if (!ejMap[ejId]) ejMap[ejId] = { total: 3, comp: 0 };
+    ejMap[ejId].comp++;
+    actualizarEstadoEjercicio(ejId);
+    actualizarProgreso();
+
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast(isOffline ? 'info' : 'success', isOffline ? 'Serie guardada en tu teléfono' : 'Serie guardada');
+    }
+  };
+
+  // 1. Manejo offline directo (0ms de latencia para el atleta)
+  if (!navigator.onLine) {
+    if (window.XpSync) {
+      XpSync.enqueue({
+        url: APP + '/cliente/guardar-serie',
+        data: {
+          ejercicio_id: ejId,
+          numero_serie: numSerie,
+          reps: reps,
+          peso: peso,
+          tipo_serie: tipoSerie,
+          tipo_implemento: tipoImp,
+          unidad_carga: unidadCarga,
+          accion: 'guardar',
+          fecha_entrenamiento: FECHA_SESION_ACTUAL
+        },
+        label: 'Serie ' + numSerie
+      });
+    }
+    applySaveUI(true);
+    return;
+  }
+
+  // 2. Con conexión
+  try {
     const body = new FormData();
     body.append('ejercicio_id', ejId);
     body.append('numero_serie', numSerie);
@@ -1868,38 +2548,40 @@ async function guardarSerie(ejId, numSerie, btn) {
     body.append('tipo_implemento', tipoImp);
     body.append('unidad_carga', unidadCarga);
     body.append('accion', 'guardar');
+    body.append('fecha_entrenamiento', FECHA_SESION_ACTUAL);
     body.append('csrf_token', CSRF);
 
     const res  = await fetch(APP + '/cliente/guardar-serie', { method: 'POST', body });
     const data = await res.json();
 
     if (data.ok) {
-      row.classList.add('completada');
-
-      const pip = document.getElementById('pip' + ejId + '_' + numSerie);
-      if (pip) pip.classList.add('done');
-
-      btn.classList.add('saved');
-      btn.innerHTML = '<i class="ti ti-check"></i>';
-      btn.title = 'Click para desmarcar serie';
-      btn.disabled = false;
-
-      if (!ejMap[ejId]) ejMap[ejId] = { total: 3, comp: 0 };
-      ejMap[ejId].comp++;
-      actualizarEstadoEjercicio(ejId);
-      actualizarProgreso();
-
-      if (typeof Xp !== 'undefined' && Xp.toast) {
-        Xp.toast('success', 'Serie guardada');
-      }
+      applySaveUI(false);
     } else {
       btn.disabled = false;
       btn.innerHTML = '<i class="ti ti-check"></i>';
       Swal.fire({ icon: 'error', title: 'Error', text: data.msg, background: '#111', color: '#fff' });
     }
   } catch(e) {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="ti ti-check"></i>';
+    // Si la señal del gym cae justo durante el fetch, guardar localmente sin frustrar al atleta
+    console.warn('[PWA] Conexión interrumpida al guardar serie, guardando localmente...', e);
+    if (window.XpSync) {
+      XpSync.enqueue({
+        url: APP + '/cliente/guardar-serie',
+        data: {
+          ejercicio_id: ejId,
+          numero_serie: numSerie,
+          reps: reps,
+          peso: peso,
+          tipo_serie: tipoSerie,
+          tipo_implemento: tipoImp,
+          unidad_carga: unidadCarga,
+          accion: 'guardar',
+          fecha_entrenamiento: FECHA_SESION_ACTUAL
+        },
+        label: 'Serie ' + numSerie
+      });
+    }
+    applySaveUI(true);
   }
 }
 
@@ -1908,7 +2590,7 @@ async function guardarSerie(ejId, numSerie, btn) {
    ═══════════════════════════════════════════════════════ */
 (function portalModalesAtleta() {
   function moverABody() {
-    ['modalBackdropCli', 'modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli', 'vista-reordenar-wrap'].forEach(id => {
+    ['modalBackdropCli', 'modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli', 'vista-reordenar-wrap', 'modalPosponerRutina', 'modalBackdropRevertir'].forEach(id => {
       const el = document.getElementById(id);
       if (el && el.parentElement !== document.body) {
         document.body.appendChild(el);
@@ -2211,7 +2893,7 @@ function confirmarAgregarEjercicio(catEj) {
 
 // 4. Cierre universal de modales
 function cerrarTodosModalesCliente() {
-  ['modalBackdropCli', 'modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli'].forEach(id => {
+  ['modalBackdropCli', 'modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli', 'modalPosponerRutina'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
@@ -2222,7 +2904,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') cerrarTodosModalesCliente();
 });
 
-['modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli'].forEach(id => {
+['modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli', 'modalPosponerRutina'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   let startY = 0;
@@ -2231,6 +2913,386 @@ document.addEventListener('keydown', (e) => {
     if (e.touches[0].clientY - startY > 70) cerrarTodosModalesCliente();
   }, { passive: true });
 });
+
+/* ── Métodos para Aplazamiento Temporal de Rutina ── */
+function abrirModalPosponerRutina() {
+  cerrarTodosModalesCliente();
+  const modal = document.getElementById('modalPosponerRutina');
+  const backdrop = document.getElementById('modalBackdropCli');
+  if (backdrop) backdrop.classList.add('active');
+  if (modal) modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  setTimeout(() => {
+    const selected = document.querySelector('#carouselDiasPosponer .wd-dia-card.selected');
+    if (selected) {
+      selected.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 100);
+}
+
+function cerrarModalPosponerRutina() {
+  const modal = document.getElementById('modalPosponerRutina');
+  const backdrop = document.getElementById('modalBackdropCli');
+  if (modal) modal.classList.remove('active');
+  if (backdrop) backdrop.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function seleccionarDiaPosponer(fecha, cardEl) {
+  fechaPosponerSeleccionada = fecha;
+  document.querySelectorAll('#carouselDiasPosponer .wd-dia-card').forEach(c => c.classList.remove('selected'));
+  if (cardEl) cardEl.classList.add('selected');
+  const btn = document.getElementById('btnConfirmarPosponer');
+  if (btn) btn.disabled = false;
+}
+
+async function ejecutarPosponerRutina() {
+  if (!fechaPosponerSeleccionada) {
+    if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+      Swal.fire({
+        icon: 'info',
+        title: 'Selecciona un día',
+        text: 'Por favor selecciona el día al que deseas mover tu rutina.',
+        background: '#121216',
+        color: '#fff'
+      });
+    } else {
+      alert('Por favor selecciona el día al que deseas mover tu rutina.');
+    }
+    return;
+  }
+
+  const btn = document.getElementById('btnConfirmarPosponer');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i> Guardando...';
+  }
+
+  try {
+    let data;
+    if (typeof Xp !== 'undefined' && typeof Xp.post === 'function') {
+      data = await Xp.post('cliente/posponer-rutina', {
+        rutina_id: RUTINA_ID,
+        fecha_destino: fechaPosponerSeleccionada
+      });
+    } else {
+      const fd = new FormData();
+      fd.append('rutina_id', RUTINA_ID);
+      fd.append('fecha_destino', fechaPosponerSeleccionada);
+      fd.append('csrf_token', typeof CSRF !== 'undefined' ? CSRF : (window.CSRF || ''));
+      const cleanBase = (window.APP || '').replace(/\/+$/, '');
+      const cleanUrl = encodeURI(cleanBase + '/cliente/posponer-rutina');
+      const res = await fetch(cleanUrl, { method: 'POST', body: fd });
+      data = await res.json();
+    }
+
+    if (data && data.ok) {
+      if (typeof cerrarModalPosponerRutina === 'function') cerrarModalPosponerRutina();
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('success', data.msg || 'Tu rutina se movió temporalmente al día seleccionado.');
+      }
+      const baseApp = (window.APP || '').replace(/\/+$/, '');
+      let targetUrl = window.location.href;
+      if (fechaPosponerSeleccionada) {
+        const partesFecha = fechaPosponerSeleccionada.split('-');
+        if (partesFecha.length === 3) {
+          const dObj = new Date(parseInt(partesFecha[0], 10), parseInt(partesFecha[1], 10) - 1, parseInt(partesFecha[2], 10));
+          const diaNum = dObj.getDay() === 0 ? 7 : dObj.getDay();
+          targetUrl = baseApp + '/cliente/rutina-dia?dia=' + encodeURIComponent(diaNum);
+        }
+      }
+      await actualizarVistaRutinaSinRecarga(targetUrl, true);
+    } else {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-calendar-share"></i> Confirmar aplazamiento';
+      }
+      const msg = (data && data.msg) ? data.msg : 'No se pudo aplazar la rutina.';
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('error', msg);
+      } else {
+        alert(msg);
+      }
+    }
+  } catch (err) {
+    console.error('[ejecutarPosponerRutina] Error:', err);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-calendar-share"></i> Confirmar aplazamiento';
+    }
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast('error', 'Verifica tu conexión a internet.');
+    } else {
+      alert('Error de red. Verifica tu conexión a internet.');
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ACTUALIZACIÓN EN TIEMPO REAL SIN RECARGA DE PÁGINA (AJAX SPA)
+   ══════════════════════════════════════════════════════════════════ */
+let isUpdatingViewAjax = false;
+
+async function actualizarVistaRutinaSinRecarga(targetUrl, pushState = true) {
+  if (isUpdatingViewAjax) return;
+  const container = document.querySelector('.xp-client-container');
+  if (!container) {
+    window.location.href = targetUrl;
+    return;
+  }
+
+  isUpdatingViewAjax = true;
+  container.classList.add('is-loading-ajax');
+
+  try {
+    const res = await fetch(targetUrl, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    if (!res.ok) {
+      window.location.href = targetUrl;
+      return;
+    }
+
+    const html = await res.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const newContainer = doc.querySelector('.xp-client-container');
+
+    if (!newContainer) {
+      window.location.href = targetUrl;
+      return;
+    }
+
+    // 1. Sincronizar estado JS desde el payload JSON embebido
+    const stateEl = newContainer.querySelector('#xpPageState') || doc.querySelector('#xpPageState');
+    if (stateEl) {
+      try {
+        const s = JSON.parse(stateEl.textContent || '{}');
+        window.RUTINA_ID = s.rutinaId || 0;
+        RUTINA_ID = window.RUTINA_ID;
+        window.TOTAL_EJ = s.totalEj || 0;
+        TOTAL_EJ = window.TOTAL_EJ;
+        window.FECHA_SESION_ACTUAL = s.fechaSesion || '';
+        FECHA_SESION_ACTUAL = window.FECHA_SESION_ACTUAL;
+        window.aplazamientoActivoFecha = s.aplazamientoActivoFecha || null;
+        aplazamientoActivoFecha = window.aplazamientoActivoFecha;
+        window.fechaPosponerSeleccionada = window.aplazamientoActivoFecha;
+        fechaPosponerSeleccionada = window.fechaPosponerSeleccionada;
+        window.sesionIniciada = !!s.sesionIniciada;
+        window.sesionHoyCompletada = !!s.sesionHoyCompletada;
+        window.modoEdicionActivo = false;
+        modoEdicionActivo = false;
+        window.hayCambiosPendientes = false;
+        hayCambiosPendientes = false;
+        window.ejMap = s.ejMap || {};
+        ejMap = window.ejMap;
+      } catch (errParse) {
+        console.warn('[actualizarVistaRutinaSinRecarga] Error parseando xpPageState:', errParse);
+      }
+    }
+
+    // 2. Cerrar inmediatamente todos los modales abiertos
+    if (typeof cerrarTodosModalesCliente === 'function') cerrarTodosModalesCliente();
+    if (typeof cerrarModalConfirmarRevertir === 'function') cerrarModalConfirmarRevertir();
+
+    // 3. Eliminar modales viejos de document.body para evitar duplicados con IDs idénticos
+    ['modalBackdropCli', 'modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli', 'vista-reordenar-wrap', 'modalPosponerRutina'].forEach(id => {
+      const oldEl = document.getElementById(id);
+      if (oldEl) oldEl.remove();
+    });
+
+    // 4. Reemplazar el contenedor visual en el DOM
+    container.innerHTML = newContainer.innerHTML;
+
+    // 5. Mover los nuevos modales limpios a document.body
+    ['modalBackdropCli', 'modalOpcionesCli', 'modalReemplazoCli', 'modalAgregarCli', 'vista-reordenar-wrap', 'modalPosponerRutina', 'modalBackdropRevertir'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.parentElement !== document.body) {
+        document.body.appendChild(el);
+      }
+    });
+
+    // 6. Garantizar que todos los modales queden en estado cerrado
+    if (typeof cerrarTodosModalesCliente === 'function') cerrarTodosModalesCliente();
+    if (typeof cerrarModalConfirmarRevertir === 'function') cerrarModalConfirmarRevertir();
+
+    // 5. Actualizar título y URL en la barra de direcciones sin recarga
+    if (doc.title) document.title = doc.title;
+    if (pushState) {
+      history.pushState({ xpUrl: targetUrl }, '', targetUrl);
+    } else {
+      history.replaceState({ xpUrl: targetUrl }, '', targetUrl);
+    }
+
+    // 6. Auto-abrir primer ejercicio incompleto si aplica
+    const firstIncomplete = Object.entries(window.ejMap || {}).find(([id, e]) => e.comp < e.total);
+    if (firstIncomplete) {
+      const card = document.getElementById('exCard' + firstIncomplete[0]);
+      if (card && !card.classList.contains('done')) {
+        card.classList.add('active');
+      }
+    }
+
+    // 7. Actualizar progreso visual si existe
+    if (typeof actualizarProgreso === 'function') {
+      actualizarProgreso();
+    }
+  } catch (err) {
+    console.error('[actualizarVistaRutinaSinRecarga] Excepción:', err);
+    window.location.href = targetUrl;
+  } finally {
+    isUpdatingViewAjax = false;
+    container.classList.remove('is-loading-ajax');
+  }
+}
+
+let pendingRevertRutinaId = 0;
+let pendingRevertAplazamientoId = 0;
+let pendingRevertTriggerBtn = null;
+
+function abrirModalConfirmarRevertir(rId, aId, triggerBtn) {
+  pendingRevertRutinaId = rId || (typeof RUTINA_ID !== 'undefined' ? RUTINA_ID : 0);
+  pendingRevertAplazamientoId = aId || 0;
+  pendingRevertTriggerBtn = triggerBtn || document.querySelector('[data-btn-revertir="1"]') || null;
+
+  const modal = document.getElementById('modalBackdropRevertir');
+  if (modal) {
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+function cerrarModalConfirmarRevertir(e) {
+  if (e && e.target && e.target.id !== 'modalBackdropRevertir' && !e.target.closest('.xp-rm-close') && !e.target.closest('.btn-rm-cancel')) {
+    return;
+  }
+  const modal = document.getElementById('modalBackdropRevertir');
+  if (modal) {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  }
+}
+
+async function confirmarYEjecutarRevertir() {
+  const btnModal = document.getElementById('btnConfirmarRevertirModal');
+  const txtModal = document.getElementById('txtBtnConfirmarRevertir');
+  const triggerBtn = pendingRevertTriggerBtn;
+  const origTriggerHtml = triggerBtn ? triggerBtn.innerHTML : '';
+
+  // Cerrar inmediatamente ambos modales en 0ms para que la UI no quede congelada
+  if (typeof cerrarModalConfirmarRevertir === 'function') cerrarModalConfirmarRevertir();
+  if (typeof cerrarTodosModalesCliente === 'function') cerrarTodosModalesCliente();
+
+  if (triggerBtn) {
+    triggerBtn.disabled = true;
+    triggerBtn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i> Revirtiendo...';
+  }
+
+  try {
+    let data;
+    if (typeof Xp !== 'undefined' && typeof Xp.post === 'function') {
+      data = await Xp.post('cliente/cancelar-aplazamiento', {
+        rutina_id: pendingRevertRutinaId,
+        aplazamiento_id: pendingRevertAplazamientoId
+      });
+    } else {
+      const fd = new FormData();
+      if (pendingRevertRutinaId) fd.append('rutina_id', pendingRevertRutinaId);
+      if (pendingRevertAplazamientoId) fd.append('aplazamiento_id', pendingRevertAplazamientoId);
+      fd.append('csrf_token', typeof CSRF !== 'undefined' ? CSRF : (window.CSRF || ''));
+      const cleanBase = (window.APP || '').replace(/\/+$/, '');
+      const cleanUrl = encodeURI(cleanBase + '/cliente/cancelar-aplazamiento');
+      const res = await fetch(cleanUrl, { method: 'POST', body: fd });
+      data = await res.json();
+    }
+
+    if (data && data.ok) {
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('success', data.msg || 'Aplazamiento revertido.');
+      }
+      const baseApp = (window.APP || '').replace(/\/+$/, '');
+      const targetUrl = data.dia_origen
+        ? baseApp + '/cliente/rutina-dia?dia=' + encodeURIComponent(data.dia_origen)
+        : window.location.href;
+      await actualizarVistaRutinaSinRecarga(targetUrl, false);
+    } else {
+      if (triggerBtn) {
+        triggerBtn.disabled = false;
+        triggerBtn.innerHTML = origTriggerHtml || '<i class="ti ti-rotate-clockwise"></i> Revertir';
+      }
+      const errMsg = (data && data.msg) ? data.msg : 'No se pudo cancelar el aplazamiento.';
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('error', errMsg);
+      } else {
+        alert(errMsg);
+      }
+    }
+  } catch (err) {
+    console.error('[confirmarYEjecutarRevertir] Error:', err);
+    if (triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.innerHTML = origTriggerHtml || '<i class="ti ti-rotate-clockwise"></i> Revertir';
+    }
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast('error', 'Error de conexión con el servidor.');
+    } else {
+      alert('Error de conexión con el servidor.');
+    }
+  } finally {
+    if (btnModal) {
+      btnModal.disabled = false;
+      if (txtModal) txtModal.textContent = 'Revertir';
+    }
+  }
+}
+
+function ejecutarCancelarAplazamiento(rId, aId, triggerBtn) {
+  abrirModalConfirmarRevertir(rId, aId, triggerBtn);
+}
+
+// Delegación global de clics para cualquier botón de revertir
+document.addEventListener('click', function(ev) {
+  const b = ev.target && ev.target.closest ? ev.target.closest('[data-btn-revertir="1"]') : null;
+  if (b && !b.disabled && !b.getAttribute('data-handling')) {
+    if (b.getAttribute('onclick')) return; // Evitar doble disparo en botones con onclick directo
+    b.setAttribute('data-handling', '1');
+    setTimeout(() => b.removeAttribute('data-handling'), 1000);
+    const r = parseInt(b.getAttribute('data-rutina-id') || '0', 10);
+    const a = parseInt(b.getAttribute('data-aplazamiento-id') || '0', 10);
+    abrirModalConfirmarRevertir(r, a, b);
+  }
+});
+
+// Intercepción de navegación por tabs de días sin recarga de página
+document.addEventListener('click', function(e) {
+  const tab = e.target.closest ? e.target.closest('.rl-tab') : null;
+  if (tab && tab.getAttribute('href') && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+    e.preventDefault();
+    if (tab.classList.contains('active')) return;
+    document.querySelectorAll('.rl-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    actualizarVistaRutinaSinRecarga(tab.href, true);
+    return;
+  }
+
+  const btnIr = e.target.closest ? e.target.closest('.btn-dt-ir') : null;
+  if (btnIr && btnIr.getAttribute('href') && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+    e.preventDefault();
+    actualizarVistaRutinaSinRecarga(btnIr.href, true);
+    return;
+  }
+});
+
+// Soporte para botones Atrás/Adelante del navegador
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.xpUrl) {
+    actualizarVistaRutinaSinRecarga(e.state.xpUrl, false);
+  } else {
+    actualizarVistaRutinaSinRecarga(window.location.href, false);
+  }
+});
+
 
 /* ── 5. Barra de Cambios Flotante y Persistencia (Punto 5) ── */
 function marcarCambioRutinaPendiente() {
@@ -2272,7 +3334,7 @@ function descartarCambiosRutina() {
     color: '#fff'
   }).then(res => {
     if (res.isConfirmed) {
-      window.location.reload();
+      actualizarVistaRutinaSinRecarga(window.location.href, false);
     }
   });
 }
@@ -2685,7 +3747,7 @@ function actualizarProgreso() {
   if (lbl) lbl.textContent = completados + '/' + totalCards;
 }
 
-/* ── Finalizar Rutina / Rutina Terminada (Punto 8) ── */
+/* ── Finalizar Rutina / Rutina Terminada (Punto 8 + PWA Offline Mode) ── */
 async function marcarRutina(rutinaId) {
   const confirm = await Swal.fire({
     title: '¿Rutina terminada?',
@@ -2702,26 +3764,67 @@ async function marcarRutina(rutinaId) {
   const btn = document.getElementById('btnFinish');
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .7s linear infinite"></i> Guardando...'; }
 
-  const body = new FormData();
-  body.append('rutina_id', rutinaId);
-  body.append('csrf_token', CSRF);
-
-  const res  = await fetch(APP + '/cliente/marcar-rutina', { method: 'POST', body });
-  const data = await res.json();
-
-  if (data.ok) {
+  const handleFinishSuccess = async (isOffline = false) => {
     await Swal.fire({
       icon: 'success',
       title: '¡Excelente entrenamiento!',
-      text: '¡Sesión de hoy completada con éxito! 💪',
+      text: isOffline 
+        ? '¡Sesión registrada offline en tu teléfono! Se sincronizará automáticamente cuando tengas conexión 💪' 
+        : '¡Sesión de hoy completada con éxito! 💪',
       background: '#111',
       color: '#fff',
       confirmButtonColor: '#4ade80'
     });
-    window.location.reload();
-  } else {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-trophy-filled"></i> Rutina Terminada'; }
-    Swal.fire({ icon:'error', title:'Error', text: data.msg, background:'#111', color:'#fff' });
+    if (isOffline) {
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ti ti-check"></i> Rutina Completada (Offline)';
+        btn.style.background = '#10b981';
+      }
+    } else {
+      actualizarVistaRutinaSinRecarga(window.location.href, false);
+    }
+  };
+
+  // 1. Manejo offline directo
+  if (!navigator.onLine) {
+    if (window.XpSync) {
+      XpSync.enqueue({
+        url: APP + '/cliente/marcar-rutina',
+        data: { rutina_id: rutinaId, fecha_entrenamiento: FECHA_SESION_ACTUAL },
+        label: 'Rutina terminada'
+      });
+    }
+    await handleFinishSuccess(true);
+    return;
+  }
+
+  // 2. Con conexión
+  try {
+    const body = new FormData();
+    body.append('rutina_id', rutinaId);
+    body.append('fecha_entrenamiento', FECHA_SESION_ACTUAL);
+    body.append('csrf_token', CSRF);
+
+    const res  = await fetch(APP + '/cliente/marcar-rutina', { method: 'POST', body });
+    const data = await res.json();
+
+    if (data.ok) {
+      await handleFinishSuccess(false);
+    } else {
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-trophy-filled"></i> Rutina Terminada'; }
+      Swal.fire({ icon:'error', title:'Error', text: data.msg, background:'#111', color:'#fff' });
+    }
+  } catch (err) {
+    console.warn('[PWA] Error de red al finalizar rutina, encolando offline...', err);
+    if (window.XpSync) {
+      XpSync.enqueue({
+        url: APP + '/cliente/marcar-rutina',
+        data: { rutina_id: rutinaId, fecha_entrenamiento: FECHA_SESION_ACTUAL },
+        label: 'Rutina terminada'
+      });
+    }
+    await handleFinishSuccess(true);
   }
 }
 
@@ -2803,7 +3906,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // Cerrar con Escape
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMedia(); });
 </script>
-<?php endif; ?>
 
 <!-- ── Modal Reproductor de Media (siempre presente en el DOM) ── -->
 <div class="wd-media-modal" id="wdMediaModal">
@@ -2816,6 +3918,26 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMedia(
     </div>
     <div class="wd-media-body" id="wdMediaBody"></div>
     <div class="wd-media-desc" id="wdMediaDesc" style="display:none;"></div>
+  </div>
+</div>
+
+<!-- ════ MODAL DE CONFIRMACIÓN: REVERTIR APLAZAMIENTO (SIMPLE & DIRECTO) ════ -->
+<div class="xp-revertir-modal-backdrop" id="modalBackdropRevertir" onclick="cerrarModalConfirmarRevertir(event)" role="dialog" aria-modal="true" aria-labelledby="tituloModalRevertir">
+  <div class="xp-revertir-modal-card" id="cardModalRevertir" onclick="event.stopPropagation()">
+    <div class="xp-rm-body">
+      <h3 class="xp-rm-title" id="tituloModalRevertir">¿Revertir aplazamiento?</h3>
+      <p class="xp-rm-desc">
+        La rutina volverá a programarse para su día asignado (<?= !empty($aplazamientoOrigenActivo['nombre_dia_origen']) ? htmlspecialchars($aplazamientoOrigenActivo['nombre_dia_origen']) : 'original' ?>).
+      </p>
+      <div class="xp-rm-footer">
+        <button type="button" class="btn-rm-cancel" onclick="cerrarModalConfirmarRevertir()">
+          Cancelar
+        </button>
+        <button type="button" class="btn-rm-confirm" id="btnConfirmarRevertirModal" onclick="confirmarYEjecutarRevertir()">
+          <span id="txtBtnConfirmarRevertir">Revertir</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 

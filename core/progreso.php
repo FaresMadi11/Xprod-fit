@@ -280,6 +280,48 @@ function obtenerFechasEntrenadasMes(PDO $db, int $clienteId, int $ano, int $mes)
 }
 
 /**
+ * Obtiene las fechas donde la rutina quedó incompleta en el mes (±7 días ventana).
+ */
+function obtenerFechasIncompletasMes(PDO $db, int $clienteId, int $ano, int $mes): array {
+    $fechaIniMes = sprintf('%04d-%02d-01', $ano, $mes);
+    $fechaFinMes = date('Y-m-t', strtotime($fechaIniMes));
+    $dIni = date('Y-m-d', strtotime($fechaIniMes . ' -7 days'));
+    $dFin = date('Y-m-d', strtotime($fechaFinMes . ' +7 days'));
+    $hoy = date('Y-m-d');
+
+    // 1. Sesiones de asistencia marcadas 'incompleta' o 'iniciada' en el pasado
+    $stAsis = $db->prepare(
+        "SELECT DISTINCT DATE(COALESCE(inicio_en, fin_en)) AS f
+         FROM sesiones_asistencia
+         WHERE cliente_id = ? 
+           AND ((estado = 'incompleta') OR (estado = 'iniciada' AND DATE(inicio_en) < ?))
+           AND (DATE(inicio_en) BETWEEN ? AND ? OR DATE(fin_en) BETWEEN ? AND ?)"
+    );
+    $stAsis->execute([$clienteId, $hoy, $dIni, $dFin, $dIni, $dFin]);
+    $fechasInc = $stAsis->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+    // 2. Fechas con series guardadas en el pasado donde las series hechas son menores a las planificadas
+    $stSeries = $db->prepare(
+        "SELECT ss.fecha, ss.rutina_id, COUNT(*) as series_hechas,
+                COALESCE((SELECT SUM(e.series) FROM ejercicios e WHERE e.rutina_id = ss.rutina_id), 0) as series_plan
+         FROM sesion_series ss
+         WHERE ss.cliente_id = ? AND ss.completado = 1 AND ss.fecha < ? AND ss.fecha BETWEEN ? AND ?
+         GROUP BY ss.fecha, ss.rutina_id"
+    );
+    $stSeries->execute([$clienteId, $hoy, $dIni, $dFin]);
+    foreach ($stSeries->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $f = (string)$row['fecha'];
+        $hechas = (int)$row['series_hechas'];
+        $plan = (int)$row['series_plan'];
+        if ($plan > 0 && $hechas < $plan) {
+            $fechasInc[] = $f;
+        }
+    }
+
+    return array_values(array_unique($fechasInc));
+}
+
+/**
  * Mapa día ISO (1=Lun…7=Dom) → rutina programada vigente del atleta.
  */
 function obtenerRutinasProgramadasPorDia(PDO $db, int $clienteId): array {
@@ -724,19 +766,46 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
             $accion       = null;
             $planificadas = 0;
 
+            // Calcular total de series planificadas para las rutinas entrenadas en este día
+            $rutinasIds = array_filter(array_column($hist['rutinas'], 'id'));
+            if (!empty($rutinasIds)) {
+                $inPlaceholders = implode(',', array_fill(0, count($rutinasIds), '?'));
+                $stPlan = $db->prepare("SELECT COALESCE(SUM(series), 0) FROM ejercicios WHERE rutina_id IN ($inPlaceholders)");
+                $stPlan->execute(array_values($rutinasIds));
+                $planificadas = (int)$stPlan->fetchColumn();
+            }
+
+            // Consultar estado de sesión en sesiones_asistencia
+            $stAsis = $db->prepare("
+                SELECT estado FROM sesiones_asistencia 
+                WHERE cliente_id = ? AND (DATE(inicio_en) = ? OR DATE(fin_en) = ?) 
+                ORDER BY id DESC LIMIT 1
+            ");
+            $stAsis->execute([$clienteId, $fecha, $fecha]);
+            $estadoAsis = (string)($stAsis->fetchColumn() ?: '');
+
             if ($modo === 'hoy') {
                 $prog = obtenerRutinasProgramadasPorDia($db, $clienteId)[$dow] ?? null;
                 if ($prog) {
-                    $stPlan = $db->prepare('SELECT COALESCE(SUM(series), 0) FROM ejercicios WHERE rutina_id = ?');
-                    $stPlan->execute([$prog['id']]);
-                    $planificadas = (int)$stPlan->fetchColumn();
-                    if ($planificadas > $hist['series'] && $role === 'cliente') {
-                        $estado = 'parcial';
-                        $accion = [
-                            'label' => 'Continuar entrenando',
-                            'url'   => APP_URL . '/cliente/rutina-dia?rutina=' . $prog['id'],
-                        ];
+                    if ($planificadas === 0) {
+                        $stPlan = $db->prepare('SELECT COALESCE(SUM(series), 0) FROM ejercicios WHERE rutina_id = ?');
+                        $stPlan->execute([$prog['id']]);
+                        $planificadas = (int)$stPlan->fetchColumn();
                     }
+                    if ($planificadas > $hist['series'] && $estadoAsis !== 'completada') {
+                        $estado = 'parcial';
+                        if ($role === 'cliente') {
+                            $accion = [
+                                'label' => 'Continuar entrenando',
+                                'url'   => APP_URL . '/cliente/rutina-dia?rutina=' . $prog['id'],
+                            ];
+                        }
+                    }
+                }
+            } else {
+                // Modo HISTORIAL: Si quedaron series pendientes o la sesión no se completó / se marcó incompleta
+                if (($planificadas > 0 && $hist['series'] < $planificadas) || $estadoAsis === 'incompleta' || ($estadoAsis !== 'completada' && $hist['series'] > 0)) {
+                    $estado = 'incompleta';
                 }
             }
 
@@ -755,25 +824,29 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
         }
 
         if ($modo === 'historial') {
-            // Fallback: verificar si hay sesión completada en sesiones_asistencia
+            // Fallback: verificar si hay sesión registrada en sesiones_asistencia
             $stAsist = $db->prepare(
-                "SELECT sa.rutina_id, r.descripcion, sa.notas 
+                "SELECT sa.rutina_id, sa.estado, r.descripcion, sa.notas 
                  FROM sesiones_asistencia sa 
                  JOIN rutinas r ON r.id = sa.rutina_id 
-                 WHERE sa.cliente_id = ? AND (DATE(sa.fin_en) = ? OR DATE(sa.inicio_en) = ?) AND sa.estado = 'completada' 
+                 WHERE sa.cliente_id = ? AND (DATE(sa.fin_en) = ? OR DATE(sa.inicio_en) = ?)
                  ORDER BY sa.id DESC LIMIT 1"
             );
             $stAsist->execute([$clienteId, $fecha, $fecha]);
             $asistRow = $stAsist->fetch(PDO::FETCH_ASSOC);
             if ($asistRow && !empty($asistRow['rutina_id'])) {
                 $ejs = obtenerEjerciciosProgramados($db, (int)$asistRow['rutina_id']);
-                return array_merge($base, [
-                    'estado'     => 'completado',
-                    'rutina'     => ['id' => (int)$asistRow['rutina_id'], 'nombre' => $asistRow['descripcion'] ?: 'Rutina completada'],
-                    'resumen'    => ['ejercicios' => count($ejs), 'series' => array_sum(array_column($ejs, 'series_total')), 'volumen_kg' => 0],
-                    'ejercicios' => $ejs,
-                    'notas'      => $asistRow['notas'] ?: $notasSesion,
-                ]);
+                $planificadas = array_sum(array_column($ejs, 'series_total'));
+                $isInc = ($asistRow['estado'] === 'incompleta' || $asistRow['estado'] === 'iniciada');
+                if ($isInc || $asistRow['estado'] === 'completada') {
+                    return array_merge($base, [
+                        'estado'     => $isInc ? 'incompleta' : 'completado',
+                        'rutina'     => ['id' => (int)$asistRow['rutina_id'], 'nombre' => $asistRow['descripcion'] ?: 'Rutina'],
+                        'resumen'    => ['ejercicios' => count($ejs), 'series' => 0, 'series_planificadas' => $planificadas, 'volumen_kg' => 0],
+                        'ejercicios' => $ejs,
+                        'notas'      => $asistRow['notas'] ?: $notasSesion,
+                    ]);
+                }
             }
             return array_merge($base, ['estado' => 'sin_actividad', 'rutina' => null, 'resumen' => null, 'ejercicios' => []]);
         }

@@ -64,11 +64,19 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ─── Shared Swal config ────────────────────────────────── */
 const Xp = {
   toast(icon, msg) {
+    if (typeof Swal === 'undefined') return;
     Swal.fire({
-      toast: true, position: 'top-end', icon, text: msg,
-      showConfirmButton: false, timer: 3000,
-      background: '#151c2e', color: '#e2e8f0',
+      toast: true,
+      position: 'top-end',
+      icon: icon || 'info',
+      text: msg,
+      showConfirmButton: false,
+      showCancelButton: false,
+      showDenyButton: false,
+      timer: 3000,
       timerProgressBar: true,
+      background: 'rgba(18, 18, 24, 0.96)',
+      color: '#f8fafc',
     });
   },
 
@@ -323,3 +331,23 @@ async function promptNuevoPeso() {
     }
   }
 }
+
+/* ── High-Performance Scroll Reveal (Instant Disconnect: 0% CPU overhead) ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const revealElements = document.querySelectorAll('.reveal-bento');
+  if (revealElements.length && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -25px 0px' });
+
+    revealElements.forEach(el => observer.observe(el));
+  } else {
+    revealElements.forEach(el => el.classList.add('is-revealed'));
+  }
+});
+

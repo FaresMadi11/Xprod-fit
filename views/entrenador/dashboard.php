@@ -9,30 +9,31 @@
       <p class="sys-top-greet-new">Bienvenido de vuelta</p>
       <h1 class="sys-top-title user-name-gradient" title="<?= e($nomUser) ?>">
         <span class="user-name-text"><?= e($nomUser) ?></span>
-        <i class="ti ti-sparkles" style="color: #fbbf24; font-size:1.05rem; flex-shrink:0;"></i>
       </h1>
     </div>
   </div>
   
   <div class="header-actions">
-    <div class="sys-top-logo brand-glow">
-      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+    <div id="xpPwaSyncPill" class="xp-pwa-header-pill online" title="Conectado a la red">
+      <span class="xp-status-dot"></span><span class="xp-status-text">Online</span>
     </div>
 
     <?php 
       $unread_hdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'entrenador');
     ?>
-    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
-      <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
-        <i class="ti ti-bell"></i>
-        <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
-      </button>
-    </div>
+    <div class="header-action-buttons">
+      <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+        <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
+          <i class="ti ti-bell"></i>
+          <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
+        </button>
+      </div>
 
-    <!-- Botón Logout -->
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
-      <i class="ti ti-logout"></i>
-    </a>
+      <!-- Botón Logout -->
+      <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+        <i class="ti ti-logout"></i>
+      </a>
+    </div>
   </div>
 </div>
 

@@ -953,29 +953,26 @@
     </div>
     
     <div class="header-actions">
-      <div class="cd-stat-pill" aria-label="<?= $cntVerif ?> sesiones completadas" style="padding: 4px 10px; border-radius: 10px; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; background: rgba(94,234,212,0.08); border: 1px solid rgba(94,234,212,0.2);">
-        <span class="num" id="statVerif" style="font-size: 1.15rem; font-weight: 800; color: var(--accent); line-height: 1;"><?= $cntVerif ?></span>
-        <span class="lbl" style="font-size: 0.55rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.06em;">Verificados</span>
-      </div>
-
-      <div class="sys-top-logo brand-glow">
-        <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+      <div id="xpPwaSyncPill" class="xp-pwa-header-pill online" title="Conectado a la red">
+        <span class="xp-status-dot"></span><span class="xp-status-text">Online</span>
       </div>
 
       <?php 
         $unread_hdr = contarNotificacionesNoLeidas((int)($_SESSION['user_id'] ?? 0), 'entrenador');
       ?>
-      <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
-        <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
-          <i class="ti ti-bell"></i>
-          <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
-        </button>
-      </div>
+      <div class="header-action-buttons">
+        <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+          <button type="button" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnNotifToggle" title="Notificaciones" aria-label="Notificaciones" onclick="toggleXpNotifDropdown(this, event)" style="cursor:pointer; position:relative;">
+            <i class="ti ti-bell"></i>
+            <span class="xp-notif-badge" style="<?= $unread_hdr > 0 ? '' : 'display:none;' ?>"><?= $unread_hdr ?></span>
+          </button>
+        </div>
 
-      <!-- Botón Logout -->
-      <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
-        <i class="ti ti-logout"></i>
-      </a>
+        <!-- Botón Logout -->
+        <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+          <i class="ti ti-logout"></i>
+        </a>
+      </div>
     </div>
   </div>
 
@@ -1139,8 +1136,13 @@
             <div class="cd-card-info">
               <div class="cd-card-name"><?= e($a['atleta_nombre']) ?></div>
               <div class="cd-card-sub">
-                <span class="dot done-dot"></span>
-                <?= e($a['rutina_desc'] ?: 'Rutina completada') ?><?= $notasBadge ?>
+                <?php if (($a['estado'] ?? '') === 'incompleta'): ?>
+                  <span class="dot" style="background:#f97316;box-shadow:0 0 6px rgba(249,115,22,0.8);"></span>
+                  <span style="color:#fb923c;font-weight:700;">Incompleta:</span> <?= e($a['rutina_desc'] ?: 'Rutina') ?><?= $notasBadge ?>
+                <?php else: ?>
+                  <span class="dot done-dot"></span>
+                  <?= e($a['rutina_desc'] ?: 'Rutina completada') ?><?= $notasBadge ?>
+                <?php endif; ?>
               </div>
             </div>
             <div class="cd-action act-arrow" aria-hidden="true" style="margin-right:-4px;">
@@ -1619,9 +1621,23 @@ function renderRutinaDrawer(drawer, data, modoTab) {
     return;
   }
 
-  const isCompletado = (data.estado === 'completado' || modoTab === 'completada') && data.modo !== 'planificacion';
+  const isCompletado = (data.estado === 'completado' || data.estado === 'incompleta' || modoTab === 'completada') && data.modo !== 'planificacion';
   const ejercicios = Array.isArray(data.ejercicios) ? data.ejercicios : [];
   const notas = data.notas || null;
+
+  let incompletaHtml = '';
+  if (data.estado === 'incompleta') {
+    const numSets = data.resumen?.series || 0;
+    const planSets = data.resumen?.series_planificadas || 0;
+    incompletaHtml = `
+      <div class="cdd-incompleta-banner" style="display:flex;align-items:flex-start;gap:10px;background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.3);border-radius:12px;padding:12px 14px;margin-bottom:14px;color:#fdba74;">
+        <i class="ti ti-clock-pause" style="font-size:1.25rem;color:#f97316;flex-shrink:0;margin-top:1px;"></i>
+        <div>
+          <strong style="display:block;font-size:0.88rem;color:#ffedd5;margin-bottom:2px;">Rutina incompleta</strong>
+          <span style="font-size:0.78rem;color:#fed7aa;line-height:1.35;display:block;">El atleta dejó esta rutina incompleta: registró <b>${numSets}</b> ${planSets ? `de <b>${planSets}</b>` : ''} series planificadas.</span>
+        </div>
+      </div>`;
+  }
 
   let notasHtml = '';
   if (notas) {
@@ -1863,7 +1879,7 @@ function renderRutinaDrawer(drawer, data, modoTab) {
     ejHtml += '</div>';
   }
 
-  drawer.innerHTML = `${notasHtml}${ejHtml}`;
+  drawer.innerHTML = `${incompletaHtml}${notasHtml}${ejHtml}`;
 }
 
 /* Renderiza Panel 1: Pendientes (En Progreso + No Han Empezado) */
@@ -2029,8 +2045,9 @@ function renderPanelCompletadas(items, appUrl) {
           <div class="cd-card-info">
             <div class="cd-card-name">${esc(a.atleta_nombre)}</div>
             <div class="cd-card-sub">
-              <span class="dot done-dot"></span>
-              ${esc(a.rutina_desc || 'Rutina completada')}${notasBadge}
+              ${a.estado === 'incompleta'
+                ? `<span class="dot" style="background:#f97316;box-shadow:0 0 6px rgba(249,115,22,0.8);"></span><span style="color:#fb923c;font-weight:700;">Incompleta:</span> ${esc(a.rutina_desc || 'Rutina')}${notasBadge}`
+                : `<span class="dot done-dot"></span>${esc(a.rutina_desc || 'Rutina completada')}${notasBadge}`}
             </div>
           </div>
           <div class="cd-action act-arrow" aria-hidden="true" style="margin-right:-4px;">

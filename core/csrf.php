@@ -25,6 +25,16 @@ function csrfValidate(): bool {
 function csrfCheck(): void {
     if (!csrfValidate()) {
         http_response_code(403);
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+               || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'))
+               || (!empty($_SERVER['CONTENT_TYPE']) && str_contains($_SERVER['CONTENT_TYPE'], 'application/json'));
+
+        if (!$isAjax && !empty($_POST)) {
+            if (function_exists('setFlash') && function_exists('redirect')) {
+                setFlash('error', 'Sesión o token expirado. Por favor, intenta de nuevo.');
+                redirect('auth/login');
+            }
+        }
         jsonOut(false, 'Token CSRF inválido.');
     }
 }

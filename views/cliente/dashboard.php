@@ -609,19 +609,28 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   text-align: left;
 }
 
-/* ── Layout Contenedor Responsive (Bento UI) ── */
+/* ── Layout Contenedor Responsive (Bento UI Widescreen) ── */
 .xp-client-container {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100% !important;
+  margin: 0;
   box-sizing: border-box;
   padding: 10px 8px calc(90px + env(safe-area-inset-bottom, 20px)) 8px !important;
 }
 @media (min-width: 768px) {
   .xp-client-container {
-    padding: 24px 32px 60px 32px !important;
+    padding: 20px 24px 60px 24px !important;
+    max-width: 100% !important;
   }
 }
+@media (min-width: 1024px) {
+  .xp-client-container {
+    padding: 24px 36px 60px 36px !important;
+    max-width: 100% !important;
+  }
+}
+
+
 
 /* ── Header adaptativo y compacto (UI-UX-PRO-MAX) ── */
 .sys-top-header.premium-header {
@@ -677,66 +686,36 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 .user-text-wrap {
   min-width: 0;
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
 }
 .sys-top-greet-new {
-  font-size: 0.64rem !important;
+  font-size: clamp(0.6rem, 1.8vw, 0.68rem) !important;
   font-weight: 700;
   color: #94a3af !important;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin: 0 0 1px 0 !important;
+  letter-spacing: 0.35px;
+  margin: 0 0 2px 0 !important;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   line-height: 1.2;
 }
 .user-name-gradient {
-  font-size: 1.02rem !important;
+  font-size: clamp(0.98rem, 3vw, 1.3rem) !important;
   font-weight: 800;
   margin: 0 !important;
   display: flex;
   align-items: center;
-  gap: 4px;
   min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
   line-height: 1.25;
+  color: #fff;
 }
 .user-name-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
   min-width: 0;
   display: inline-block;
+  line-height: 1.2;
 }
-.header-actions {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 8px !important;
-  flex-shrink: 0 !important;
-}
-.header-actions .db-icon-btn {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 11px !important;
-  font-size: 1rem !important;
-  flex-shrink: 0 !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-}
-.header-actions .db-icon-btn:hover {
-  background: rgba(138, 43, 226, 0.25) !important;
-  border-color: rgba(138, 43, 226, 0.5) !important;
-  color: #fff !important;
-}
-@media (min-width: 768px) {
-  .header-actions .db-icon-btn {
-    width: 38px !important;
-    height: 38px !important;
-  }
-}
+
 
 /* ── Tarjetas adaptativas sin overflow ── */
 .hero-workout-card {
@@ -757,9 +736,9 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   .db-bento-top-row {
     display: grid;
     grid-template-columns: 1.25fr 1fr;
-    gap: 18px;
+    gap: 20px;
     align-items: stretch;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
   }
   .db-bento-top-row.single-col {
     grid-template-columns: 1fr !important;
@@ -773,18 +752,34 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
     justify-content: space-between;
   }
   .db-bento-top-row .db-stats {
-    margin: 0 !important;
+    margin: 0 0 20px 0 !important;
     height: 100%;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 20px;
     align-content: stretch;
   }
   .db-bento-top-row .db-stat-card {
     height: 100%;
     box-sizing: border-box;
+    padding: 22px 26px !important;
+    border-radius: 22px !important;
+  }
+  .db-quote-text {
+    font-size: 1.08rem !important;
+    line-height: 1.5 !important;
+  }
+  .bento-meta-card {
+    border-radius: 22px !important;
   }
   .t-grid {
     grid-template-columns: repeat(4, 1fr) !important;
-    gap: 16px !important;
+    gap: 18px !important;
+  }
+}
+@media (min-width: 1440px) {
+  .t-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 22px !important;
   }
 }
 </style>
@@ -793,7 +788,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 <div class="xp-client-container">
 
 <!-- ── HEADER DE BIENVENIDA (PREMIUM BENTO UI) ── -->
-<div class="sys-top-header premium-header">
+<div class="sys-top-header premium-header bento-in">
   <div class="user-info-group">
     <div class="user-avatar">
        <?= strtoupper(substr($nomUser, 0, 1)) ?>
@@ -802,30 +797,31 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
       <p class="sys-top-greet-new">Bienvenido de vuelta</p>
       <h1 class="sys-top-title user-name-gradient" title="<?= e($nomUser) ?>">
         <span class="user-name-text"><?= e($nomUser) ?></span>
-        <i class="ti ti-sparkles" style="color: #fbbf24; font-size:1.05rem; flex-shrink:0;"></i>
       </h1>
     </div>
   </div>
   
-  <div class="header-actions" style="display: flex; flex-direction: row; align-items: center; gap: 8px; flex-shrink: 0;">
-    <div class="sys-top-logo brand-glow">
-      <i class="ti ti-bolt icon-glow"></i> Xprod<span>Fit</span>
+  <div class="header-actions">
+    <div id="xpPwaSyncPill" class="xp-pwa-header-pill online" title="Conectado a la red">
+      <span class="xp-status-dot"></span><span class="xp-status-text">Online</span>
     </div>
 
     <?php 
       $unreadCliHdr = contarNotificacionesNoLeidas((int)$_SESSION['user_id'], 'cliente');
     ?>
-    <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
-      <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
-        <i class="ti ti-bell"></i>
-        <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
-      </button>
-    </div>
+    <div class="header-action-buttons">
+      <div class="notif-wrapper" style="position:relative; flex-shrink: 0;">
+        <button type="button" onclick="toggleXpNotifDropdown(this, event)" class="db-icon-btn btn-notif-trigger xp-bell-trigger" id="btnCliNotifToggle" title="Notificaciones" aria-label="Notificaciones" style="cursor:pointer; position:relative;">
+          <i class="ti ti-bell"></i>
+          <span class="xp-notif-badge" style="<?= $unreadCliHdr > 0 ? '' : 'display:none;' ?>"><?= $unreadCliHdr ?></span>
+        </button>
+      </div>
 
-    <!-- Botón Logout -->
-    <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
-      <i class="ti ti-logout"></i>
-    </a>
+      <!-- Botón Logout -->
+      <a href="<?= APP_URL ?>/auth/logout" class="db-icon-btn" title="Cerrar sesión" aria-label="Cerrar sesión" style="flex-shrink: 0;">
+        <i class="ti ti-logout"></i>
+      </a>
+    </div>
   </div>
 </div>
 
@@ -835,7 +831,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 <!-- ── STAT CARDS ── -->
 <div class="db-stats" style="margin: 0 16px 16px;">
   <!-- Tarjeta de Frase Motivadora Diaria -->
-  <div class="db-stat-card db-quote-card">
+  <div class="db-stat-card db-quote-card bento-in bento-delay-1 bento-hover-lift">
     <div class="db-stat-top">
       <div class="db-quote-tag">
         <i class="ti ti-sparkles"></i> <span>Frase del Día</span>
@@ -851,10 +847,10 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   </div>
 
   <!-- Tarjeta de Peso Actual -->
-  <div class="db-stat-card">
+  <div class="db-stat-card bento-in bento-delay-2 bento-hover-lift">
     <div class="db-stat-top">
       <div class="db-stat-icon"><i class="ti ti-scale"></i></div>
-      <button onclick="promptNuevoPeso()" class="db-edit-weight-btn" title="Añadir registro de peso">
+      <button onclick="promptNuevoPeso()" class="db-edit-weight-btn btn-shimmer" title="Añadir registro de peso">
         <i class="ti ti-plus"></i> Añadir
       </button>
     </div>
@@ -881,10 +877,10 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 <!-- ══════════════════════════════════════════════════════════════════
      SECCIÓN METAS (BENTO UI & EXPANDIBLE IN-SITU – UI-UX-PRO-MAX)
      ══════════════════════════════════════════════════════════════════ -->
-<div class="bento-meta-wrapper" id="bentoMetaWrapper">
+<div class="bento-meta-wrapper bento-in bento-delay-3" id="bentoMetaWrapper">
 
   <!-- ── 1. ESTADO EMPTY (Omitido o Sin Meta) ── -->
-  <div class="bento-meta-card" id="bentoMetaEmptyCard" style="<?= $tieneMetaActiva ? 'display:none;' : 'display:block;' ?>">
+  <div class="bento-meta-card bento-hover-lift" id="bentoMetaEmptyCard" style="<?= $tieneMetaActiva ? 'display:none;' : 'display:block;' ?>">
     <div class="bento-meta-empty-content">
       <div class="bento-meta-empty-text">
         <div class="bento-meta-empty-badge">
@@ -894,7 +890,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
         <p class="bento-meta-empty-sub">Aún no has definido tu objetivo principal. Elige tu meta para que tu rutina y exigencias se adapten a lo que buscas lograr.</p>
       </div>
       <div>
-        <button type="button" id="btnToggleEmptyMetaSelector" class="btn-bento-add-meta" onclick="toggleMetaSelector('empty')">
+        <button type="button" id="btnToggleEmptyMetaSelector" class="btn-bento-add-meta btn-shimmer" onclick="toggleMetaSelector('empty')">
           <i class="ti ti-plus"></i> <span id="lblBtnAddMeta">Agregar metas</span>
         </button>
       </div>
@@ -907,7 +903,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
   </div>
 
   <!-- ── 2. ESTADO ACTIVO (Meta Configurada con Detalle Expandible) ── -->
-  <div class="bento-meta-card" id="bentoMetaActiveCard" style="<?= $tieneMetaActiva ? 'display:block;' : 'display:none;' ?>">
+  <div class="bento-meta-card bento-hover-lift" id="bentoMetaActiveCard" style="<?= $tieneMetaActiva ? 'display:block;' : 'display:none;' ?>">
     <div class="bento-meta-active-header" id="btnToggleActiveMetaDetail" onclick="toggleActiveMetaDetail()">
       <div class="bento-meta-active-left">
         <div class="bento-meta-icon-badge" id="bentoActiveIconBadge" style="color: <?= e($metaDetalle['color'] ?? '#8a2be2') ?>; border-color: <?= e($metaDetalle['color'] ?? '#8a2be2') ?>55; box-shadow: 0 0 20px <?= e($metaDetalle['color'] ?? '#8a2be2') ?>33;">
@@ -1147,7 +1143,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
 .t-card-glass-btn span { position: relative; z-index: 3; text-decoration: none; border: none; background-color: transparent; color: #fff; }
 </style>
 
-<div id="tiendaSection" class="open">
+<div id="tiendaSection" class="open reveal-bento bento-hover-lift">
   <div class="t-header" onclick="toggleTiendaSection()" title="Toca para abrir o cerrar">
     <div class="t-header-left">
       <i class="ti ti-bolt"></i>
@@ -1185,7 +1181,7 @@ $fraseDelDia = $frasesMotivadoras[$indiceFrase];
         $waMsg = urlencode($baseMsg);
         $waLink = "https://wa.me/{$waNum}?text={$waMsg}";
     ?>
-    <div class="t-card" data-seccion="<?= $sec['id'] ?>" onclick="toggleCard(this)">
+    <div class="t-card bento-hover-lift" data-seccion="<?= $sec['id'] ?>" onclick="toggleCard(this)">
       <!-- Imagen normal (fondo claro) -->
       <div class="t-card-img">
         <?php if($img): ?>
