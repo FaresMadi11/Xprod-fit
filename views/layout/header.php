@@ -22,10 +22,14 @@ addSecurityHeaders();
   <meta name="apple-mobile-web-app-title" content="Xprod Fit">
   <meta name="mobile-web-app-capable" content="yes">
 
+  <?php $icoVer = @filemtime(__DIR__ . '/../../assets/img/icon-192.png') ?: time(); ?>
   <!-- ── PWA Manifest & App Icons ── -->
-  <link rel="manifest" href="<?= APP_URL ?>/manifest.webmanifest">
-  <link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/assets/img/favicon.svg">
-  <link rel="apple-touch-icon" href="<?= APP_URL ?>/assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="<?= APP_URL ?>/manifest.webmanifest?v=<?= $icoVer ?>">
+  <link rel="shortcut icon" href="<?= APP_URL ?>/favicon.ico?v=<?= $icoVer ?>">
+  <link rel="icon" type="image/png" sizes="32x32" href="<?= APP_URL ?>/assets/img/favicon-32.png?v=<?= $icoVer ?>">
+  <link rel="icon" type="image/png" sizes="192x192" href="<?= APP_URL ?>/assets/img/icon-192.png?v=<?= $icoVer ?>">
+  <link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/assets/img/favicon.svg?v=<?= $icoVer ?>">
+  <link rel="apple-touch-icon" href="<?= APP_URL ?>/assets/img/apple-touch-icon.png?v=<?= $icoVer ?>">
 
   <!-- ── Preconnect a CDNs críticos (mejora LCP) ── -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -77,7 +81,7 @@ addSecurityHeaders();
 ?>
 <nav class="xp-nav" id="mainNav">
   <div class="xp-nav-brand">
-    <div class="brand-icon"><i class="ti ti-bolt"></i></div>
+    <div class="brand-icon" style="background:transparent;padding:0;overflow:hidden;border-radius:8px;"><img src="<?= APP_URL ?>/assets/img/icon-192.png" alt="XF" style="width:28px;height:28px;object-fit:cover;border-radius:6px;display:block;"></div>
     <span class="brand-name">Xprod<strong>Fit</strong></span>
   </div>
 

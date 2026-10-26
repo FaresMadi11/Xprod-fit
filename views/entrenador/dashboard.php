@@ -374,7 +374,9 @@
     <a href="<?= APP_URL ?>/entrenador/crear-rutina"
        class="fab-option" id="fabOpt2"
        style="--opt-color:#818cf8" title="Crear Rutina">
-      <i class="ti ti-dumbbell"></i>
+      <span class="fab-opt-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;display:inline-block;"><rect x="2" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="5" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2.5"/><rect x="16" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="19" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/></svg>
+      </span>
       <span class="fab-label">Crear Rutina</span>
     </a>
     <a href="<?= APP_URL ?>/entrenador/asistencias"
@@ -498,7 +500,7 @@ a.dash-stat-card:hover {
   font-weight: 600;
   white-space: nowrap;
 }
-.fab-option i {
+.fab-option i, .fab-option .fab-opt-icon {
   width: 36px; height: 36px;
   border-radius: 50%;
   background: rgba(255,255,255,0.05);
@@ -511,7 +513,7 @@ a.dash-stat-card:hover {
 .fab-option:hover {
   background: rgba(255,255,255,0.06);
 }
-.fab-option:hover i {
+.fab-option:hover i, .fab-option:hover .fab-opt-icon {
   background: color-mix(in srgb, var(--opt-color, var(--accent)) 20%, transparent);
   transform: scale(1.1);
 }

@@ -89,7 +89,8 @@ function agregarEjercicio(defaultData = null) {
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div>
           <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">Series</label>
-          <input name="ejercicio_series[]" type="number" value="${defaultData?defaultData.series:2}" min="1" max="20"
+          <input name="ejercicio_series[]" type="number" value="${defaultData?defaultData.series:2}" min="1" max="12"
+            oninput="if(parseFloat(this.value)>12) this.value=12; if(parseFloat(this.value)<1) this.value=1;"
             style="width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);text-align:center">
         </div>
         <div>
@@ -98,8 +99,9 @@ function agregarEjercicio(defaultData = null) {
             style="width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);text-align:center">
         </div>
         <div>
-          <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">RIR</label>
-          <input name="ejercicio_rir[]" type="text" value="${defaultData?defaultData.rir:'1'}"
+          <label style="font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px">RIR (0-5)</label>
+          <input name="ejercicio_rir[]" type="number" min="0" max="5" value="${defaultData?defaultData.rir:'1'}"
+            oninput="if(parseFloat(this.value)>5) this.value=5; if(parseFloat(this.value)<0) this.value=0;"
             style="width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);text-align:center">
         </div>
       </div>

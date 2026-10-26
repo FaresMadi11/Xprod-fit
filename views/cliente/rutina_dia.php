@@ -1663,11 +1663,12 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
             </span>
           </td>
           <td style="text-align:center">
-            <input type="number" min="0" max="200"
+            <input type="number" min="0" max="100"
                    class="wd-input-reps <?= $inputLockedClass ?>"
                    id="reps_<?= $ej['id'] ?>_<?= $s ?>"
                    value="<?= $savedReps !== '' ? e($savedReps) : e($ej['repeticiones']) ?>"
                    placeholder="Reps"
+                   oninput="if(parseFloat(this.value)>100) this.value=100; if(parseFloat(this.value)<0) this.value=0;"
                    <?= $inputDisabledAttr ?>>
             <?php if ($prevReps !== null): ?>
               <span class="wd-prev-ref" title="Semana anterior">Ant: <?= $prevReps ?> r</span>
@@ -1683,12 +1684,12 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
                 <span class="wd-prev-ref">Corporal</span>
               <?php endif; ?>
             <?php elseif ($imp === 'mancuerna'): ?>
-              <input type="number" min="0" max="900" step="0.5"
+              <input type="number" min="0" max="200" step="0.5"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
                      value="<?= $savedPeso !== '' && $savedPeso !== null ? e($savedPeso) : '' ?>"
                      placeholder="Kg c/u"
-                     oninput="actualizarMancuernaAtleta(<?= $ej['id'] ?>, <?= $s ?>, this)"
+                     oninput="if(parseFloat(this.value)>200) this.value=200; if(parseFloat(this.value)<0) this.value=0; actualizarMancuernaAtleta(<?= $ej['id'] ?>, <?= $s ?>, this)"
                      <?= $inputDisabledAttr ?>>
               <span class="wd-mancuerna-x2-hint" id="hintManc_<?= $ej['id'] ?>_<?= $s ?>">
                 <?= ($savedPeso > 0) ? "({$savedPeso} kg c/u = " . ($savedPeso * 2) . " kg tot)" : '' ?>
@@ -1697,21 +1698,24 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
                 <span class="wd-prev-ref" title="Sesión anterior: <?= $prevPeso ?> kg por mancuerna">Ant: <?= $prevPeso ?>k c/u</span>
               <?php endif; ?>
             <?php elseif ($imp === 'polea_maquina'): ?>
-              <input type="number" min="0" max="999" step="<?= $uni === 'placas' ? '1' : '0.5' ?>"
+              <?php $maxPol = ($uni === 'placas') ? 30 : 500; ?>
+              <input type="number" min="0" max="<?= $maxPol ?>" step="<?= $uni === 'placas' ? '1' : '0.5' ?>"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
                      value="<?= $savedPeso !== '' && $savedPeso !== null ? e($savedPeso) : '' ?>"
                      placeholder="<?= $uni === 'placas' ? 'N° Placas' : 'Kg' ?>"
+                     oninput="if(parseFloat(this.value)><?= $maxPol ?>) this.value=<?= $maxPol ?>; if(parseFloat(this.value)<0) this.value=0;"
                      <?= $inputDisabledAttr ?>>
               <?php if ($prevPeso !== null): ?>
                 <span class="wd-prev-ref" title="Sesión anterior">Ant: <?= $prevPeso ?><?= $prevUnit === 'placas' ? 'p' : 'kg' ?></span>
               <?php endif; ?>
             <?php else: ?>
-              <input type="number" min="0" max="900" step="0.5"
+              <input type="number" min="0" max="500" step="0.5"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
                      value="<?= $savedPeso !== '' && $savedPeso !== null ? e($savedPeso) : '' ?>"
                      placeholder="Kg"
+                     oninput="if(parseFloat(this.value)>500) this.value=500; if(parseFloat(this.value)<0) this.value=0;"
                      <?= $inputDisabledAttr ?>>
               <?php if ($prevPeso !== null): ?>
                 <span class="wd-prev-ref" title="Sesión anterior">Ant: <?= $prevPeso ?>kg</span>

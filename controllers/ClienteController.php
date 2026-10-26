@@ -598,9 +598,9 @@ function cliGuardarSerie(): void {
             }
         }
 
-        if ($ejercicioId < 1 || $numSerie < 1 || $numSerie > 50) {
+        if ($ejercicioId < 1 || $numSerie < 1 || $numSerie > 12) {
             http_response_code(422);
-            jsonOut(false, 'Datos inválidos.');
+            jsonOut(false, 'El número de serie no puede superar el límite de 12.');
         }
 
         $accion = strtolower(trim((string)($_POST['accion'] ?? 'guardar')));
@@ -643,12 +643,12 @@ function cliGuardarSerie(): void {
             $unidadCarga = 'ninguna';
         }
 
-        // Validación de repeticiones
+        // Validación de repeticiones (máximo 100 reps)
         $reps = null;
         if ($rawReps !== '') {
-            if (!ctype_digit($rawReps) || (int)$rawReps > 255) {
+            if (!ctype_digit($rawReps) || (int)$rawReps > 100) {
                 http_response_code(422);
-                jsonOut(false, 'Las repeticiones deben ser un número entre 0 y 255.');
+                jsonOut(false, 'Las repeticiones no pueden superar 100 reps.');
             }
             $reps = (int)$rawReps;
         }
@@ -666,13 +666,17 @@ function cliGuardarSerie(): void {
         } else {
             if ($rawPeso !== '') {
                 $rawPeso = str_replace(',', '.', $rawPeso);
-                if (!is_numeric($rawPeso) || (float)$rawPeso < 0 || (float)$rawPeso > 9999.99) {
+                if (!is_numeric($rawPeso) || (float)$rawPeso < 0) {
                     http_response_code(422);
-                    jsonOut(false, 'El peso o placas debe estar entre 0 y 9999.99.');
+                    jsonOut(false, 'El peso o placas debe ser un valor positivo.');
                 }
                 $valNumeric = round((float)$rawPeso, 2);
 
                 if ($tipoImplemento === 'mancuerna') {
+                    if ($valNumeric > 200) {
+                        http_response_code(422);
+                        jsonOut(false, 'El peso en mancuernas no puede superar los 200 kg por lado.');
+                    }
                     // Carga ingresada = peso de cada mancuerna (por mano / por lado).
                     // kg_real para volumen total = peso * 2
                     $pesoUsado   = $valNumeric;
@@ -680,10 +684,21 @@ function cliGuardarSerie(): void {
                     $kgReal      = round($valNumeric * 2, 2);
                     $unidadCarga = 'kg';
                 } elseif ($tipoImplemento === 'polea_maquina') {
+                    if ($unidadCarga === 'placas' && $valNumeric > 30) {
+                        http_response_code(422);
+                        jsonOut(false, 'El límite máximo es de 30 placas en máquinas de polea.');
+                    } elseif ($valNumeric > 500) {
+                        http_response_code(422);
+                        jsonOut(false, 'El peso en polea no puede superar los 500 kg.');
+                    }
                     $pesoUsado   = $valNumeric;
                     $pesoPorLado = null;
                     $kgReal      = $valNumeric;
                 } else {
+                    if ($valNumeric > 500) {
+                        http_response_code(422);
+                        jsonOut(false, 'El peso en barra no puede superar los 500 kg.');
+                    }
                     $pesoUsado   = $valNumeric;
                     $pesoPorLado = null;
                     $kgReal      = $valNumeric;

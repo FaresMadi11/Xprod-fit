@@ -2,11 +2,12 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v2.3';
+const CACHE_NAME = 'xprod-fit-v2.5';
 
 // Recursos críticos locales precacheados (0ms de arranque, 100% offline)
 const PRECACHE_ASSETS = [
   './manifest.webmanifest',
+  './favicon.ico',
   './assets/css/style.css',
   './assets/js/app.js',
   './assets/js/pwa-sync.js',
@@ -16,6 +17,7 @@ const PRECACHE_ASSETS = [
   './assets/img/icon-192.png',
   './assets/img/icon-512.png',
   './assets/img/favicon.svg',
+  './assets/img/favicon-32.png',
   './assets/img/apple-touch-icon.png'
 ];
 

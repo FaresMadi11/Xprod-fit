@@ -1812,7 +1812,9 @@ function addExercise(exOrName) {
       <i class="ti ti-clock" style="font-size:.9rem;color:var(--accent)" aria-hidden="true"></i>
       <span class="ex-rest-label ex-rest-toggle-label">Descanso: <strong>APAGADO</strong></span>
       <input class="ex-rest-input" type="number" min="10" max="600" step="5"
-             placeholder="seg" aria-label="Segundos de descanso"
+             placeholder="seg" aria-label="Segundos de descanso (máximo 600)"
+             onkeydown="prevenirExcesoMax(event, 600)"
+             oninput="validarMaxInput(this, 600)"
              onclick="event.stopPropagation()">
       <span class="ex-rest-label" id="restOnLabel_${idx}" style="display:none">seg</span>
     </div>
@@ -1863,14 +1865,56 @@ function toggleRestTimer(rowEl) {
 /* ═══════════════════════════════════════════════════
    SERIES — añadir / cambiar tipo / eliminar
 ═══════════════════════════════════════════════════ */
+function prevenirExcesoMax(e, maxVal) {
+  const controlKeys = ['Backspace', 'Tab', 'Enter', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+  if (controlKeys.includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
+    return;
+  }
+  if (!/[\d.,]/.test(e.key)) return;
+
+  const input = e.target;
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  const current = input.value;
+  const simulatedStr = current.slice(0, start) + e.key.replace(',', '.') + current.slice(end);
+  const nextVal = parseFloat(simulatedStr);
+  const max = (maxVal !== undefined) ? maxVal : parseFloat(input.getAttribute('max') || input.dataset.max || 9999);
+
+  if (!isNaN(nextVal) && nextVal > max) {
+    e.preventDefault();
+  }
+}
+
+function validarMaxInput(input, maxVal) {
+  const max = (maxVal !== undefined) ? maxVal : parseFloat(input.getAttribute('max') || input.dataset.max || 9999);
+  if (input.value === '') return;
+  const val = parseFloat(input.value);
+  if (!isNaN(val) && val > max) {
+    input.value = max;
+  } else if (!isNaN(val) && val < 0) {
+    input.value = 0;
+  }
+}
+
+function validarMaxCarga(input, maxVal) {
+  validarMaxInput(input, maxVal);
+}
+
 function addSet(exIdx) {
   const body = document.getElementById('setsBody_' + exIdx);
   if (!body) return;
+
+  const currentCount = body.querySelectorAll('.set-row').length;
+  if (currentCount >= 12) {
+    // Límite estricto de 12 series: no permitir añadir más silenciosamente
+    return;
+  }
+
   const block = body.closest('.ex-block');
   const impl  = block?.dataset.implemento || 'barra';
   const unit  = block?.dataset.unidad || 'kg';
 
-  const num  = body.querySelectorAll('.set-row').length + 1;
+  const num  = currentCount + 1;
   const row  = document.createElement('div');
   row.className      = 'set-row';
   row.dataset.serieNum = num;
@@ -1901,27 +1945,36 @@ function addSet(exIdx) {
   } else {
     let ph = 'Kg';
     let step = '0.5';
+    let maxW = 500;
     if (impl === 'mancuerna') {
       ph = 'Kg c/u';
+      maxW = 200;
     } else if (impl === 'polea_maquina' && unit === 'placas') {
       ph = 'Placas';
       step = '1';
+      maxW = 30;
+    } else if (impl === 'polea_maquina') {
+      maxW = 500;
+    } else if (impl === 'barra') {
+      maxW = 500;
     }
     weightWrap.innerHTML = `
-      <input type="number" class="set-input set-input-weight" placeholder="${ph}" min="0" step="${step}"
-             inputmode="decimal" aria-label="Carga objetivo" oninput="actualizarHintMancuerna(this)">
+      <input type="number" class="set-input set-input-weight" placeholder="${ph}" min="0" max="${maxW}" step="${step}"
+             data-max="${maxW}" inputmode="decimal" aria-label="Carga objetivo"
+             onkeydown="prevenirExcesoMax(event, ${maxW})"
+             oninput="validarMaxInput(this, ${maxW}); actualizarHintMancuerna(this)">
       <span class="dumbbell-hint" style="display:none"></span>`;
   }
   row.appendChild(weightWrap);
 
-  // Columna REPS
+  // Columna REPS (máximo 100 reps)
   const repsWrap = document.createElement('div');
-  repsWrap.innerHTML = `<input type="number" class="set-input set-input-reps" placeholder="—" min="0" step="1" inputmode="numeric" aria-label="Repeticiones objetivo">`;
+  repsWrap.innerHTML = `<input type="number" class="set-input set-input-reps" placeholder="—" min="1" max="100" step="1" inputmode="numeric" aria-label="Repeticiones objetivo" onkeydown="prevenirExcesoMax(event, 100)" oninput="validarMaxInput(this, 100)">`;
   row.appendChild(repsWrap);
 
-  // Columna RIR
+  // Columna RIR (máximo RIR 5)
   const rirWrap = document.createElement('div');
-  rirWrap.innerHTML = `<input type="number" class="set-input set-input-rir" placeholder="RIR" min="0" max="10" step="1" inputmode="numeric" aria-label="Reps en Reserva (0-10)">`;
+  rirWrap.innerHTML = `<input type="number" class="set-input set-input-rir" placeholder="RIR" min="0" max="5" step="1" inputmode="numeric" aria-label="Reps en Reserva (0-5)" onkeydown="prevenirExcesoMax(event, 5)" oninput="validarMaxInput(this, 5)">`;
   row.appendChild(rirWrap);
 
   body.appendChild(row);
@@ -1981,14 +2034,19 @@ function cambiarImplemento(exIdx, nuevoImpl) {
     } else {
       let ph = 'Kg';
       let step = '0.5';
-      if (nuevoImpl === 'mancuerna') ph = 'Kg c/u';
-      else if (nuevoImpl === 'polea_maquina' && unit === 'placas') { ph = 'Placas'; step = '1'; }
+      let maxW = 500;
+      if (nuevoImpl === 'mancuerna') { ph = 'Kg c/u'; maxW = 200; }
+      else if (nuevoImpl === 'polea_maquina' && unit === 'placas') { ph = 'Placas'; step = '1'; maxW = 30; }
+      else if (nuevoImpl === 'barra') { maxW = 500; }
       
       const existingInput = weightCell.querySelector('.set-input-weight');
-      const val = (existingInput && existingInput.value !== '0') ? existingInput.value : '';
+      let val = (existingInput && existingInput.value !== '0') ? existingInput.value : '';
+      if (val !== '' && parseFloat(val) > maxW) val = maxW;
       weightCell.innerHTML = `
-        <input type="number" class="set-input set-input-weight" value="${val}" placeholder="${ph}" min="0" step="${step}"
-               inputmode="decimal" aria-label="Carga objetivo" oninput="actualizarHintMancuerna(this)">
+        <input type="number" class="set-input set-input-weight" value="${val}" placeholder="${ph}" min="0" max="${maxW}" step="${step}"
+               data-max="${maxW}" inputmode="decimal" aria-label="Carga objetivo"
+               onkeydown="prevenirExcesoMax(event, ${maxW})"
+               oninput="validarMaxInput(this, ${maxW}); actualizarHintMancuerna(this)">
         <span class="dumbbell-hint" style="display:none"></span>`;
       const input = weightCell.querySelector('.set-input-weight');
       if (input && val) actualizarHintMancuerna(input);
@@ -2016,12 +2074,16 @@ function cambiarUnidad(exIdx, nuevaUnidad) {
     colWeight.textContent = (nuevaUnidad === 'placas') ? 'PLACAS' : 'KG';
   }
 
-  // Actualizar placeholders y steps de las series
+  // Actualizar placeholders, steps y límites de las series
   block.querySelectorAll('.set-weight-cell').forEach(cell => {
     const input = cell.querySelector('.set-input-weight');
     if (input) {
+      const maxW = (nuevaUnidad === 'placas') ? 30 : 500;
       input.placeholder = (nuevaUnidad === 'placas') ? 'Placas' : 'Kg';
       input.step = (nuevaUnidad === 'placas') ? '1' : '0.5';
+      input.setAttribute('max', maxW);
+      input.dataset.max = maxW;
+      if (parseFloat(input.value) > maxW) input.value = maxW;
     }
   });
 }
@@ -2312,38 +2374,68 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
     return;
   }
 
+  let errorValidacion = null;
   const ejercicios = [];
-  blocks.forEach((b, orden) => {
+  for (let orden = 0; orden < blocks.length; orden++) {
+    const b        = blocks[orden];
     const idx      = b.dataset.idx;
-    const nombre   = document.getElementById('exName_' + idx)?.textContent.trim() || '';
+    const nombre   = document.getElementById('exName_' + idx)?.textContent.trim() || 'Ejercicio ' + (orden + 1);
     const restRow  = document.getElementById('restRow_' + idx);
     const restIn   = restRow?.querySelector('.ex-rest-input');
     const descanso = (restRow?.classList.contains('active') && restIn?.value)
                      ? parseInt(restIn.value, 10) : null;
+
+    if (descanso !== null && descanso > 600) {
+      errorValidacion = `El descanso en "${nombre}" supera el límite máximo de 10 minutos (600 seg).`;
+      break;
+    }
+
+    const setRows = b.querySelectorAll('.set-row');
+    if (setRows.length > 12) {
+      errorValidacion = `"${nombre}" tiene ${setRows.length} series. El límite máximo es de 12 series.`;
+      break;
+    }
 
     const impl = b.dataset.implemento || 'barra';
     let unit   = b.dataset.unidad || (impl === 'sin_peso' ? 'ninguna' : 'kg');
 
     const series = [];
     let tienePesoValido = false;
-    b.querySelectorAll('.set-row').forEach((row, si) => {
+
+    for (let si = 0; si < setRows.length; si++) {
+      const row = setRows[si];
       const badge  = row.querySelector('.set-badge');
       const weightInput = row.querySelector('.set-input-weight') || row.querySelectorAll('input[type="number"]')[0];
       const repsInput   = row.querySelector('.set-input-reps')   || row.querySelectorAll('input[type="number"]')[1];
       const rirInput    = row.querySelector('.set-input-rir')    || row.querySelectorAll('input[type="number"]')[2];
 
-      const pesoVal = (impl !== 'sin_peso' && weightInput && weightInput.value !== '' && weightInput.value !== '0')
+      let repsVal = (repsInput && repsInput.value !== '') ? parseInt(repsInput.value, 10) : null;
+      if (repsVal !== null && repsVal > 100) repsVal = 100;
+      if (repsVal !== null && repsVal < 1)   repsVal = 1;
+
+      let rirVal = (rirInput && rirInput.value !== '') ? parseInt(rirInput.value, 10) : 2;
+      if (rirVal !== null && rirVal > 5) rirVal = 5;
+      if (rirVal !== null && rirVal < 0) rirVal = 0;
+
+      let pesoVal = (impl !== 'sin_peso' && weightInput && weightInput.value !== '' && weightInput.value !== '0')
                       ? parseFloat(weightInput.value) : null;
       if (pesoVal !== null && pesoVal > 0) tienePesoValido = true;
+
+      if (pesoVal !== null) {
+        if (impl === 'mancuerna' && pesoVal > 200) pesoVal = 200;
+        else if (impl === 'polea_maquina' && unit === 'placas' && pesoVal > 30) pesoVal = 30;
+        else if (pesoVal > 500) pesoVal = 500;
+        if (pesoVal < 0) pesoVal = 0;
+      }
 
       series.push({
         numero_serie  : si + 1,
         tipo_serie    : badge?.dataset.type || 'normal',
         kg_objetivo   : pesoVal,
-        reps_objetivo : (repsInput && repsInput.value !== '') ? parseInt(repsInput.value, 10) : null,
-        rir           : (rirInput && rirInput.value !== '') ? parseInt(rirInput.value, 10) : 2,
+        reps_objetivo : repsVal,
+        rir           : rirVal,
       });
-    });
+    }
 
     // Si el entrenador deja el peso en 0, vacío o marca 'Sin peso', guardarlo explícitamente como sin_peso
     let finalImpl = impl;
@@ -2358,10 +2450,10 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
       orden: orden + 1,
       tipo_implemento: finalImpl,
       unidad_carga: finalUnit,
-      descanso_segundos: descanso,
+      descanso_segundos: descanso > 600 ? 600 : descanso,
       series
     });
-  });
+  }
 
   if (!ejercicios.length) {
     if (typeof Xp !== 'undefined') Xp.toast('warning','Ningún ejercicio tiene nombre válido.');

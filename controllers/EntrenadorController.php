@@ -229,40 +229,109 @@ function entRegistrarCliente(): void {
 
 function entGuardarCliente(): void {
     csrfCheck();
+    header('Content-Type: application/json');
+
     $db    = getDB();
-    $entId = $_SESSION['user_id'];
+    $entId = (int)$_SESSION['user_id'];
 
-    $nombre   = trim($_POST['nombre']   ?? '');
-    $email    = trim($_POST['email']    ?? '');
-    $password = trim($_POST['password'] ?? '');
-    $peso     = $_POST['peso']    ? (float)$_POST['peso']    : null;
-    $altura   = $_POST['altura']  ? (float)$_POST['altura']  : null;
-    $objetivo = trim($_POST['objetivo'] ?? '');
+    // Soportar tanto payload JSON (fetch) como FormData clásico
+    $raw = file_get_contents('php://input');
+    $jsonData = json_decode($raw, true);
+    $in = is_array($jsonData) ? $jsonData : $_POST;
 
-    if (!$nombre || !$email || !$password) jsonOut(false, 'Nombre, email y contraseña son requeridos.');
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) jsonOut(false, 'Email inválido.');
+    $nombres   = trim((string)($in['nombres'] ?? ''));
+    $apellidos = trim((string)($in['apellidos'] ?? ''));
+    if (!$nombres && !empty($in['nombre'])) {
+        $parts = explode(' ', trim((string)$in['nombre']), 2);
+        $nombres = $parts[0] ?? '';
+        $apellidos = $parts[1] ?? '';
+    }
+    $cedulaRaw = trim((string)($in['cedula'] ?? ''));
+    $cedula    = UsuarioModel::normalizarCedula($cedulaRaw);
+    $email     = sanitizeEmail((string)($in['email'] ?? ''));
+    $password  = trim((string)($in['password'] ?? ''));
+    $pregunta  = trim((string)($in['pregunta_seguridad'] ?? '¿Cuál fue tu primera mascota?'));
+    $respuesta = trim((string)($in['respuesta_seguridad'] ?? 'Mascota'));
 
-    $chk = $db->prepare("SELECT id FROM usuarios WHERE email = ?");
-    $chk->execute([$email]);
-    if ($chk->fetch()) jsonOut(false, 'Ese email ya está en uso.');
+    $fechaNacRaw = trim((string)($in['fecha_nacimiento'] ?? ($in['fecha_nac'] ?? '2005-06-15')));
+    $fechaNac    = preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaNacRaw) ? $fechaNacRaw : '2005-06-15';
 
-    $db->beginTransaction();
+    $pesoRaw     = (float)($in['peso_kg'] ?? ($in['peso'] ?? 70.0));
+    $pesoKg      = ($pesoRaw >= 20 && $pesoRaw <= 400) ? round($pesoRaw, 1) : 70.0;
+
+    $alturaRaw   = (float)($in['altura_cm'] ?? ($in['altura'] ?? 170.0));
+    $alturaCm    = ($alturaRaw >= 100 && $alturaRaw <= 250) ? round($alturaRaw) : 170.0;
+
+    // Metas seleccionadas
+    $metas = [];
+    $metaDetalle = null;
+    $rawMetasJson = $in['metas_json'] ?? null;
+    if (is_string($rawMetasJson)) {
+        $decoded = json_decode($rawMetasJson, true);
+        if (is_array($decoded)) {
+            $metaDetalle = $decoded;
+            if (!empty($decoded['titulo'])) $metas[] = $decoded['titulo'];
+            elseif (!empty($decoded['custom_texto'])) $metas[] = $decoded['custom_texto'];
+        }
+    } elseif (is_array($rawMetasJson)) {
+        $metaDetalle = $rawMetasJson;
+        if (!empty($rawMetasJson['titulo'])) $metas[] = $rawMetasJson['titulo'];
+        elseif (!empty($rawMetasJson['custom_texto'])) $metas[] = $rawMetasJson['custom_texto'];
+    } elseif (!empty($in['objetivo'])) {
+        $metas[] = trim((string)$in['objetivo']);
+    }
+
+    if (empty($nombres) || empty($email) || empty($password)) {
+        jsonOut(false, 'Nombres, email y contraseña son requeridos.');
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        jsonOut(false, 'Email inválido.');
+    }
+    if (strlen($password) < 8) {
+        jsonOut(false, 'La contraseña debe tener al menos 8 caracteres.');
+    }
+    if ($cedula === null && !empty($cedulaRaw)) {
+        jsonOut(false, 'La cédula no tiene un formato válido (ej. V-12345678).');
+    }
+
+    $um = new UsuarioModel();
+    if ($um->emailExists($email)) {
+        jsonOut(false, 'Ese correo electrónico ya está registrado.');
+    }
+    if ($cedula && $um->cedulaExists($cedula)) {
+        jsonOut(false, 'Esa cédula ya está registrada.');
+    }
+
     try {
-        $hash = password_hash($password, PASSWORD_BCRYPT);
-        $ins  = $db->prepare("INSERT INTO usuarios (nombre, email, password_hash, rol) VALUES (?, ?, ?, 'cliente')");
-        $ins->execute([$nombre, $email, $hash]);
-        $userId = (int)$db->lastInsertId();
+        $passHash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+        $respHash = password_hash(strtolower(trim($respuesta)), PASSWORD_DEFAULT);
+        $nombreCompleto = trim($nombres . ' ' . $apellidos);
 
-        $ins2 = $db->prepare(
-            "INSERT INTO clientes (usuario_id, entrenador_id, peso_kg, altura_cm, objetivo)
-             VALUES (?, ?, ?, ?, ?)"
+        $ids = $um->registrarAtleta(
+            $nombreCompleto,
+            $email,
+            $passHash,
+            $cedula ?: ('V-' . time()),
+            $pregunta,
+            $respHash,
+            $entId,
+            $fechaNac,
+            $pesoKg,
+            $alturaCm,
+            $metas,
+            $metaDetalle
         );
-        $ins2->execute([$userId, $entId, $peso, $altura, $objetivo]);
-        $db->commit();
-        jsonOut(true, 'Atleta registrado correctamente.');
-    } catch (Throwable $e) {
-        $db->rollBack();
-        jsonOut(false, 'Error al guardar: ' . $e->getMessage());
+
+        // Cuenta activa inmediatamente al ser creada por el entrenador
+        $db->prepare("UPDATE usuarios SET estado_cuenta = 'activo' WHERE id = ?")->execute([$ids['usuario_id']]);
+
+        jsonOut(true, 'Atleta registrado y vinculado correctamente.', [
+            'cliente_id' => $ids['cliente_id'],
+            'usuario_id' => $ids['usuario_id']
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[entGuardarCliente] ' . $e->getMessage());
+        jsonOut(false, 'Error al guardar el atleta: ' . $e->getMessage());
     }
 }
 
@@ -733,6 +802,52 @@ function entGuardarPlantillaRutina(): void {
         }
     }
 
+    // Validar límites estrictos de rutina solicitados
+    foreach ($ejercicios as $ex) {
+        $nomEx = trim($ex['nombre'] ?? 'Ejercicio');
+        $sList = $ex['series'] ?? [];
+        if (count($sList) > 12) {
+            echo json_encode(['ok' => false, 'msg' => "El ejercicio '{$nomEx}' supera el límite máximo de 12 series."]);
+            return;
+        }
+        if (isset($ex['descanso_segundos']) && is_numeric($ex['descanso_segundos']) && (int)$ex['descanso_segundos'] > 600) {
+            echo json_encode(['ok' => false, 'msg' => "El tiempo de descanso en '{$nomEx}' supera el límite de 10 minutos (600 seg)."]);
+            return;
+        }
+        $imp = $ex['tipo_implemento'] ?? 'barra';
+        $uni = $ex['unidad_carga'] ?? 'kg';
+        foreach ($sList as $si => $sRow) {
+            $sNum = $si + 1;
+            if (isset($sRow['reps_objetivo']) && is_numeric($sRow['reps_objetivo']) && (int)$sRow['reps_objetivo'] > 100) {
+                echo json_encode(['ok' => false, 'msg' => "Las repeticiones de '{$nomEx}' (serie {$sNum}) no pueden superar 100 reps."]);
+                return;
+            }
+            if (isset($sRow['rir']) && is_numeric($sRow['rir']) && (int)$sRow['rir'] > 5) {
+                echo json_encode(['ok' => false, 'msg' => "El RIR de '{$nomEx}' (serie {$sNum}) no puede superar 5."]);
+                return;
+            }
+            if (isset($sRow['kg_objetivo']) && is_numeric($sRow['kg_objetivo'])) {
+                $pesoKg = (float)$sRow['kg_objetivo'];
+                if ($imp === 'barra' && $pesoKg > 500) {
+                    echo json_encode(['ok' => false, 'msg' => "El peso en barra de '{$nomEx}' (serie {$sNum}) no puede superar 500 kg."]);
+                    return;
+                }
+                if ($imp === 'mancuerna' && $pesoKg > 200) {
+                    echo json_encode(['ok' => false, 'msg' => "El peso en mancuernas de '{$nomEx}' (serie {$sNum}) no puede superar 200 kg por lado."]);
+                    return;
+                }
+                if ($imp === 'polea_maquina' && $uni === 'placas' && $pesoKg > 30) {
+                    echo json_encode(['ok' => false, 'msg' => "Las placas en polea de '{$nomEx}' (serie {$sNum}) no pueden superar 30 placas."]);
+                    return;
+                }
+                if ($pesoKg > 500) {
+                    echo json_encode(['ok' => false, 'msg' => "El peso de '{$nomEx}' (serie {$sNum}) no puede superar los 500 kg."]);
+                    return;
+                }
+            }
+        }
+    }
+
     try {
         $db->beginTransaction();
 
@@ -787,7 +902,7 @@ function entGuardarPlantillaRutina(): void {
                 $kg    = ($tipoImplemento !== 'sin_peso' && is_numeric($s['kg_objetivo'] ?? null) && (float)$s['kg_objetivo'] > 0)
                        ? (float)$s['kg_objetivo'] : null;
                 $reps  = is_numeric($s['reps_objetivo'] ?? null) ? (int)$s['reps_objetivo']    : null;
-                $rir   = (isset($s['rir']) && is_numeric($s['rir'])) ? max(0, min(10, (int)$s['rir'])) : null;
+                $rir   = (isset($s['rir']) && is_numeric($s['rir'])) ? max(0, min(5, (int)$s['rir'])) : null;
                 $stSerie->execute([$ejId, (int)($s['numero_serie'] ?? 1), $tipo, $kg, $reps, $rir]);
             }
         }
@@ -821,7 +936,7 @@ function entGuardarPlantillaRutina(): void {
             $primerRir = 2; // RIR por defecto defensivo (2 = hipertrofia con 2 reps en reserva)
             foreach (($ex['series'] ?? []) as $sRow) {
                 if (isset($sRow['rir']) && is_numeric($sRow['rir']) && $sRow['rir'] !== '') {
-                    $primerRir = max(0, min(10, (int)$sRow['rir']));
+                    $primerRir = max(0, min(5, (int)$sRow['rir']));
                     break;
                 }
             }

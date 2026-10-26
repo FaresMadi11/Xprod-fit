@@ -8,9 +8,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Xprod Fit">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="manifest" href="<?= APP_URL ?>/manifest.webmanifest">
-<link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/assets/img/favicon.svg">
-<link rel="apple-touch-icon" href="<?= APP_URL ?>/assets/img/apple-touch-icon.png">
+<?php $icoVer = @filemtime(__DIR__ . '/../../assets/img/icon-192.png') ?: time(); ?>
+<link rel="manifest" href="<?= APP_URL ?>/manifest.webmanifest?v=<?= $icoVer ?>">
+<link rel="shortcut icon" href="<?= APP_URL ?>/favicon.ico?v=<?= $icoVer ?>">
+<link rel="icon" type="image/png" sizes="32x32" href="<?= APP_URL ?>/assets/img/favicon-32.png?v=<?= $icoVer ?>">
+<link rel="icon" type="image/png" sizes="192x192" href="<?= APP_URL ?>/assets/img/icon-192.png?v=<?= $icoVer ?>">
+<link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/assets/img/favicon.svg?v=<?= $icoVer ?>">
+<link rel="apple-touch-icon" href="<?= APP_URL ?>/assets/img/apple-touch-icon.png?v=<?= $icoVer ?>">
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/vendor/tabler-icons/tabler-icons.min.css">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -976,6 +980,13 @@ $esStandby  = ($vistaInicial === 'standby');
 ?>
 <main id="mainContent">
 <div class="auth-box" id="authBox" role="region" aria-label="Portal de autenticación">
+
+  <!-- ── Logo de la Marca XF ── -->
+  <div class="auth-brand-logo-wrap" style="display:flex;justify-content:center;margin-bottom:20px;">
+    <div style="width:72px;height:72px;border-radius:50%;border:2px solid rgba(138,43,226,0.6);box-shadow:0 0 25px rgba(138,43,226,0.5);overflow:hidden;background:#0d0a1a;display:flex;align-items:center;justify-content:center;">
+      <img src="<?= APP_URL ?>/assets/img/icon-192.png?v=<?= $icoVer ?>" alt="Xprod Fit" style="width:100%;height:100%;object-fit:cover;display:block;">
+    </div>
+  </div>
 
   <!-- ══ VISTA LOGIN ══ -->
   <div id="view-login" class="auth-view"<?= $esLogin ? '' : ' style="display: none;" aria-hidden="true"' ?>>
