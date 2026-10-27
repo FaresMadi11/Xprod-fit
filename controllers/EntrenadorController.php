@@ -2306,14 +2306,14 @@ function entApiTiendaAgregar(): void {
     
     $imgPath = null;
     if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = BASE_DIR . '/assets/img/tienda/';
-        $fileName = time() . '_' . preg_replace("/[^a-zA-Z0-9\.]/", "", basename($_FILES['imagen']['name']));
-        $targetFile = $uploadDir . $fileName;
-        
-        $imgType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+        $imgType = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
         if (in_array($imgType, ['jpg', 'jpeg', 'png', 'webp'])) {
-            if (move_uploaded_file($_FILES['imagen']['tmp_name'], $targetFile)) {
-                $imgPath = 'assets/img/tienda/' . $fileName;
+            $saveExt = ($imgType === 'webp') ? 'webp' : 'jpg';
+            $baseName = pathinfo(preg_replace("/[^a-zA-Z0-9\.]/", "", basename($_FILES['imagen']['name'])), PATHINFO_FILENAME);
+            $relFile = 'assets/img/tienda/' . time() . '_' . ($baseName ?: 'prod') . '.' . $saveExt;
+            $rawBytes = (string)@file_get_contents($_FILES['imagen']['tmp_name']);
+            if ($rawBytes !== '' && guardarMediaPermanente($rawBytes, $relFile, 700, 78, false)) {
+                $imgPath = $relFile;
             }
         } else {
             jsonOut(false, 'Formato de imagen inválido. Solo JPG, PNG, WEBP.');
@@ -2351,18 +2351,17 @@ function entApiTiendaEditar(): void {
     $imgPath = $prod['imagen_path'];
     
     if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = BASE_DIR . '/assets/img/tienda/';
-        $fileName = time() . '_' . preg_replace("/[^a-zA-Z0-9\.]/", "", basename($_FILES['imagen']['name']));
-        $targetFile = $uploadDir . $fileName;
-        
-        $imgType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+        $imgType = strtolower(pathinfo($_FILES['imagen']['name'], PATHINFO_EXTENSION));
         if (in_array($imgType, ['jpg', 'jpeg', 'png', 'webp'])) {
-            if (move_uploaded_file($_FILES['imagen']['tmp_name'], $targetFile)) {
-                // Remove old image if exists
-                if ($imgPath && file_exists(BASE_DIR . '/' . $imgPath)) {
-                    unlink(BASE_DIR . '/' . $imgPath);
+            $saveExt = ($imgType === 'webp') ? 'webp' : 'jpg';
+            $baseName = pathinfo(preg_replace("/[^a-zA-Z0-9\.]/", "", basename($_FILES['imagen']['name'])), PATHINFO_FILENAME);
+            $relFile = 'assets/img/tienda/' . time() . '_' . ($baseName ?: 'prod') . '.' . $saveExt;
+            $rawBytes = (string)@file_get_contents($_FILES['imagen']['tmp_name']);
+            if ($rawBytes !== '' && guardarMediaPermanente($rawBytes, $relFile, 700, 78, false)) {
+                if ($imgPath) {
+                    eliminarMediaPermanente((string)$imgPath);
                 }
-                $imgPath = 'assets/img/tienda/' . $fileName;
+                $imgPath = $relFile;
             }
         } else {
             jsonOut(false, 'Formato de imagen inválido.');
@@ -2388,8 +2387,8 @@ function entApiTiendaBorrar(): void {
     $stmt->execute([$id]);
     $prod = $stmt->fetch();
     
-    if ($prod && $prod['imagen_path'] && file_exists(BASE_DIR . '/' . $prod['imagen_path'])) {
-        unlink(BASE_DIR . '/' . $prod['imagen_path']);
+    if ($prod && !empty($prod['imagen_path'])) {
+        eliminarMediaPermanente((string)$prod['imagen_path']);
     }
     
     $db->prepare("DELETE FROM tienda_productos WHERE id = ?")->execute([$id]);
@@ -2588,15 +2587,14 @@ function entApiCatalogoAgregar(): void {
     // Subida de media
     $mediaPath = null;
     if (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = BASE_DIR . '/public/uploads/ejercicios/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-        
         $ext = strtolower(pathinfo($_FILES['media']['name'], PATHINFO_EXTENSION));
         $validExts = ['jpg', 'jpeg', 'png', 'webp', 'mp4'];
         if (in_array($ext, $validExts)) {
-            $newName = uniqid('ej_') . '.' . $ext;
-            if (move_uploaded_file($_FILES['media']['tmp_name'], $uploadDir . $newName)) {
-                $mediaPath = 'public/uploads/ejercicios/' . $newName;
+            $saveExt = in_array($ext, ['jpg', 'jpeg', 'png']) ? 'jpg' : $ext;
+            $relMedia = 'public/uploads/ejercicios/' . uniqid('ej_') . '.' . $saveExt;
+            $rawBytes = (string)@file_get_contents($_FILES['media']['tmp_name']);
+            if ($rawBytes !== '' && guardarMediaPermanente($rawBytes, $relMedia, 700, 78, false)) {
+                $mediaPath = $relMedia;
             }
         }
     }
@@ -2634,15 +2632,15 @@ function entApiCatalogoEditar(): void {
     
     $mediaPath = $ej['imagen_path'];
     if (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
-        $uploadDir = BASE_DIR . '/public/uploads/ejercicios/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
-        
         $ext = strtolower(pathinfo($_FILES['media']['name'], PATHINFO_EXTENSION));
         $validExts = ['jpg', 'jpeg', 'png', 'webp', 'mp4'];
         if (in_array($ext, $validExts)) {
-            $newName = uniqid('ej_') . '.' . $ext;
-            if (move_uploaded_file($_FILES['media']['tmp_name'], $uploadDir . $newName)) {
-                $mediaPath = 'public/uploads/ejercicios/' . $newName;
+            $saveExt = in_array($ext, ['jpg', 'jpeg', 'png']) ? 'jpg' : $ext;
+            $relMedia = 'public/uploads/ejercicios/' . uniqid('ej_') . '.' . $saveExt;
+            $rawBytes = (string)@file_get_contents($_FILES['media']['tmp_name']);
+            if ($rawBytes !== '' && guardarMediaPermanente($rawBytes, $relMedia, 700, 78, false)) {
+                if ($mediaPath) eliminarMediaPermanente((string)$mediaPath);
+                $mediaPath = $relMedia;
             }
         }
     }

@@ -1,7 +1,7 @@
 FROM php:8.2-apache
 
-# 1. Habilitar mod_rewrite para el enrutamiento limpio del MVC y .htaccess
-RUN a2enmod rewrite
+# 1. Habilitar mod_rewrite, headers, expires y deflate para enrutamiento, caché de 1 año y compresión Gzip
+RUN a2enmod rewrite headers expires deflate
 
 # 2. Instalar dependencias del sistema y extensiones de PHP (PDO MySQL, GD para imágenes)
 RUN apt-get update && apt-get install -y --no-install-recommends \

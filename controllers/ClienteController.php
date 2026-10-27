@@ -1432,7 +1432,7 @@ function cliApiSubirFoto(): void {
     $path      = BASE_DIR . '/' . $filename;
 
     // Save the decoded image directly (JS already cropped and resized it)
-    if (file_put_contents($path, $imgData) === false) {
+    if (!guardarMediaPermanente($imgData, $filename, 360, 80, false)) {
         echo json_encode(['ok' => false, 'msg' => 'Error al guardar la imagen.']); exit;
     }
 
@@ -1442,7 +1442,7 @@ function cliApiSubirFoto(): void {
     $st  = $db->prepare("SELECT foto FROM clientes WHERE id = ?");
     $st->execute([$clienteId]);
     $oldFoto = $st->fetchColumn();
-    if ($oldFoto && file_exists(BASE_DIR . '/' . $oldFoto)) @unlink(BASE_DIR . '/' . $oldFoto);
+    if ($oldFoto) eliminarMediaPermanente((string)$oldFoto);
 
     $db->prepare("UPDATE clientes SET foto = ? WHERE id = ?")->execute([$filename, $clienteId]);
 
@@ -1785,7 +1785,9 @@ function cliGuardarPago(): void {
         $allowed = ['jpg','jpeg','png','gif','webp','pdf'];
         if (!in_array($ext, $allowed)) jsonOut(false, 'Formato de archivo no permitido.');
         $filename = 'uploads/comprobantes/' . uniqid('cmp_') . '.' . $ext;
-        if (move_uploaded_file($_FILES['comprobante']['tmp_name'], BASE_DIR . '/' . $filename)) {
+        purgarComprobantesVencidos($db, 10);
+        $rawCmp = (string)@file_get_contents($_FILES['comprobante']['tmp_name']);
+        if ($rawCmp !== '' && guardarMediaPermanente($rawCmp, $filename, 900, 75, true)) {
             $imgPath = $filename;
         }
     }

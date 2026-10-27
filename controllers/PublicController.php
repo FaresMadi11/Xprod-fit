@@ -9,7 +9,8 @@ if ($action === 'ping' || $action === 'health') {
     try {
         $db = getDB();
         $db->query('SELECT 1');
-        echo json_encode(['status' => 'ok', 'db' => 'connected', 'ts' => time()]);
+        $purgados = purgarComprobantesVencidos($db, 10);
+        echo json_encode(['status' => 'ok', 'db' => 'connected', 'purged_receipts' => $purgados, 'ts' => time()]);
     } catch (\Throwable $e) {
         http_response_code(503);
         echo json_encode(['status' => 'error', 'db' => 'disconnected']);

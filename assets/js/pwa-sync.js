@@ -48,10 +48,15 @@
         setTimeout(() => {
           const base = (window.APP || '').replace(/\/+$/, '');
           const isAtleta = window.location.pathname.includes('/cliente');
+          const isEntrenador = window.location.pathname.includes('/entrenador');
           if (isAtleta) {
             fetch(base + '/cliente/dashboard', { credentials: 'same-origin' }).catch(() => {});
             fetch(base + '/cliente/rutina-dia', { credentials: 'same-origin' }).catch(() => {});
             fetch(base + '/cliente/rutinas', { credentials: 'same-origin' }).catch(() => {});
+          } else if (isEntrenador) {
+            fetch(base + '/entrenador/dashboard', { credentials: 'same-origin' }).catch(() => {});
+            fetch(base + '/entrenador/clientes', { credentials: 'same-origin' }).catch(() => {});
+            fetch(base + '/entrenador/asistencias', { credentials: 'same-origin' }).catch(() => {});
           }
         }, 2500);
       }

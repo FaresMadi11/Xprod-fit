@@ -57,12 +57,16 @@ date_default_timezone_set(APP_TIMEZONE);
 // ── 4. Núcleo de la aplicación ─────────────────────────────────
 require BASE_DIR . '/config/database.php';
 require BASE_DIR . '/core/helpers.php';
+require BASE_DIR . '/core/media_storage.php';
 require BASE_DIR . '/core/csrf.php';
 require BASE_DIR . '/core/rate_limiter.php';
 require BASE_DIR . '/core/security.php';
 
 // ── 5. Router ──────────────────────────────────────────────────
 $route   = trim($_GET['route'] ?? '', '/');
+if ($route !== '') {
+    intentarServirMediaRespaldado($route);
+}
 if ($route === '') $route = 'auth/login';
 
 $segment = explode('/', $route);

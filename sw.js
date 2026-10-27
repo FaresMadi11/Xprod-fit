@@ -2,7 +2,7 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v2.5';
+const CACHE_NAME = 'xprod-fit-v2.6';
 
 // Recursos críticos locales precacheados (0ms de arranque, 100% offline)
 const PRECACHE_ASSETS = [
@@ -11,6 +11,7 @@ const PRECACHE_ASSETS = [
   './assets/css/style.css',
   './assets/js/app.js',
   './assets/js/pwa-sync.js',
+  './assets/vendor/sweetalert2/sweetalert2.all.min.js',
   './assets/vendor/chartjs/chart.min.js',
   './assets/vendor/tabler-icons/tabler-icons.min.css',
   './assets/vendor/tabler-icons/fonts/tabler-icons.woff2',
