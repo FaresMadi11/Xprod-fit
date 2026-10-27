@@ -15,11 +15,11 @@ declare(strict_types=1);
  */
 function loadEnv(string $path): void {
     if (!file_exists($path)) {
-        // En producción es crítico; en dev lanzamos advertencia
-        if (($_ENV['APP_ENV'] ?? 'development') === 'production') {
-            throw new \RuntimeException("Archivo .env no encontrado en: {$path}");
+        // En entornos Cloud/Docker (Render, Railway, etc.) las variables se inyectan por SO sin archivo .env físico
+        if (getenv('DB_HOST') !== false || isset($_ENV['DB_HOST']) || isset($_SERVER['DB_HOST']) || getenv('RENDER') !== false) {
+            return;
         }
-        error_log("[Xprod Fit] Advertencia: archivo .env no encontrado en {$path}");
+        error_log("[Xprod Fit] Advertencia: archivo .env no encontrado en {$path}; usando entorno del sistema.");
         return;
     }
 
@@ -71,7 +71,7 @@ function loadEnv(string $path): void {
  * Busca en: $_ENV → getenv() → $default
  */
 function env(string $key, mixed $default = null): mixed {
-    $value = $_ENV[$key] ?? getenv($key);
+    $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
 
     if ($value === false || $value === null) {
         return $default;

@@ -38,6 +38,7 @@ function getDB(): PDO {
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
                 PDO::ATTR_PERSISTENT         => false,
+                PDO::ATTR_TIMEOUT            => 10,
                 $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
                 $foundRows                   => true, // rowCount() funciona en UPDATE
             ];
@@ -63,7 +64,19 @@ function getDB(): PDO {
                 }
             }
 
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, $pdoOptions);
+            // Reintento automático ante cold-start/hibernación de TiDB Cloud Serverless
+            $maxAttempts = 2;
+            for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                try {
+                    $pdo = new PDO($dsn, DB_USER, DB_PASS, $pdoOptions);
+                    break;
+                } catch (\PDOException $connectErr) {
+                    if ($attempt === $maxAttempts) {
+                        throw $connectErr;
+                    }
+                    usleep(1500000); // Esperar 1.5s para que el clúster despierte
+                }
+            }
 
             // Alinear la zona horaria de la sesión MySQL con la de PHP (CURDATE()/NOW()
             // == date()). Offset numérico: no depende de las tablas tz de MySQL.
