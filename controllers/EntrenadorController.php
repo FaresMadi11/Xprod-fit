@@ -87,15 +87,15 @@ function entDashboard(): void {
 
     $stSinTerminar = $db->prepare(
         "SELECT COUNT(DISTINCT c.id) FROM clientes c
-         JOIN rutinas r ON r.id = (
-             SELECT r2.id FROM rutinas r2
-             WHERE r2.cliente_id = c.id
-               AND r2.estado = 'en_progreso'
+         JOIN (
+             SELECT cliente_id, MAX(id) AS max_id
+             FROM rutinas r2
+             WHERE r2.estado = 'en_progreso'
                AND (r2.es_modificacion IS NULL OR r2.es_modificacion = 0 OR r2.estado_modificacion = 'aprobada')
                AND (r2.dias_semana = '' OR FIND_IN_SET(?, r2.dias_semana))
-             ORDER BY r2.creado_en DESC, r2.id DESC
-             LIMIT 1
-         )
+             GROUP BY cliente_id
+         ) r_lat ON r_lat.cliente_id = c.id
+         JOIN rutinas r ON r.id = r_lat.max_id
          WHERE (? IS NOT NULL)
            AND NOT EXISTS (
                SELECT 1 FROM sesiones_asistencia sa 
@@ -1149,15 +1149,15 @@ function entAsistencias(): void {
                 'pendiente' as estado_sesion
          FROM clientes c
          JOIN usuarios u ON c.usuario_id = u.id
-         JOIN rutinas r ON r.id = (
-             SELECT r2.id FROM rutinas r2
-             WHERE r2.cliente_id = c.id
-               AND r2.estado = 'en_progreso'
+         JOIN (
+             SELECT cliente_id, MAX(id) AS max_id
+             FROM rutinas r2
+             WHERE r2.estado = 'en_progreso'
                AND (r2.es_modificacion IS NULL OR r2.es_modificacion = 0 OR r2.estado_modificacion = 'aprobada')
                AND (r2.dias_semana IS NULL OR r2.dias_semana = '' OR FIND_IN_SET(?, REPLACE(r2.dias_semana, ' ', '')))
-             ORDER BY r2.creado_en DESC, r2.id DESC
-             LIMIT 1
-         )
+             GROUP BY cliente_id
+         ) r_lat ON r_lat.cliente_id = c.id
+         JOIN rutinas r ON r.id = r_lat.max_id
          WHERE (? IS NOT NULL)
            AND NOT EXISTS (
                SELECT 1 FROM sesiones_asistencia sa 
@@ -1256,15 +1256,15 @@ function entAsistenciasFiltro(): void {
                 (SELECT COUNT(*) FROM ejercicios e WHERE e.rutina_id = r.id) AS total_ej
             FROM clientes c
             JOIN usuarios u ON c.usuario_id = u.id
-            JOIN rutinas r ON r.id = (
-                SELECT r2.id FROM rutinas r2
-                WHERE r2.cliente_id = c.id
-                  AND r2.estado = 'en_progreso'
+            JOIN (
+                SELECT cliente_id, MAX(id) AS max_id
+                FROM rutinas r2
+                WHERE r2.estado = 'en_progreso'
                   AND (r2.es_modificacion IS NULL OR r2.es_modificacion = 0 OR r2.estado_modificacion = 'aprobada')
                   AND (r2.dias_semana IS NULL OR r2.dias_semana = '' OR FIND_IN_SET(?, REPLACE(r2.dias_semana, ' ', '')))
-                ORDER BY r2.creado_en DESC, r2.id DESC
-                LIMIT 1
-            )
+                GROUP BY cliente_id
+            ) r_lat ON r_lat.cliente_id = c.id
+            JOIN rutinas r ON r.id = r_lat.max_id
             WHERE (? IS NOT NULL)
               AND NOT EXISTS (
                   SELECT 1 FROM sesiones_asistencia sa 
@@ -1370,15 +1370,15 @@ function entAsistenciasData(): void {
                 'pendiente' AS estado_sesion
          FROM clientes c
          JOIN usuarios u ON c.usuario_id = u.id
-         JOIN rutinas r ON r.id = (
-             SELECT r2.id FROM rutinas r2
-             WHERE r2.cliente_id = c.id
-               AND r2.estado = 'en_progreso'
+         JOIN (
+             SELECT cliente_id, MAX(id) AS max_id
+             FROM rutinas r2
+             WHERE r2.estado = 'en_progreso'
                AND (r2.es_modificacion IS NULL OR r2.es_modificacion = 0 OR r2.estado_modificacion = 'aprobada')
                AND (r2.dias_semana IS NULL OR r2.dias_semana = '' OR FIND_IN_SET(?, REPLACE(r2.dias_semana, ' ', '')))
-             ORDER BY r2.creado_en DESC, r2.id DESC
-             LIMIT 1
-         )
+             GROUP BY cliente_id
+         ) r_lat ON r_lat.cliente_id = c.id
+         JOIN rutinas r ON r.id = r_lat.max_id
          WHERE (? IS NOT NULL)
            AND NOT EXISTS (
                SELECT 1 FROM sesiones_asistencia sa
