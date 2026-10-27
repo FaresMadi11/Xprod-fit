@@ -49,14 +49,46 @@
           const base = (window.APP || '').replace(/\/+$/, '');
           const isAtleta = window.location.pathname.includes('/cliente');
           const isEntrenador = window.location.pathname.includes('/entrenador');
+          const htmlOpts = { credentials: 'same-origin', headers: { 'Accept': 'text/html' } };
           if (isAtleta) {
-            fetch(base + '/cliente/dashboard', { credentials: 'same-origin' }).catch(() => {});
-            fetch(base + '/cliente/rutina-dia', { credentials: 'same-origin' }).catch(() => {});
-            fetch(base + '/cliente/rutinas', { credentials: 'same-origin' }).catch(() => {});
+            fetch(base + '/cliente/dashboard', htmlOpts).catch(() => {});
+            fetch(base + '/cliente/rutina-dia', htmlOpts).catch(() => {});
+            fetch(base + '/cliente/rutinas', htmlOpts).catch(() => {});
+            fetch(base + '/cliente/perfil', htmlOpts).catch(() => {});
+            fetch(base + '/cliente/estadisticas', htmlOpts)
+              .then(r => r.ok ? r.text() : '')
+              .then(html => {
+                if (!html) return;
+                const m = html.match(/<script id="xpStatsOfflineSnapshot" type="application\/json">([\s\S]*?)<\/script>/);
+                if (m && m[1]) {
+                  try {
+                    const parsed = JSON.parse(m[1]);
+                    if (parsed && parsed.cliente_id) {
+                      localStorage.setItem('xprod_stats_snapshot_v1', JSON.stringify(parsed));
+                      if (parsed.dias_historial) {
+                        Object.entries(parsed.dias_historial).forEach(([f, det]) => {
+                          localStorage.setItem('xprod_cal_dia_' + f, JSON.stringify(det));
+                        });
+                      }
+                      if (parsed.grupos_ejercicios) {
+                        Object.entries(parsed.grupos_ejercicios).forEach(([g, gData]) => {
+                          localStorage.setItem('xprod_st_ej_' + g, JSON.stringify(gData));
+                        });
+                      }
+                      if (parsed.ejercicios_historial) {
+                        Object.entries(parsed.ejercicios_historial).forEach(([nom, hData]) => {
+                          localStorage.setItem('xprod_st_hist_' + nom, JSON.stringify(hData));
+                        });
+                      }
+                    }
+                  } catch (_) {}
+                }
+              })
+              .catch(() => {});
           } else if (isEntrenador) {
-            fetch(base + '/entrenador/dashboard', { credentials: 'same-origin' }).catch(() => {});
-            fetch(base + '/entrenador/clientes', { credentials: 'same-origin' }).catch(() => {});
-            fetch(base + '/entrenador/asistencias', { credentials: 'same-origin' }).catch(() => {});
+            fetch(base + '/entrenador/dashboard', htmlOpts).catch(() => {});
+            fetch(base + '/entrenador/clientes', htmlOpts).catch(() => {});
+            fetch(base + '/entrenador/asistencias', htmlOpts).catch(() => {});
           }
         }, 2500);
       }

@@ -45,7 +45,7 @@ function getDB(): PDO {
                 PDO::ATTR_EMULATE_PREPARES   => false,
                 PDO::ATTR_PERSISTENT         => true, // Reutiliza el socket TLS entre clics (ahorra ~1.7s por módulo)
                 PDO::ATTR_TIMEOUT            => 10,
-                $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci" . $tzSql,
+                $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci" . $tzSql . ", sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
                 $foundRows                   => true, // rowCount() funciona en UPDATE
             ];
 

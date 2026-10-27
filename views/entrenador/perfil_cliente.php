@@ -77,11 +77,12 @@ if ($mesPrevMes < 1) { $mesPrevMes = 12; $mesPrevAno--; }
 $mesSigMes = $calMes + 1; $mesSigAno = $calAno;
 if ($mesSigMes > 12) { $mesSigMes = 1; $mesSigAno++; }
 
-// Fechas entrenadas reales en BD y rutinas programadas por día de la semana
-$fechasEntrenadas   = obtenerFechasEntrenadasMes($db, (int)$cliente['id'], $calAno, $calMes);
-$fechasIncompletas  = obtenerFechasIncompletasMes($db, (int)$cliente['id'], $calAno, $calMes);
-$rutinasProgMap     = obtenerRutinasProgramadasPorDia($db, (int)$cliente['id']);
-$diasProgramados    = array_keys($rutinasProgMap);
+// Snapshot unificado en lote (3 consultas totales, 0 N+1) para Calendario y Progreso Muscular 0ms / Offline
+$offlineStatsSnapshot = construirSnapshotEstadisticasOffline($db, (int)$cliente['id'], 'entrenador');
+$fechasEntrenadas     = $offlineStatsSnapshot['fechas_entrenadas'] ?? [];
+$fechasIncompletas    = $offlineStatsSnapshot['fechas_incompletas'] ?? [];
+$rutinasProgMap       = obtenerRutinasProgramadasPorDia($db, (int)$cliente['id']);
+$diasProgramados      = $offlineStatsSnapshot['dias_programados'] ?? array_keys($rutinasProgMap);
 
 // Construcción de semanas (Lunes a Domingo, 7 columnas completas)
 $primerDia = new DateTime(sprintf('%04d-%02d-01', $calAno, $calMes));
@@ -111,7 +112,7 @@ for ($w = 0; $w < 6; $w++) {
 
 // Estadísticas rápidas
 $rutinasTotal      = count($rutinas);
-$rutinasCompletadas = count(array_filter($rutinas, fn($r) => $r['estado'] === 'completada'));
+$rutinasCompletadas = max(count(array_filter($rutinas, fn($r) => $r['estado'] === 'completada')), (int)($offlineStatsSnapshot['rutinas_completadas_count'] ?? 0));
 
 // Datos de peso para tarjeta de peso (idéntico a cliente)
 $pesoHistorial = $pesoTodos ?? [];
@@ -2167,7 +2168,45 @@ function cambiarTren(tren) {
   if (grupos && grupos.length) seleccionarGrupo(grupos[0], tren);
 }
 
-// ── Seleccionar Grupo Muscular ────────────────────────────
+// ── Snapshot Offline para Vista Entrenador (0ms & Offline-First) ─────────
+window.XP_STATS_SNAPSHOT_ENT = <?= json_encode($offlineStatsSnapshot ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+try {
+  if (window.XP_STATS_SNAPSHOT_ENT && window.XP_STATS_SNAPSHOT_ENT.cliente_id) {
+    localStorage.setItem('xprod_stats_ent_' + window.XP_STATS_SNAPSHOT_ENT.cliente_id, JSON.stringify(window.XP_STATS_SNAPSHOT_ENT));
+  } else if (typeof CLIENTE_ID_STATS !== 'undefined') {
+    const raw = localStorage.getItem('xprod_stats_ent_' + CLIENTE_ID_STATS);
+    if (raw) window.XP_STATS_SNAPSHOT_ENT = JSON.parse(raw);
+  }
+} catch (_) {}
+
+// ── Seleccionar Grupo Muscular (0ms desde Snapshot + Sync en Segundo Plano) ──
+function renderBotonesGrupoEnt(grupo, data, list, autoSelect = true) {
+  if (!data || !data.ok || !data.ejercicios || data.ejercicios.length === 0) {
+    if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
+    const emptyMsg = document.getElementById('chartEmptyMsg');
+    if (emptyMsg) emptyMsg.textContent = 'El atleta aún no tiene series completadas registradas en ' + ucFirst(grupo) + '.';
+    const titleText = document.getElementById('chartTitleText');
+    if (titleText) titleText.textContent = 'Progreso de ' + ucFirst(grupo);
+    return false;
+  }
+
+  let html = '';
+  data.ejercicios.forEach(ej => {
+    const safeName = (ej.nombre || '').replace(/'/g, "\\'");
+    const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
+    const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
+    const isAct = currentEjercicio === ej.nombre ? ' active' : '';
+    html += `<button type="button" class="pm-ex-btn${isAct}" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
+      data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
+  });
+  if (list) list.innerHTML = html;
+
+  if (autoSelect && data.ejercicios.length > 0) {
+    seleccionarEjercicio(data.ejercicios[0].nombre, data.ejercicios[0].id || 0);
+  }
+  return true;
+}
+
 async function seleccionarGrupo(grupo, tren) {
   currentGrupo       = grupo;
   currentEjercicio   = null;
@@ -2181,9 +2220,7 @@ async function seleccionarGrupo(grupo, tren) {
   );
   if (chip) chip.classList.add(tren === 'superior' ? 'active-sup' : 'active-inf');
 
-  const list = document.getElementById('pmExList');
-  if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-loader ti-spin"></i> Cargando ejercicios registrados...</span>';
-
+  const list   = document.getElementById('pmExList');
   const canvas = document.getElementById('mainChart');
   const empty  = document.getElementById('chartEmpty');
   if (canvas) canvas.style.display = 'none';
@@ -2194,41 +2231,70 @@ async function seleccionarGrupo(grupo, tren) {
   if (marcasWrap) marcasWrap.style.display = 'none';
   if (mainChart) { mainChart.destroy(); mainChart = null; }
 
+  const snap = window.XP_STATS_SNAPSHOT_ENT;
+  const localData = (snap && snap.grupos_ejercicios && snap.grupos_ejercicios[norm]) ? snap.grupos_ejercicios[norm] : null;
+  let renderedLocal = false;
+  if (localData && localData.ok) {
+    renderBotonesGrupoEnt(grupo, localData, list, true);
+    renderedLocal = true;
+  } else if (list) {
+    list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-loader ti-spin"></i> Cargando ejercicios registrados...</span>';
+  }
+
+  if (!navigator.onLine && renderedLocal) return;
+
   try {
     const res = await fetch(`${APP_URL_STATS}/entrenador/api-progreso-ejercicios?cliente_id=${CLIENTE_ID_STATS}&grupo=${encodeURIComponent(grupo)}`);
     const data = await res.json();
-
-    if (!data.ok || !data.ejercicios || data.ejercicios.length === 0) {
-      if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
-      const emptyMsg = document.getElementById('chartEmptyMsg');
-      if (emptyMsg) emptyMsg.textContent = 'El atleta aún no tiene series completadas registradas en ' + ucFirst(grupo) + '.';
-      const titleText = document.getElementById('chartTitleText');
-      if (titleText) titleText.textContent = 'Progreso de ' + ucFirst(grupo);
-      return;
-    }
-
-    let html = '';
-    data.ejercicios.forEach(ej => {
-      const safeName = (ej.nombre || '').replace(/'/g, "\\'");
-      const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
-      const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
-      html += `<button type="button" class="pm-ex-btn" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
-        data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
-    });
-    if (list) list.innerHTML = html;
-
-    if (data.ejercicios.length > 0) {
-      seleccionarEjercicio(data.ejercicios[0].nombre, data.ejercicios[0].id || 0);
+    if (data && data.ok) {
+      if (snap && snap.grupos_ejercicios) snap.grupos_ejercicios[norm] = data;
+      const prevCount = (localData && localData.ejercicios) ? localData.ejercicios.length : -1;
+      const newCount  = (data.ejercicios) ? data.ejercicios.length : 0;
+      if (!renderedLocal || prevCount !== newCount) {
+        renderBotonesGrupoEnt(grupo, data, list, true);
+      }
+    } else if (!renderedLocal) {
+      renderBotonesGrupoEnt(grupo, null, list, false);
     }
   } catch (err) {
-    console.error('Error al cargar ejercicios de progreso:', err);
-    if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-alert-circle"></i> Error de conexión al cargar ejercicios</span>';
-    const emptyMsg = document.getElementById('chartEmptyMsg');
-    if (emptyMsg) emptyMsg.textContent = 'Error de conexión al cargar ejercicios.';
+    if (!renderedLocal) renderBotonesGrupoEnt(grupo, localData, list, true);
   }
 }
 
-// ── Seleccionar Ejercicio Individual ──────────────────────
+// ── Seleccionar Ejercicio Individual (0ms desde Snapshot + Sync) ──────────
+function aplicarHistorialEjercicioEnt(nombre, data) {
+  const canvas = document.getElementById('mainChart');
+  const empty  = document.getElementById('chartEmpty');
+  const titleText = document.getElementById('chartTitleText');
+
+  if (!data || !data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
+    currentTop3Sesiones   = [];
+    currentBarrasPesos    = [];
+    currentResumenRecords = null;
+    if (canvas) canvas.style.display = 'none';
+    if (empty)  empty.style.display  = 'flex';
+    const emptyMsg = document.getElementById('chartEmptyMsg');
+    if (emptyMsg) emptyMsg.textContent = 'Sin datos suficientes de series completadas para ' + nombre;
+    if (titleText) titleText.textContent = nombre;
+    const summaryCard = document.getElementById('pmSummaryCard');
+    if (summaryCard) summaryCard.style.display = 'none';
+    const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
+    if (marcasWrap) marcasWrap.style.display = 'none';
+    if (mainChart) { mainChart.destroy(); mainChart = null; }
+    return false;
+  }
+
+  currentBarrasPesos    = data.barras_pesos || [];
+  currentResumenRecords = data.resumen_records || null;
+  currentTop3Sesiones   = data.top3_sesiones || [];
+  currentVersionIndex   = 0;
+
+  renderChartEjercicio(0);
+  renderSummary();
+  renderPodioTop3();
+  return true;
+}
+
 async function seleccionarEjercicio(nombre, id) {
   currentEjercicio   = nombre;
   currentEjercicioId = id || null;
@@ -2237,10 +2303,18 @@ async function seleccionarEjercicio(nombre, id) {
     b.classList.toggle('active', b.dataset.ej === nombre);
   });
 
-  const canvas = document.getElementById('mainChart');
-  const empty  = document.getElementById('chartEmpty');
-  const titleText = document.getElementById('chartTitleText');
-  if (titleText) titleText.textContent = nombre + ' — Cargando historial...';
+  const snap = window.XP_STATS_SNAPSHOT_ENT;
+  const localData = (snap && snap.ejercicios_historial && snap.ejercicios_historial[nombre]) ? snap.ejercicios_historial[nombre] : null;
+  let renderedLocal = false;
+  if (localData && localData.ok) {
+    aplicarHistorialEjercicioEnt(nombre, localData);
+    renderedLocal = true;
+  } else {
+    const titleText = document.getElementById('chartTitleText');
+    if (titleText) titleText.textContent = nombre + ' — Cargando historial...';
+  }
+
+  if (!navigator.onLine && renderedLocal) return;
 
   try {
     let url = `${APP_URL_STATS}/entrenador/api-progreso-historial?cliente_id=${CLIENTE_ID_STATS}&ejercicio_nombre=${encodeURIComponent(nombre)}`;
@@ -2248,42 +2322,19 @@ async function seleccionarEjercicio(nombre, id) {
 
     const res  = await fetch(url);
     const data = await res.json();
-
-    if (!data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
-      currentTop3Sesiones   = [];
-      currentBarrasPesos    = [];
-      currentResumenRecords = null;
-      if (canvas) canvas.style.display = 'none';
-      if (empty)  empty.style.display  = 'flex';
-      const emptyMsg = document.getElementById('chartEmptyMsg');
-      if (emptyMsg) emptyMsg.textContent = 'Sin datos suficientes de series completadas para ' + nombre;
-      if (titleText) titleText.textContent = nombre;
-      const summaryCard = document.getElementById('pmSummaryCard');
-      if (summaryCard) summaryCard.style.display = 'none';
-      const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
-      if (marcasWrap) marcasWrap.style.display = 'none';
-      if (mainChart) { mainChart.destroy(); mainChart = null; }
-      return;
+    if (data && data.ok) {
+      if (snap && snap.ejercicios_historial) snap.ejercicios_historial[nombre] = data;
+      if (currentEjercicio === nombre) aplicarHistorialEjercicioEnt(nombre, data);
+    } else if (!renderedLocal && currentEjercicio === nombre) {
+      aplicarHistorialEjercicioEnt(nombre, null);
     }
-
-    currentBarrasPesos    = data.barras_pesos || [];
-    currentResumenRecords = data.resumen_records || null;
-    currentTop3Sesiones   = data.top3_sesiones || [];
-    currentVersionIndex   = 0;
-
-    renderChartEjercicio(0);
-    renderSummary();
-    renderPodioTop3();
   } catch (err) {
-    console.error('Error al cargar historial del ejercicio:', err);
-    if (canvas) canvas.style.display = 'none';
-    if (empty)  empty.style.display  = 'flex';
-    const emptyMsg = document.getElementById('chartEmptyMsg');
-    if (emptyMsg) emptyMsg.textContent = 'Error al cargar el historial de marcas.';
+    if (!renderedLocal && currentEjercicio === nombre) {
+      aplicarHistorialEjercicioEnt(nombre, localData);
+    }
   }
 }
 
-// ── Renderizar Gráfica de Barras ──────────────────────────
 function renderChartEjercicio(versionIdx = null) {
   if (versionIdx !== null && versionIdx !== undefined) {
     currentVersionIndex = versionIdx;
@@ -2731,13 +2782,31 @@ if (document.readyState === 'complete') {
     }
     activeFetchAbort = new AbortController();
 
+    const snapEnt = window.XP_STATS_SNAPSHOT_ENT;
+    let localDia = (snapEnt && snapEnt.dias_historial && snapEnt.dias_historial[fecha]) ? snapEnt.dias_historial[fecha] : null;
+    if (!localDia && snapEnt && fecha < FECHA_HOY) {
+      localDia = { ok: true, fecha: fecha, fecha_hoy: FECHA_HOY, modo: 'historial', estado: 'sin_actividad', rutina: null, resumen: null, ejercicios: [] };
+    }
+    let renderedLocalDia = false;
+    if (localDia && localDia.ok) {
+      renderModalDia(fecha, localDia);
+      renderedLocalDia = true;
+    }
+    if (!navigator.onLine && renderedLocalDia) return;
+
     try {
       const url = `${APP_URL_STATS}/entrenador/api-dia-detalle?cliente_id=${CLIENTE_ID_STATS}&fecha=${encodeURIComponent(fecha)}`;
       const res = await fetch(url, { credentials: 'same-origin', signal: activeFetchAbort.signal });
       const data = await res.json();
-      renderModalDia(fecha, data);
+      if (data && data.ok) {
+        if (snapEnt && snapEnt.dias_historial) snapEnt.dias_historial[fecha] = data;
+        renderModalDia(fecha, data);
+      } else if (!renderedLocalDia) {
+        renderModalDia(fecha, data);
+      }
     } catch(err) {
       if (err.name === 'AbortError') return;
+      if (renderedLocalDia) return;
       bodyEl.innerHTML = `
         <div class="dia-modal-empty">
           <i class="ti ti-wifi-off" aria-hidden="true"></i>

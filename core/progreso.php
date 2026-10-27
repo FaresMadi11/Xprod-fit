@@ -2,64 +2,104 @@
 // core/progreso.php – Consultas y consolidación unificada de progreso y récords
 
 /**
- * Obtiene los ejercicios con series completadas para un cliente filtrados por grupo muscular.
+ * Normaliza texto a minúsculas sin tildes para comparaciones deterministas.
  */
-function obtenerProgresoEjercicios(PDO $db, int $clienteId, string $grupo): array {
-    $normGrupo = strtolower(str_replace(
-        ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
-        ['a', 'e', 'i', 'o', 'u', 'a', 'e', 'i', 'o', 'u'],
-        $grupo
-    ));
+function normalizarTextoProgreso(string $texto): string {
+    return strtr(
+        mb_strtolower(trim($texto), 'UTF-8'),
+        ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u',
+         'Á' => 'a', 'É' => 'e', 'Í' => 'i', 'Ó' => 'o', 'Ú' => 'u', 'Ü' => 'u']
+    );
+}
 
-    $patrones = match($normGrupo) {
-        'pecho'                   => ['%pecho%', '%pectoral%', '%banca%'],
-        'hombro', 'hombros'       => ['%hombro%', '%deltoid%', '%militar%'],
-        'biceps'                  => ['%bicep%'],
-        'triceps'                 => ['%tricep%'],
-        'antebrazos', 'antebrazo' => ['%antebrazo%', '%braquial%', '%braquiorradial%'],
-        'espalda'                 => ['%espalda%', '%dorsal%', '%remo%', '%jalon%', '%dominada%', '%romboid%'],
-        'abdomen'                 => ['%abdomen%', '%core%', '%crunch%', '%plancha%'],
-        'cuadriceps'              => ['%cuadric%', '%sentadilla%', '%hacka%', '%prensa%'],
-        'femoral'                 => ['%femoral%', '%isquio%'],
-        'gluteos', 'gluteo'       => ['%gluteo%', '%hip thrust%'],
-        'isquiotibiales'          => ['%isquio%', '%femoral%'],
-        'gemelos', 'gemelo'       => ['%gemelo%', '%pantorrilla%', '%soleo%', '%gastrocnemio%'],
-        'abductores', 'abductor'  => ['%abductor%', '%aductor%'],
-        default                   => ['%' . $normGrupo . '%']
-    };
+/**
+ * Evalúa si un ejercicio pertenece al grupo muscular consultado (por grupo_muscular en BD o por nombre).
+ */
+function coincideGrupoMuscularProgreso(string $nombreEjercicio, ?string $grupoMuscularBD, string $grupoBuscado): bool {
+    $normGrupo = normalizarTextoProgreso($grupoBuscado);
+    $normNom   = normalizarTextoProgreso($nombreEjercicio);
+    $normBD    = normalizarTextoProgreso((string)$grupoMuscularBD);
 
-    $clauses = [
-        "LOWER(TRIM(COALESCE(e.grupo_muscular, ''))) = LOWER(TRIM(?))",
-        "LOWER(TRIM(COALESCE(ec.grupo_muscular, ''))) = LOWER(TRIM(?))"
-    ];
-    $params = [$clienteId, $grupo, $grupo];
-
-    foreach ($patrones as $p) {
-        $clauses[] = "LOWER(COALESCE(e.grupo_muscular, '')) LIKE ?";
-        $clauses[] = "LOWER(COALESCE(ec.grupo_muscular, '')) LIKE ?";
-        $clauses[] = "LOWER(COALESCE(ss.ejercicio_nombre, e.nombre)) LIKE ?";
-        $params[] = $p;
-        $params[] = $p;
-        $params[] = $p;
+    if ($normBD !== '' && $normBD === $normGrupo) {
+        return true;
     }
 
+    // Evitar falsos positivos: "curl femoral" o "curl acostado" es femoral/isquio, no bíceps
+    if ($normGrupo === 'biceps' && (str_contains($normNom, 'femoral') || str_contains($normNom, 'isquio') || str_contains($normNom, 'tumbado') || str_contains($normNom, 'acostado'))) {
+        return false;
+    }
+
+    $keywords = match($normGrupo) {
+        'pecho'                   => ['pecho', 'pectoral', 'banca', 'apertura', 'cruce', 'pullover', 'flexion', 'lagartija', 'push up', 'pushup', 'press plano', 'press inclinado', 'press declinado', 'pec deck'],
+        'hombro', 'hombros'       => ['hombro', 'deltoid', 'militar', 'elevacion lateral', 'elevaciones laterales', 'elevacion frontal', 'pajaro', 'face pull', 'arnold', 'encogimiento', 'posterior', 'vuelo', 'press hombro'],
+        'biceps'                  => ['bicep', 'curl', 'martillo', 'predicador', 'concentrado'],
+        'triceps'                 => ['tricep', 'frances', 'fondo', 'patada de tricep', 'kickback', 'copa', 'pushdown', 'extension en polea', 'extensiones en polea', 'extension de tricep', 'press cerrado'],
+        'antebrazos', 'antebrazo' => ['antebrazo', 'muneca', 'braquial', 'braquiorradial', 'prono', 'supino', 'pinza', 'farmer'],
+        'espalda'                 => ['espalda', 'dorsal', 'remo', 'jalon', 'dominada', 'pulldown', 'pull down', 'lumbar', 'hiperextension', 'romboid', 'serrucho', 't-bar'],
+        'abdomen'                 => ['abdomen', 'abdominal', 'crunch', 'plancha', 'core', 'oblicuo', 'rueda', 'leg raise', 'elevacion de piernas'],
+        'cuadriceps'              => ['cuadric', 'sentadilla', 'prensa', 'extension de pierna', 'extension de rodilla', 'extension de cuadriceps', 'zancada', 'estocada', 'hack', 'bulgara', 'sissy'],
+        'femoral'                 => ['femoral', 'isquio', 'curl tumbado', 'curl sentado', 'curl acostado', 'buenos dias', 'peso muerto', 'rumano', 'romanian', 'deadlift'],
+        'gluteos', 'gluteo'       => ['glute', 'hip thrust', 'puente', 'patada de gluteo', 'patada gluteo', 'abduccion'],
+        'isquiotibiales'          => ['isquio', 'femoral', 'peso muerto', 'rumano', 'romanian', 'deadlift', 'nordic', 'curl tumbado', 'curl sentado'],
+        'gemelos', 'gemelo'       => ['gemelo', 'pantorrilla', 'soleo', 'gastrocnemio', 'talon', 'calf'],
+        'abductores', 'abductor'  => ['abductor', 'aductor', 'aduccion', 'abduccion', 'copenhagen'],
+        default                   => [$normGrupo]
+    };
+
+    foreach ($keywords as $kw) {
+        if ($kw !== '' && (str_contains($normBD, $kw) || str_contains($normNom, $kw))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Obtiene los ejercicios con series completadas para un cliente filtrados por grupo muscular.
+ * Compatible con ONLY_FULL_GROUP_BY (TiDB Cloud / MySQL 8) y libre de colisiones de colación.
+ */
+function obtenerProgresoEjercicios(PDO $db, int $clienteId, string $grupo): array {
     $st = $db->prepare(
         "SELECT 
-            COALESCE(e.id, ss.ejercicio_id) AS id,
+            MAX(COALESCE(e.id, ss.ejercicio_id)) AS id,
             COALESCE(ss.ejercicio_nombre, e.nombre) AS nombre,
+            MAX(COALESCE(NULLIF(TRIM(e.grupo_muscular), ''), ec.grupo_muscular, ce.grupo_muscular)) AS grupo_muscular,
             COUNT(ss.id) AS total_series_registradas,
             MAX(ss.fecha) AS ultima_fecha
          FROM sesion_series ss
          LEFT JOIN ejercicios e ON ss.ejercicio_id = e.id
-         LEFT JOIN ejercicios_catalogo ec ON (LOWER(TRIM(ec.nombre)) = LOWER(TRIM(COALESCE(ss.ejercicio_nombre, e.nombre))))
+         LEFT JOIN (
+             SELECT LOWER(TRIM(nombre)) AS nom_key, MAX(grupo_muscular) AS grupo_muscular
+             FROM ejercicios_catalogo GROUP BY LOWER(TRIM(nombre))
+         ) ec ON ec.nom_key = LOWER(TRIM(COALESCE(ss.ejercicio_nombre, e.nombre)))
+         LEFT JOIN (
+             SELECT LOWER(TRIM(nombre)) AS nom_key, MAX(grupo_muscular) AS grupo_muscular
+             FROM catalogo_ejercicios GROUP BY LOWER(TRIM(nombre))
+         ) ce ON ce.nom_key = LOWER(TRIM(COALESCE(ss.ejercicio_nombre, e.nombre)))
          WHERE ss.cliente_id = ? 
            AND ss.completado = 1
-           AND (" . implode(" OR ", $clauses) . ")
          GROUP BY COALESCE(ss.ejercicio_nombre, e.nombre)
          ORDER BY total_series_registradas DESC, nombre ASC"
     );
-    $st->execute($params);
-    return $st->fetchAll(PDO::FETCH_ASSOC);
+    $st->execute([$clienteId]);
+    $todos = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    $filtrados = [];
+    foreach ($todos as $row) {
+        $nom = (string)($row['nombre'] ?? '');
+        if ($nom === '') continue;
+        if (coincideGrupoMuscularProgreso($nom, $row['grupo_muscular'] ?? null, $grupo)) {
+            $filtrados[] = [
+                'id'                       => (int)($row['id'] ?? 0),
+                'nombre'                   => $nom,
+                'total_series_registradas' => (int)($row['total_series_registradas'] ?? 0),
+                'ultima_fecha'             => $row['ultima_fecha'],
+            ];
+        }
+    }
+
+    return $filtrados;
 }
 
 /**
@@ -885,4 +925,515 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
             : null,
     ]);
 }
+
+/**
+ * Construye un snapshot integral en lote (3 consultas SQL totales, cero N+1) con:
+ * - Historial completo del calendario (todas las fechas entrenadas y sesiones registradas)
+ * - Planificación semanal por día (1..7)
+ * - Ejercicios completados por cada grupo muscular
+ * - Historial de marcas, récords y Top 3 sesiones de cada ejercicio
+ * Permite que el calendario y las gráficas funcionen en 0ms y 100% sin conexión a internet.
+ */
+function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $role = 'cliente'): array {
+    $hoy = date('Y-m-d');
+
+    // 1. Todas las rutinas y ejercicios del cliente (para planificación y cálculo de series planificadas)
+    $stRut = $db->prepare(
+        "SELECT r.id AS rutina_id, r.dias_semana, r.estado, r.es_modificacion, r.estado_modificacion,
+                COALESCE(NULLIF(TRIM(r.titulo), ''), NULLIF(TRIM(r.zona_muscular), ''),
+                         NULLIF(LEFT(TRIM(r.descripcion), 60), ''), CONCAT('Rutina #', r.id)) AS rutina_nombre,
+                e.id AS ej_id, e.nombre AS ej_nombre, e.descripcion AS ej_desc,
+                COALESCE(NULLIF(TRIM(e.grupo_muscular), ''), ce.grupo_muscular) AS ej_grupo,
+                e.series AS ej_series, e.repeticiones AS ej_reps, e.rir AS ej_rir,
+                e.orden AS ej_orden, e.tipo_implemento AS ej_implemento, e.unidad_carga AS ej_unidad,
+                COALESCE(ce.equipamiento, e.tipo_implemento) AS ej_equipamiento
+         FROM rutinas r
+         LEFT JOIN ejercicios e ON e.rutina_id = r.id
+         LEFT JOIN (
+             SELECT LOWER(TRIM(nombre)) AS nom_key, MAX(grupo_muscular) AS grupo_muscular, MAX(equipamiento) AS equipamiento
+             FROM catalogo_ejercicios GROUP BY LOWER(TRIM(nombre))
+         ) ce ON ce.nom_key = LOWER(TRIM(e.nombre))
+         WHERE r.cliente_id = ?
+         ORDER BY r.id ASC, e.orden ASC, e.id ASC"
+    );
+    $stRut->execute([$clienteId]);
+
+    $rutinasInfo = [];
+    foreach ($stRut->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $rid = (int)$row['rutina_id'];
+        if (!isset($rutinasInfo[$rid])) {
+            $rutinasInfo[$rid] = [
+                'id'                  => $rid,
+                'nombre'              => (string)$row['rutina_nombre'],
+                'dias_semana'         => (string)($row['dias_semana'] ?? ''),
+                'estado'              => (string)($row['estado'] ?? ''),
+                'es_modificacion'     => (int)($row['es_modificacion'] ?? 0),
+                'estado_modificacion' => (string)($row['estado_modificacion'] ?? ''),
+                'series_planificadas' => 0,
+                'ejercicios'          => [],
+            ];
+        }
+        if (!empty($row['ej_id'])) {
+            $numSeries = max(1, (int)$row['ej_series']);
+            $repsBase  = !empty($row['ej_reps']) ? (string)$row['ej_reps'] : '10';
+            $rirBase   = $row['ej_rir'] !== null ? (int)$row['ej_rir'] : 2;
+            $pesoExtra = null;
+            if (!empty($row['ej_desc']) && preg_match('/(\d+(?:\.\d+)?)\s*(?:kg|kilos|lbs)?/i', (string)$row['ej_desc'], $mP)) {
+                $pesoExtra = (float)$mP[1];
+            }
+            $seriesDetalle = [];
+            for ($s = 1; $s <= $numSeries; $s++) {
+                $seriesDetalle[] = [
+                    'numero' => $s,
+                    'tipo'   => 'normal',
+                    'reps'   => $repsBase,
+                    'peso'   => $pesoExtra,
+                    'rir'    => $rirBase,
+                ];
+            }
+            $rutinasInfo[$rid]['series_planificadas'] += $numSeries;
+            $rutinasInfo[$rid]['ejercicios'][] = [
+                'id'              => (int)$row['ej_id'],
+                'rutina_id'       => $rid,
+                'nombre'          => (string)$row['ej_nombre'],
+                'grupo_muscular'  => inferirGrupoMuscularProgreso((string)$row['ej_nombre'], $row['ej_grupo']),
+                'equipamiento'    => inferirEquipamientoProgreso((string)$row['ej_nombre'], $row['ej_equipamiento']),
+                'tipo_implemento' => (string)($row['ej_implemento'] ?: 'barra'),
+                'unidad_carga'    => (string)($row['ej_unidad'] ?: 'kg'),
+                'series_total'    => $numSeries,
+                'repeticiones'    => $repsBase,
+                'rir'             => $rirBase,
+                'series_detalle'  => $seriesDetalle,
+            ];
+        }
+    }
+
+    // Mapa día ISO (1..7) -> rutina programada activa
+    $planPorDow = [];
+    foreach ($rutinasInfo as $r) {
+        $activa = in_array($r['estado'], ['en_progreso', 'pendiente'], true)
+            && ($r['es_modificacion'] === 0 || $r['estado_modificacion'] === 'aprobada');
+        if (!$activa) continue;
+        foreach (explode(',', $r['dias_semana']) as $dStr) {
+            $d = (int)trim($dStr);
+            if ($d >= 1 && $d <= 7 && !isset($planPorDow[$d])) {
+                $planPorDow[$d] = [
+                    'id'         => $r['id'],
+                    'nombre'     => $r['nombre'],
+                    'resumen'    => [
+                        'ejercicios' => count($r['ejercicios']),
+                        'series'     => $r['series_planificadas'],
+                    ],
+                    'ejercicios' => $r['ejercicios'],
+                ];
+            }
+        }
+    }
+
+    // 2. Todas las sesiones de asistencia del cliente
+    $stAsis = $db->prepare(
+        "SELECT sa.id, sa.rutina_id, sa.estado, sa.notas,
+                DATE(COALESCE(sa.inicio_en, sa.fin_en)) AS fecha_ini,
+                DATE(COALESCE(sa.fin_en, sa.inicio_en)) AS fecha_fin
+         FROM sesiones_asistencia sa
+         WHERE sa.cliente_id = ?
+         ORDER BY sa.id DESC"
+    );
+    $stAsis->execute([$clienteId]);
+    $asistPorFecha = [];
+    $sesionesCompletadasCount = 0;
+    foreach ($stAsis->fetchAll(PDO::FETCH_ASSOC) as $a) {
+        if ($a['estado'] === 'completada') {
+            $sesionesCompletadasCount++;
+        }
+        foreach (array_unique(array_filter([$a['fecha_ini'], $a['fecha_fin']])) as $f) {
+            if (!isset($asistPorFecha[$f])) {
+                $asistPorFecha[$f] = $a;
+            }
+        }
+    }
+
+    // 3. Todas las series completadas del cliente en un único lote
+    $stSeries = $db->prepare(
+        "SELECT ss.id, ss.fecha,
+                DATE_FORMAT(ss.fecha, '%d %b') AS fecha_formateada,
+                DATE_FORMAT(ss.fecha, '%d %b %Y') AS fecha_completa,
+                ss.ejercicio_id, ss.numero_serie, ss.tipo_serie,
+                ss.reps_realizadas, ss.peso_usado, ss.unidad_carga, ss.kg_real,
+                COALESCE(ss.ejercicio_nombre, e.nombre) AS ejercicio_nombre,
+                COALESCE(NULLIF(TRIM(e.grupo_muscular), ''), ec.grupo_muscular, ce.grupo_muscular) AS grupo_muscular,
+                COALESCE(ss.rutina_id, e.rutina_id) AS rutina_id,
+                COALESCE(ss.rutina_nombre, r.descripcion, CONCAT('Rutina #', r.id)) AS rutina_nombre,
+                COALESCE(ss.equipamiento, ce.equipamiento, e.tipo_implemento) AS equipamiento
+         FROM sesion_series ss
+         LEFT JOIN ejercicios e ON e.id = ss.ejercicio_id
+         LEFT JOIN rutinas r ON r.id = COALESCE(ss.rutina_id, e.rutina_id)
+         LEFT JOIN (
+             SELECT LOWER(TRIM(nombre)) AS nom_key, MAX(grupo_muscular) AS grupo_muscular
+             FROM ejercicios_catalogo GROUP BY LOWER(TRIM(nombre))
+         ) ec ON ec.nom_key = LOWER(TRIM(COALESCE(ss.ejercicio_nombre, e.nombre)))
+         LEFT JOIN (
+             SELECT LOWER(TRIM(nombre)) AS nom_key, MAX(grupo_muscular) AS grupo_muscular, MAX(equipamiento) AS equipamiento
+             FROM catalogo_ejercicios GROUP BY LOWER(TRIM(nombre))
+         ) ce ON ce.nom_key = LOWER(TRIM(COALESCE(ss.ejercicio_nombre, e.nombre)))
+         WHERE ss.cliente_id = ? AND ss.completado = 1
+         ORDER BY ss.fecha ASC, COALESCE(e.orden, 255) ASC, ss.ejercicio_id ASC, ss.numero_serie ASC, ss.id ASC"
+    );
+    $stSeries->execute([$clienteId]);
+    $allSeries = $stSeries->fetchAll(PDO::FETCH_ASSOC);
+
+    // Agrupar series por fecha (para el calendario) y por nombre de ejercicio (para gráficas de progreso)
+    $seriesPorFecha = [];
+    $seriesPorEjercicio = [];
+    $metaPorEjercicio = [];
+
+    foreach ($allSeries as $row) {
+        $f = (string)$row['fecha'];
+        $seriesPorFecha[$f][] = $row;
+
+        $nomEj = trim((string)($row['ejercicio_nombre'] ?? ''));
+        if ($nomEj !== '') {
+            $seriesPorEjercicio[$nomEj][] = $row;
+            if (!isset($metaPorEjercicio[$nomEj])) {
+                $metaPorEjercicio[$nomEj] = [
+                    'id'                       => (int)($row['ejercicio_id'] ?? 0),
+                    'nombre'                   => $nomEj,
+                    'grupo_muscular'           => $row['grupo_muscular'],
+                    'total_series_registradas' => 0,
+                    'ultima_fecha'             => $f,
+                ];
+            }
+            $metaPorEjercicio[$nomEj]['total_series_registradas']++;
+            if ($f > $metaPorEjercicio[$nomEj]['ultima_fecha']) {
+                $metaPorEjercicio[$nomEj]['ultima_fecha'] = $f;
+            }
+            if (!empty($row['ejercicio_id'])) {
+                $metaPorEjercicio[$nomEj]['id'] = (int)$row['ejercicio_id'];
+            }
+            if (empty($metaPorEjercicio[$nomEj]['grupo_muscular']) && !empty($row['grupo_muscular'])) {
+                $metaPorEjercicio[$nomEj]['grupo_muscular'] = $row['grupo_muscular'];
+            }
+        }
+    }
+
+    $fechasEntrenadas = array_keys($seriesPorFecha);
+    $fechasIncompletas = [];
+    $diasHistorial = [];
+
+    // Construir el detalle de cada día con series completadas
+    foreach ($seriesPorFecha as $fecha => $rowsDia) {
+        $modo = $fecha < $hoy ? 'historial' : ($fecha === $hoy ? 'hoy' : 'planificacion');
+        $dow  = (int)(new DateTimeImmutable($fecha))->format('N');
+
+        $ejerciciosDia = [];
+        $rutinasDia    = [];
+        $totalSeries   = 0;
+        $volumen       = 0.0;
+
+        foreach ($rowsDia as $row) {
+            $nombre = (string)($row['ejercicio_nombre'] ?: 'Ejercicio');
+            $key    = $row['ejercicio_id'] !== null ? 'id' . $row['ejercicio_id'] : 'n' . $nombre;
+
+            if (!isset($ejerciciosDia[$key])) {
+                $ejerciciosDia[$key] = [
+                    'nombre'         => $nombre,
+                    'grupo_muscular' => inferirGrupoMuscularProgreso($nombre, $row['grupo_muscular']),
+                    'equipamiento'   => inferirEquipamientoProgreso($nombre, $row['equipamiento']),
+                    'series'         => [],
+                ];
+            }
+
+            $reps = $row['reps_realizadas'] !== null ? (int)$row['reps_realizadas'] : null;
+            $peso = $row['peso_usado']      !== null ? (float)$row['peso_usado']    : null;
+
+            $ejerciciosDia[$key]['series'][] = [
+                'numero' => (int)$row['numero_serie'],
+                'tipo'   => (string)$row['tipo_serie'],
+                'reps'   => $reps,
+                'peso'   => $peso,
+            ];
+            $totalSeries++;
+
+            if ($row['tipo_serie'] !== 'calentamiento' && $reps !== null && $peso !== null) {
+                $volumen += $reps * $peso;
+            }
+
+            $rid = $row['rutina_id'] !== null ? (int)$row['rutina_id'] : 0;
+            if (!isset($rutinasDia[$rid])) {
+                $rutinasDia[$rid] = ['id' => $rid ?: null, 'nombre' => (string)($row['rutina_nombre'] ?: 'Rutina')];
+            }
+        }
+
+        $planificadas = 0;
+        foreach ($rutinasDia as $rDia) {
+            $rid = (int)($rDia['id'] ?? 0);
+            if ($rid > 0 && isset($rutinasInfo[$rid])) {
+                $planificadas += $rutinasInfo[$rid]['series_planificadas'];
+            }
+        }
+
+        $asistRow   = $asistPorFecha[$fecha] ?? null;
+        $estadoAsis = (string)($asistRow['estado'] ?? '');
+        $notas      = !empty($asistRow['notas']) ? (string)$asistRow['notas'] : null;
+        $estado     = 'completado';
+        $accion     = null;
+
+        if ($modo === 'hoy') {
+            $progHoy = $planPorDow[$dow] ?? null;
+            if ($progHoy) {
+                if ($planificadas === 0) {
+                    $planificadas = (int)($progHoy['resumen']['series'] ?? 0);
+                }
+                if ($planificadas > $totalSeries && $estadoAsis !== 'completada') {
+                    $estado = 'parcial';
+                    if ($role === 'cliente') {
+                        $accion = [
+                            'label' => 'Continuar entrenando',
+                            'url'   => APP_URL . '/cliente/rutina-dia?rutina=' . $progHoy['id'],
+                        ];
+                    }
+                }
+            }
+        } else {
+            if (($planificadas > 0 && $totalSeries < $planificadas) || $estadoAsis === 'incompleta' || ($estadoAsis !== 'completada' && $totalSeries > 0)) {
+                $estado = 'incompleta';
+                $fechasIncompletas[] = $fecha;
+            }
+        }
+
+        $diasHistorial[$fecha] = [
+            'ok'         => true,
+            'cliente_id' => $clienteId,
+            'fecha'      => $fecha,
+            'fecha_hoy'  => $hoy,
+            'modo'       => $modo,
+            'estado'     => $estado,
+            'accion'     => $accion,
+            'notas'      => $notas,
+            'rutina'     => ['nombre' => implode(' · ', array_column($rutinasDia, 'nombre'))],
+            'resumen'    => [
+                'ejercicios'          => count($ejerciciosDia),
+                'series'              => $totalSeries,
+                'series_planificadas' => $planificadas,
+                'volumen_kg'          => round($volumen, 1),
+            ],
+            'ejercicios' => array_values($ejerciciosDia),
+        ];
+    }
+
+    // Agregar días con sesión de asistencia pero sin series registradas
+    foreach ($asistPorFecha as $fecha => $asistRow) {
+        if (isset($diasHistorial[$fecha]) || empty($asistRow['rutina_id'])) continue;
+        $rid = (int)$asistRow['rutina_id'];
+        if (!isset($rutinasInfo[$rid])) continue;
+        $rInfo = $rutinasInfo[$rid];
+        $modo  = $fecha < $hoy ? 'historial' : ($fecha === $hoy ? 'hoy' : 'planificacion');
+        if ($modo !== 'historial') continue;
+        $isInc = in_array($asistRow['estado'], ['incompleta', 'iniciada'], true);
+        if (!$isInc && $asistRow['estado'] !== 'completada') continue;
+        if ($isInc) $fechasIncompletas[] = $fecha;
+
+        $diasHistorial[$fecha] = [
+            'ok'         => true,
+            'cliente_id' => $clienteId,
+            'fecha'      => $fecha,
+            'fecha_hoy'  => $hoy,
+            'modo'       => 'historial',
+            'estado'     => $isInc ? 'incompleta' : 'completado',
+            'accion'     => null,
+            'notas'      => !empty($asistRow['notas']) ? (string)$asistRow['notas'] : null,
+            'rutina'     => ['id' => $rid, 'nombre' => $rInfo['nombre']],
+            'resumen'    => [
+                'ejercicios'          => count($rInfo['ejercicios']),
+                'series'              => 0,
+                'series_planificadas' => $rInfo['series_planificadas'],
+                'volumen_kg'          => 0,
+            ],
+            'ejercicios' => $rInfo['ejercicios'],
+        ];
+    }
+
+    // 4. Construir listas de ejercicios por grupo muscular
+    $listaMetas = array_values($metaPorEjercicio);
+    usort($listaMetas, static function(array $a, array $b): int {
+        if ($b['total_series_registradas'] !== $a['total_series_registradas']) {
+            return $b['total_series_registradas'] <=> $a['total_series_registradas'];
+        }
+        return strcmp($a['nombre'], $b['nombre']);
+    });
+
+    $gruposCatalogo = [
+        'pecho', 'hombro', 'hombros', 'biceps', 'triceps', 'antebrazos', 'espalda', 'abdomen',
+        'cuadriceps', 'femoral', 'gluteos', 'isquiotibiales', 'gemelos', 'abductores'
+    ];
+    $gruposEjercicios = [];
+    foreach ($gruposCatalogo as $gKey) {
+        $ejsGrupo = [];
+        foreach ($listaMetas as $m) {
+            if (coincideGrupoMuscularProgreso($m['nombre'], $m['grupo_muscular'], $gKey)) {
+                $ejsGrupo[] = [
+                    'id'                       => $m['id'],
+                    'nombre'                   => $m['nombre'],
+                    'total_series_registradas' => $m['total_series_registradas'],
+                    'ultima_fecha'             => $m['ultima_fecha'],
+                ];
+            }
+        }
+        $gruposEjercicios[$gKey] = [
+            'ok'         => true,
+            'grupo'      => $gKey,
+            'ejercicios' => $ejsGrupo,
+        ];
+    }
+
+    // 5. Construir historial de marcas y Top 3 por cada ejercicio registrado
+    $ejerciciosHistorial = [];
+    foreach ($seriesPorEjercicio as $nombreEj => $todasSeries) {
+        $porSesion       = [];
+        $recordMaxPeso   = null;
+        $recordMayorReps = null;
+        $barrasPorPeso   = [];
+
+        foreach ($todasSeries as $s) {
+            $f      = $s['fecha'];
+            $pFloat = (float)($s['peso_usado'] ?? 0);
+            $reps   = (int)($s['reps_realizadas'] ?? 0);
+
+            if (!isset($porSesion[$f])) {
+                $porSesion[$f] = [
+                    'fecha'            => $f,
+                    'fecha_formateada' => $s['fecha_formateada'],
+                    'fecha_completa'   => $s['fecha_completa'],
+                    'peso_max'         => $pFloat,
+                    'reps_en_max'      => $reps,
+                    'series_count'     => 1,
+                    'series'           => [$s],
+                ];
+            } else {
+                $porSesion[$f]['series_count']++;
+                $porSesion[$f]['series'][] = $s;
+                if ($pFloat > $porSesion[$f]['peso_max'] || ($pFloat === $porSesion[$f]['peso_max'] && $reps > $porSesion[$f]['reps_en_max'])) {
+                    $porSesion[$f]['peso_max']    = $pFloat;
+                    $porSesion[$f]['reps_en_max'] = $reps;
+                }
+            }
+
+            if ($recordMaxPeso === null || $pFloat > (float)$recordMaxPeso['peso'] || ($pFloat === (float)$recordMaxPeso['peso'] && $reps > (int)$recordMaxPeso['reps'])) {
+                $recordMaxPeso = [
+                    'peso'      => $pFloat,
+                    'reps'      => $reps,
+                    'fecha'     => $s['fecha'],
+                    'fecha_fmt' => $s['fecha_formateada'],
+                ];
+            }
+
+            if ($recordMayorReps === null || $reps > (int)$recordMayorReps['reps'] || ($reps === (int)$recordMayorReps['reps'] && $pFloat > (float)$recordMayorReps['peso'])) {
+                $recordMayorReps = [
+                    'peso'      => $pFloat,
+                    'reps'      => $reps,
+                    'fecha'     => $s['fecha'],
+                    'fecha_fmt' => $s['fecha_formateada'],
+                ];
+            }
+
+            if (($s['tipo_serie'] ?? '') !== 'calentamiento') {
+                $k = (string)$pFloat;
+                if (!isset($barrasPorPeso[$k])) {
+                    $barrasPorPeso[$k] = [
+                        'peso'           => $pFloat,
+                        'peso_label'     => $pFloat > 0 ? (rtrim(rtrim(number_format($pFloat, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                        'reps_max'       => $reps,
+                        'sesiones_count' => 1,
+                        'fecha_label'    => $s['fecha_formateada'],
+                        'fecha_iso'      => $s['fecha'],
+                    ];
+                } else {
+                    if ($reps > $barrasPorPeso[$k]['reps_max']) {
+                        $barrasPorPeso[$k]['reps_max']    = $reps;
+                        $barrasPorPeso[$k]['fecha_label'] = $s['fecha_formateada'];
+                        $barrasPorPeso[$k]['fecha_iso']   = $s['fecha'];
+                    }
+                    $barrasPorPeso[$k]['sesiones_count']++;
+                }
+            }
+        }
+
+        ksort($barrasPorPeso, SORT_NUMERIC);
+        $barrasPesos = array_values($barrasPorPeso);
+
+        $sesionesArray = array_values($porSesion);
+        usort($sesionesArray, static function(array $a, array $b): int {
+            if ($b['peso_max'] != $a['peso_max']) return ($b['peso_max'] > $a['peso_max']) ? 1 : -1;
+            if ($b['reps_en_max'] != $a['reps_en_max']) return ($b['reps_en_max'] > $a['reps_en_max']) ? 1 : -1;
+            return strcmp($b['fecha'], $a['fecha']);
+        });
+        $top3Sesiones = array_slice($sesionesArray, 0, 3);
+
+        foreach ($top3Sesiones as &$ses) {
+            $pMax      = (float)$ses['peso_max'];
+            $umbral    = $pMax > 0 ? ($pMax * 0.75) : 0;
+            $barrasSes = [];
+            foreach ($ses['series'] as $s) {
+                $p = (float)($s['peso_usado'] ?? 0);
+                $r = (int)($s['reps_realizadas'] ?? 0);
+                if (($s['tipo_serie'] ?? '') === 'calentamiento') continue;
+                if ($pMax > 0 && $p < $umbral) continue;
+                $k = (string)$p;
+                if (!isset($barrasSes[$k])) {
+                    $barrasSes[$k] = [
+                        'peso'        => $p,
+                        'peso_label'  => $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                        'reps_max'    => $r,
+                        'fecha_label' => $s['fecha_formateada'] ?? $ses['fecha_formateada'],
+                        'fecha_iso'   => $s['fecha'] ?? $ses['fecha'],
+                    ];
+                } elseif ($r > $barrasSes[$k]['reps_max']) {
+                    $barrasSes[$k]['reps_max']    = $r;
+                    $barrasSes[$k]['fecha_label'] = $s['fecha_formateada'] ?? $ses['fecha_formateada'];
+                    $barrasSes[$k]['fecha_iso']   = $s['fecha'] ?? $ses['fecha'];
+                }
+            }
+            if (empty($barrasSes)) {
+                $barrasSes[] = [
+                    'peso'        => $pMax,
+                    'peso_label'  => $pMax > 0 ? (rtrim(rtrim(number_format($pMax, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                    'reps_max'    => $ses['reps_en_max'],
+                    'fecha_label' => $ses['fecha_formateada'],
+                    'fecha_iso'   => $ses['fecha'],
+                ];
+            }
+            ksort($barrasSes, SORT_NUMERIC);
+            $ses['barras'] = array_values($barrasSes);
+            unset($ses['series']);
+        }
+        unset($ses);
+
+        $ejerciciosHistorial[$nombreEj] = [
+            'ok'              => true,
+            'ejercicio'       => $nombreEj,
+            'resumen_records' => [
+                'peso_maximo' => $recordMaxPeso,
+                'mayor_reps'  => $recordMayorReps,
+            ],
+            'barras_pesos'    => $barrasPesos,
+            'top3_sesiones'   => $top3Sesiones,
+            'historial'       => [],
+        ];
+    }
+
+    return [
+        'cliente_id'                => $clienteId,
+        'fecha_hoy'                 => $hoy,
+        'generado_en'               => time(),
+        'rutinas_completadas_count' => max(count($fechasEntrenadas), $sesionesCompletadasCount),
+        'fechas_entrenadas'         => $fechasEntrenadas,
+        'fechas_incompletas'        => array_values(array_unique($fechasIncompletas)),
+        'dias_programados'          => array_keys($planPorDow),
+        'plan_por_dow'              => $planPorDow,
+        'dias_historial'            => $diasHistorial,
+        'grupos_ejercicios'         => $gruposEjercicios,
+        'ejercicios_historial'      => $ejerciciosHistorial,
+    ];
+}
+
 

@@ -1250,120 +1250,54 @@ function cliGuardarModificacionDirecta(): void {
 âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ*/
 function cliEstadisticas(): void {
     $db        = getDB();
-    $clienteId = $_SESSION['cliente_id'];
+    $clienteId = (int)$_SESSION['cliente_id'];
+    session_write_close();
 
-    // ââ 1. MÃ©tricas rÃ¡pidas ââââââââââââââââââââââââââââââââ
-    $stRut = $db->prepare("SELECT COUNT(*) FROM rutinas WHERE cliente_id = ? AND estado='completada'");
-    $stRut->execute([$clienteId]);
-    $rutinasCompletadas = (int)$stRut->fetchColumn();
+    // ── 1. Calendario del mes visible (por parámetro GET) ─────
+    $mesReq = (int)($_GET['mes'] ?? date('n'));
+    $anoReq = (int)($_GET['ano'] ?? date('Y'));
+    if ($mesReq < 1 || $mesReq > 12)     { $mesReq = (int)date('n'); }
+    if ($anoReq < 2020 || $anoReq > 2099) { $anoReq = (int)date('Y'); }
 
-    $stSesTot = $db->prepare("SELECT COUNT(DISTINCT fecha) FROM sesion_series WHERE cliente_id = ? AND completado=1");
-    $stSesTot->execute([$clienteId]);
-    $diasEntrenados = (int)$stSesTot->fetchColumn();
+    $fechaHoy = date('Y-m-d');
 
-    // Racha actual (dÃ­as consecutivos hasta hoy con al menos 1 serie)
-    $stRacha = $db->prepare(
-        "SELECT DISTINCT fecha FROM sesion_series
-         WHERE cliente_id = ? AND completado = 1
-         ORDER BY fecha DESC LIMIT 60"
-    );
-    $stRacha->execute([$clienteId]);
-    $fechasRacha = $stRacha->fetchAll(PDO::FETCH_COLUMN);
+    // ── 2. Snapshot completo en lote (3 consultas totales, 0 N+1) para soporte 100% Offline ──
+    $offlineStatsSnapshot = construirSnapshotEstadisticasOffline($db, $clienteId, 'cliente');
+
+    $fechasEntrenadas   = $offlineStatsSnapshot['fechas_entrenadas'] ?? [];
+    $fechasIncompletas  = $offlineStatsSnapshot['fechas_incompletas'] ?? [];
+    $diasProgramados    = $offlineStatsSnapshot['dias_programados'] ?? [];
+    $rutinasCompletadas = (int)($offlineStatsSnapshot['rutinas_completadas_count'] ?? 0);
+    $diasEntrenados     = count($fechasEntrenadas);
+
     $rachaActual = 0;
-    $checkDate   = new DateTime('today');
-    foreach ($fechasRacha as $f) {
-        if ($f === $checkDate->format('Y-m-d')) {
-            $rachaActual++;
-            $checkDate->modify('-1 day');
-        } else {
-            break;
+    if (!empty($fechasEntrenadas)) {
+        $fechasDesc = $fechasEntrenadas;
+        rsort($fechasDesc);
+        $checkDate = new DateTime('today');
+        foreach ($fechasDesc as $f) {
+            if ($f === $checkDate->format('Y-m-d')) {
+                $rachaActual++;
+                $checkDate->modify('-1 day');
+            } else {
+                break;
+            }
         }
     }
 
-    // ââ 2. Calendario del mes visible (por parÃ¡metro GET) âââââ
-    $mesReq  = (int)($_GET['mes']  ?? date('n'));
-    $anoReq  = (int)($_GET['ano']  ?? date('Y'));
-    // Validar rango sensato
-    if ($mesReq < 1 || $mesReq > 12) { $mesReq = (int)date('n'); }
-    if ($anoReq < 2020 || $anoReq > 2099) { $anoReq = (int)date('Y'); }
-
-    $fechaIniMes = sprintf('%04d-%02d-01', $anoReq, $mesReq);
-    $fechaFinMes = date('Y-m-t', strtotime($fechaIniMes));
-
-    // "Hoy" estricto del sistema (zona horaria Ãºnica APP_TIMEZONE, ver index.php/getDB()).
-    $fechaHoy = date('Y-m-d');
-
-    // Puntos morados de dÃ­as PASADOS: sÃ³lo fechas con al menos 1 serie completada realmente
-    // registrada en sesion_series (historial permanente; sobrevive al borrado de ejercicios).
-    // Ventana Â±7 dÃ­as: el calendario tambiÃ©n pinta dÃ­as de los meses adyacentes.
-    $stFechas = $db->prepare(
-        "SELECT DISTINCT fecha FROM sesion_series
-          WHERE cliente_id = ? AND completado = 1 AND fecha BETWEEN ? AND ?"
-    );
-    $stFechas->execute([
-        $clienteId,
-        date('Y-m-d', strtotime($fechaIniMes . ' -7 days')),
-        date('Y-m-d', strtotime($fechaFinMes . ' +7 days')),
-    ]);
-    $fechasEntrenadas = $stFechas->fetchAll(PDO::FETCH_COLUMN);
-
-    // DÃ­as de la semana (ISO 1=Lunâ¦7=Dom) que tienen rutina programada â puntos de dÃ­as FUTUROS.
-    $diasProgramados = array_keys(cliRutinasProgramadasPorDia($db, (int)$clienteId));
-
-    // ââ 3. Datos para grÃ¡ficas de progreso por grupo muscular ââ
-    $stGrafica = $db->prepare(
-        "SELECT e.nombre AS ejercicio, e.grupo_muscular,
-                ss.fecha,
-                MAX(ss.peso_usado) AS peso_max,
-                MAX(ss.reps_realizadas) AS reps_max,
-                SUM(ss.reps_realizadas * COALESCE(ss.kg_real, ss.peso_usado, 0)) AS volumen
-         FROM sesion_series ss
-         JOIN ejercicios e ON ss.ejercicio_id = e.id
-         WHERE ss.cliente_id = ? AND ss.completado = 1
-           AND e.grupo_muscular IS NOT NULL
-           AND ss.peso_usado IS NOT NULL
-         GROUP BY e.nombre, e.grupo_muscular, ss.fecha
-         ORDER BY ss.fecha ASC"
-    );
-    $stGrafica->execute([$clienteId]);
-    $graficaRows = $stGrafica->fetchAll();
-
-    // Indexar: grupo_muscular â ejercicio â [ {fecha, peso_max, reps_max} ]
-    $graficaData = [];
-    foreach ($graficaRows as $gr) {
-        $grupo = $gr['grupo_muscular'];
-        $ej    = $gr['ejercicio'];
-        if (!isset($graficaData[$grupo]))    $graficaData[$grupo]    = [];
-        if (!isset($graficaData[$grupo][$ej])) $graficaData[$grupo][$ej] = [];
-        $graficaData[$grupo][$ej][] = [
-            'fecha'     => $gr['fecha'],
-            'peso_max'  => (float)$gr['peso_max'],
-            'reps_max'  => (int)$gr['reps_max'],
-            'volumen'   => (float)$gr['volumen'],
-        ];
-    }
-
-    // ââ 4. Historial de peso (para mini grÃ¡fica) ââââââââââ
+    // ── 3. Historial de peso (para mini gráfica) ──────────
     $stPeso = $db->prepare(
         "SELECT fecha, peso_kg FROM peso_historial WHERE cliente_id = ? ORDER BY fecha ASC"
     );
     $stPeso->execute([$clienteId]);
     $pesoHistorial = $stPeso->fetchAll();
 
-    // Sesiones totales por mes (legacy)
-    $stSes = $db->prepare(
-        "SELECT DATE_FORMAT(fin_en,'%Y-%m') AS mes, COUNT(*) AS total
-         FROM sesiones_asistencia
-         WHERE cliente_id = ? AND estado = 'completada'
-         GROUP BY mes ORDER BY mes DESC LIMIT 6"
-    );
-    $stSes->execute([$clienteId]);
-    $sesiones = $stSes->fetchAll();
+    $graficaData = [];
+    $sesiones    = [];
+    $calMes      = $mesReq;
+    $calAno      = $anoReq;
 
-    $calMes = $mesReq;
-    $calAno = $anoReq;
-
-    $pageTitle = 'Mis EstadÃ­sticas';
+    $pageTitle = 'Mis Estadísticas';
     require BASE_DIR . '/views/cliente/estadisticas.php';
 }
 
@@ -2689,6 +2623,7 @@ function cliApiProgresoEjercicios(): void {
     if ($reqAtletaId > 0 && ($_SESSION['rol'] ?? '') === 'entrenador') {
         $clienteId = $reqAtletaId;
     }
+    session_write_close();
 
     $grupo = trim($_GET['grupo'] ?? '');
     if (!$clienteId || empty($grupo)) {
@@ -2697,67 +2632,10 @@ function cliApiProgresoEjercicios(): void {
     }
 
     try {
-        // Normalizar grupo (quitar tildes y minúsculas)
-        $normGrupo = strtolower(str_replace(
-            ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
-            ['a', 'e', 'i', 'o', 'u', 'a', 'e', 'i', 'o', 'u'],
-            $grupo
-        ));
-
-        $patrones = match($normGrupo) {
-            'pecho'                   => ['%pecho%', '%pectoral%', '%banca%'],
-            'hombro', 'hombros'       => ['%hombro%', '%deltoid%', '%militar%'],
-            'biceps'                  => ['%bicep%'],
-            'triceps'                 => ['%tricep%'],
-            'antebrazos', 'antebrazo' => ['%antebrazo%', '%braquial%', '%braquiorradial%'],
-            'espalda'                 => ['%espalda%', '%dorsal%', '%remo%', '%jalon%', '%dominada%', '%romboid%'],
-            'abdomen'                 => ['%abdomen%', '%core%', '%crunch%', '%plancha%'],
-            'cuadriceps'              => ['%cuadric%', '%sentadilla%', '%hacka%', '%prensa%'],
-            'femoral'                 => ['%femoral%', '%isquio%'],
-            'gluteos', 'gluteo'       => ['%gluteo%', '%hip thrust%'],
-            'isquiotibiales'          => ['%isquio%', '%femoral%'],
-            'gemelos', 'gemelo'       => ['%gemelo%', '%pantorrilla%', '%soleo%', '%gastrocnemio%'],
-            'abductores', 'abductor'  => ['%abductor%', '%aductor%'],
-            default                   => ['%' . $normGrupo . '%']
-        };
-
-        $clauses = [
-            "LOWER(TRIM(COALESCE(e.grupo_muscular, ''))) = LOWER(TRIM(?))",
-            "LOWER(TRIM(COALESCE(ec.grupo_muscular, ''))) = LOWER(TRIM(?))"
-        ];
-        $params = [$clienteId, $grupo, $grupo];
-
-        foreach ($patrones as $p) {
-            $clauses[] = "LOWER(COALESCE(e.grupo_muscular, '')) LIKE ?";
-            $clauses[] = "LOWER(COALESCE(ec.grupo_muscular, '')) LIKE ?";
-            $clauses[] = "LOWER(COALESCE(ss.ejercicio_nombre, e.nombre)) LIKE ?";
-            $params[] = $p;
-            $params[] = $p;
-            $params[] = $p;
-        }
-
-        // Consulta estricta basada ÚNICAMENTE en el historial real de entrenamientos completados
-        $st = $db->prepare(
-            "SELECT 
-                COALESCE(e.id, ss.ejercicio_id) AS id,
-                COALESCE(ss.ejercicio_nombre, e.nombre) AS nombre,
-                COUNT(ss.id) AS total_series_registradas,
-                MAX(ss.fecha) AS ultima_fecha
-             FROM sesion_series ss
-             LEFT JOIN ejercicios e ON ss.ejercicio_id = e.id
-             LEFT JOIN ejercicios_catalogo ec ON (LOWER(TRIM(ec.nombre)) = LOWER(TRIM(COALESCE(ss.ejercicio_nombre, e.nombre))))
-             WHERE ss.cliente_id = ? 
-               AND ss.completado = 1
-               AND (" . implode(" OR ", $clauses) . ")
-             GROUP BY COALESCE(ss.ejercicio_nombre, e.nombre)
-             ORDER BY total_series_registradas DESC, nombre ASC"
-        );
-        $st->execute($params);
-        $ejercicios = $st->fetchAll(PDO::FETCH_ASSOC);
-
+        $ejercicios = obtenerProgresoEjercicios($db, $clienteId, $grupo);
         echo json_encode([
-            'ok' => true,
-            'grupo' => $grupo,
+            'ok'         => true,
+            'grupo'      => $grupo,
             'ejercicios' => $ejercicios
         ], JSON_UNESCAPED_UNICODE);
     } catch (\Throwable $e) {
@@ -2791,194 +2669,8 @@ function cliApiProgresoHistorial(): void {
     }
 
     try {
-        if (!empty($nombreEj)) {
-            $st = $db->prepare(
-                "SELECT 
-                    ss.id, ss.fecha,
-                    DATE_FORMAT(ss.fecha, '%d %b') AS fecha_formateada,
-                    DATE_FORMAT(ss.fecha, '%d %b %Y') AS fecha_completa,
-                    ss.numero_serie, ss.reps_realizadas, ss.peso_usado, ss.unidad_carga, ss.kg_real, ss.tipo_serie
-                 FROM sesion_series ss
-                 LEFT JOIN ejercicios e ON ss.ejercicio_id = e.id
-                 WHERE ss.cliente_id = ?
-                   AND ss.completado = 1
-                   AND (ss.ejercicio_nombre = ? OR e.nombre = ?)
-                 ORDER BY ss.fecha ASC, ss.numero_serie ASC, ss.id ASC"
-            );
-            $st->execute([$clienteId, $nombreEj, $nombreEj]);
-        } else {
-            $st = $db->prepare(
-                "SELECT 
-                    ss.id, ss.fecha,
-                    DATE_FORMAT(ss.fecha, '%d %b') AS fecha_formateada,
-                    DATE_FORMAT(ss.fecha, '%d %b %Y') AS fecha_completa,
-                    ss.numero_serie, ss.reps_realizadas, ss.peso_usado, ss.unidad_carga, ss.kg_real, ss.tipo_serie
-                 FROM sesion_series ss
-                 WHERE ss.cliente_id = ?
-                   AND ss.completado = 1
-                   AND ss.ejercicio_id = ?
-                 ORDER BY ss.fecha ASC, ss.numero_serie ASC, ss.id ASC"
-            );
-            $st->execute([$clienteId, $ejId]);
-        }
-
-        $todasSeries = $st->fetchAll(PDO::FETCH_ASSOC);
-
-        if (empty($todasSeries)) {
-            echo json_encode([
-                'ok'              => true,
-                'ejercicio'       => $nombreEj,
-                'resumen_records' => null,
-                'barras_pesos'    => [],
-                'top3_sesiones'   => [],
-                'historial'       => []
-            ], JSON_UNESCAPED_UNICODE);
-            exit;
-        }
-
-        // 1. Agrupar por sesión (fecha) para aislar la Carga Máxima de Trabajo (Top Set) de cada día
-        $porSesion = [];
-        $recordMaxPeso = null;
-        $recordMayorReps = null;
-
-        foreach ($todasSeries as $s) {
-            $f      = $s['fecha'];
-            $pFloat = (float)($s['peso_usado'] ?? 0);
-            $reps   = (int)($s['reps_realizadas'] ?? 0);
-
-            if (!isset($porSesion[$f])) {
-                $porSesion[$f] = [
-                    'fecha'            => $f,
-                    'fecha_formateada' => $s['fecha_formateada'],
-                    'fecha_completa'   => $s['fecha_completa'],
-                    'peso_max'         => $pFloat,
-                    'reps_en_max'      => $reps,
-                    'series_count'     => 1,
-                    'series'           => [$s]
-                ];
-            } else {
-                $porSesion[$f]['series_count']++;
-                $porSesion[$f]['series'][] = $s;
-                if ($pFloat > $porSesion[$f]['peso_max']) {
-                    $porSesion[$f]['peso_max']    = $pFloat;
-                    $porSesion[$f]['reps_en_max'] = $reps;
-                } elseif ($pFloat === $porSesion[$f]['peso_max'] && $reps > $porSesion[$f]['reps_en_max']) {
-                    $porSesion[$f]['reps_en_max'] = $reps;
-                }
-            }
-
-            // Récord de peso máximo absoluto de todos los tiempos
-            if ($recordMaxPeso === null || $pFloat > (float)$recordMaxPeso['peso'] || ($pFloat === (float)$recordMaxPeso['peso'] && $reps > (int)$recordMaxPeso['reps'])) {
-                $recordMaxPeso = [
-                    'peso'      => $pFloat,
-                    'reps'      => $reps,
-                    'fecha'     => $s['fecha'],
-                    'fecha_fmt' => $s['fecha_formateada']
-                ];
-            }
-
-            // Récord de mayor repeticiones en cualquier serie
-            if ($recordMayorReps === null || $reps > (int)$recordMayorReps['reps'] || ($reps === (int)$recordMayorReps['reps'] && $pFloat > (float)$recordMayorReps['peso'])) {
-                $recordMayorReps = [
-                    'peso'      => $pFloat,
-                    'reps'      => $reps,
-                    'fecha'     => $s['fecha'],
-                    'fecha_fmt' => $s['fecha_formateada']
-                ];
-            }
-        }
-
-        // 2. Consolidar las barras de cargas máximas alcanzadas globalmente
-        $barrasPorPeso = [];
-        foreach ($porSesion as $ses) {
-            $p = $ses['peso_max'];
-            $r = $ses['reps_en_max'];
-            $k = (string)$p;
-
-            if (!isset($barrasPorPeso[$k])) {
-                $barrasPorPeso[$k] = [
-                    'peso'           => $p,
-                    'peso_label'     => $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
-                    'reps_max'       => $r,
-                    'sesiones_count' => 1,
-                    'fecha_label'    => $ses['fecha_formateada'],
-                    'fecha_iso'      => $ses['fecha']
-                ];
-            } else {
-                if ($r > $barrasPorPeso[$k]['reps_max']) {
-                    $barrasPorPeso[$k]['reps_max'] = $r;
-                }
-                $barrasPorPeso[$k]['sesiones_count']++;
-            }
-        }
-        ksort($barrasPorPeso, SORT_NUMERIC);
-        $barrasPesos = array_values($barrasPorPeso);
-
-        // 3. Top 3 mejores sesiones históricas (Orden: mayor peso, mayores reps, fecha más reciente)
-        $sesionesArray = array_values($porSesion);
-        usort($sesionesArray, function($a, $b) {
-            if ($b['peso_max'] != $a['peso_max']) {
-                return ($b['peso_max'] > $a['peso_max']) ? 1 : -1;
-            }
-            if ($b['reps_en_max'] != $a['reps_en_max']) {
-                return ($b['reps_en_max'] > $a['reps_en_max']) ? 1 : -1;
-            }
-            return strcmp($b['fecha'], $a['fecha']);
-        });
-        $top3Sesiones = array_slice($sesionesArray, 0, 3);
-
-        // Estructurar barras por cada una de las 3 versiones de sesión
-        foreach ($top3Sesiones as &$ses) {
-            $pMax = (float)$ses['peso_max'];
-            $umbral = $pMax > 0 ? ($pMax * 0.75) : 0;
-            $barrasSes = [];
-            foreach ($ses['series'] as $s) {
-                $p = (float)($s['peso_usado'] ?? 0);
-                $r = (int)($s['reps_realizadas'] ?? 0);
-                if (($s['tipo_serie'] ?? '') === 'calentamiento') continue;
-                if ($pMax > 0 && $p < $umbral) continue;
-
-                $k = (string)$p;
-                if (!isset($barrasSes[$k])) {
-                    $barrasSes[$k] = [
-                        'peso'        => $p,
-                        'peso_label'  => $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
-                        'reps_max'    => $r,
-                        'fecha_label' => $ses['fecha_formateada'],
-                        'fecha_iso'   => $ses['fecha']
-                    ];
-                } else {
-                    if ($r > $barrasSes[$k]['reps_max']) {
-                        $barrasSes[$k]['reps_max'] = $r;
-                    }
-                }
-            }
-            if (empty($barrasSes)) {
-                $barrasSes[] = [
-                    'peso'        => $pMax,
-                    'peso_label'  => $pMax > 0 ? (rtrim(rtrim(number_format($pMax, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
-                    'reps_max'    => $ses['reps_en_max'],
-                    'fecha_label' => $ses['fecha_formateada'],
-                    'fecha_iso'   => $ses['fecha']
-                ];
-            }
-            ksort($barrasSes, SORT_NUMERIC);
-            $ses['barras'] = array_values($barrasSes);
-            unset($ses['series']);
-        }
-        unset($ses);
-
-        echo json_encode([
-            'ok'              => true,
-            'ejercicio'       => $nombreEj,
-            'resumen_records' => [
-                'peso_maximo' => $recordMaxPeso,
-                'mayor_reps'  => $recordMayorReps,
-            ],
-            'barras_pesos'    => $barrasPesos,
-            'top3_sesiones'   => $top3Sesiones,
-            'historial'       => []
-        ], JSON_UNESCAPED_UNICODE);
+        $resultado = obtenerProgresoHistorial($db, $clienteId, $nombreEj, $ejId);
+        echo json_encode($resultado, JSON_UNESCAPED_UNICODE);
     } catch (\Throwable $e) {
         error_log('[cliApiProgresoHistorial] Error: ' . $e->getMessage());
         http_response_code(500);

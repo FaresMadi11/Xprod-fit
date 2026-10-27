@@ -785,15 +785,15 @@ $grupoIconos = [
   ?>
 
   <div class="cal-nav">
-    <a class="cal-nav-btn" href="?mes=<?= $mesPrevMes ?>&ano=<?= $mesPrevAno ?>">
+    <a class="cal-nav-btn" id="calNavPrev" href="?mes=<?= $mesPrevMes ?>&ano=<?= $mesPrevAno ?>" data-mes="<?= $mesPrevMes ?>" data-ano="<?= $mesPrevAno ?>">
       <i class="ti ti-chevron-left"></i>
     </a>
     <div class="cal-nav-title">
-      <span class="cal-mes"><?= $mesesES[$calMes] ?></span>
-      <span class="cal-ano"><?= $calAno ?></span>
+      <span class="cal-mes" id="calMesTitle"><?= $mesesES[$calMes] ?></span>
+      <span class="cal-ano" id="calAnoTitle"><?= $calAno ?></span>
     </div>
     <a class="cal-nav-btn <?= ($calMes === $mesActual && $calAno === $anoActual) ? 'disabled' : '' ?>"
-       href="?mes=<?= $mesSigMes ?>&ano=<?= $mesSigAno ?>">
+       id="calNavNext" href="?mes=<?= $mesSigMes ?>&ano=<?= $mesSigAno ?>" data-mes="<?= $mesSigMes ?>" data-ano="<?= $mesSigAno ?>">
       <i class="ti ti-chevron-right"></i>
     </a>
   </div>
@@ -809,6 +809,7 @@ $grupoIconos = [
       </div>
     </div>
 
+    <div id="calWeeksContainer">
     <!-- Semanas -->
     <?php foreach ($semanas as $sIdx => $semana):
       $primerDiaSemana = $semana[0];
@@ -851,6 +852,7 @@ $grupoIconos = [
       </div>
     </div>
     <?php endforeach; ?>
+    </div>
   </div>
 
 </div><!-- end st-section-box -->
@@ -895,6 +897,9 @@ $grupoIconos = [
   </div>
 </div>
 
+<!-- Snapshot Offline de Estadísticas y Calendario (0ms & 100% Offline) -->
+<script id="xpStatsOfflineSnapshot" type="application/json"><?= json_encode($offlineStatsSnapshot ?? null, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
+
 <script>
 (function() {
   'use strict';
@@ -906,6 +911,228 @@ $grupoIconos = [
   const DIAS_LARGOS  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
                         'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const MESES_TITULO = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+  // Inicializar y persistir Snapshot Offline en localStorage para funcionamiento 100% sin internet
+  const SNAPSHOT_KEY = 'xprod_stats_snapshot_v1';
+  let statsSnapshot = null;
+  try {
+    const snapEl = document.getElementById('xpStatsOfflineSnapshot');
+    if (snapEl && snapEl.textContent) {
+      const parsed = JSON.parse(snapEl.textContent);
+      if (parsed && parsed.cliente_id) {
+        statsSnapshot = parsed;
+        try {
+          localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(parsed));
+          if (parsed.dias_historial) {
+            Object.entries(parsed.dias_historial).forEach(([f, det]) => {
+              localStorage.setItem('xprod_cal_dia_' + f, JSON.stringify(det));
+            });
+          }
+          if (parsed.grupos_ejercicios) {
+            Object.entries(parsed.grupos_ejercicios).forEach(([g, gData]) => {
+              localStorage.setItem('xprod_st_ej_' + g, JSON.stringify(gData));
+            });
+          }
+          if (parsed.ejercicios_historial) {
+            Object.entries(parsed.ejercicios_historial).forEach(([nom, hData]) => {
+              localStorage.setItem('xprod_st_hist_' + nom, JSON.stringify(hData));
+            });
+          }
+        } catch (_) {}
+      }
+    }
+    if (!statsSnapshot) {
+      const raw = localStorage.getItem(SNAPSHOT_KEY);
+      if (raw) statsSnapshot = JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn('[Stats Offline] Error procesando snapshot:', e);
+  }
+  window.XP_STATS_SNAPSHOT = statsSnapshot;
+
+  // Resolver cualquier fecha del calendario localmente (0ms, 100% Offline: Historial, Hoy y Planificación)
+  function resolverDetalleDiaLocal(fecha) {
+    if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return null;
+
+    // 1. Buscar primero en caché puntual de día o en dias_historial del snapshot
+    try {
+      const cachedDia = localStorage.getItem('xprod_cal_dia_' + fecha);
+      if (cachedDia) {
+        const parsed = JSON.parse(cachedDia);
+        if (parsed && parsed.ok) return parsed;
+      }
+    } catch (_) {}
+
+    const snap = window.XP_STATS_SNAPSHOT;
+    if (snap && snap.dias_historial && snap.dias_historial[fecha]) {
+      return snap.dias_historial[fecha];
+    }
+
+    // 2. Si no está en dias_historial y tenemos snapshot:
+    if (snap) {
+      const modo = fecha < FECHA_HOY ? 'historial' : (fecha === FECHA_HOY ? 'hoy' : 'planificacion');
+      if (modo === 'historial') {
+        return {
+          ok: true,
+          fecha: fecha,
+          fecha_hoy: FECHA_HOY,
+          modo: 'historial',
+          estado: 'sin_actividad',
+          accion: null,
+          rutina: null,
+          resumen: null,
+          ejercicios: []
+        };
+      }
+
+      // Hoy pendiente o Planificación futura según día de la semana ISO (1=Lun..7=Dom)
+      const parts = fecha.split('-').map(Number);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+      const jsDay = dt.getDay(); // 0=Dom..6=Sáb
+      const isoDow = jsDay === 0 ? 7 : jsDay;
+      const plan = (snap.plan_por_dow && snap.plan_por_dow[isoDow]) ? snap.plan_por_dow[isoDow] : null;
+
+      if (!plan) {
+        return {
+          ok: true,
+          fecha: fecha,
+          fecha_hoy: FECHA_HOY,
+          modo: modo,
+          estado: 'sin_rutina',
+          accion: null,
+          rutina: null,
+          resumen: null,
+          ejercicios: []
+        };
+      }
+
+      return {
+        ok: true,
+        fecha: fecha,
+        fecha_hoy: FECHA_HOY,
+        modo: modo,
+        estado: modo === 'hoy' ? 'pendiente' : 'programado',
+        rutina: { id: plan.id, nombre: plan.nombre },
+        resumen: plan.resumen,
+        ejercicios: plan.ejercicios || [],
+        accion: modo === 'hoy' ? {
+          label: 'Ir a entrenar hoy',
+          url: `${APP_BASE}/cliente/rutina-dia?rutina=${plan.id}`
+        } : null
+      };
+    }
+
+    return null;
+  }
+  window.resolverDetalleDiaLocal = resolverDetalleDiaLocal;
+
+  // Renderizado dinámico de meses del calendario en 0ms (100% Offline, sin recargar la página)
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+  function fmtIso(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+  function renderCalendarioMes(mes, ano, pushUrl = true) {
+    mes = parseInt(mes, 10);
+    ano = parseInt(ano, 10);
+    if (!mes || !ano || mes < 1 || mes > 12) return false;
+
+    const container = document.getElementById('calWeeksContainer');
+    if (!container) return false;
+
+    const snap = window.XP_STATS_SNAPSHOT || {};
+    const fechasEntrenadas = Array.isArray(snap.fechas_entrenadas) ? snap.fechas_entrenadas : [];
+    const diasProgramados  = Array.isArray(snap.dias_programados)  ? snap.dias_programados.map(Number) : [];
+
+    // Primer día del mes y retroceso hasta el Lunes de esa semana
+    const primerDia = new Date(ano, mes - 1, 1);
+    const jsDow = primerDia.getDay(); // 0=Dom..6=Sáb
+    const isoDowFirst = jsDow === 0 ? 7 : jsDow;
+    const cursor = new Date(ano, mes - 1, 1 - (isoDowFirst - 1));
+
+    const semanas = [];
+    let totalDias = 0;
+    while (totalDias <= 35) {
+      const semana = [];
+      for (let d = 1; d <= 5; d++) {
+        semana.push(new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate()));
+        cursor.setDate(cursor.getDate() + 1);
+      }
+      cursor.setDate(cursor.getDate() + 2); // Saltar Sáb y Dom
+      const tieneDiaMes = semana.some(dia => (dia.getMonth() + 1) === mes && dia.getFullYear() === ano);
+      if (tieneDiaMes) semanas.push(semana);
+      totalDias += 7;
+      if (totalDias > 35) break;
+    }
+
+    const semanasVisibles = semanas.slice(0, 5);
+    let html = '';
+    semanasVisibles.forEach((semana, sIdx) => {
+      html += `<div class="cal-week"><div class="cal-week-label">Sem ${sIdx + 1}</div><div class="cal-week-cells">`;
+      semana.forEach(dia => {
+        const fechaStr = fmtIso(dia);
+        const diaNum   = dia.getDate();
+        const esMes    = (dia.getMonth() + 1) === mes;
+        const esHoy    = fechaStr === FECHA_HOY;
+        const esFuturo = fechaStr > FECHA_HOY;
+        const jsD      = dia.getDay();
+        const isoD     = jsD === 0 ? 7 : jsD;
+        const entreno    = !esFuturo && (fechasEntrenadas.includes(fechaStr) || (snap.dias_historial && snap.dias_historial[fechaStr] && snap.dias_historial[fechaStr].resumen && snap.dias_historial[fechaStr].resumen.series > 0));
+        const programado = diasProgramados.includes(isoD);
+
+        let clases = 'cal-cell clickable';
+        if (!esMes)                      clases += ' fuera-mes';
+        if (esHoy)                       clases += ' hoy';
+        if (entreno)                     clases += ' entrenado';
+        else if (esFuturo && programado) clases += ' planificado';
+
+        const estadoTxt = esHoy ? 'hoy' : (esFuturo ? (programado ? 'rutina programada' : 'sin rutina') : (entreno ? 'entrenado' : 'sin actividad'));
+        html += `<div class="${clases}" data-fecha="${fechaStr}" role="button" tabindex="0" aria-label="${esc(formatoFechaLarga(fechaStr) + ', ' + estadoTxt)}">`;
+        html += `<span class="cal-day-num">${diaNum}</span>`;
+        if (entreno) {
+          html += `<span class="cal-dot" aria-hidden="true"></span>`;
+        } else if ((esHoy || esFuturo) && programado) {
+          html += `<span class="cal-dot-plan" aria-hidden="true"></span>`;
+        }
+        html += `</div>`;
+      });
+      html += `</div></div>`;
+    });
+    container.innerHTML = html;
+
+    // Actualizar títulos y botones Prev / Next
+    const mesTitle = document.getElementById('calMesTitle');
+    const anoTitle = document.getElementById('calAnoTitle');
+    if (mesTitle) mesTitle.textContent = MESES_TITULO[mes] || '';
+    if (anoTitle) anoTitle.textContent = String(ano);
+
+    let prevMes = mes - 1, prevAno = ano;
+    if (prevMes < 1) { prevMes = 12; prevAno--; }
+    let sigMes = mes + 1, sigAno = ano;
+    if (sigMes > 12) { sigMes = 1; sigAno++; }
+
+    const btnPrev = document.getElementById('calNavPrev');
+    const btnNext = document.getElementById('calNavNext');
+    if (btnPrev) {
+      btnPrev.setAttribute('href', `?mes=${prevMes}&ano=${prevAno}`);
+      btnPrev.setAttribute('data-mes', String(prevMes));
+      btnPrev.setAttribute('data-ano', String(prevAno));
+    }
+    const hoyParts = FECHA_HOY.split('-').map(Number);
+    const mesActual = hoyParts[1], anoActual = hoyParts[0];
+    if (btnNext) {
+      btnNext.setAttribute('href', `?mes=${sigMes}&ano=${sigAno}`);
+      btnNext.setAttribute('data-mes', String(sigMes));
+      btnNext.setAttribute('data-ano', String(sigAno));
+      btnNext.classList.toggle('disabled', (mes === mesActual && ano === anoActual));
+    }
+
+    if (pushUrl && window.history && window.history.replaceState) {
+      try { window.history.replaceState(null, '', `?mes=${mes}&ano=${ano}`); } catch (_) {}
+    }
+    return true;
+  }
+  window.renderCalendarioMes = renderCalendarioMes;
 
   let activeFetchAbort = null;
   let ultimoElementoFoco = null;
@@ -968,7 +1195,7 @@ $grupoIconos = [
     return 'Serie ' + (num || 1);
   }
 
-  // Abrir modal con Fetch API y evaluación temporal
+  // Abrir modal con renderizado instantáneo Offline-First (0ms) y sincronización en segundo plano
   async function abrirModalDia(fecha) {
     if (!fecha) return;
     asegurarPortalBody();
@@ -1004,13 +1231,6 @@ $grupoIconos = [
       badgeEl.classList.add('modo-planificacion');
     }
 
-    bodyEl.innerHTML = `
-      <div class="dia-modal-loading">
-        <div class="dia-modal-spinner" aria-hidden="true"></div>
-        <span>Consultando registros...</span>
-      </div>
-    `;
-
     // Abrir bottom-sheet y bloquear scroll de fondo
     backdrop.classList.add('open');
     modal.classList.add('open');
@@ -1019,6 +1239,26 @@ $grupoIconos = [
 
     // Foco accesible al modal
     setTimeout(() => { modal.focus(); }, 100);
+
+    // 1. Renderizado inmediato 0ms desde el snapshot local / localStorage (funciona 100% sin internet)
+    const localData = resolverDetalleDiaLocal(fecha);
+    let renderedLocal = false;
+    if (localData && localData.ok) {
+      renderModalDia(fecha, localData);
+      renderedLocal = true;
+    } else {
+      bodyEl.innerHTML = `
+        <div class="dia-modal-loading">
+          <div class="dia-modal-spinner" aria-hidden="true"></div>
+          <span>Consultando registros...</span>
+        </div>
+      `;
+    }
+
+    // Si estamos sin internet y ya pintamos los datos locales, terminar aquí en 0ms
+    if (!navigator.onLine && renderedLocal) {
+      return;
+    }
 
     // Cancelar fetch previo si aún estuviera en curso
     if (activeFetchAbort) {
@@ -1030,9 +1270,26 @@ $grupoIconos = [
       const url = `${APP_BASE}/cliente/api-dia-detalle?fecha=${encodeURIComponent(fecha)}`;
       const res = await fetch(url, { credentials: 'same-origin', signal: activeFetchAbort.signal });
       const data = await res.json();
-      renderModalDia(fecha, data);
+      if (data && data.ok) {
+        try {
+          localStorage.setItem('xprod_cal_dia_' + fecha, JSON.stringify(data));
+          if (window.XP_STATS_SNAPSHOT && window.XP_STATS_SNAPSHOT.dias_historial) {
+            window.XP_STATS_SNAPSHOT.dias_historial[fecha] = data;
+            localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(window.XP_STATS_SNAPSHOT));
+          }
+        } catch (_) {}
+        renderModalDia(fecha, data);
+      } else if (!renderedLocal) {
+        renderModalDia(fecha, data);
+      }
     } catch(err) {
       if (err.name === 'AbortError') return;
+      if (renderedLocal) return; // Mantener la vista offline ya renderizada
+      const fallback = resolverDetalleDiaLocal(fecha);
+      if (fallback && fallback.ok) {
+        renderModalDia(fecha, fallback);
+        return;
+      }
       bodyEl.innerHTML = `
         <div class="dia-modal-empty">
           <i class="ti ti-wifi-off" aria-hidden="true"></i>
@@ -1360,8 +1617,21 @@ $grupoIconos = [
     }
   }
 
-  // Delegación de eventos en el calendario (click y accesibilidad con teclado Enter / Espacio)
+  // Delegación de eventos en el calendario (navegación de mes 0ms, click en celdas y accesibilidad)
   document.addEventListener('click', function(e) {
+    const navBtn = e.target.closest('.cal-nav-btn[data-mes][data-ano]');
+    if (navBtn) {
+      if (navBtn.classList.contains('disabled')) {
+        e.preventDefault();
+        return;
+      }
+      const m = navBtn.getAttribute('data-mes');
+      const a = navBtn.getAttribute('data-ano');
+      if (m && a && renderCalendarioMes(m, a, true)) {
+        e.preventDefault();
+        return;
+      }
+    }
     const celda = e.target.closest('.cal-cell[data-fecha]');
     if (celda) {
       e.preventDefault();
@@ -1369,6 +1639,19 @@ $grupoIconos = [
       abrirModalDia(fecha);
     }
   });
+
+  // Si la página provino del Service Worker en modo offline con ?mes=&ano= distintos, sincronizar vista
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const qMes = parseInt(params.get('mes') || '0', 10);
+    const qAno = parseInt(params.get('ano') || '0', 10);
+    if (qMes >= 1 && qMes <= 12 && qAno >= 2020) {
+      renderCalendarioMes(qMes, qAno, false);
+    } else if (window.XP_STATS_SNAPSHOT) {
+      const hoyP = FECHA_HOY.split('-').map(Number);
+      renderCalendarioMes(hoyP[1], hoyP[0], false);
+    }
+  } catch (_) {}
 
   document.addEventListener('keydown', function(e) {
     // Escape cierra el modal
@@ -2172,12 +2455,37 @@ function cambiarTren(tren) {
   if (grupos.length) seleccionarGrupo(grupos[0], tren);
 }
 
-// ── Seleccionar grupo muscular (Fetch Dinámico) ───────────
+// ── Seleccionar grupo muscular (Instantáneo 0ms desde Snapshot + Sync en Segundo Plano) ──
+function renderBotonesGrupo(grupo, data, list, autoSelect = true) {
+  if (!data || !data.ok || !data.ejercicios || data.ejercicios.length === 0) {
+    list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
+    document.getElementById('chartEmptyMsg').textContent =
+      'Aún no tienes series completadas registradas en ' + ucFirst(grupo) + '.';
+    document.getElementById('chartTitleText').textContent = 'Progreso de ' + ucFirst(grupo);
+    return false;
+  }
+
+  let html = '';
+  data.ejercicios.forEach(ej => {
+    const safeName = (ej.nombre || '').replace(/'/g, "\\'");
+    const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
+    const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
+    const isAct = currentEjercicio === ej.nombre ? ' active' : '';
+    html += `<button class="pm-ex-btn${isAct}" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
+      data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
+  });
+  list.innerHTML = html;
+
+  if (autoSelect && data.ejercicios.length > 0) {
+    seleccionarEjercicio(data.ejercicios[0].nombre, data.ejercicios[0].id || 0);
+  }
+  return true;
+}
+
 async function seleccionarGrupo(grupo, tren) {
   currentGrupo       = grupo;
   currentEjercicio   = null;
   currentEjercicioId = null;
-  currentHistorial   = [];
 
   // Actualizar chips de la UI
   document.querySelectorAll('.st-grupo-chip').forEach(c =>
@@ -2188,11 +2496,7 @@ async function seleccionarGrupo(grupo, tren) {
   );
   if (chip) chip.classList.add(tren === 'superior' ? 'active-sup' : 'active-inf');
 
-  // Estado de carga en selector de ejercicios
-  const list = document.getElementById('pmExList');
-  list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-loader ti-spin"></i> Cargando ejercicios registrados...</span>';
-
-  // Ocultar gráfica, resumen y marcas mientras carga
+  const list   = document.getElementById('pmExList');
   const canvas = document.getElementById('mainChart');
   const empty  = document.getElementById('chartEmpty');
   canvas.style.display = 'none';
@@ -2202,56 +2506,90 @@ async function seleccionarGrupo(grupo, tren) {
   if (marcasWrap) marcasWrap.style.display = 'none';
   if (mainChart) { mainChart.destroy(); mainChart = null; }
 
+  // 1. Buscar en Snapshot Offline o localStorage para renderizar en 0ms
+  let localData = null;
+  const snap = window.XP_STATS_SNAPSHOT;
+  if (snap && snap.grupos_ejercicios && snap.grupos_ejercicios[norm]) {
+    localData = snap.grupos_ejercicios[norm];
+  } else {
+    const cached = localStorage.getItem('xprod_st_ej_' + grupo) || localStorage.getItem('xprod_st_ej_' + norm);
+    if (cached) {
+      try { localData = JSON.parse(cached); } catch(e){}
+    }
+  }
+
+  let renderedLocal = false;
+  if (localData && localData.ok) {
+    renderBotonesGrupo(grupo, localData, list, true);
+    renderedLocal = true;
+  } else {
+    list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-loader ti-spin"></i> Cargando ejercicios registrados...</span>';
+  }
+
+  if (!navigator.onLine && renderedLocal) {
+    return;
+  }
+
   try {
-    let data = null;
-    try {
-      const res = await fetch(APP + '/cliente/api-progreso-ejercicios?grupo=' + encodeURIComponent(grupo));
-      data = await res.json();
-      if (data && data.ok) {
-        try { localStorage.setItem('xprod_st_ej_' + grupo, JSON.stringify(data)); } catch(e){}
+    const res = await fetch(APP + '/cliente/api-progreso-ejercicios?grupo=' + encodeURIComponent(grupo));
+    const data = await res.json();
+    if (data && data.ok) {
+      try {
+        localStorage.setItem('xprod_st_ej_' + grupo, JSON.stringify(data));
+        localStorage.setItem('xprod_st_ej_' + norm, JSON.stringify(data));
+        if (window.XP_STATS_SNAPSHOT && window.XP_STATS_SNAPSHOT.grupos_ejercicios) {
+          window.XP_STATS_SNAPSHOT.grupos_ejercicios[norm] = data;
+        }
+      } catch(e){}
+      if (currentGrupo === grupo) {
+        const prevCount = (localData && localData.ejercicios) ? localData.ejercicios.length : -1;
+        const newCount  = (data.ejercicios) ? data.ejercicios.length : 0;
+        if (!renderedLocal || prevCount !== newCount) {
+          renderBotonesGrupo(grupo, data, list, true);
+        }
       }
-    } catch(fetchErr) {
-      console.warn('[Offline] Error en fetch de ejercicios de grupo, consultando caché local...', fetchErr);
-    }
-
-    if (!data || !data.ok) {
-      const cached = localStorage.getItem('xprod_st_ej_' + grupo);
-      if (cached) {
-        try { data = JSON.parse(cached); } catch(e){}
-      }
-    }
-
-    if (!data || !data.ok || !data.ejercicios || data.ejercicios.length === 0) {
-      list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
-      document.getElementById('chartEmptyMsg').textContent =
-        'Aún no tienes series completadas registradas en ' + ucFirst(grupo) + '.';
-      document.getElementById('chartTitleText').textContent = 'Progreso de ' + ucFirst(grupo);
-      return;
-    }
-
-    // Renderizar botones de ejercicios
-    let html = '';
-    data.ejercicios.forEach(ej => {
-      const safeName = (ej.nombre || '').replace(/'/g, "\\'");
-      const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
-      const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
-      html += `<button class="pm-ex-btn" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
-        data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
-    });
-    list.innerHTML = html;
-
-    // Auto-seleccionar el primer ejercicio registrado
-    if (data.ejercicios.length > 0) {
-      seleccionarEjercicio(data.ejercicios[0].nombre, data.ejercicios[0].id || 0);
+    } else if (!renderedLocal && currentGrupo === grupo) {
+      renderBotonesGrupo(grupo, null, list, false);
     }
   } catch (err) {
-    console.error('Error al cargar ejercicios de progreso:', err);
-    list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-alert-circle"></i> Error de conexión al cargar ejercicios</span>';
-    document.getElementById('chartEmptyMsg').textContent = 'Error de conexión al cargar ejercicios.';
+    if (!renderedLocal && currentGrupo === grupo) {
+      renderBotonesGrupo(grupo, localData, list, true);
+    }
   }
 }
 
-// ── Seleccionar ejercicio individual (Fetch Historial con Soporte Offline) ────
+// ── Seleccionar ejercicio individual (Instantáneo 0ms + Soporte 100% Offline) ────
+function aplicarDatosHistorialEjercicio(nombre, data) {
+  const canvas = document.getElementById('mainChart');
+  const empty  = document.getElementById('chartEmpty');
+
+  if (!data || !data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
+    currentTop3Sesiones   = [];
+    currentBarrasPesos    = [];
+    currentResumenRecords = null;
+    canvas.style.display = 'none';
+    empty.style.display  = 'flex';
+    document.getElementById('chartEmptyMsg').textContent =
+      'Sin datos suficientes de series completadas para ' + nombre;
+    document.getElementById('chartTitleText').textContent = nombre;
+    document.getElementById('pmSummaryCard').style.display = 'none';
+    const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
+    if (marcasWrap) marcasWrap.style.display = 'none';
+    if (mainChart) { mainChart.destroy(); mainChart = null; }
+    return false;
+  }
+
+  currentBarrasPesos    = data.barras_pesos || [];
+  currentResumenRecords = data.resumen_records || null;
+  currentTop3Sesiones   = data.top3_sesiones || [];
+  currentVersionIndex   = 0;
+
+  renderChartEjercicio(0);
+  renderSummary();
+  renderPodioTop3();
+  return true;
+}
+
 async function seleccionarEjercicio(nombre, id) {
   currentEjercicio   = nombre;
   currentEjercicioId = id || null;
@@ -2261,61 +2599,53 @@ async function seleccionarEjercicio(nombre, id) {
     b.classList.toggle('active', b.dataset.ej === nombre);
   });
 
-  const canvas = document.getElementById('mainChart');
-  const empty  = document.getElementById('chartEmpty');
-  document.getElementById('chartTitleText').textContent = nombre + ' — Cargando historial...';
+  // 1. Renderizar inmediatamente en 0ms si está en el Snapshot o localStorage
+  let localData = null;
+  const snap = window.XP_STATS_SNAPSHOT;
+  if (snap && snap.ejercicios_historial && snap.ejercicios_historial[nombre]) {
+    localData = snap.ejercicios_historial[nombre];
+  } else {
+    const cached = localStorage.getItem('xprod_st_hist_' + nombre);
+    if (cached) {
+      try { localData = JSON.parse(cached); } catch(e){}
+    }
+  }
+
+  let renderedLocal = false;
+  if (localData && localData.ok) {
+    aplicarDatosHistorialEjercicio(nombre, localData);
+    renderedLocal = true;
+  } else {
+    document.getElementById('chartTitleText').textContent = nombre + ' — Cargando historial...';
+  }
+
+  if (!navigator.onLine && renderedLocal) {
+    return;
+  }
 
   try {
     let url = APP + '/cliente/api-progreso-historial?ejercicio_nombre=' + encodeURIComponent(nombre);
     if (id) url += '&ejercicio_id=' + id;
 
-    let data = null;
-    try {
-      const res  = await fetch(url);
-      data = await res.json();
-      if (data && data.ok) {
-        try { localStorage.setItem('xprod_st_hist_' + nombre, JSON.stringify(data)); } catch(e){}
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data && data.ok) {
+      try {
+        localStorage.setItem('xprod_st_hist_' + nombre, JSON.stringify(data));
+        if (window.XP_STATS_SNAPSHOT && window.XP_STATS_SNAPSHOT.ejercicios_historial) {
+          window.XP_STATS_SNAPSHOT.ejercicios_historial[nombre] = data;
+        }
+      } catch(e){}
+      if (currentEjercicio === nombre) {
+        aplicarDatosHistorialEjercicio(nombre, data);
       }
-    } catch(fetchErr) {
-      console.warn('[Offline] Error en fetch de historial de ejercicio, consultando caché local...', fetchErr);
+    } else if (!renderedLocal && currentEjercicio === nombre) {
+      aplicarDatosHistorialEjercicio(nombre, null);
     }
-
-    if (!data || !data.ok) {
-      const cached = localStorage.getItem('xprod_st_hist_' + nombre);
-      if (cached) {
-        try { data = JSON.parse(cached); } catch(e){}
-      }
-    }
-
-    if (!data || !data.ok || ((!data.barras_pesos || data.barras_pesos.length === 0) && (!data.top3_sesiones || data.top3_sesiones.length === 0))) {
-      currentTop3Sesiones   = [];
-      currentBarrasPesos    = [];
-      currentResumenRecords = null;
-      canvas.style.display = 'none';
-      empty.style.display  = 'flex';
-      document.getElementById('chartEmptyMsg').textContent =
-        'Sin datos suficientes de series completadas para ' + nombre;
-      document.getElementById('chartTitleText').textContent = nombre;
-      document.getElementById('pmSummaryCard').style.display = 'none';
-      const marcasWrap = document.getElementById('pmHistorialMarcasWrap');
-      if (marcasWrap) marcasWrap.style.display = 'none';
-      if (mainChart) { mainChart.destroy(); mainChart = null; }
-      return;
-    }
-
-    currentBarrasPesos    = data.barras_pesos || [];
-    currentResumenRecords = data.resumen_records || null;
-    currentTop3Sesiones   = data.top3_sesiones || [];
-    currentVersionIndex   = 0;
-
-    renderChartEjercicio(0);
-    renderSummary();
-    renderPodioTop3();
   } catch (err) {
-    console.error('Error al cargar historial del ejercicio:', err);
-    canvas.style.display = 'none';
-    empty.style.display  = 'flex';
-    document.getElementById('chartEmptyMsg').textContent = 'Error al cargar el historial de marcas.';
+    if (!renderedLocal && currentEjercicio === nombre) {
+      aplicarDatosHistorialEjercicio(nombre, localData);
+    }
   }
 }
 

@@ -2,7 +2,7 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v2.7';
+const CACHE_NAME = 'xprod-fit-v2.8';
 
 // Recursos críticos locales precacheados (0ms de arranque, 100% offline)
 const PRECACHE_ASSETS = [
@@ -137,7 +137,19 @@ self.addEventListener('fetch', event => {
             if (rutinaKey) return await cache.match(rutinaKey);
           }
 
-          // B. Si se intenta abrir el dashboard o inicio
+          // B. Si se intenta abrir estadísticas o historial del calendario
+          if (pathname.includes('/estadisticas')) {
+            const statsKey = keys.find(k => k.url.toLowerCase().includes('/cliente/estadisticas'));
+            if (statsKey) return await cache.match(statsKey);
+          }
+
+          // C. Si se intenta abrir el perfil
+          if (pathname.includes('/perfil')) {
+            const perfilKey = keys.find(k => k.url.toLowerCase().includes('/cliente/perfil'));
+            if (perfilKey) return await cache.match(perfilKey);
+          }
+
+          // D. Si se intenta abrir el dashboard o inicio
           if (pathname.includes('/dashboard') || pathname.endsWith('/') || pathname.includes('/login') || pathname.includes('/auth')) {
             const dashKey = keys.find(k => {
               const u = k.url.toLowerCase();
@@ -146,7 +158,7 @@ self.addEventListener('fetch', event => {
             if (dashKey) return await cache.match(dashKey);
           }
 
-          // C. Fallback a cualquier página HTML previamente cacheada de la app
+          // E. Fallback a cualquier página HTML previamente cacheada de la app
           const anyHtmlKey = keys.find(k => {
             const u = k.url.toLowerCase();
             return u.includes('/cliente/') || u.includes('/entrenador/');
