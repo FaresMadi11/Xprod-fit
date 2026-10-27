@@ -198,6 +198,125 @@ function googleCallback(): void {
 }
 
 /**
+ * Realiza una petición HTTP POST segura compatible con cURL y con fallback nativo file_get_contents.
+ * Garantiza funcionamiento incluso si la extensión php_curl no está cargada en el servidor Apache/PHP.
+ */
+function googleHttpPost(string $url, array $params): array {
+    $postData = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $postData,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
+        ]);
+
+        $response  = curl_exec($ch);
+        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlError) {
+            throw new \RuntimeException("Error cURL: {$curlError}");
+        }
+    } else {
+        // Fallback nativo 100% PHP con stream_context
+        $context = stream_context_create([
+            'http' => [
+                'method'        => 'POST',
+                'header'        => "Content-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n",
+                'content'       => $postData,
+                'timeout'       => 15,
+                'ignore_errors' => true,
+            ],
+            'ssl' => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false,
+            ],
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+        $httpCode = 200;
+        $headers  = function_exists('http_get_last_response_headers') ? (http_get_last_response_headers() ?? []) : ($http_response_header ?? []);
+        if (!empty($headers) && is_array($headers)) {
+            if (preg_match('/HTTP\/\d\.\d\s+(\d+)/', $headers[0] ?? '', $m)) {
+                $httpCode = (int)$m[1];
+            }
+        }
+        if ($response === false) {
+            throw new \RuntimeException('Error de conexión HTTP nativo al contactar con Google.');
+        }
+    }
+
+    $data = json_decode((string)$response, true);
+
+    if ($httpCode !== 200 || empty($data)) {
+        $errorMsg = $data['error_description'] ?? $data['error'] ?? "Código HTTP {$httpCode}";
+        throw new \RuntimeException("Error al intercambiar código: {$errorMsg}");
+    }
+
+    return $data;
+}
+
+/**
+ * Realiza una petición HTTP GET segura compatible con cURL y con fallback nativo file_get_contents.
+ */
+function googleHttpGet(string $url): array {
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+    } else {
+        $context = stream_context_create([
+            'http' => [
+                'method'        => 'GET',
+                'header'        => "Connection: close\r\n",
+                'timeout'       => 10,
+                'ignore_errors' => true,
+            ],
+            'ssl' => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false,
+            ],
+        ]);
+
+        $response = @file_get_contents($url, false, $context);
+        $httpCode = 200;
+        $headers  = function_exists('http_get_last_response_headers') ? (http_get_last_response_headers() ?? []) : ($http_response_header ?? []);
+        if (!empty($headers) && is_array($headers)) {
+            if (preg_match('/HTTP\/\d\.\d\s+(\d+)/', $headers[0] ?? '', $m)) {
+                $httpCode = (int)$m[1];
+            }
+        }
+    }
+
+    if ($httpCode !== 200 || $response === false) {
+        throw new \RuntimeException("Token de Google inválido o expirado (HTTP {$httpCode}).");
+    }
+
+    $payload = json_decode((string)$response, true);
+
+    if (empty($payload) || !empty($payload['error'])) {
+        throw new \RuntimeException('Error al validar token: ' . ($payload['error'] ?? 'desconocido'));
+    }
+
+    return $payload;
+}
+
+/**
  * Intercambia el código de autorización por tokens de acceso.
  */
 function googleExchangeCode(string $code): array {
@@ -205,41 +324,13 @@ function googleExchangeCode(string $code): array {
     $clientSecret = env('GOOGLE_CLIENT_SECRET', '');
     $redirectUri  = getGoogleRedirectUri();
 
-    $postData = http_build_query([
+    return googleHttpPost('https://oauth2.googleapis.com/token', [
         'code'          => $code,
         'client_id'     => $clientId,
         'client_secret' => $clientSecret,
         'redirect_uri'  => $redirectUri,
         'grant_type'    => 'authorization_code',
-    ], '', '&', PHP_QUERY_RFC3986);
-
-    $ch = curl_init('https://oauth2.googleapis.com/token');
-    curl_setopt_array($ch, [
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $postData,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_SSL_VERIFYPEER => false, // Fix para XAMPP local
-        CURLOPT_HTTPHEADER     => ['Content-Type: application/x-www-form-urlencoded'],
     ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
-
-    if ($curlError) {
-        throw new \RuntimeException("Error cURL: {$curlError}");
-    }
-
-    $data = json_decode($response, true);
-
-    if ($httpCode !== 200 || empty($data)) {
-        $errorMsg = $data['error_description'] ?? $data['error'] ?? 'Error desconocido';
-        throw new \RuntimeException("Error al intercambiar código: {$errorMsg}");
-    }
-
-    return $data;
 }
 
 /**
@@ -254,27 +345,7 @@ function googleExchangeCode(string $code): array {
 function googleDecodeIdToken(string $idToken): array {
     // Verificar el token con el endpoint de Google (método más seguro sin librería JWT)
     $url = 'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($idToken);
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
-        CURLOPT_SSL_VERIFYPEER => false, // Fix para XAMPP local
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-        throw new \RuntimeException('Token de Google inválido o expirado.');
-    }
-
-    $payload = json_decode($response, true);
-
-    if (empty($payload) || !empty($payload['error'])) {
-        throw new \RuntimeException('Error al validar token: ' . ($payload['error'] ?? 'desconocido'));
-    }
+    $payload = googleHttpGet($url);
 
     // Verificar que el token sea para nuestra app
     $expectedClientId = env('GOOGLE_CLIENT_ID', '');
@@ -288,3 +359,4 @@ function googleDecodeIdToken(string $idToken): array {
 
     return $payload;
 }
+

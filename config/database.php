@@ -33,14 +33,37 @@ function getDB(): PDO {
             $initCmd = defined('\Pdo\Mysql::ATTR_INIT_COMMAND') ? \Pdo\Mysql::ATTR_INIT_COMMAND : \PDO::MYSQL_ATTR_INIT_COMMAND;
             $foundRows = defined('\Pdo\Mysql::ATTR_FOUND_ROWS') ? \Pdo\Mysql::ATTR_FOUND_ROWS : \PDO::MYSQL_ATTR_FOUND_ROWS;
 
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            $pdoOptions = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
                 PDO::ATTR_PERSISTENT         => false,
                 $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
                 $foundRows                   => true, // rowCount() funciona en UPDATE
-            ]);
+            ];
+
+            // Soporte para bases de datos en la nube con cifrado SSL/TLS obligatorio (TiDB Cloud, Aiven, etc.)
+            if (env('DB_SSL', false) || (string)DB_PORT === '4000' || str_contains((string)DB_HOST, 'tidbcloud.com')) {
+                $caKey = defined('\Pdo\Mysql::ATTR_SSL_CA') ? \Pdo\Mysql::ATTR_SSL_CA : (defined('\PDO::MYSQL_ATTR_SSL_CA') ? \PDO::MYSQL_ATTR_SSL_CA : null);
+                if ($caKey !== null) {
+                    $caCandidates = [
+                        (string)env('DB_SSL_CA', ''),
+                        __DIR__ . '/isrgrootx1.pem',
+                        'C:/xampp/apache/bin/curl-ca-bundle.crt',
+                        'C:/xampp/php/extras/ssl/cacert.pem',
+                        '/etc/ssl/certs/ca-certificates.crt',
+                        '/etc/pki/tls/certs/ca-bundle.crt',
+                    ];
+                    foreach ($caCandidates as $ca) {
+                        if ($ca !== '' && file_exists($ca)) {
+                            $pdoOptions[$caKey] = $ca;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            $pdo = new PDO($dsn, DB_USER, DB_PASS, $pdoOptions);
 
             // Alinear la zona horaria de la sesión MySQL con la de PHP (CURDATE()/NOW()
             // == date()). Offset numérico: no depende de las tablas tz de MySQL.
@@ -51,6 +74,26 @@ function getDB(): PDO {
                 $pdo->exec("SET time_zone = '" . $offset . "'");
             }
         } catch (\PDOException $e) {
+            // En desarrollo local, si la conexión a la BD en la nube falla por caída de DNS o red,
+            // fallback transparente a MySQL local (localhost:3306) para garantizar operatividad sin cortes
+            if (env('APP_ENV') === 'development' && !in_array(DB_HOST, ['localhost', '127.0.0.1'], true)) {
+                error_log('[Xprod Fit] Fallo al conectar con host remoto (' . $e->getMessage() . '). Intentando fallback a MySQL local...');
+                try {
+                    $localDsn = sprintf('mysql:host=localhost;port=3306;dbname=%s;charset=%s', DB_NAME, DB_CHARSET);
+                    $localOptions = [
+                        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                        PDO::ATTR_EMULATE_PREPARES   => false,
+                        PDO::ATTR_PERSISTENT         => false,
+                    ];
+                    $pdo = new PDO($localDsn, 'root', '', $localOptions);
+                    error_log('[Xprod Fit] Conectado exitosamente a MySQL local (fallback de desarrollo).');
+                    return $pdo;
+                } catch (\Throwable $localErr) {
+                    error_log('[Xprod Fit] Fallback local falló también: ' . $localErr->getMessage());
+                }
+            }
+
             // Registrar error sin exponer credenciales
             error_log('[Xprod Fit] Error de conexión a BD: ' . $e->getMessage());
 

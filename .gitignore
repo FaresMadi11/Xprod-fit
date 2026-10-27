@@ -19,11 +19,13 @@ contrasenas/
 logs/
 *.log
 
-# ── Archivos temporales / scratch ──
+# ── Archivos temporales / scratch / backups ──
 scratch/
+storage/backups/
 *.tmp
 *.bak
 *.swp
+*.sql
 
 # ── Dependencias (si se agrega Composer en el futuro) ──
 vendor/

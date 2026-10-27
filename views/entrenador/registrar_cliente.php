@@ -209,6 +209,7 @@ require __DIR__ . '/../layout/header.php';
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  -webkit-box-shadow: none !important;
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff !important;
   width: 100% !important;
@@ -216,6 +217,20 @@ require __DIR__ . '/../layout/header.php';
   font-family: 'Inter', sans-serif !important;
   padding: 4px 0 !important;
   margin: 0 !important;
+}
+/* Autofill 100% transparente: previene rectángulos grises del navegador */
+.reg-atleta-wrap input:-webkit-autofill,
+.reg-atleta-wrap input:-webkit-autofill:hover, 
+.reg-atleta-wrap input:-webkit-autofill:focus,
+.reg-atleta-wrap input:-webkit-autofill:active,
+.reg-atleta-wrap select:-webkit-autofill {
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  background-color: transparent !important;
+  background: transparent !important;
+  transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s !important;
 }
 .input-box-group input::placeholder {
   color: rgba(255, 255, 255, 0.25) !important;

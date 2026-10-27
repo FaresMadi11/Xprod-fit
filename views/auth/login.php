@@ -16,6 +16,25 @@
 <link rel="icon" type="image/svg+xml" href="<?= APP_URL ?>/assets/img/favicon.svg?v=<?= $icoVer ?>">
 <link rel="apple-touch-icon" href="<?= APP_URL ?>/assets/img/apple-touch-icon.png?v=<?= $icoVer ?>">
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/vendor/tabler-icons/tabler-icons.min.css">
+<script>
+function togglePassVisibility(btn, ev) {
+  if (ev) {
+    if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+  }
+  if (!btn) return;
+  var targetId = btn.getAttribute('data-target');
+  var inp = document.getElementById(targetId);
+  if (!inp) return;
+  var isPass = (inp.type === 'password');
+  inp.type = isPass ? 'text' : 'password';
+  var icon = btn.querySelector('i');
+  if (icon) {
+    icon.className = isPass ? 'ti ti-eye-off' : 'ti ti-eye';
+  }
+}
+window.togglePassVisibility = togglePassVisibility;
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:#02040a;min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow-x:hidden;overflow-y:auto;position:relative;}
@@ -63,8 +82,6 @@ main#mainContent{
   justify-content: center;
   padding: 16px;
   background: rgba(2, 4, 10, 0.46);
-  backdrop-filter: blur(2.5px);
-  -webkit-backdrop-filter: blur(2.5px);
   /* Scroll interno fluido cuando el wizard de registro o recuperación desborda la pantalla */
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -98,23 +115,35 @@ main#mainContent{
 .field:focus-within{border-color:#8a2be2;box-shadow: 0 0 12px rgba(138,43,226,0.25);}
 .field label{display:block;font-size:0.75rem;color:rgba(255,255,255,.6);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;} 
 .field input{
-  width:100%;background:transparent;border:none;color:#FFFFFF;font-size:1.05rem;font-weight:500;outline:none;font-family:'Inter',sans-serif;
+  width:100%;background:transparent !important;background-color:transparent !important;border:none !important;box-shadow:none !important;-webkit-box-shadow:none !important;color:#FFFFFF;font-size:1.05rem;font-weight:500;outline:none;font-family:'Inter',sans-serif;
 } 
 .field input::placeholder{color:rgba(255,255,255,.18);}
-/* Autofill Fix unificado: Chrome/Edge nunca pintan blanco ni azul */
+/* Autofill 100% transparente: elimina cualquier caja, sombra o rectángulo gris sobre los textos */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 
 input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
     -webkit-text-fill-color: #ffffff !important;
-    -webkit-box-shadow: 0 0 0px 1000px #0d0d12 inset !important;
-    caret-color: #ffffff;
-    transition: background-color 5000s ease-in-out 0s;
+    caret-color: #ffffff !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    background-color: transparent !important;
+    background: transparent !important;
+    transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s !important;
 }
 .pass-row{display:flex;align-items:center;}
 .pass-row input{flex:1;}
 .btn-eye{background:none;border:none;color:rgba(255,255,255,.28);cursor:pointer;font-size:1.1rem;padding:4px;transition:color .2s;}
 .btn-eye:hover{color:#fff;}
+.btn-eye i{pointer-events:none;}
 
 /* ── Submit ── */
 .btn-submit{
@@ -189,16 +218,6 @@ input:-webkit-autofill:active {
   .mh-img{animation:none;}
 }
 
-/* ── Autofill (Chrome/Edge): nunca pintar los inputs de blanco ni azul ── */
-input:-webkit-autofill,
-input:-webkit-autofill:hover,
-input:-webkit-autofill:focus,
-input:-webkit-autofill:active {
-    -webkit-text-fill-color: #ffffff !important;
-    -webkit-box-shadow: 0 0 0px 1000px #0d0d12 inset !important;
-    caret-color: #ffffff;
-    transition: background-color 5000s ease-in-out 0s;
-}
 
 /* ══ SPA TOGGLE LOGIN ⇄ REGISTRO ⇄ RECUPERACIÓN (mismo contenedor, mismo fondo) ══ */
 .auth-view.fade-in{animation:viewFadeIn .35s ease both;}
@@ -247,15 +266,17 @@ input:-webkit-autofill:active {
 .input-box-group label{font-size:0.75rem;font-weight:600;color:#94a3b8;display:block;margin-bottom:4px;}
 .input-box-group input,
 .input-box-group select{
-  background-color: transparent !important; /* background-color (no el shorthand) para no borrar la flecha del select */
-  border: none;
-  outline: none;
+  background-color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
   color: #fff;
   width: 100%;
   font-size: 0.95rem;
   font-family:'Inter',sans-serif;
 }
-.input-box-group input{border-radius:6px;}
+.input-box-group input{border-radius:6px;background:transparent !important;}
 .input-box-group input::placeholder{color:rgba(255,255,255,.28);}
 
 /* <select> oscuro con flecha propia */
@@ -981,13 +1002,6 @@ $esStandby  = ($vistaInicial === 'standby');
 <main id="mainContent">
 <div class="auth-box" id="authBox" role="region" aria-label="Portal de autenticación">
 
-  <!-- ── Logo de la Marca XF ── -->
-  <div class="auth-brand-logo-wrap" style="display:flex;justify-content:center;margin-bottom:20px;">
-    <div style="width:72px;height:72px;border-radius:50%;border:2px solid rgba(138,43,226,0.6);box-shadow:0 0 25px rgba(138,43,226,0.5);overflow:hidden;background:#0d0a1a;display:flex;align-items:center;justify-content:center;">
-      <img src="<?= APP_URL ?>/assets/img/icon-192.png?v=<?= $icoVer ?>" alt="Xprod Fit" style="width:100%;height:100%;object-fit:cover;display:block;">
-    </div>
-  </div>
-
   <!-- ══ VISTA LOGIN ══ -->
   <div id="view-login" class="auth-view"<?= $esLogin ? '' : ' style="display: none;" aria-hidden="true"' ?>>
   <form id="loginForm" method="POST" action="<?= APP_URL ?>/auth/do-login" novalidate aria-label="Formulario de inicio de sesión">
@@ -1000,7 +1014,7 @@ $esStandby  = ($vistaInicial === 'standby');
       <label for="login_pass">Contraseña</label>
       <div class="pass-row">
         <input type="password" id="login_pass" name="password" placeholder="••••••••" required autocomplete="current-password" aria-required="true">
-        <button type="button" class="btn-eye" data-target="login_pass" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
+        <button type="button" class="btn-eye" data-target="login_pass" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
       </div>
     </div>
     <button type="submit" id="btnLogin" class="btn-submit">Iniciar Sesión</button>
@@ -1447,7 +1461,7 @@ $esStandby  = ($vistaInicial === 'standby');
           <label for="rec_nueva_password">NUEVA CONTRASEÑA</label>
           <div class="pass-row">
             <input type="password" id="rec_nueva_password" name="nueva_password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" aria-describedby="err_rec_nueva_password">
-            <button type="button" class="btn-eye" data-target="rec_nueva_password" aria-label="Mostrar u ocultar contraseña">
+            <button type="button" class="btn-eye" data-target="rec_nueva_password" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña">
               <i class="ti ti-eye" aria-hidden="true"></i>
             </button>
           </div>
@@ -1458,7 +1472,7 @@ $esStandby  = ($vistaInicial === 'standby');
           <label for="rec_confirmar_password">CONFIRMAR CONTRASEÑA</label>
           <div class="pass-row">
             <input type="password" id="rec_confirmar_password" name="confirmar_password" placeholder="Repite tu nueva contraseña" autocomplete="new-password" aria-describedby="err_rec_confirmar_password">
-            <button type="button" class="btn-eye" data-target="rec_confirmar_password" aria-label="Mostrar u ocultar contraseña">
+            <button type="button" class="btn-eye" data-target="rec_confirmar_password" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña">
               <i class="ti ti-eye" aria-hidden="true"></i>
             </button>
           </div>
@@ -1494,7 +1508,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <?php endif; ?>
 
 <script src="<?= APP_URL ?>/assets/vendor/sweetalert2/sweetalert2.all.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+<script src="<?= APP_URL ?>/assets/vendor/animejs/anime.min.js"></script>
 <script>
 window.APP       = '<?= APP_URL ?>';
 window.BASE_PATH = '<?= BASE_PATH ?>';
@@ -1503,25 +1517,21 @@ const APP        = window.APP;
 const CSRF       = window.CSRF;
 const API        = APP + '/api';
 
-// Entrance
-anime({ targets:'#authBox', opacity:[0,1], translateY:[20,0], duration:800, easing:'easeOutExpo' });
+// ── Fallback Defensivo para Anime.js (asegura que ninguna llamada lance error) ──
+if (typeof window.anime === 'undefined') {
+  window.anime = function() { return { finished: Promise.resolve() }; };
+}
+const safeAnime = window.anime;
 
-// ── Password toggle ──
-document.querySelectorAll('.btn-eye').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const inp = document.getElementById(btn.dataset.target);
-    const show = inp.type === 'password';
-    inp.type = show ? 'text' : 'password';
-    btn.querySelector('i').className = show ? 'ti ti-eye-off' : 'ti ti-eye';
-  });
-});
+// Entrance
+safeAnime({ targets:'#authBox', opacity:[0,1], translateY:[20,0], duration:800, easing:'easeOutExpo' });
 
 // ── Field micro-animations ──
 const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-if (motionOK) {
+if (motionOK && typeof anime !== 'undefined') {
   document.querySelectorAll('.field input, .input-box-group input').forEach(el => {
-    el.addEventListener('focus', () => anime({ targets: el.closest('.field, .input-box-group'), scale:[1,1.018], duration:350, easing:'easeOutElastic(1,.6)' }));
-    el.addEventListener('blur',  () => anime({ targets: el.closest('.field, .input-box-group'), scale:1, duration:300, easing:'easeOutCubic' }));
+    el.addEventListener('focus', () => safeAnime({ targets: el.closest('.field, .input-box-group'), scale:[1,1.018], duration:350, easing:'easeOutElastic(1,.6)' }));
+    el.addEventListener('blur',  () => safeAnime({ targets: el.closest('.field, .input-box-group'), scale:1, duration:300, easing:'easeOutCubic' }));
   });
 }
 

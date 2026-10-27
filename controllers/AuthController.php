@@ -91,7 +91,6 @@ function authDoLogin(): void {
     csrfCheck();
 
     // ── 3. Sanitizar entradas ──
-    file_put_contents(BASE_DIR . '/scratch/login_debug.txt', "Login attempt: \nPOST: " . print_r($_POST, true) . "\n", FILE_APPEND);
     $usuario = sanitizeInput($_POST['usuario'] ?? $_POST['email'] ?? '', 255);
     $pass    = (string)($_POST['password'] ?? '');
 
@@ -114,7 +113,6 @@ function authDoLogin(): void {
         $hashToVerify = $user['password_hash'] ?? $dummyHash;
 
         $pwdVerify = password_verify($pass, $hashToVerify);
-        file_put_contents(BASE_DIR . '/scratch/login_debug.txt', "User found: " . ($user ? 'Yes' : 'No') . "\nPass verify: " . ($pwdVerify ? 'Yes' : 'No') . "\n", FILE_APPEND);
 
         if (!$user || !$pwdVerify) {
             rateLimitFail('auth/do-login');

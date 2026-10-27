@@ -672,13 +672,20 @@ async function enviarComprobante(e) {
 </script>
 <?php endif; ?>
 
-  <!-- Sección: Seguridad de tu cuenta (al final de todo el módulo) -->
-  <div class="profile-security-card">
-    <div class="profile-security-icon"><i class="ti ti-shield-lock"></i></div>
-    <div class="profile-security-text">
-      <h4>Seguridad de tu cuenta</h4>
-      <p>Tu contrase&ntilde;a est&aacute; cifrada de extremo a extremo. Solo t&uacute; puedes cambiarla desde el bot&oacute;n de arriba. Para actualizar tu correo, contacta a tu entrenador.</p>
+  <!-- Sección: Portabilidad y Privacidad RGPD -->
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:18px 20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 8px 30px rgba(0,0,0,0.35); margin-top:4px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div style="width:38px; height:38px; border-radius:10px; background:rgba(138,43,226,0.18); border:1px solid rgba(138,43,226,0.35); display:flex; align-items:center; justify-content:center; color:#b388ff; font-size:1.25rem; flex-shrink:0;">
+        <i class="ti ti-download"></i>
+      </div>
+      <div>
+        <h4 style="margin:0; font-size:0.95rem; font-weight:700; color:#fff;">Portabilidad de Datos (RGPD)</h4>
+        <p style="margin:2px 0 0 0; font-size:0.8rem; color:var(--text2,rgba(255,255,255,0.6));">Descarga una copia completa de tu historial de entrenamiento, marcas y perfil en formato JSON.</p>
+      </div>
     </div>
+    <a href="<?= APP_URL ?>/cliente/exportar-datos" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; padding:10px 16px; font-size:0.84rem; border-radius:10px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; font-weight:600; transition:all 0.2s;" onmouseover="this.style.background='rgba(138,43,226,0.25)'; this.style.borderColor='#8a2be2'" onmouseout="this.style.background='rgba(255,255,255,0.06)'; this.style.borderColor='rgba(255,255,255,0.15)'">
+      <i class="ti ti-file-download"></i> Descargar Mis Datos Personales (JSON)
+    </a>
   </div>
 
 </div><!-- end .profile-container -->

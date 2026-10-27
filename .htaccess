@@ -16,23 +16,22 @@ RewriteEngine On
 # RewriteCond %{HTTP_HOST} !^localhost
 # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-# ── Bloquear acceso directo a archivos sensibles ───────────────
-# .env nunca debe ser accesible desde el navegador
-<Files ".env">
-    Order allow,deny
-    Deny from all
-</Files>
+# ── Bloquear acceso directo a archivos y carpetas sensibles ───────────
+# Bloquear cualquier archivo o directorio que empiece por punto (.git, .env, .gitignore, .agents, etc.)
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
 
-<Files ".gitignore">
-    Order allow,deny
-    Deny from all
-</Files>
-
-# Bloquear acceso a directorios de código fuente
-RewriteRule ^(config|core|models|database|controllers)/(.*)$ - [F,L]
+# Bloquear acceso a directorios de código fuente, almacenamiento y utilidades
+RewriteRule ^(config|core|models|database|controllers|scratch|storage|libs)/(.*)$ - [F,L]
 
 # Bloquear archivos PHP de utilidades y pruebas
 RewriteRule ^(fix_|check|test_|kogane_).*\.php$ - [F,L]
+
+# Prohibir acceso explícito a dotfiles mediante directiva FilesMatch
+<FilesMatch "^\.">
+    Require all denied
+    Order allow,deny
+    Deny from all
+</FilesMatch>
 
 # ── Headers de Seguridad HTTP ──────────────────────────────────
 <IfModule mod_headers.c>
