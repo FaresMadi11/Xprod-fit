@@ -3,49 +3,57 @@
 
 /* ─── Entrance animation for all cards ─────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
-  // Animación escalonada (staggered) de aparición para tarjetas y paneles
-  anime({
-    targets: '.dash-stat-card, .card-bento, .stat-card, .exercise-item, .auth-card',
-    opacity: [0, 1],
-    translateY: [20, 0],
-    delay: anime.stagger(100),
-    duration: 800,
-    easing: 'easeOutExpo'
-  });
+  if (typeof anime === 'function') {
+    // Animación escalonada (staggered) de aparición para tarjetas y paneles
+    anime({
+      targets: '.dash-stat-card, .card-bento, .stat-card, .exercise-item, .auth-card',
+      opacity: [0, 1],
+      translateY: [20, 0],
+      delay: anime.stagger(100),
+      duration: 800,
+      easing: 'easeOutExpo'
+    });
 
-  // Animación del header principal
-  anime({
-    targets: '.sys-top-header > div',
-    opacity: [0, 1],
-    translateX: [-20, 0],
-    delay: anime.stagger(150),
-    duration: 800,
-    easing: 'easeOutExpo'
-  });
+    // Animación del header principal
+    anime({
+      targets: '.sys-top-header > div',
+      opacity: [0, 1],
+      translateX: [-20, 0],
+      delay: anime.stagger(150),
+      duration: 800,
+      easing: 'easeOutExpo'
+    });
 
-  // Efecto burbuja 'pop' para las acciones rápidas
-  anime({
-    targets: '.dash-meta-bubble',
-    opacity: [0, 1],
-    scale: [0.5, 1],
-    delay: anime.stagger(80, {start: 300}),
-    duration: 800,
-    easing: 'easeOutElastic(1, .6)'
-  });
+    // Efecto burbuja 'pop' para las acciones rápidas
+    anime({
+      targets: '.dash-meta-bubble',
+      opacity: [0, 1],
+      scale: [0.5, 1],
+      delay: anime.stagger(80, {start: 300}),
+      duration: 800,
+      easing: 'easeOutElastic(1, .6)'
+    });
 
-  // Animación del nav (fade in from bottom)
-  anime({
-    targets: '#mainNav',
-    opacity: [0, 1],
-    translateY: [30, 0],
-    duration: 800,
-    easing: 'easeOutExpo'
-  });
+    // Animación del nav (fade in from bottom)
+    anime({
+      targets: '#mainNav',
+      opacity: [0, 1],
+      translateY: [30, 0],
+      duration: 800,
+      easing: 'easeOutExpo'
+    });
+  }
 
   // Flash message auto-dismiss
   const flash = document.getElementById('flashMsg');
   if (flash) {
-    setTimeout(() => anime({ targets: flash, opacity: 0, height: 0, duration: 400 }), 4000);
+    setTimeout(() => {
+      if (typeof anime === 'function') {
+        anime({ targets: flash, opacity: 0, height: 0, duration: 400 });
+      } else {
+        flash.style.display = 'none';
+      }
+    }, 4000);
   }
 
   // Responsive Tables Auto-Wrapper
@@ -159,13 +167,19 @@ if (loginForm) {
     try {
       const r = await Xp.post('auth/do-login', data);
       if (r.ok) {
-        anime({
-          targets: '.auth-card', scale: [1, 1.02, 0], duration: 400, easing: 'easeInExpo',
-          complete: () => location.href = r.redirect
-        });
+        if (typeof anime === 'function') {
+          anime({
+            targets: '.auth-card', scale: [1, 1.02, 0], duration: 400, easing: 'easeInExpo',
+            complete: () => location.href = r.redirect
+          });
+        } else {
+          location.href = r.redirect;
+        }
       } else {
         Xp.toast('error', r.msg);
-        anime({ targets: loginForm, translateX: [-6, 6, -5, 5, 0], duration: 400 });
+        if (typeof anime === 'function') {
+          anime({ targets: loginForm, translateX: [-6, 6, -5, 5, 0], duration: 400 });
+        }
       }
     } catch { Xp.toast('error', 'Error de red.'); }
     btn.disabled = false;
@@ -262,8 +276,8 @@ if (clienteForm) {
 
 /* ─── Hover micro-animations on nav links ───────────────── */
 document.querySelectorAll('.xp-nav-links a').forEach(a => {
-  a.addEventListener('mouseenter', () => anime({ targets: a, scale: 1.04, duration: 150 }));
-  a.addEventListener('mouseleave', () => anime({ targets: a, scale: 1, duration: 150 }));
+  a.addEventListener('mouseenter', () => { if (typeof anime === 'function') anime({ targets: a, scale: 1.04, duration: 150 }); });
+  a.addEventListener('mouseleave', () => { if (typeof anime === 'function') anime({ targets: a, scale: 1, duration: 150 }); });
 });
 
 // ── Añadir Nuevo Peso (Global) ─────────────────────────────

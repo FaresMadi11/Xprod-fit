@@ -2,7 +2,7 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v2.8';
+const CACHE_NAME = 'xprod-fit-v2.9';
 
 // Recursos críticos locales precacheados (0ms de arranque, 100% offline)
 const PRECACHE_ASSETS = [
@@ -63,6 +63,12 @@ self.addEventListener('fetch', event => {
   }
 
   const url = new URL(req.url);
+
+  // Ignorar esquemas no HTTP/HTTPS (ej. chrome-extension://) y orígenes externos (CDNs usan su propio caché HTTP e impiden violar CSP connect-src)
+  if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.origin !== self.location.origin) {
+    return;
+  }
+
   const pathname = url.pathname.toLowerCase();
 
   // ── REGLA ZERO-TRUST 1: NUNCA INTERCEPTAR AUTENTICACIÓN, MUTACIONES NI CSRF ──
@@ -177,13 +183,7 @@ self.addEventListener('fetch', event => {
 
   // ── REGLA 3: RECURSOS ESTÁTICOS (CSS, JS, Fuentes, Iconos locales) ──
   // Cache-First con actualización en segundo plano
-  const isStatic = (
-    url.pathname.match(/\.(css|js|woff2?|ttf|png|jpe?g|svg|webp|ico)$/i) ||
-    url.hostname.includes('cdn.jsdelivr.net') ||
-    url.hostname.includes('fonts.googleapis.com') ||
-    url.hostname.includes('fonts.gstatic.com') ||
-    url.hostname.includes('cdnjs.cloudflare.com')
-  );
+  const isStatic = /\.(css|js|woff2?|ttf|png|jpe?g|svg|webp|ico)$/i.test(url.pathname);
 
   if (isStatic) {
     event.respondWith(
@@ -192,20 +192,21 @@ self.addEventListener('fetch', event => {
           // Devolver de caché de inmediato y actualizar en segundo plano si hay red
           fetch(req).then(networkResponse => {
             if (networkResponse && networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then(cache => cache.put(req, networkResponse));
+              const copy = networkResponse.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(req, copy).catch(() => {}));
             }
           }).catch(() => {});
           return cachedResponse;
         }
 
-        // Si no está en caché, traer de la red
+        // Si no está en caché, traer de la red con manejo seguro de fallos offline
         return fetch(req).then(networkResponse => {
           if (networkResponse && networkResponse.status === 200) {
             const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
+            caches.open(CACHE_NAME).then(cache => cache.put(req, copy).catch(() => {}));
           }
           return networkResponse;
-        });
+        }).catch(() => new Response('', { status: 408, statusText: 'Offline' }));
       })
     );
     return;

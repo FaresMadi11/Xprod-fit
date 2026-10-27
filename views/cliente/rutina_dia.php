@@ -2276,15 +2276,6 @@ async function iniciarRutinaAtleta() {
       });
     }
     unlockUI();
-    Swal.fire({
-      icon: 'info',
-      title: '¡Rutina iniciada (Modo Gym Offline)!',
-      text: 'Entrena con tranquilidad. Tus series se guardarán en tu teléfono y se sincronizarán al conectarte.',
-      timer: 2800,
-      showConfirmButton: false,
-      background: '#121216',
-      color: '#fff'
-    });
     return;
   }
 
@@ -2300,15 +2291,6 @@ async function iniciarRutinaAtleta() {
 
     if (data.ok) {
       unlockUI();
-      Swal.fire({
-        icon: 'success',
-        title: '¡Rutina iniciada!',
-        text: 'A darlo todo en cada serie 💪',
-        timer: 1500,
-        showConfirmButton: false,
-        background: '#121216',
-        color: '#fff'
-      });
     } else {
       if (btn) {
         btn.disabled = false;
@@ -2326,15 +2308,6 @@ async function iniciarRutinaAtleta() {
       });
     }
     unlockUI();
-    Swal.fire({
-      icon: 'info',
-      title: '¡Rutina iniciada (Sin Red)!',
-      text: 'Conexión débil detectada. El entrenamiento continuará guardándose localmente.',
-      timer: 2500,
-      showConfirmButton: false,
-      background: '#121216',
-      color: '#fff'
-    });
   }
 }
 
@@ -2421,10 +2394,6 @@ async function guardarSerie(ejId, numSerie, btn) {
       }
       actualizarEstadoEjercicio(ejId);
       actualizarProgreso();
-
-      if (typeof Xp !== 'undefined' && Xp.toast) {
-        Xp.toast('info', 'Serie desmarcada');
-      }
     };
 
     if (!navigator.onLine) {
@@ -2512,10 +2481,6 @@ async function guardarSerie(ejId, numSerie, btn) {
     ejMap[ejId].comp++;
     actualizarEstadoEjercicio(ejId);
     actualizarProgreso();
-
-    if (typeof Xp !== 'undefined' && Xp.toast) {
-      Xp.toast(isOffline ? 'info' : 'success', isOffline ? 'Serie guardada en tu teléfono' : 'Serie guardada');
-    }
   };
 
   // 1. Manejo offline directo (0ms de latencia para el atleta)

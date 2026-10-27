@@ -177,22 +177,56 @@
       const remaining = this.getQueue().length;
       if (remaining === 0 && successCount > 0) {
         this.updatePillUI('success');
-        if (typeof Swal !== 'undefined') {
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: '¡Series sincronizadas!',
-            text: 'Tu entrenamiento quedó guardado en tu panel.',
-            timer: 2800,
-            showConfirmButton: false,
-            background: '#121216',
-            color: '#fff'
-          });
-        }
+        this.showSyncNotice('Datos sincronizados');
       } else {
         this.updatePillUI();
       }
+    },
+
+    // Aviso pequeño y discreto en la parte superior sin fondo difuminado
+    showSyncNotice(texto = 'Datos sincronizados') {
+      const prev = document.getElementById('xpSyncSmallNotice');
+      if (prev) prev.remove();
+
+      const pill = document.createElement('div');
+      pill.id = 'xpSyncSmallNotice';
+      pill.setAttribute('role', 'status');
+      pill.setAttribute('aria-live', 'polite');
+      pill.style.cssText = [
+        'position:fixed',
+        'top:12px',
+        'left:50%',
+        'transform:translateX(-50%) translateY(-10px)',
+        'z-index:999999',
+        'pointer-events:none',
+        'display:inline-flex',
+        'align-items:center',
+        'gap:6px',
+        'background:#14141d',
+        'border:1px solid rgba(34,197,94,0.4)',
+        'border-radius:999px',
+        'padding:5px 13px',
+        'color:#e2e8f0',
+        'font-size:0.74rem',
+        'font-weight:600',
+        'letter-spacing:0.01em',
+        'box-shadow:0 4px 12px rgba(0,0,0,0.35)',
+        'opacity:0',
+        'transition:opacity 0.22s ease, transform 0.22s ease'
+      ].join(';');
+      pill.innerHTML = `<i class="ti ti-check" style="color:#4ade80;font-size:0.85rem;line-height:1;"></i><span>${texto}</span>`;
+      document.body.appendChild(pill);
+
+      requestAnimationFrame(() => {
+        pill.style.opacity = '1';
+        pill.style.transform = 'translateX(-50%) translateY(0)';
+      });
+
+      setTimeout(() => {
+        pill.style.opacity = '0';
+        pill.style.transform = 'translateX(-50%) translateY(-10px)';
+        setTimeout(() => pill.remove(), 250);
+      }, 2200);
     },
 
     // Inyectar o asegurar el badge visual en la cabecera (por encima de los botones de notificaciones y logout)
