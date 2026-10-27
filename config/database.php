@@ -43,7 +43,7 @@ function getDB(): PDO {
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
-                PDO::ATTR_PERSISTENT         => false,
+                PDO::ATTR_PERSISTENT         => true, // Reutiliza el socket TLS entre clics (ahorra ~1.7s por módulo)
                 PDO::ATTR_TIMEOUT            => 10,
                 $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci" . $tzSql,
                 $foundRows                   => true, // rowCount() funciona en UPDATE
@@ -70,17 +70,20 @@ function getDB(): PDO {
                 }
             }
 
-            // Reintento automático ante cold-start/hibernación de TiDB Cloud Serverless
+            // Reintento automático ante cold-start o socket persistente cerrado por inactividad
             $maxAttempts = 2;
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
                 try {
+                    if ($attempt > 1) {
+                        $pdoOptions[PDO::ATTR_PERSISTENT] = false;
+                    }
                     $pdo = new PDO($dsn, DB_USER, DB_PASS, $pdoOptions);
                     break;
                 } catch (\PDOException $connectErr) {
                     if ($attempt === $maxAttempts) {
                         throw $connectErr;
                     }
-                    usleep(1500000); // Esperar 1.5s para que el clúster despierte
+                    usleep(800000);
                 }
             }
         } catch (\PDOException $e) {
