@@ -141,8 +141,8 @@ function authDoLogin(): void {
         $_SESSION['rol']     = $user['rol'];
         $_SESSION['_login_at'] = time();
 
-        if (password_needs_rehash($user['password_hash'], PASSWORD_BCRYPT, ['cost' => 12])) {
-            $um->updatePasswordHash((int)$user['id'], password_hash($pass, PASSWORD_BCRYPT, ['cost' => 12]));
+        if (password_needs_rehash($user['password_hash'], PASSWORD_BCRYPT, ['cost' => 10])) {
+            $um->updatePasswordHash((int)$user['id'], password_hash($pass, PASSWORD_BCRYPT, ['cost' => 10]));
         }
 
         $dest = $user['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard';

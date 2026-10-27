@@ -33,13 +33,19 @@ function getDB(): PDO {
             $initCmd = defined('\Pdo\Mysql::ATTR_INIT_COMMAND') ? \Pdo\Mysql::ATTR_INIT_COMMAND : \PDO::MYSQL_ATTR_INIT_COMMAND;
             $foundRows = defined('\Pdo\Mysql::ATTR_FOUND_ROWS') ? \Pdo\Mysql::ATTR_FOUND_ROWS : \PDO::MYSQL_ATTR_FOUND_ROWS;
 
+            // Calcular offset horario para enviarlo en el mismo handshake inicial (ahorra 1 roundtrip SQL)
+            $offset = (new DateTime('now', new DateTimeZone(
+                defined('APP_TIMEZONE') ? APP_TIMEZONE : date_default_timezone_get()
+            )))->format('P');
+            $tzSql = preg_match('/^[+-]\d{2}:\d{2}$/', $offset) ? ", time_zone = '{$offset}'" : '';
+
             $pdoOptions = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
                 PDO::ATTR_PERSISTENT         => false,
                 PDO::ATTR_TIMEOUT            => 10,
-                $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+                $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci" . $tzSql,
                 $foundRows                   => true, // rowCount() funciona en UPDATE
             ];
 
@@ -76,15 +82,6 @@ function getDB(): PDO {
                     }
                     usleep(1500000); // Esperar 1.5s para que el clúster despierte
                 }
-            }
-
-            // Alinear la zona horaria de la sesión MySQL con la de PHP (CURDATE()/NOW()
-            // == date()). Offset numérico: no depende de las tablas tz de MySQL.
-            $offset = (new DateTime('now', new DateTimeZone(
-                defined('APP_TIMEZONE') ? APP_TIMEZONE : date_default_timezone_get()
-            )))->format('P');
-            if (preg_match('/^[+-]\d{2}:\d{2}$/', $offset)) {
-                $pdo->exec("SET time_zone = '" . $offset . "'");
             }
         } catch (\PDOException $e) {
             // En desarrollo local, si la conexión a la BD en la nube falla por caída de DNS o red,

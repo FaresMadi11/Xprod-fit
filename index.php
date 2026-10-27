@@ -7,30 +7,27 @@ if (function_exists('opcache_reset')) { opcache_reset(); }
 require __DIR__ . '/core/env.php';
 loadEnv(__DIR__ . '/.env');
 
-// ── 2. Configuración de sesión segura ─────────────────────────
-ini_set('session.use_strict_mode',   '1');
-ini_set('session.cookie_httponly',   '1');
-ini_set('session.cookie_samesite',   'Lax');
-// En producción HTTPS, descomentar la siguiente línea:
-// ini_set('session.cookie_secure', '1');
-ini_set('session.gc_maxlifetime',    '7200'); // 2 horas
-
-session_start();
-
-// Regenerar ID de sesión para prevenir session fixation
-// (solo si no se ha hecho ya en este ciclo)
-if (empty($_SESSION['_initiated'])) {
-    session_regenerate_id(true);
-    $_SESSION['_initiated'] = true;
-}
-
-// ── 3. Constantes globales y detección dinámica de entorno ──────
+// ── 2. Detección temprana de HTTPS (Render / Cloudflare proxy) ─
 $isHttps = (
     (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ||
     (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
     (!empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower((string)$_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off') ||
     (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
 );
+
+// ── 3. Configuración de sesión segura (1 sola cookie por respuesta) ─
+ini_set('session.use_strict_mode',   '1');
+ini_set('session.cookie_httponly',   '1');
+ini_set('session.cookie_samesite',   'Lax');
+if ($isHttps) {
+    ini_set('session.cookie_secure', '1');
+}
+ini_set('session.gc_maxlifetime',    '7200'); // 2 horas
+
+session_start();
+$_SESSION['_initiated'] = true;
+
+// ── 4. Constantes globales y detección dinámica de entorno ──────
 $protocol = $isHttps ? "https://" : "http://";
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
