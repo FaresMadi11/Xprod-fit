@@ -2,7 +2,7 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v2.6';
+const CACHE_NAME = 'xprod-fit-v2.7';
 
 // Recursos críticos locales precacheados (0ms de arranque, 100% offline)
 const PRECACHE_ASSETS = [
