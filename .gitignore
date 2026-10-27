@@ -28,7 +28,9 @@ storage/backups/
 *.sql
 
 # ── Dependencias (si se agrega Composer en el futuro) ──
-vendor/
+/vendor/
+!assets/vendor/
+!assets/vendor/**
 node_modules/
 
 # ── IDEs ──
