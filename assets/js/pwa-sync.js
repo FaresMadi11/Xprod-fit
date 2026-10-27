@@ -9,14 +9,17 @@
   let isSyncing = false;
 
   const XpSync = {
-    // Registrar el Service Worker
+    // Registrar el Service Worker (con ?v=3.0 y updateViaCache:'none' para evadir caché inmutable antiguo)
     initSW() {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          const swPath = (window.APP || '') + '/sw.js';
-          navigator.serviceWorker.register(swPath, { scope: (window.APP || '') + '/' })
+          const swPath = (window.APP || '') + '/sw.js?v=3.0';
+          navigator.serviceWorker.register(swPath, {
+            scope: (window.APP || '') + '/',
+            updateViaCache: 'none'
+          })
             .then(reg => {
-              reg.update();
+              reg.update().catch(() => {});
             })
             .catch(err => {
               console.warn('[PWA] Error registrando Service Worker:', err);

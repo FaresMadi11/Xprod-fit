@@ -2,7 +2,16 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v2.9';
+const CACHE_NAME = 'xprod-fit-v3.0';
+
+function safeCachePut(req, response) {
+  if (!req || !req.url || !response || response.status !== 200) return;
+  if (!req.url.startsWith('http://') && !req.url.startsWith('https://')) return;
+  try {
+    const copy = response.clone();
+    caches.open(CACHE_NAME).then(cache => cache.put(req, copy).catch(() => {})).catch(() => {});
+  } catch (_) {}
+}
 
 // Recursos críticos locales precacheados (0ms de arranque, 100% offline)
 const PRECACHE_ASSETS = [
@@ -64,8 +73,12 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(req.url);
 
-  // Ignorar esquemas no HTTP/HTTPS (ej. chrome-extension://) y orígenes externos (CDNs usan su propio caché HTTP e impiden violar CSP connect-src)
-  if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.origin !== self.location.origin) {
+  // Ignorar esquemas no HTTP/HTTPS (ej. chrome-extension://), orígenes externos y el propio sw.js
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    url.origin !== self.location.origin ||
+    url.pathname.toLowerCase().endsWith('/sw.js')
+  ) {
     return;
   }
 
@@ -94,10 +107,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(req)
         .then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-          }
+          safeCachePut(req, networkResponse);
           return networkResponse;
         })
         .catch(async () => {
@@ -118,10 +128,7 @@ self.addEventListener('fetch', event => {
       fetch(req)
         .then(networkResponse => {
           // Cachear cualquier página navegada con éxito por el usuario
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(req, copy));
-          }
+          safeCachePut(req, networkResponse);
           return networkResponse;
         })
         .catch(async () => {
@@ -191,20 +198,14 @@ self.addEventListener('fetch', event => {
         if (cachedResponse) {
           // Devolver de caché de inmediato y actualizar en segundo plano si hay red
           fetch(req).then(networkResponse => {
-            if (networkResponse && networkResponse.status === 200) {
-              const copy = networkResponse.clone();
-              caches.open(CACHE_NAME).then(cache => cache.put(req, copy).catch(() => {}));
-            }
+            safeCachePut(req, networkResponse);
           }).catch(() => {});
           return cachedResponse;
         }
 
         // Si no está en caché, traer de la red con manejo seguro de fallos offline
         return fetch(req).then(networkResponse => {
-          if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(req, copy).catch(() => {}));
-          }
+          safeCachePut(req, networkResponse);
           return networkResponse;
         }).catch(() => new Response('', { status: 408, statusText: 'Offline' }));
       })

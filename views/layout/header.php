@@ -57,7 +57,7 @@ addSecurityHeaders();
   <!-- SortableJS (Touch & Drag Reordering) -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js" defer></script>
   <!-- PWA & Offline Sync Manager -->
-  <script src="<?= APP_URL ?>/assets/js/pwa-sync.js" defer></script>
+  <script src="<?= APP_URL ?>/assets/js/pwa-sync.js?v=<?= @filemtime(__DIR__ . '/../../assets/js/pwa-sync.js') ?: '3.0' ?>" defer></script>
 
   <!-- ── Variables globales JS (inline, no bloquea render) ── -->
   <script>
@@ -72,6 +72,16 @@ addSecurityHeaders();
     (function() {
       const t = localStorage.getItem('xp_theme') || 'dark';
       document.getElementById('htmlRoot').setAttribute('data-theme', t);
+      if ('caches' in window) {
+        caches.keys().then(function(ks) {
+          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.0') caches.delete(k); });
+        }).catch(function(){});
+      }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.0', { scope: window.APP + '/', updateViaCache: 'none' })
+          .then(function(r) { r.update().catch(function(){}); })
+          .catch(function(){});
+      }
     })();
   </script>
 </head>

@@ -43,7 +43,7 @@
 </div>
 
 <!-- ── Scripts de la app ── -->
-<script src="<?= APP_URL ?>/assets/js/app.js?v=1.2" defer></script>
+<script src="<?= APP_URL ?>/assets/js/app.js?v=<?= @filemtime(__DIR__ . '/../../assets/js/app.js') ?: '3.0' ?>" defer></script>
 
 <!-- ── Banner de Cookies (GDPR/LOPD) ── -->
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/cookies.css">

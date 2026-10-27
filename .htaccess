@@ -143,6 +143,12 @@ RewriteRule ^(fix_|check|test_|kogane_).*\.php$ - [F,L]
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
 
+    # Service Worker y Manifest: NUNCA cachear en navegador (actualización inmediata)
+    <FilesMatch "(sw\.js|manifest\.webmanifest)$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+
     # PHP / HTML: nunca cachear
     <FilesMatch "\.php$">
         Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
