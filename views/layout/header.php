@@ -75,11 +75,11 @@ addSecurityHeaders();
       document.getElementById('htmlRoot').setAttribute('data-theme', t);
       if ('caches' in window) {
         caches.keys().then(function(ks) {
-          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.0') caches.delete(k); });
+          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.1') caches.delete(k); });
         }).catch(function(){});
       }
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.0', { scope: window.APP + '/', updateViaCache: 'none' })
+        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.1', { scope: window.APP + '/', updateViaCache: 'none' })
           .then(function(r) { r.update().catch(function(){}); })
           .catch(function(){});
       }
