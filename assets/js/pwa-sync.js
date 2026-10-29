@@ -59,88 +59,99 @@
         setTimeout(() => this.flushQueue(), 1200);
       }
 
-      // Precalentar en segundo plano las pantallas clave (inmediato en el 1er acceso tras login para garantizar arranque offline, y luego máx 1 vez cada 10 min)
-      if (navigator.onLine && 'serviceWorker' in navigator) {
-        const lastPrewarm = parseInt(sessionStorage.getItem('xp_prewarm_ts') || '0', 10);
-        const nowTs = Date.now();
-        const isFirstRun = (lastPrewarm === 0);
-        if (isFirstRun || (nowTs - lastPrewarm) > 600000) {
-          sessionStorage.setItem('xp_prewarm_ts', String(nowTs));
-          const runPrewarm = async () => {
-            const base = (window.APP || '').replace(/\/+$/, '');
+      // Precalentar y guardar directamente en Cache Storage todos los módulos del rol tras iniciar sesión
+      // Así, aunque el usuario solo inicie sesión y no entre a ningún otro módulo antes de quedarse sin red,
+      // todos los módulos estarán disponibles offline.
+      if (navigator.onLine && 'caches' in window) {
+        const runPrewarm = async () => {
+          try {
+            const CACHE_NAME = 'xprod-fit-v3.3';
+            const cache = await caches.open(CACHE_NAME);
+            const base = (window.APP || window.location.origin).replace(/\/+$/, '');
             const curPath = window.location.pathname;
-            const isAtleta = curPath.includes('/cliente');
-            const isEntrenador = curPath.includes('/entrenador');
-            const htmlOpts = { credentials: 'same-origin', headers: { 'Accept': 'text/html' } };
+            const role = localStorage.getItem('xp_auth_role') || '';
+            const isAtleta = curPath.includes('/cliente') || role === 'cliente';
+            const isEntrenador = curPath.includes('/entrenador') || role === 'entrenador';
+            if (!isAtleta && !isEntrenador) return;
 
+            const lastPrewarm = parseInt(sessionStorage.getItem('xp_prewarm_ts') || '0', 10);
+            const nowTs = Date.now();
+            const isStale = (nowTs - lastPrewarm) > 600000;
+
+            const urls = isAtleta
+              ? ['/cliente/dashboard', '/cliente/rutina-dia', '/cliente/estadisticas', '/cliente/perfil']
+              : ['/entrenador/dashboard', '/entrenador/clientes', '/entrenador/asistencias', '/entrenador/configuracion'];
+
+            const htmlOpts = { credentials: 'same-origin', headers: { 'Accept': 'text/html' } };
             const waitIdle = (ms) => new Promise(res => setTimeout(res, ms));
 
-            // Asegurar que la vista actual también quede guardada en la caché del Service Worker
-            await fetch(window.location.href, htmlOpts).catch(() => {});
-
-            if (isAtleta) {
-              const urls = ['/cliente/dashboard', '/cliente/perfil', '/cliente/rutina-dia'];
-              for (const u of urls) {
-                if (curPath.endsWith(u) || !navigator.onLine) continue;
-                while (document.body && document.body.classList.contains('is-typing')) {
-                  await waitIdle(800);
+            // 1. Asegurar que la pantalla actual quede guardada directamente en la caché
+            const curCached = await cache.match(window.location.href, { ignoreSearch: true });
+            if (!curCached || isStale) {
+              const curRes = await fetch(window.location.href, htmlOpts).catch(() => null);
+              if (curRes && curRes.ok) {
+                await cache.put(window.location.href, curRes.clone()).catch(() => {});
+                if (curPath.includes('/dashboard') || curPath.includes('/perfil')) {
+                  await cache.put(base + '/', curRes.clone()).catch(() => {});
                 }
-                await fetch(base + u, htmlOpts).catch(() => {});
-                await waitIdle(400);
               }
-              if (!curPath.endsWith('/cliente/estadisticas') && navigator.onLine) {
-                fetch(base + '/cliente/estadisticas', htmlOpts)
-                  .then(r => r.ok ? r.text() : '')
-                  .then(html => {
-                    if (!html) return;
-                    const m = html.match(/<script id="xpStatsOfflineSnapshot" type="application\/json">([\s\S]*?)<\/script>/);
-                    if (m && m[1]) {
-                      try {
-                        const parsed = JSON.parse(m[1]);
-                        if (parsed && parsed.cliente_id) {
-                          localStorage.setItem('xprod_stats_snapshot_v1', JSON.stringify(parsed));
-                          if (parsed.dias_historial) {
-                            Object.entries(parsed.dias_historial).forEach(([f, det]) => {
-                              localStorage.setItem('xprod_cal_dia_' + f, JSON.stringify(det));
-                            });
-                          }
-                          if (parsed.grupos_ejercicios) {
-                            Object.entries(parsed.grupos_ejercicios).forEach(([g, gData]) => {
-                              localStorage.setItem('xprod_st_ej_' + g, JSON.stringify(gData));
-                            });
-                          }
-                          if (parsed.ejercicios_historial) {
-                            Object.entries(parsed.ejercicios_historial).forEach(([nom, hData]) => {
-                              localStorage.setItem('xprod_st_hist_' + nom, JSON.stringify(hData));
-                            });
-                          }
+            }
+
+            // 2. Descargar y guardar en Cache Storage cada módulo faltante (o desactualizado)
+            for (const u of urls) {
+              if (!navigator.onLine) break;
+              const fullUrl = base + u;
+              const existing = await cache.match(fullUrl, { ignoreSearch: true });
+
+              // Si ya está en caché y no han pasado 10 min, saltar (salvo estadísticas si falta el snapshot en localStorage)
+              const needStatsSnapshot = (u === '/cliente/estadisticas' && !localStorage.getItem('xprod_stats_snapshot_v1'));
+              if (existing && !isStale && !needStatsSnapshot) continue;
+
+              while (document.body && document.body.classList.contains('is-typing')) {
+                await waitIdle(600);
+              }
+
+              const res = await fetch(fullUrl, htmlOpts).catch(() => null);
+              if (res && res.ok && res.url && (res.url.includes('/cliente/') || res.url.includes('/entrenador/'))) {
+                await cache.put(fullUrl, res.clone()).catch(() => {});
+
+                // Si es el módulo de estadísticas, extraer también el snapshot JSON para el calendario y grupos musculares offline
+                if (u === '/cliente/estadisticas') {
+                  const html = await res.text().catch(() => '');
+                  const m = html ? html.match(/<script id="xpStatsOfflineSnapshot" type="application\/json">([\s\S]*?)<\/script>/) : null;
+                  if (m && m[1]) {
+                    try {
+                      const parsed = JSON.parse(m[1]);
+                      if (parsed && parsed.cliente_id) {
+                        localStorage.setItem('xprod_stats_snapshot_v1', JSON.stringify(parsed));
+                        if (parsed.dias_historial) {
+                          Object.entries(parsed.dias_historial).forEach(([f, det]) => {
+                            localStorage.setItem('xprod_cal_dia_' + f, JSON.stringify(det));
+                          });
                         }
-                      } catch (_) {}
-                    }
-                  })
-                  .catch(() => {});
-              }
-            } else if (isEntrenador) {
-              const urls = ['/entrenador/dashboard', '/entrenador/clientes', '/entrenador/asistencias'];
-              for (const u of urls) {
-                if (curPath.endsWith(u) || !navigator.onLine) continue;
-                while (document.body && document.body.classList.contains('is-typing')) {
-                  await waitIdle(800);
+                        if (parsed.grupos_ejercicios) {
+                          Object.entries(parsed.grupos_ejercicios).forEach(([g, gData]) => {
+                            localStorage.setItem('xprod_st_ej_' + g, JSON.stringify(gData));
+                          });
+                        }
+                        if (parsed.ejercicios_historial) {
+                          Object.entries(parsed.ejercicios_historial).forEach(([nom, hData]) => {
+                            localStorage.setItem('xprod_st_hist_' + nom, JSON.stringify(hData));
+                          });
+                        }
+                      }
+                    } catch (_) {}
+                  }
                 }
-                await fetch(base + u, htmlOpts).catch(() => {});
-                await waitIdle(500);
               }
+              await waitIdle(250);
             }
-          };
 
-          setTimeout(() => {
-            if ('requestIdleCallback' in window) {
-              requestIdleCallback(() => runPrewarm(), { timeout: 3000 });
-            } else {
-              runPrewarm();
-            }
-          }, isFirstRun ? 1200 : 4000);
-        }
+            sessionStorage.setItem('xp_prewarm_ts', String(Date.now()));
+          } catch (_) {}
+        };
+
+        setTimeout(() => runPrewarm(), 600);
       }
     },
 
