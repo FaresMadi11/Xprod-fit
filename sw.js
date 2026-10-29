@@ -2,7 +2,7 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v3.1';
+const CACHE_NAME = 'xprod-fit-v3.2';
 
 function safeCachePut(req, response) {
   if (!req || !req.url || !response || response.status !== 200) return;
@@ -84,14 +84,15 @@ self.addEventListener('fetch', event => {
 
   const pathname = url.pathname.toLowerCase();
 
-  // ── REGLA ZERO-TRUST 1: NUNCA INTERCEPTAR AUTENTICACIÓN, MUTACIONES NI CSRF ──
-  // Si es login, logout, registro o acciones transaccionales POST, no intervenir
+  // ── REGLA ZERO-TRUST 1: NUNCA INTERCEPTAR MUTACIONES, OAUTH NI LOGOUT EXPLÍCITO ──
   if (
-    pathname.includes('/auth') ||
-    pathname.includes('/login') ||
     pathname.includes('/logout') ||
+    pathname.includes('/google') ||
+    pathname.includes('/do-') ||
     pathname.includes('/registro') ||
     pathname.includes('/recuperar') ||
+    url.searchParams.has('logged_out') ||
+    url.searchParams.has('standby') ||
     pathname.includes('guardar') ||
     pathname.includes('iniciar') ||
     pathname.includes('marcar') ||
@@ -121,26 +122,55 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // ── REGLA 2: NAVEGACIÓN HTML (Network-First con fallback inteligente a rutina offline) ──
+  // ── REGLA 2: NAVEGACIÓN HTML (Network-First con entrada directa al perfil/panel en Offline) ──
   const isHtmlNavigation = req.mode === 'navigate' || (req.headers.get('accept') && req.headers.get('accept').includes('text/html'));
   if (isHtmlNavigation) {
     event.respondWith(
       fetch(req)
         .then(networkResponse => {
-          // Cachear cualquier página navegada con éxito por el usuario
-          safeCachePut(req, networkResponse);
+          // Solo cachear vistas autenticadas (NUNCA cachear el HTML de login bajo la raíz '/')
+          const finalUrl = (networkResponse && networkResponse.url ? networkResponse.url : req.url).toLowerCase();
+          const isAuthPage = finalUrl.includes('/cliente/') || finalUrl.includes('/entrenador/');
+          if (isAuthPage) {
+            safeCachePut(req, networkResponse);
+            // Si es el dashboard o perfil, actualizar también la raíz './' del Service Worker para arranque offline directo
+            if (finalUrl.includes('/dashboard') || finalUrl.includes('/perfil')) {
+              try {
+                const rootReq = new Request(self.registration.scope);
+                safeCachePut(rootReq, networkResponse);
+              } catch (_) {}
+            }
+          }
           return networkResponse;
         })
         .catch(async () => {
           const cache = await caches.open(CACHE_NAME);
+          const keys = await cache.keys();
 
-          // 1. Coincidencia directa de la URL solicitada (ignorando parámetros query como ?dia=1)
+          // 1. Si el teléfono abre la raíz '/', '/index.php' o '/auth/login' estando SIN CONEXIÓN,
+          // llevar directamente al panel/perfil del usuario logueado sin pasar jamás por el login
+          const isRootOrLogin = (
+            pathname.endsWith('/') ||
+            pathname.endsWith('/index.php') ||
+            pathname.includes('/login') ||
+            pathname.includes('/auth') ||
+            pathname.includes('/dashboard')
+          );
+
+          if (isRootOrLogin) {
+            const homeKey =
+              keys.find(k => k.url.toLowerCase().includes('/cliente/dashboard')) ||
+              keys.find(k => k.url.toLowerCase().includes('/cliente/perfil')) ||
+              keys.find(k => k.url.toLowerCase().includes('/entrenador/dashboard')) ||
+              keys.find(k => k.url.toLowerCase().includes('/cliente/rutina-dia'));
+            if (homeKey) return await cache.match(homeKey);
+          }
+
+          // 2. Coincidencia directa de la URL solicitada (para módulos específicos)
           const directMatch = await cache.match(req, { ignoreSearch: true });
           if (directMatch) return directMatch;
 
-          // 2. Si no coincide directamente, buscar en la lista de URLs cacheadas
-          const keys = await cache.keys();
-
+          // 3. Búsqueda por módulo en las URLs cacheadas
           // A. Si se intenta abrir la rutina o rutinas del atleta
           if (pathname.includes('/rutina')) {
             const rutinaKey = keys.find(k => {
@@ -162,16 +192,7 @@ self.addEventListener('fetch', event => {
             if (perfilKey) return await cache.match(perfilKey);
           }
 
-          // D. Si se intenta abrir el dashboard o inicio
-          if (pathname.includes('/dashboard') || pathname.endsWith('/') || pathname.includes('/login') || pathname.includes('/auth')) {
-            const dashKey = keys.find(k => {
-              const u = k.url.toLowerCase();
-              return u.includes('/cliente/dashboard') || u.includes('/entrenador/dashboard') || u.includes('/cliente/rutina-dia');
-            });
-            if (dashKey) return await cache.match(dashKey);
-          }
-
-          // E. Fallback a cualquier página HTML previamente cacheada de la app
+          // E. Fallback a cualquier página autenticada previamente cacheada de la app
           const anyHtmlKey = keys.find(k => {
             const u = k.url.toLowerCase();
             return u.includes('/cliente/') || u.includes('/entrenador/');

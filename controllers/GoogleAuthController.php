@@ -186,6 +186,9 @@ function googleCallback(): void {
         $_SESSION['_login_at'] = time();
         $_SESSION['_via']      = 'google';
 
+        // Persistir sesión por 90 días en el teléfono
+        xpSetRememberCookie($user);
+
         $dest = $user['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard';
         redirect($dest);
         return;

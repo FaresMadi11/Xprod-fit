@@ -9,11 +9,11 @@
   let isSyncing = false;
 
   const XpSync = {
-    // Registrar el Service Worker (con ?v=3.0 y updateViaCache:'none' para evadir caché inmutable antiguo)
+    // Registrar el Service Worker (con ?v=3.2 y updateViaCache:'none' para evadir caché inmutable antiguo)
     initSW() {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          const swPath = (window.APP || '') + '/sw.js?v=3.1';
+          const swPath = (window.APP || '') + '/sw.js?v=3.2';
           navigator.serviceWorker.register(swPath, {
             scope: (window.APP || '') + '/',
             updateViaCache: 'none'
@@ -26,6 +26,19 @@
             });
         });
       }
+
+      // Al tocar cualquier botón de Cerrar Sesión, limpiar el estado persistente local antes de salir
+      document.addEventListener('click', (e) => {
+        const logoutLink = e.target && e.target.closest ? e.target.closest('a[href*="auth/logout"]') : null;
+        if (logoutLink) {
+          try {
+            localStorage.removeItem('xp_auth_active');
+            localStorage.removeItem('xp_auth_role');
+            localStorage.removeItem('xp_auth_home');
+            sessionStorage.removeItem('xp_prewarm_ts');
+          } catch (_) {}
+        }
+      }, true);
 
       // Escuchar cambios de conectividad
       window.addEventListener('online', () => {
@@ -46,11 +59,12 @@
         setTimeout(() => this.flushQueue(), 1200);
       }
 
-      // Precalentar en segundo plano las pantallas clave (máximo 1 vez cada 10 min, de forma secuencial para no bloquear sesión ni red)
+      // Precalentar en segundo plano las pantallas clave (inmediato en el 1er acceso tras login para garantizar arranque offline, y luego máx 1 vez cada 10 min)
       if (navigator.onLine && 'serviceWorker' in navigator) {
         const lastPrewarm = parseInt(sessionStorage.getItem('xp_prewarm_ts') || '0', 10);
         const nowTs = Date.now();
-        if ((nowTs - lastPrewarm) > 600000) {
+        const isFirstRun = (lastPrewarm === 0);
+        if (isFirstRun || (nowTs - lastPrewarm) > 600000) {
           sessionStorage.setItem('xp_prewarm_ts', String(nowTs));
           const runPrewarm = async () => {
             const base = (window.APP || '').replace(/\/+$/, '');
@@ -61,15 +75,18 @@
 
             const waitIdle = (ms) => new Promise(res => setTimeout(res, ms));
 
+            // Asegurar que la vista actual también quede guardada en la caché del Service Worker
+            await fetch(window.location.href, htmlOpts).catch(() => {});
+
             if (isAtleta) {
-              const urls = ['/cliente/dashboard', '/cliente/rutina-dia', '/cliente/perfil'];
+              const urls = ['/cliente/dashboard', '/cliente/perfil', '/cliente/rutina-dia'];
               for (const u of urls) {
                 if (curPath.endsWith(u) || !navigator.onLine) continue;
                 while (document.body && document.body.classList.contains('is-typing')) {
                   await waitIdle(800);
                 }
                 await fetch(base + u, htmlOpts).catch(() => {});
-                await waitIdle(500);
+                await waitIdle(400);
               }
               if (!curPath.endsWith('/cliente/estadisticas') && navigator.onLine) {
                 fetch(base + '/cliente/estadisticas', htmlOpts)
@@ -118,11 +135,11 @@
 
           setTimeout(() => {
             if ('requestIdleCallback' in window) {
-              requestIdleCallback(() => runPrewarm(), { timeout: 5000 });
+              requestIdleCallback(() => runPrewarm(), { timeout: 3000 });
             } else {
               runPrewarm();
             }
-          }, 4000);
+          }, isFirstRun ? 1200 : 4000);
         }
       }
     },

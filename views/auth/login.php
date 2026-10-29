@@ -17,6 +17,35 @@
 <link rel="apple-touch-icon" href="<?= APP_URL ?>/assets/img/apple-touch-icon.png?v=<?= $icoVer ?>">
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/vendor/tabler-icons/tabler-icons.min.css">
 <script>
+(function() {
+  var appBase = <?= json_encode(APP_URL) ?>;
+  var qs = window.location.search || '';
+  if (qs.indexOf('logged_out=1') !== -1 || qs.indexOf('standby=1') !== -1) {
+    try {
+      localStorage.removeItem('xp_auth_active');
+      localStorage.removeItem('xp_auth_role');
+      localStorage.removeItem('xp_auth_home');
+      sessionStorage.removeItem('xp_prewarm_ts');
+    } catch (_) {}
+    if ('caches' in window) {
+      caches.keys().then(function(ks) {
+        ks.forEach(function(k) { caches.delete(k); });
+      }).catch(function(){});
+    }
+  } else if (!navigator.onLine) {
+    try {
+      if (localStorage.getItem('xp_auth_active') === '1') {
+        var targetHome = localStorage.getItem('xp_auth_home') || (appBase + '/cliente/dashboard');
+        window.location.replace(targetHome);
+        return;
+      }
+    } catch (_) {}
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register(appBase + '/sw.js?v=3.2', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
+  }
+})();
+
 function togglePassVisibility(btn, ev) {
   if (ev) {
     if (typeof ev.stopPropagation === 'function') ev.stopPropagation();

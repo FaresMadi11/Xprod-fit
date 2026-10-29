@@ -73,13 +73,14 @@ addSecurityHeaders();
     (function() {
       const t = localStorage.getItem('xp_theme') || 'dark';
       document.getElementById('htmlRoot').setAttribute('data-theme', t);
+      <?php if ($rolUser): ?>try { localStorage.setItem('xp_auth_active', '1'); localStorage.setItem('xp_auth_role', '<?= e($rolUser) ?>'); localStorage.setItem('xp_auth_home', window.APP + '/<?= $rolUser === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard' ?>'); } catch (_) {}<?php endif; ?>
       if ('caches' in window) {
         caches.keys().then(function(ks) {
-          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.1') caches.delete(k); });
+          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.2') caches.delete(k); });
         }).catch(function(){});
       }
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.1', { scope: window.APP + '/', updateViaCache: 'none' })
+        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.2', { scope: window.APP + '/', updateViaCache: 'none' })
           .then(function(r) { r.update().catch(function(){}); })
           .catch(function(){});
       }

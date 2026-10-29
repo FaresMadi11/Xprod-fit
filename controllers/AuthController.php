@@ -142,8 +142,13 @@ function authDoLogin(): void {
         $_SESSION['_login_at'] = time();
 
         if (password_needs_rehash($user['password_hash'], PASSWORD_BCRYPT, ['cost' => 10])) {
-            $um->updatePasswordHash((int)$user['id'], password_hash($pass, PASSWORD_BCRYPT, ['cost' => 10]));
+            $newHash = password_hash($pass, PASSWORD_BCRYPT, ['cost' => 10]);
+            $um->updatePasswordHash((int)$user['id'], $newHash);
+            $user['password_hash'] = $newHash;
         }
+
+        // Persistir sesión por 90 días en el teléfono (sobrevive al cerrar la app de recientes)
+        xpSetRememberCookie($user);
 
         $dest = $user['rol'] === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard';
 
@@ -673,7 +678,8 @@ function authDoRecuperarCambiar(): void {
 // ══════════════════════════════════════════════════════════════
 
 function authLogout(): void {
-    // Destruir sesión de forma segura
+    // Destruir sesión y cookie persistente de 90 días de forma segura
+    xpClearRememberCookie();
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $params = session_get_cookie_params();
@@ -684,7 +690,7 @@ function authLogout(): void {
         );
     }
     session_destroy();
-    redirect('auth/login');
+    redirect('auth/login?logged_out=1');
 }
 
 // ══════════════════════════════════════════════════════════════

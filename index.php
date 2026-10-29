@@ -15,14 +15,23 @@ $isHttps = (
     (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
 );
 
-// ── 3. Configuración de sesión segura (1 sola cookie por respuesta) ─
+// ── 3. Configuración de sesión segura y persistente (90 días como app nativa) ─
+$sessionLifetime = 7776000; // 90 días
 ini_set('session.use_strict_mode',   '1');
 ini_set('session.cookie_httponly',   '1');
 ini_set('session.cookie_samesite',   'Lax');
+ini_set('session.cookie_lifetime',   (string)$sessionLifetime);
+ini_set('session.gc_maxlifetime',    (string)$sessionLifetime);
 if ($isHttps) {
     ini_set('session.cookie_secure', '1');
 }
-ini_set('session.gc_maxlifetime',    '7200'); // 2 horas
+session_set_cookie_params([
+    'lifetime' => $sessionLifetime,
+    'path'     => '/',
+    'secure'   => $isHttps,
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
 
 session_start();
 $_SESSION['_initiated'] = true;
@@ -62,12 +71,21 @@ require BASE_DIR . '/core/csrf.php';
 require BASE_DIR . '/core/rate_limiter.php';
 require BASE_DIR . '/core/security.php';
 
+// Restaurar sesión persistente automáticamente si el usuario cerró la app de "Recientes"
+xpRestoreRememberSession();
+
 // ── 5. Router ──────────────────────────────────────────────────
 $route   = trim($_GET['route'] ?? '', '/');
 if ($route !== '') {
     intentarServirMediaRespaldado($route);
 }
-if ($route === '') $route = 'auth/login';
+if ($route === '') {
+    if (!empty($_SESSION['user_id'])) {
+        $route = (($_SESSION['rol'] ?? '') === 'entrenador') ? 'entrenador/dashboard' : 'cliente/dashboard';
+    } else {
+        $route = 'auth/login';
+    }
+}
 
 $segment = explode('/', $route);
 $area    = $segment[0] ?? '';   // auth | entrenador | cliente | legal

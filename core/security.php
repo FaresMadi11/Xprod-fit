@@ -177,3 +177,147 @@ function addSecurityHeaders(): void {
     // Eliminar header que revela tecnología
     header_remove('X-Powered-By');
 }
+
+/**
+ * Clave HMAC interna derivada del entorno para firmar cookies de sesión persistente ("Remember Me").
+ */
+function xpRememberSecret(): string {
+    $base = (string)env('APP_KEY', '') . '|' . (string)DB_HOST . '|' . (string)DB_NAME . '|' . (string)DB_USER . '|xp_persist_v1';
+    return hash('sha256', $base);
+}
+
+/**
+ * Establece una cookie persistente firmada por 90 días para que la PWA nunca cierre sesión
+ * al borrarse de "Apps recientes" o tras reinicios del servidor, salvo logout explícito.
+ */
+function xpSetRememberCookie(array $user): void {
+    $uid = (int)($user['id'] ?? 0);
+    if ($uid <= 0) return;
+
+    $exp  = time() + 7776000; // 90 días
+    $hash = (string)($user['password_hash'] ?? '');
+    $rol  = (string)($user['rol'] ?? 'cliente');
+    $sig  = hash_hmac('sha256', $uid . '|' . $exp . '|' . $hash . '|' . $rol, xpRememberSecret());
+    $val  = $uid . ':' . $exp . ':' . $sig;
+
+    $isHttps = (
+        (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ||
+        (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+        (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+    );
+
+    setcookie('xp_remember', $val, [
+        'expires'  => $exp,
+        'path'     => '/',
+        'secure'   => $isHttps,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+/**
+ * Elimina la cookie persistente cuando el usuario cierra sesión explícitamente.
+ */
+function xpClearRememberCookie(): void {
+    $isHttps = (
+        (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ||
+        (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') ||
+        (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443)
+    );
+
+    setcookie('xp_remember', '', [
+        'expires'  => time() - 42000,
+        'path'     => '/',
+        'secure'   => $isHttps,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    unset($_COOKIE['xp_remember']);
+}
+
+/**
+ * Restaura automáticamente la sesión PHP si el teléfono cerró la cookie temporal o el contenedor reinició,
+ * verificando criptográficamente la cookie xp_remember.
+ */
+function xpRestoreRememberSession(): void {
+    // Si el usuario ya tiene sesión activa pero aún no tiene la cookie persistente de 90 días, emitirla automáticamente
+    if (!empty($_SESSION['user_id'])) {
+        if (empty($_COOKIE['xp_remember'])) {
+            try {
+                $db = getDB();
+                $st = $db->prepare("SELECT id, password_hash, rol, activo FROM usuarios WHERE id = ? LIMIT 1");
+                $st->execute([(int)$_SESSION['user_id']]);
+                $u = $st->fetch(\PDO::FETCH_ASSOC);
+                if ($u && !empty($u['activo'])) {
+                    xpSetRememberCookie($u);
+                }
+            } catch (\Throwable $e) {}
+        }
+        return;
+    }
+
+    if (empty($_COOKIE['xp_remember'])) {
+        return;
+    }
+
+    $parts = explode(':', (string)$_COOKIE['xp_remember']);
+    if (count($parts) !== 3) {
+        xpClearRememberCookie();
+        return;
+    }
+
+    [$uidRaw, $expRaw, $sig] = $parts;
+    $uid = (int)$uidRaw;
+    $exp = (int)$expRaw;
+
+    if ($uid <= 0 || $exp < time() || strlen($sig) !== 64) {
+        xpClearRememberCookie();
+        return;
+    }
+
+    try {
+        $db = getDB();
+        $st = $db->prepare("SELECT id, nombre, email, password_hash, rol, activo, estado_cuenta FROM usuarios WHERE id = ? LIMIT 1");
+        $st->execute([$uid]);
+        $user = $st->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$user || empty($user['activo'])) {
+            xpClearRememberCookie();
+            return;
+        }
+
+        if (($user['rol'] ?? '') !== 'entrenador' && ($user['estado_cuenta'] ?? 'activo') !== 'activo') {
+            xpClearRememberCookie();
+            return;
+        }
+
+        $expected = hash_hmac(
+            'sha256',
+            $uid . '|' . $exp . '|' . (string)($user['password_hash'] ?? '') . '|' . (string)($user['rol'] ?? 'cliente'),
+            xpRememberSecret()
+        );
+
+        if (!hash_equals($expected, $sig)) {
+            xpClearRememberCookie();
+            return;
+        }
+
+        $_SESSION['user_id']    = (int)$user['id'];
+        $_SESSION['nombre']     = $user['nombre'];
+        $_SESSION['email']      = $user['email'];
+        $_SESSION['rol']        = ($user['rol'] === 'atleta') ? 'cliente' : $user['rol'];
+        $_SESSION['_login_at']  = time();
+        $_SESSION['_acc_ok_ts'] = time();
+
+        if ($_SESSION['rol'] === 'cliente') {
+            $stCli = $db->prepare("SELECT id FROM clientes WHERE usuario_id = ? LIMIT 1");
+            $stCli->execute([$uid]);
+            $cid = (int)$stCli->fetchColumn();
+            if ($cid > 0) {
+                $_SESSION['cliente_id'] = $cid;
+            }
+        }
+    } catch (\Throwable $e) {
+        // Si hay corte temporal de red/BD, no borrar la cookie para poder restaurar en el siguiente intento
+    }
+}
