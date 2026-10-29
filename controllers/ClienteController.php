@@ -405,7 +405,7 @@ function cliRutinaDia(): void {
 
     if ($rutinaId) {
         $stRut = $db->prepare(
-            "SELECT r.id, r.descripcion, r.dias_semana, r.estado, u.nombre AS entrenador
+            "SELECT r.id, r.descripcion, r.dias_semana, r.estado, r.cardio_activo, r.cardio_tiempo, r.cardio_indicaciones, u.nombre AS entrenador
              FROM rutinas r
              JOIN usuarios u ON r.entrenador_id = u.id
              WHERE r.id = ? AND r.cliente_id = ?"

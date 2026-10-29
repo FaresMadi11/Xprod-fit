@@ -60,6 +60,9 @@ match($action) {
     'api-dia-detalle'          => entApiDiaDetalle(),
     'api-rutina-ejercicio'     => entApiRutinaEjercicio(),
     'api-dias-atleta'          => entApiDiasAtleta(),
+    'api-listar-plantillas-catalogo'  => entApiListarPlantillasCatalogo(),
+    'api-guardar-plantilla-catalogo' => entApiGuardarPlantillaCatalogo(),
+    'api-eliminar-plantilla-catalogo'=> entApiEliminarPlantillaCatalogo(),
     default             => entDashboard(),
 };
 
@@ -754,6 +757,9 @@ function entGuardarPlantillaRutina(): void {
     $ejercicios  = $data['ejercicios'] ?? [];
     $descripcion = trim($data['descripcion'] ?? '');
     $dias        = $data['dias'] ?? [];
+    $cardioActivo = !empty($data['cardio_activo']) ? 1 : 0;
+    $cardioTiempo = (!empty($data['cardio_tiempo']) && is_numeric($data['cardio_tiempo'])) ? (int)$data['cardio_tiempo'] : null;
+    $cardioIndicaciones = isset($data['cardio_indicaciones']) ? trim((string)$data['cardio_indicaciones']) : null;
 
     // Validaciones básicas
     if (!$clienteId || empty($ejercicios)) {
@@ -854,9 +860,9 @@ function entGuardarPlantillaRutina(): void {
 
         // 1. Crear plantilla
         $stPl = $db->prepare(
-            "INSERT INTO plantillas_rutinas (entrenador_id, titulo) VALUES (?,?)"
+            "INSERT INTO plantillas_rutinas (entrenador_id, titulo, cardio_activo, cardio_tiempo, cardio_indicaciones) VALUES (?,?,?,?,?)"
         );
-        $stPl->execute([$entId, $titulo]);
+        $stPl->execute([$entId, $titulo, $cardioActivo, $cardioTiempo, $cardioIndicaciones]);
         $plantillaId = (int)$db->lastInsertId();
 
         // 2. Insertar ejercicios y sus series
@@ -914,10 +920,10 @@ function entGuardarPlantillaRutina(): void {
             : (string)date('N');
 
         $stRut = $db->prepare(
-            "INSERT INTO rutinas (cliente_id, entrenador_id, titulo, descripcion, plantilla_id, dias_semana, estado)
-             VALUES (?, ?, ?, ?, ?, ?, 'en_progreso')"
+            "INSERT INTO rutinas (cliente_id, entrenador_id, titulo, descripcion, plantilla_id, dias_semana, estado, cardio_activo, cardio_tiempo, cardio_indicaciones)
+             VALUES (?, ?, ?, ?, ?, ?, 'en_progreso', ?, ?, ?)"
         );
-        $stRut->execute([$clienteId, $entId, $titulo, $descripcion, $plantillaId, $diasStr]);
+        $stRut->execute([$clienteId, $entId, $titulo, $descripcion, $plantillaId, $diasStr, $cardioActivo, $cardioTiempo, $cardioIndicaciones]);
         $rutinaAsignadaId = (int)$db->lastInsertId();
 
         // 3.1 Insertar ejercicios en tabla ejercicios para que el cliente los visualice y registre
@@ -2986,6 +2992,170 @@ function entApiRutinaEjercicio(): void {
         error_log('[entApiRutinaEjercicio] Error: ' . $e->getMessage());
         jsonOut(false, 'Error al procesar la solicitud: ' . $e->getMessage(), [], 500);
     }
+}
+
+/*─────────────────────────────────────────────────────────────
+  CATÁLOGO DE PLANTILLAS REUTILIZABLES (LISTAR, GUARDAR, ELIMINAR)
+─────────────────────────────────────────────────────────────*/
+function entApiListarPlantillasCatalogo(): void {
+    requireRole('entrenador');
+    header('Content-Type: application/json');
+    $db = getDB();
+    $entId = (int)$_SESSION['user_id'];
+
+    $st = $db->prepare(
+        "SELECT p.id, p.titulo, p.descripcion, p.creado_en, p.cardio_activo, p.cardio_tiempo, p.cardio_indicaciones,
+                COUNT(pe.id) AS total_ejercicios
+         FROM plantillas_rutinas p
+         LEFT JOIN plantilla_ejercicios pe ON pe.plantilla_id = p.id
+         WHERE p.entrenador_id = ? AND p.es_catalogo = 1
+         GROUP BY p.id
+         ORDER BY p.id DESC"
+    );
+    $st->execute([$entId]);
+    $plantillas = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    // Para cada plantilla, cargar ejercicios y series estructuradas
+    foreach ($plantillas as &$pl) {
+        $stEj = $db->prepare(
+            "SELECT pe.id, pe.nombre_override AS nombre, pe.orden, pe.descanso_segundos, pe.tipo_implemento, pe.unidad_carga,
+                    ce.imagen_path
+             FROM plantilla_ejercicios pe
+             LEFT JOIN catalogo_ejercicios ce ON LOWER(TRIM(pe.nombre_override)) = LOWER(TRIM(ce.nombre))
+             WHERE pe.plantilla_id = ?
+             ORDER BY pe.orden ASC"
+        );
+        $stEj->execute([$pl['id']]);
+        $ejs = $stEj->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($ejs as &$ex) {
+            $stS = $db->prepare(
+                "SELECT numero_serie, tipo_serie, kg_objetivo, reps_objetivo, rir
+                 FROM plantilla_series
+                 WHERE plantilla_ej_id = ?
+                 ORDER BY numero_serie ASC"
+            );
+            $stS->execute([$ex['id']]);
+            $ex['series'] = $stS->fetchAll(PDO::FETCH_ASSOC);
+        }
+        unset($ex);
+        $pl['ejercicios'] = $ejs;
+    }
+    unset($pl);
+
+    echo json_encode(['ok' => true, 'plantillas' => $plantillas]);
+    exit;
+}
+
+function entApiGuardarPlantillaCatalogo(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json');
+
+    $db    = getDB();
+    $entId = (int)$_SESSION['user_id'];
+    $raw   = file_get_contents('php://input');
+    $data  = json_decode($raw, true);
+
+    $titulo = trim($data['titulo'] ?? '');
+    if (!$titulo) {
+        $titulo = 'Plantilla de Rutina';
+    }
+    $descripcion = trim($data['descripcion'] ?? '');
+    $ejercicios  = $data['ejercicios'] ?? [];
+    if (empty($ejercicios)) {
+        echo json_encode(['ok' => false, 'msg' => 'Agrega al menos un ejercicio a la plantilla.']);
+        exit;
+    }
+
+    $cardioActivo = !empty($data['cardio_activo']) ? 1 : 0;
+    $cardioTiempo = (!empty($data['cardio_tiempo']) && is_numeric($data['cardio_tiempo'])) ? (int)$data['cardio_tiempo'] : null;
+    $cardioIndicaciones = isset($data['cardio_indicaciones']) ? trim((string)$data['cardio_indicaciones']) : null;
+
+    try {
+        $db->beginTransaction();
+
+        $stPl = $db->prepare(
+            "INSERT INTO plantillas_rutinas (entrenador_id, titulo, descripcion, es_catalogo, cardio_activo, cardio_tiempo, cardio_indicaciones)
+             VALUES (?, ?, ?, 1, ?, ?, ?)"
+        );
+        $stPl->execute([$entId, $titulo, $descripcion, $cardioActivo, $cardioTiempo, $cardioIndicaciones]);
+        $plantillaId = (int)$db->lastInsertId();
+
+        $stEx = $db->prepare(
+            "INSERT INTO plantilla_ejercicios (plantilla_id, nombre_override, orden, descanso_segundos, tipo_implemento, unidad_carga)
+             VALUES (?, ?, ?, ?, ?, ?)"
+        );
+        $stSerie = $db->prepare(
+            "INSERT INTO plantilla_series (plantilla_ej_id, numero_serie, tipo_serie, kg_objetivo, reps_objetivo, rir)
+             VALUES (?, ?, ?, ?, ?, ?)"
+        );
+
+        foreach ($ejercicios as $ex) {
+            $nombre = trim($ex['nombre'] ?? '');
+            if (!$nombre) continue;
+            $descanso = isset($ex['descanso_segundos']) && is_numeric($ex['descanso_segundos']) ? (int)$ex['descanso_segundos'] : null;
+            $tipoImp  = in_array($ex['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true) ? $ex['tipo_implemento'] : 'barra';
+            $uniCarga = in_array($ex['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true) ? $ex['unidad_carga'] : 'kg';
+            if ($tipoImp === 'sin_peso') $uniCarga = 'ninguna';
+
+            $stEx->execute([$plantillaId, $nombre, (int)($ex['orden'] ?? 1), $descanso, $tipoImp, $uniCarga]);
+            $ejId = (int)$db->lastInsertId();
+
+            foreach (($ex['series'] ?? []) as $s) {
+                $tipo = in_array($s['tipo_serie'] ?? '', ['normal','calentamiento','fallo','drop']) ? $s['tipo_serie'] : 'normal';
+                $kg   = ($tipoImp !== 'sin_peso' && is_numeric($s['kg_objetivo'] ?? null) && (float)$s['kg_objetivo'] > 0) ? (float)$s['kg_objetivo'] : null;
+                $reps = is_numeric($s['reps_objetivo'] ?? null) ? (int)$s['reps_objetivo'] : null;
+                $rir  = (isset($s['rir']) && is_numeric($s['rir'])) ? max(0, min(5, (int)$s['rir'])) : null;
+                $stSerie->execute([$ejId, (int)($s['numero_serie'] ?? 1), $tipo, $kg, $reps, $rir]);
+            }
+        }
+
+        $db->commit();
+        echo json_encode(['ok' => true, 'msg' => 'Plantilla "' . $titulo . '" guardada con éxito.', 'plantilla_id' => $plantillaId]);
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[Xprod] entApiGuardarPlantillaCatalogo: ' . $e->getMessage());
+        echo json_encode(['ok' => false, 'msg' => 'Error al guardar la plantilla: ' . $e->getMessage()]);
+    }
+    exit;
+}
+
+function entApiEliminarPlantillaCatalogo(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json');
+
+    $db    = getDB();
+    $entId = (int)$_SESSION['user_id'];
+    $raw   = file_get_contents('php://input');
+    $data  = json_decode($raw, true);
+    $plantillaId = (int)($data['plantilla_id'] ?? 0);
+
+    if (!$plantillaId) {
+        echo json_encode(['ok' => false, 'msg' => 'ID de plantilla inválido.']);
+        exit;
+    }
+
+    $chk = $db->prepare("SELECT id FROM plantillas_rutinas WHERE id = ? AND entrenador_id = ?");
+    $chk->execute([$plantillaId, $entId]);
+    if (!$chk->fetch()) {
+        echo json_encode(['ok' => false, 'msg' => 'Plantilla no encontrada o sin permisos.']);
+        exit;
+    }
+
+    try {
+        $db->beginTransaction();
+        $db->prepare("DELETE FROM plantilla_series WHERE plantilla_ej_id IN (SELECT id FROM plantilla_ejercicios WHERE plantilla_id = ?)")->execute([$plantillaId]);
+        $db->prepare("DELETE FROM plantilla_ejercicios WHERE plantilla_id = ?")->execute([$plantillaId]);
+        $db->prepare("DELETE FROM plantillas_rutinas WHERE id = ?")->execute([$plantillaId]);
+        $db->commit();
+        echo json_encode(['ok' => true, 'msg' => 'Plantilla eliminada correctamente.']);
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        echo json_encode(['ok' => false, 'msg' => 'Error al eliminar la plantilla.']);
+    }
+    exit;
 }
 
 

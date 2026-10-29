@@ -294,18 +294,29 @@ window.guardarSesion = async (ejercicioId, btn) => {
 };
 
 /* ─── MARCAR rutina completa ────────────────────────────── */
-window.marcarRutina = (rutinaId) => {
-  Xp.confirm('¿Marcar como completada?', 'Registrarás esta rutina como finalizada.', async () => {
-    const r = await Xp.post('cliente/marcar-rutina', { rutina_id: rutinaId }).catch(() => ({ ok: false, msg: 'Error' }));
-    if (r.ok) {
-      Xp.toast('success', r.msg);
-      anime({
-        targets: '#rutinaCard', opacity: 0, translateY: 20, duration: 400,
-        complete: () => location.reload()
-      });
-    } else Xp.toast('error', r.msg);
-  });
-};
+if (typeof window.marcarRutina !== 'function') {
+  window.marcarRutina = (rutinaId) => {
+    Xp.confirm('¿Marcar como completada?', 'Registrarás esta rutina como finalizada.', async () => {
+      if (!navigator.onLine && window.XpSync) {
+        XpSync.enqueue({
+          url: Xp.getBase() + '/cliente/marcar-rutina',
+          data: { rutina_id: rutinaId },
+          label: 'Rutina terminada'
+        });
+        Xp.toast('success', '¡Rutina registrada offline! Se sincronizará al conectar.');
+        return;
+      }
+      const r = await Xp.post('cliente/marcar-rutina', { rutina_id: rutinaId }).catch(() => ({ ok: false, msg: 'Error de red.' }));
+      if (r.ok) {
+        Xp.toast('success', r.msg);
+        anime({
+          targets: '#rutinaCard', opacity: 0, translateY: 20, duration: 400,
+          complete: () => location.reload()
+        });
+      } else Xp.toast('error', r.msg || 'No se pudo marcar la rutina.');
+    });
+  };
+}
 
 
 

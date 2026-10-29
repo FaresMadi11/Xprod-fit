@@ -1476,6 +1476,33 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
 
     <!-- ── Lista de ejercicios ── -->
     <div class="wd-exercise-list" id="ejerciciosList">
+    <?php if (!empty($rutina['cardio_activo'])): ?>
+    <!-- ── Tarjeta Bento de Cardio Asignado ── -->
+    <div class="wd-cardio-card bento-in" style="background: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(18,18,24,0.95) 100%); border: 1px solid rgba(249,115,22,0.35); border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="width:36px; height:36px; border-radius:10px; background:rgba(249,115,22,0.2); color:#fb923c; display:grid; place-items:center; font-size:1.2rem;">
+            <i class="ti ti-run"></i>
+          </div>
+          <div>
+            <div style="font-weight:800; font-size:0.95rem; color:#fff;">Cardio / Trote</div>
+            <div style="font-size:0.75rem; color:#fdba74; font-weight:600;"><?= (int)($rutina['cardio_tiempo'] ?? 20) ?> minutos sugeridos</div>
+          </div>
+        </div>
+        <span style="background:rgba(249,115,22,0.2); border:1px solid rgba(249,115,22,0.4); color:#fdba74; font-size:0.72rem; font-weight:800; padding:3px 10px; border-radius:999px;">
+          <i class="ti ti-clock"></i> <?= (int)($rutina['cardio_tiempo'] ?? 20) ?> min
+        </span>
+      </div>
+      <?php if (!empty($rutina['cardio_indicaciones'])): ?>
+      <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px 12px; margin-top:8px; font-size:0.82rem; color:#cbd5e1; line-height:1.45;">
+        <div style="font-size:0.7rem; font-weight:700; color:#fb923c; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px;">
+          <i class="ti ti-list-details"></i> Indicaciones del entrenador:
+        </div>
+        <?= nl2br(e($rutina['cardio_indicaciones'])) ?>
+      </div>
+      <?php endif; ?>
+    </div>
+    <?php endif; ?>
     <?php foreach ($rutina['ejercicios'] as $idx => $ej):
       $totalSeries = (int)$ej['series'];
       $completadas = (int)$ej['series_completadas'];
@@ -3428,12 +3455,46 @@ async function ejecutarAccionCambiosRutina() {
           color: '#fff',
           confirmButtonColor: '#8a2be2'
         });
+      } else if (data.offline || !navigator.onLine) {
+        hayCambiosPendientes = false;
+        if (window.XpSync) {
+          XpSync.enqueue({
+            url: APP + '/cliente/solicitar-modificacion-rutina',
+            data: { rutina_id: RUTINA_ID, tipo_modificacion: formaEdicion, descripcion: 'Modificación de rutina offline', cambios_json: JSON.stringify(ejerciciosPayload) },
+            label: 'Solicitud de modificación de rutina'
+          });
+        }
+        if (modoEdicionActivo) toggleModoEdicion();
+        Swal.fire({
+          icon: 'success',
+          title: 'Guardado offline',
+          text: 'Tu solicitud se sincronizará automáticamente cuando tengas conexión.',
+          background: '#121216',
+          color: '#fff',
+          confirmButtonColor: '#8a2be2'
+        });
       } else {
         Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo enviar la solicitud.', background: '#121216', color: '#fff' });
       }
     } catch (e) {
-      console.error(e);
-      Swal.fire({ icon: 'error', title: 'Error', text: 'Error de comunicación con el servidor.', background: '#121216', color: '#fff' });
+      console.warn('[PWA] Error de red solicitando modificación, encolando offline...', e);
+      hayCambiosPendientes = false;
+      if (window.XpSync) {
+        XpSync.enqueue({
+          url: APP + '/cliente/solicitar-modificacion-rutina',
+          data: { rutina_id: RUTINA_ID, tipo_modificacion: formaEdicion, descripcion: 'Modificación de rutina offline', cambios_json: JSON.stringify(ejerciciosPayload) },
+          label: 'Solicitud de modificación de rutina'
+        });
+      }
+      if (modoEdicionActivo) toggleModoEdicion();
+      Swal.fire({
+        icon: 'success',
+        title: 'Guardado offline',
+        text: 'Tu solicitud se sincronizará automáticamente cuando tengas conexión.',
+        background: '#121216',
+        color: '#fff',
+        confirmButtonColor: '#8a2be2'
+      });
     } finally {
       btnsAccion.forEach(b => {
         b.disabled = false;
@@ -3482,12 +3543,48 @@ async function ejecutarAccionCambiosRutina() {
             color: '#fff'
           });
         }
+      } else if (data.offline || !navigator.onLine) {
+        hayCambiosPendientes = false;
+        if (window.XpSync) {
+          XpSync.enqueue({
+            url: APP + '/cliente/guardar-modificacion-directa',
+            data: { rutina_id: RUTINA_ID, ejercicios: JSON.stringify(ejerciciosPayload) },
+            label: 'Guardar cambios de rutina'
+          });
+        }
+        if (modoEdicionActivo) toggleModoEdicion();
+        Swal.fire({
+          icon: 'success',
+          title: 'Guardado offline',
+          text: 'Tus modificaciones se guardaron localmente y se sincronizarán al conectar.',
+          timer: 2200,
+          showConfirmButton: false,
+          background: '#121216',
+          color: '#fff'
+        });
       } else {
         Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudieron guardar los cambios.', background: '#121216', color: '#fff' });
       }
     } catch (e) {
-      console.error(e);
-      Swal.fire({ icon: 'error', title: 'Error', text: 'Error de comunicación con el servidor.', background: '#121216', color: '#fff' });
+      console.warn('[PWA] Error de red guardando cambios directos, encolando offline...', e);
+      hayCambiosPendientes = false;
+      if (window.XpSync) {
+        XpSync.enqueue({
+          url: APP + '/cliente/guardar-modificacion-directa',
+          data: { rutina_id: RUTINA_ID, ejercicios: JSON.stringify(ejerciciosPayload) },
+          label: 'Guardar cambios de rutina'
+        });
+      }
+      if (modoEdicionActivo) toggleModoEdicion();
+      Swal.fire({
+        icon: 'success',
+        title: 'Guardado offline',
+        text: 'Tus modificaciones se guardaron localmente y se sincronizarán al conectar.',
+        timer: 2200,
+        showConfirmButton: false,
+        background: '#121216',
+        color: '#fff'
+      });
     } finally {
       btnsAccion.forEach(b => {
         b.disabled = false;
@@ -3788,9 +3885,18 @@ async function marcarRutina(rutinaId) {
 
     if (data.ok) {
       await handleFinishSuccess(false);
+    } else if (data.offline || !navigator.onLine) {
+      if (window.XpSync) {
+        XpSync.enqueue({
+          url: APP + '/cliente/marcar-rutina',
+          data: { rutina_id: rutinaId, fecha_entrenamiento: FECHA_SESION_ACTUAL },
+          label: 'Rutina terminada'
+        });
+      }
+      await handleFinishSuccess(true);
     } else {
       if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-trophy-filled"></i> Rutina Terminada'; }
-      Swal.fire({ icon:'error', title:'Error', text: data.msg, background:'#111', color:'#fff' });
+      Swal.fire({ icon:'error', title:'Error', text: data.msg || 'No se pudo registrar la rutina.', background:'#111', color:'#fff' });
     }
   } catch (err) {
     console.warn('[PWA] Error de red al finalizar rutina, encolando offline...', err);

@@ -1047,6 +1047,317 @@
 /* ── Spinner ── */
 @keyframes cr-spin { to { transform: rotate(360deg); } }
 .cr-spin { display: inline-block; animation: cr-spin .8s linear infinite; }
+
+/* ── Barra de Acciones y Switch Cardio / Plantillas (Bento UI) ── */
+.cr-cardio-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  user-select: none;
+}
+.cr-cardio-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.cr-cardio-toggle.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+}
+.cr-cardio-switch {
+  width: 26px;
+  height: 15px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+  display: inline-block;
+  pointer-events: none;
+}
+.cr-cardio-toggle.active .cr-cardio-switch {
+  background: #ef4444;
+}
+.cr-cardio-knob {
+  width: 11px;
+  height: 11px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.cr-cardio-toggle.active .cr-cardio-knob {
+  transform: translateX(11px);
+}
+
+.btn-plantilla-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(138, 43, 226, 0.12);
+  border: 1px solid rgba(138, 43, 226, 0.32);
+  color: #d8b4fe;
+  padding: 5px 13px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  user-select: none;
+}
+.btn-plantilla-action:hover {
+  background: rgba(138, 43, 226, 0.2);
+  border-color: rgba(138, 43, 226, 0.5);
+  color: #f3e8ff;
+  transform: translateY(-1px);
+}
+.btn-plantilla-action.is-dirty {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(139, 92, 246, 0.35));
+  border-color: rgba(168, 85, 247, 0.6);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(138, 43, 226, 0.3);
+}
+
+/* ── Panel Compacto de Cardio (Bento UI) ── */
+.cr-cardio-panel {
+  background: rgba(18, 18, 26, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 16px;
+  padding: 13px 15px;
+  margin: 0 0 14px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: crSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes crSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cr-cardio-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.cr-cardio-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cr-cardio-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+.cr-cardio-heading {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+.cr-cardio-sub {
+  font-size: 0.73rem;
+  color: #fca5a5;
+  font-weight: 600;
+}
+.cr-cardio-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #94a3b8;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.cr-cardio-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+.cr-time-section {
+  margin-bottom: 10px;
+}
+.cr-cardio-field-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  display: block;
+}
+.cr-time-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cr-time-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.cr-time-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.cr-time-pill.active {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+.cr-time-custom-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 2px 8px;
+  width: 76px;
+}
+.cr-time-custom-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  width: 36px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+}
+.cr-time-custom-suffix {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.cr-cardio-steps-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+.cr-cardio-steps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.cr-cardio-add-step-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.cr-cardio-add-step-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fff;
+}
+.cr-cardio-step-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cr-cardio-step-num {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #ef4444;
+  min-width: 14px;
+}
+.cr-cardio-step-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #f1f5f9;
+  font-size: 0.78rem;
+  outline: none;
+  font-family: inherit;
+}
+.cr-cardio-step-input::placeholder {
+  color: #64748b;
+}
+.cr-cardio-step-del {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cr-cardio-step-del:hover {
+  color: #ef4444;
+}
+
+/* ── Tarjetas en Sheet de Plantillas ── */
+.plantilla-card-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+.plantilla-card-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+.plantilla-chip-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
 </style>
 
 <div class="cr-wrapper">
@@ -1128,13 +1439,67 @@
     </div>
   </div>
 
-  <!-- Barra superior de ejercicios con contador y botón Reordenar -->
-  <div class="canvas-header-bar" id="canvasHeaderBar" style="display:none; align-items:center; justify-content:space-between; margin:16px 0 10px; padding:0 4px;">
+  <!-- Barra superior de ejercicios con contador, suiche Cardio y Plantillas / Guardar Plantilla -->
+  <div class="canvas-header-bar" id="canvasHeaderBar" style="display:flex; align-items:center; justify-content:space-between; margin:16px 0 10px; padding:0 4px; gap:8px;">
     <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;" id="canvasExCount">Ejercicios</span>
-    <button type="button" class="btn-quick-reorder" onclick="startReorder()" style="display:inline-flex; align-items:center; gap:6px; background:rgba(138,43,226,0.15); border:1px solid rgba(138,43,226,0.3); color:#d8b4fe; padding:6px 14px; border-radius:20px; font-size:0.82rem; font-weight:700; cursor:pointer;" title="Reordenar ejercicios">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
-      Reordenar
-    </button>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <button type="button" id="btnToggleCardio" class="cr-cardio-toggle" onclick="toggleCardioPanel()" title="Activar / Desactivar Cardio">
+        <i class="ti ti-run"></i>
+        <span>Cardio</span>
+        <span class="cr-cardio-switch"><span class="cr-cardio-knob"></span></span>
+      </button>
+      <button type="button" id="btnPlantillaAction" class="btn-plantilla-action" onclick="handlePlantillaClick()" title="Gestionar plantillas de rutina">
+        <i class="ti ti-template" id="iconPlantillaAction"></i>
+        <span id="txtPlantillaAction">Plantillas</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Panel Compacto de Cardio Bento UI -->
+  <div id="cardioCompactPanel" class="cr-cardio-panel" style="display:none;">
+    <div class="cr-cardio-header">
+      <div class="cr-cardio-title">
+        <div class="cr-cardio-icon-wrap">
+          <i class="ti ti-flame"></i>
+        </div>
+        <div>
+          <div class="cr-cardio-heading">Trote / Cardio</div>
+          <div class="cr-cardio-sub" id="cardioTiempoSummary">15 min asignados</div>
+        </div>
+      </div>
+      <button type="button" class="cr-cardio-close-btn" onclick="toggleCardioPanel(false)" title="Cerrar panel de cardio">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <!-- Selector Rápido de Tiempo -->
+    <div class="cr-time-section">
+      <label class="cr-cardio-field-lbl">Tiempo de trote / cardio</label>
+      <div class="cr-time-pills">
+        <button type="button" class="cr-time-pill" data-mins="10" onclick="setCardioMinutos(10)">10m</button>
+        <button type="button" class="cr-time-pill active" data-mins="15" onclick="setCardioMinutos(15)">15m</button>
+        <button type="button" class="cr-time-pill" data-mins="20" onclick="setCardioMinutos(20)">20m</button>
+        <button type="button" class="cr-time-pill" data-mins="30" onclick="setCardioMinutos(30)">30m</button>
+        <button type="button" class="cr-time-pill" data-mins="45" onclick="setCardioMinutos(45)">45m</button>
+        <div class="cr-time-custom-wrap">
+          <input type="number" id="cardioTiempoInput" class="cr-time-custom-input" min="1" max="180" placeholder="Otro" oninput="onCustomCardioMin(this)">
+          <span class="cr-time-custom-suffix">min</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Indicaciones Compactas Paso a Paso -->
+    <div class="cr-cardio-steps-section">
+      <div class="cr-cardio-steps-header">
+        <label class="cr-cardio-field-lbl" style="margin-bottom:0;">Indicaciones del entrenador</label>
+        <button type="button" class="cr-cardio-add-step-btn" onclick="agregarPasoCardio()">
+          <i class="ti ti-plus"></i> Paso
+        </button>
+      </div>
+      <div id="cardioPasosContainer" class="cr-cardio-steps-list">
+        <!-- Generado dinámicamente -->
+      </div>
+    </div>
   </div>
 
   <!-- ════ VISTA REORDENAR COMPACTA FULL-SCREEN (IMAGE_27 / IMAGE_28) ════ -->
@@ -1285,6 +1650,24 @@
 
 </div><!-- /#sheetCats -->
 
+<!-- ════ BOTTOM SHEET: Catálogo de Plantillas ════ -->
+<div class="bs-overlay" id="overlayPlantillas" aria-hidden="true" onclick="closeSheet('sheetPlantillas')"></div>
+<div class="bs-sheet" id="sheetPlantillas" role="dialog" aria-modal="true" aria-label="Catálogo de Plantillas">
+  <div class="bs-handle" aria-hidden="true"></div>
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; padding:0 4px;">
+    <div>
+      <div style="font-size:1.05rem; font-weight:800; color:#fff;">Plantillas de Rutina</div>
+      <div style="font-size:0.78rem; color:#94a3b8;">Carga una rutina de tu catálogo personal</div>
+    </div>
+    <button type="button" class="cr-cardio-close-btn" onclick="closeSheet('sheetPlantillas')" aria-label="Cerrar modal">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+  <div id="plantillasListContainer" style="display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; padding-bottom:16px;">
+    <!-- Renderizado dinámicamente -->
+  </div>
+</div>
+
 <script>
 /* ════════════════════════════════════════════════════
    MODAL PORTAL — Mover todos los modales a <body>
@@ -1302,9 +1685,10 @@
    ════════════════════════════════════════════════════ */
 (function modalPortal() {
   const IDS = [
-    'overlayExOpts',  'sheetExOpts',
-    'overlaySetType', 'sheetSetType',
-    'overlayCats',    'sheetCats',
+    'overlayExOpts',    'sheetExOpts',
+    'overlaySetType',   'sheetSetType',
+    'overlayCats',      'sheetCats',
+    'overlayPlantillas','sheetPlantillas',
     'vista-reordenar-wrap',
   ];
   /* Ejecutar en DOMContentLoaded si el DOM aún no está listo,
@@ -1351,9 +1735,10 @@ let dragSrc            = null;
    SHEETS: open / close / escape
 ═══════════════════════════════════════════════════ */
 const SHEET_OVERLAY_MAP = {
-  sheetExOpts  : 'overlayExOpts',
-  sheetSetType : 'overlaySetType',
-  sheetCats    : 'overlayCats',
+  sheetExOpts     : 'overlayExOpts',
+  sheetSetType    : 'overlaySetType',
+  sheetCats       : 'overlayCats',
+  sheetPlantillas : 'overlayPlantillas',
 };
 
 function openSheet(sheetId, overlayId) {
@@ -1678,6 +2063,7 @@ function confirmSelection() {
   toAdd.forEach((ex, i) => {
     setTimeout(() => addExercise(ex), i * 80);
   });
+  actualizarBotonPlantilla('guardar');
 }
 
 /* ────────────────────────────────────────────────────
@@ -1841,7 +2227,53 @@ function addExercise(exOrName) {
 
   document.getElementById('exerciseCanvas').appendChild(block);
   initDragHandlers(block);
-  addSet(idx);
+
+  if (Array.isArray(ex.series) && ex.series.length > 0) {
+    ex.series.forEach(s => {
+      addSet(idx);
+      const rows = block.querySelectorAll('.set-row');
+      const lastRow = rows[rows.length - 1];
+      if (lastRow) {
+        const badge = lastRow.querySelector('.set-badge');
+        if (badge && s.tipo_serie && s.tipo_serie !== 'normal') {
+          badge.dataset.type = s.tipo_serie;
+          badge.textContent = typeLabels[s.tipo_serie] || lastRow.dataset.serieNum;
+        }
+        const wInput = lastRow.querySelector('.set-input-weight');
+        if (wInput && s.kg_objetivo !== null && s.kg_objetivo !== undefined && s.kg_objetivo !== '') {
+          wInput.value = s.kg_objetivo;
+          actualizarHintMancuerna(wInput);
+        }
+        const rInput = lastRow.querySelector('.set-input-reps');
+        if (rInput && s.reps_objetivo !== null && s.reps_objetivo !== undefined && s.reps_objetivo !== '') {
+          rInput.value = s.reps_objetivo;
+        }
+        const rirInput = lastRow.querySelector('.set-input-rir');
+        if (rirInput && s.rir !== null && s.rir !== undefined && s.rir !== '') {
+          rirInput.value = s.rir;
+        }
+      }
+    });
+  } else {
+    addSet(idx);
+  }
+
+  if (ex.descanso_segundos && parseInt(ex.descanso_segundos) > 0) {
+    const restRow = document.getElementById('restRow_' + idx);
+    if (restRow) {
+      restRow.classList.add('active');
+      const restInput = restRow.querySelector('.ex-rest-input');
+      const toggleLabel = restRow.querySelector('.ex-rest-toggle-label');
+      const onLabel = restRow.querySelector('[id^="restOnLabel"]');
+      if (restInput) {
+        restInput.style.display = 'inline-block';
+        restInput.value = ex.descanso_segundos;
+      }
+      if (onLabel) onLabel.style.display = 'inline';
+      if (toggleLabel) toggleLabel.style.display = 'none';
+    }
+  }
+
   updateCanvasHeader();
   setTimeout(() => block.scrollIntoView({behavior:'smooth',block:'nearest'}), 60);
 }
@@ -2156,7 +2588,11 @@ function deleteExercise() {
   el.animate(
     [{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(.96) translateY(6px)'}],
     {duration:220}
-  ).onfinish = () => { el.remove(); updateCanvasHeader(); };
+  ).onfinish = () => {
+    el.remove();
+    updateCanvasHeader();
+    actualizarBotonPlantilla('guardar');
+  };
 }
 
 function replaceExercise() {
@@ -2199,6 +2635,7 @@ function initDragHandlers(block) {
     const fromIdx   = allBlocks.indexOf(dragSrc);
     const toIdx     = allBlocks.indexOf(block);
     canvas.insertBefore(dragSrc, fromIdx < toIdx ? block.nextSibling : block);
+    actualizarBotonPlantilla('guardar');
   });
 }
 
@@ -2213,11 +2650,9 @@ function updateCanvasHeader() {
   const countEl = document.getElementById('canvasExCount');
   const blocks = document.querySelectorAll('#exerciseCanvas .ex-block');
   if (!bar) return;
-  if (blocks.length >= 2) {
-    bar.style.display = 'flex';
-    if (countEl) countEl.textContent = `Ejercicios (${blocks.length})`;
-  } else {
-    bar.style.display = 'none';
+  bar.style.display = 'flex';
+  if (countEl) {
+    countEl.textContent = blocks.length > 0 ? `Ejercicios (${blocks.length})` : 'Ejercicios';
   }
 }
 
@@ -2350,6 +2785,7 @@ function guardarNuevoOrdenCompacto() {
   // 3. Ocultar vista compacta y restaurar el canvas normal
   cancelarReordenarCompacto();
   updateCanvasHeader();
+  actualizarBotonPlantilla('guardar');
 
   if (typeof Xp !== 'undefined' && Xp.toast) {
     Xp.toast('success', 'Orden de ejercicios actualizado.');
@@ -2357,25 +2793,12 @@ function guardarNuevoOrdenCompacto() {
 }
 
 /* ═══════════════════════════════════════════════════
-   GUARDAR — POST JSON al backend
-   FIX[1]: usa window.CSRF (del header) — no redeclarado
-   FIX[2]: numero_serie incluido en cada serie
+   SERIALIZADOR DE EJERCICIOS DEL CANVAS (DRY / SOLID)
 ═══════════════════════════════════════════════════ */
-document.getElementById('btnGuardar').addEventListener('click', async () => {
-  const btn         = document.getElementById('btnGuardar');
-  const clienteId   = document.getElementById('selectAtleta').value;
-  const descripcion = document.getElementById('rutinaDesc').value.trim();
-  const dias        = Array.from(document.querySelectorAll('.cr-day-toggle:checked')).map(el => parseInt(el.value));
-
-  if (!clienteId) {
-    if (typeof Xp !== 'undefined') Xp.toast('warning','Selecciona un atleta antes de guardar.');
-    document.getElementById('selectAtleta').focus();
-    return;
-  }
+function serializarEjerciciosCanvas() {
   const blocks = document.querySelectorAll('#exerciseCanvas .ex-block');
   if (!blocks.length) {
-    if (typeof Xp !== 'undefined') Xp.toast('warning','Agrega al menos un ejercicio.');
-    return;
+    return { ok: false, msg: 'Agrega al menos un ejercicio a la rutina.' };
   }
 
   let errorValidacion = null;
@@ -2407,8 +2830,8 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
     let tienePesoValido = false;
 
     for (let si = 0; si < setRows.length; si++) {
-      const row = setRows[si];
-      const badge  = row.querySelector('.set-badge');
+      const row         = setRows[si];
+      const badge       = row.querySelector('.set-badge');
       const weightInput = row.querySelector('.set-input-weight') || row.querySelectorAll('input[type="number"]')[0];
       const repsInput   = row.querySelector('.set-input-reps')   || row.querySelectorAll('input[type="number"]')[1];
       const rirInput    = row.querySelector('.set-input-rir')    || row.querySelectorAll('input[type="number"]')[2];
@@ -2441,7 +2864,6 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
       });
     }
 
-    // Si el entrenador deja el peso en 0, vacío o marca 'Sin peso', guardarlo explícitamente como sin_peso
     let finalImpl = impl;
     let finalUnit = unit;
     if (impl === 'sin_peso' || (!tienePesoValido && impl !== 'polea_maquina')) {
@@ -2459,8 +2881,463 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
     });
   }
 
-  if (!ejercicios.length) {
-    if (typeof Xp !== 'undefined') Xp.toast('warning','Ningún ejercicio tiene nombre válido.');
+  if (errorValidacion) return { ok: false, msg: errorValidacion };
+  if (!ejercicios.length) return { ok: false, msg: 'Ningún ejercicio tiene nombre válido.' };
+
+  return { ok: true, ejercicios };
+}
+
+/* ═══════════════════════════════════════════════════
+   CARDIO & TROTAR — Estado y Controlador Bento UI
+═══════════════════════════════════════════════════ */
+const cardioState = {
+  activo: false,
+  tiempo: 15,
+};
+
+function toggleCardioPanel(forceState) {
+  if (forceState !== undefined) {
+    cardioState.activo = !!forceState;
+  } else {
+    cardioState.activo = !cardioState.activo;
+  }
+
+  const btn = document.getElementById('btnToggleCardio');
+  const panel = document.getElementById('cardioCompactPanel');
+  if (btn) btn.classList.toggle('active', cardioState.activo);
+  if (panel) {
+    panel.style.display = cardioState.activo ? 'block' : 'none';
+  }
+  actualizarCardioSummary();
+}
+
+function setCardioMinutos(mins) {
+  const m = parseInt(mins, 10) || 15;
+  cardioState.tiempo = m;
+
+  const pills = document.querySelectorAll('.cr-time-pill');
+  let matched = false;
+  pills.forEach(p => {
+    const isThis = parseInt(p.dataset.mins, 10) === m;
+    p.classList.toggle('active', isThis);
+    if (isThis) matched = true;
+  });
+
+  const customInput = document.getElementById('cardioTiempoInput');
+  if (customInput) {
+    customInput.value = matched ? '' : m;
+  }
+  actualizarCardioSummary();
+}
+
+function onCustomCardioMin(input) {
+  const v = parseInt(input.value, 10);
+  if (!isNaN(v) && v > 0) {
+    cardioState.tiempo = Math.min(180, v);
+    document.querySelectorAll('.cr-time-pill').forEach(p => p.classList.remove('active'));
+    actualizarCardioSummary();
+  }
+}
+
+function actualizarCardioSummary() {
+  const summaryEl = document.getElementById('cardioTiempoSummary');
+  if (summaryEl) {
+    summaryEl.textContent = `${cardioState.tiempo} min asignados`;
+  }
+}
+
+function agregarPasoCardio(texto = '') {
+  const container = document.getElementById('cardioPasosContainer');
+  if (!container) return;
+
+  const count = container.querySelectorAll('.cr-cardio-step-item').length + 1;
+  const item = document.createElement('div');
+  item.className = 'cr-cardio-step-item';
+  item.innerHTML = `
+    <span class="cr-cardio-step-num">${count}.</span>
+    <input type="text" class="cr-cardio-step-input" placeholder="Ej: 5 min trote suave a ritmo constante..." value="${escapeHtmlAttr(texto)}">
+    <button type="button" class="cr-cardio-step-del" onclick="eliminarPasoCardio(this)" title="Quitar paso">
+      <i class="ti ti-x"></i>
+    </button>
+  `;
+  container.appendChild(item);
+  const input = item.querySelector('input');
+  if (input && !texto) input.focus();
+}
+
+function eliminarPasoCardio(btn) {
+  const item = btn.closest('.cr-cardio-step-item');
+  if (!item) return;
+  item.remove();
+  actualizarNumerosPasosCardio();
+}
+
+function actualizarNumerosPasosCardio() {
+  const container = document.getElementById('cardioPasosContainer');
+  if (!container) return;
+  container.querySelectorAll('.cr-cardio-step-item').forEach((it, i) => {
+    const num = it.querySelector('.cr-cardio-step-num');
+    if (num) num.textContent = `${i + 1}.`;
+  });
+}
+
+function consolidarPasosCardio() {
+  const container = document.getElementById('cardioPasosContainer');
+  if (!container) return '';
+  const lines = [];
+  container.querySelectorAll('.cr-cardio-step-input').forEach(inp => {
+    const val = inp.value.trim();
+    if (val) lines.push(val);
+  });
+  return lines.join('\n');
+}
+
+function cargarPasosCardio(indicacionesStr) {
+  const container = document.getElementById('cardioPasosContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!indicacionesStr) {
+    agregarPasoCardio('Trote a ritmo constante y controlado');
+    return;
+  }
+  const lines = indicacionesStr.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (!lines.length) {
+    agregarPasoCardio('Trote a ritmo constante y controlado');
+  } else {
+    lines.forEach(l => agregarPasoCardio(l));
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   PLANTILLAS DE RUTINA — Estado y Controlador
+═══════════════════════════════════════════════════ */
+let plantillaEstado = 'plantillas'; // 'plantillas' | 'guardar'
+window._catalogoPlantillasCache = [];
+
+function actualizarBotonPlantilla(nuevoEstado) {
+  plantillaEstado = nuevoEstado;
+  const btn = document.getElementById('btnPlantillaAction');
+  const icon = document.getElementById('iconPlantillaAction');
+  const txt = document.getElementById('txtPlantillaAction');
+  if (!btn || !icon || !txt) return;
+
+  if (nuevoEstado === 'guardar') {
+    btn.classList.add('is-dirty');
+    icon.className = 'ti ti-device-floppy';
+    txt.textContent = 'Guardar plantilla';
+    btn.title = 'Guardar esta rutina como plantilla en tu catálogo';
+  } else {
+    btn.classList.remove('is-dirty');
+    icon.className = 'ti ti-template';
+    txt.textContent = 'Plantillas';
+    btn.title = 'Ver tus plantillas guardadas';
+  }
+}
+
+function handlePlantillaClick() {
+  if (plantillaEstado === 'plantillas') {
+    abrirSheetPlantillas();
+  } else {
+    guardarComoPlantilla();
+  }
+}
+
+async function abrirSheetPlantillas() {
+  openSheet('sheetPlantillas', 'overlayPlantillas');
+  const container = document.getElementById('plantillasListContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="text-align:center; padding:32px 10px; color:#a78bfa;">
+      <i class="ti ti-loader-2 cr-spin" style="font-size:1.8rem;"></i>
+      <div style="margin-top:8px; font-size:0.85rem; color:#94a3b8;">Cargando tus plantillas...</div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${APP}/entrenador/api-listar-plantillas-catalogo`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.msg || 'Error al obtener plantillas');
+
+    window._catalogoPlantillasCache = data.plantillas || [];
+    renderPlantillasList(window._catalogoPlantillasCache);
+  } catch (err) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:24px 12px; color:#ef4444;">
+        <i class="ti ti-alert-circle" style="font-size:2rem; margin-bottom:6px;"></i>
+        <div style="font-size:0.85rem; font-weight:700;">No se pudieron cargar las plantillas</div>
+        <button type="button" class="btn-plantilla-action" style="margin-top:10px;" onclick="abrirSheetPlantillas()">
+          <i class="ti ti-refresh"></i> Reintentar
+        </button>
+      </div>
+    `;
+  }
+}
+
+function renderPlantillasList(plantillas) {
+  const container = document.getElementById('plantillasListContainer');
+  if (!container) return;
+
+  if (!plantillas || !plantillas.length) {
+    container.innerHTML = `
+      <div style="text-align:center; padding:36px 16px; background:rgba(255,255,255,0.02); border-radius:16px; border:1px dashed rgba(255,255,255,0.1);">
+        <i class="ti ti-template-off" style="font-size:2.2rem; color:#64748b; margin-bottom:10px; display:inline-block;"></i>
+        <div style="font-weight:700; color:#e2e8f0; font-size:0.95rem;">No tienes plantillas guardadas</div>
+        <div style="font-size:0.8rem; color:#94a3b8; margin-top:6px; max-width:280px; margin-left:auto; margin-right:auto; line-height:1.4;">
+          Agrega ejercicios a tu lienzo y usa el botón <strong>"Guardar plantilla"</strong> para guardarlas y reutilizarlas en otros atletas.
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = '';
+  plantillas.forEach(p => {
+    const ejCount = (p.ejercicios || []).length;
+    const cardioBadge = (p.cardio_activo == 1)
+      ? `<span style="background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:8px; display:inline-flex; align-items:center; gap:4px;">
+           <i class="ti ti-run"></i> ${p.cardio_tiempo || 15}m Cardio
+         </span>`
+      : '';
+
+    const firstChips = (p.ejercicios || []).slice(0, 3).map(e =>
+      `<span class="plantilla-chip-tag">${escapeHtmlAttr(e.nombre)}</span>`
+    ).join('');
+    const extraChip = ejCount > 3 ? `<span class="plantilla-chip-tag">+${ejCount - 3} más</span>` : '';
+
+    html += `
+      <div class="plantilla-card-item">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+          <div>
+            <div style="font-weight:800; font-size:0.95rem; color:#fff;">${escapeHtmlAttr(p.titulo)}</div>
+            <div style="display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;">
+              <span style="font-size:0.75rem; color:#94a3b8;"><i class="ti ti-barbell"></i> ${ejCount} ejercicio(s)</span>
+              ${cardioBadge}
+            </div>
+          </div>
+          <button type="button" onclick="eliminarPlantillaGuardada(${p.id}, '${escapeJs(p.titulo)}')"
+                  style="background:transparent; border:none; color:#64748b; cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center;"
+                  title="Eliminar plantilla" aria-label="Eliminar plantilla">
+            <i class="ti ti-trash" style="font-size:1.05rem;"></i>
+          </button>
+        </div>
+
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin:10px 0 12px;">
+          ${firstChips} ${extraChip}
+        </div>
+
+        <button type="button" onclick="cargarPlantillaEnRutina(${p.id})"
+                style="width:100%; display:inline-flex; align-items:center; justify-content:center; gap:6px; background:linear-gradient(135deg,#8b5cf6,#7c3aed); border:none; color:#fff; padding:7px 14px; border-radius:10px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+          <i class="ti ti-download"></i> Cargar en la rutina
+        </button>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function cargarPlantillaEnRutina(id) {
+  const p = (window._catalogoPlantillasCache || []).find(it => it.id == id);
+  if (!p) return;
+
+  const canvas = document.getElementById('exerciseCanvas');
+  const currentCount = canvas ? canvas.querySelectorAll('.ex-block').length : 0;
+
+  const aplicar = () => {
+    if (canvas) canvas.innerHTML = '';
+    ejercicioCount = 0;
+
+    // Configurar cardio
+    if (p.cardio_activo == 1) {
+      toggleCardioPanel(true);
+      setCardioMinutos(p.cardio_tiempo || 15);
+      if (p.cardio_indicaciones) {
+        cargarPasosCardio(p.cardio_indicaciones);
+      }
+    } else {
+      toggleCardioPanel(false);
+    }
+
+    // Agregar ejercicios de la plantilla
+    if (Array.isArray(p.ejercicios) && p.ejercicios.length > 0) {
+      p.ejercicios.forEach(ej => {
+        addExercise({
+          id: ej.ejercicio_id || null,
+          nombre: ej.nombre,
+          tipo_implemento: ej.tipo_implemento || 'barra',
+          unidad_carga: ej.unidad_carga || 'kg',
+          descanso_segundos: ej.descanso_segundos || null,
+          series: ej.series || [],
+          imagen_path: ej.imagen_path || null,
+        });
+      });
+    }
+
+    closeSheet('sheetPlantillas');
+    actualizarBotonPlantilla('plantillas');
+
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast('success', `Plantilla "${p.titulo}" cargada.`);
+    }
+  };
+
+  if (currentCount > 0) {
+    Swal.fire({
+      title: '¿Reemplazar ejercicios?',
+      text: 'Tu lienzo ya tiene ejercicios. Si cargas esta plantilla, se reemplazarán por los de la plantilla seleccionada.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cargar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#8b5cf6',
+      cancelButtonColor: '#475569',
+      background: '#12121a',
+      color: '#ffffff',
+    }).then(result => {
+      if (result.isConfirmed) aplicar();
+    });
+  } else {
+    aplicar();
+  }
+}
+
+async function eliminarPlantillaGuardada(id, titulo) {
+  const result = await Swal.fire({
+    title: '¿Eliminar plantilla?',
+    text: `¿Deseas eliminar la plantilla "${titulo}" del catálogo?`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#475569',
+    background: '#12121a',
+    color: '#ffffff',
+  });
+  if (!result.isConfirmed) return;
+
+  try {
+    const res = await fetch(`${APP}/entrenador/api-eliminar-plantilla-catalogo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plantilla_id: id, csrf_token: window.CSRF }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('success', data.msg || 'Plantilla eliminada.');
+      abrirSheetPlantillas();
+    } else {
+      if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('error', data.msg || 'No se pudo eliminar.');
+    }
+  } catch (_) {
+    if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('error', 'Error al conectar con el servidor.');
+  }
+}
+
+async function guardarComoPlantilla() {
+  const serializado = serializarEjerciciosCanvas();
+  if (!serializado.ok) {
+    if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('warning', serializado.msg);
+    return;
+  }
+
+  const { value: nombrePlantilla } = await Swal.fire({
+    title: 'Guardar como plantilla',
+    text: 'Asigna un nombre a esta plantilla para reutilizarla:',
+    input: 'text',
+    inputPlaceholder: 'Ej: Pierna & Glúteos - Hipertrofia',
+    showCancelButton: true,
+    confirmButtonText: 'Guardar plantilla',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#8b5cf6',
+    cancelButtonColor: '#475569',
+    background: '#12121a',
+    color: '#ffffff',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'Debes escribir un nombre para la plantilla.';
+      }
+    }
+  });
+
+  if (!nombrePlantilla) return;
+
+  const btn = document.getElementById('btnPlantillaAction');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader-2 cr-spin"></i> Guardando...';
+  }
+
+  try {
+    const res = await fetch(`${APP}/entrenador/api-guardar-plantilla-catalogo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: nombrePlantilla.trim(),
+        ejercicios: serializado.ejercicios,
+        cardio_activo: cardioState.activo ? 1 : 0,
+        cardio_tiempo: cardioState.activo ? cardioState.tiempo : null,
+        cardio_indicaciones: cardioState.activo ? consolidarPasosCardio() : null,
+        csrf_token: window.CSRF,
+      }),
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    if (data.ok) {
+      if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('success', data.msg || 'Plantilla guardada.');
+      actualizarBotonPlantilla('plantillas');
+    } else {
+      if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('error', data.msg || 'No se pudo guardar la plantilla.');
+    }
+  } catch (_) {
+    if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('error', 'Error al guardar la plantilla.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      actualizarBotonPlantilla(plantillaEstado);
+    }
+  }
+}
+
+function escapeHtmlAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function escapeJs(str) {
+  if (!str) return '';
+  return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+/* ═══════════════════════════════════════════════════
+   GUARDAR — POST JSON al backend
+   FIX[1]: usa window.CSRF (del header) — no redeclarado
+   FIX[2]: numero_serie incluido en cada serie
+═══════════════════════════════════════════════════ */
+document.getElementById('btnGuardar').addEventListener('click', async () => {
+  const btn         = document.getElementById('btnGuardar');
+  const clienteId   = document.getElementById('selectAtleta').value;
+  const descripcion = document.getElementById('rutinaDesc').value.trim();
+  const dias        = Array.from(document.querySelectorAll('.cr-day-toggle:checked')).map(el => parseInt(el.value));
+
+  if (!clienteId) {
+    if (typeof Xp !== 'undefined') Xp.toast('warning','Selecciona un atleta antes de guardar.');
+    document.getElementById('selectAtleta').focus();
+    return;
+  }
+
+  const serializado = serializarEjerciciosCanvas();
+  if (!serializado.ok) {
+    if (typeof Xp !== 'undefined') Xp.toast('warning', serializado.msg);
     return;
   }
 
@@ -2476,7 +3353,10 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
         cliente_id : clienteId,
         descripcion,
         dias,
-        ejercicios,
+        ejercicios : serializado.ejercicios,
+        cardio_activo : cardioState.activo ? 1 : 0,
+        cardio_tiempo : cardioState.activo ? cardioState.tiempo : null,
+        cardio_indicaciones : cardioState.activo ? consolidarPasosCardio() : null,
         csrf_token : window.CSRF,    /* FIX: CSRF correcto del header */
       }),
     });
@@ -2617,6 +3497,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Pre-carga de rutina en modo edición
   if (RUTINA_EDITAR) {
+    if (RUTINA_EDITAR.cardio_activo == 1) {
+      toggleCardioPanel(true);
+      setCardioMinutos(RUTINA_EDITAR.cardio_tiempo || 15);
+      if (RUTINA_EDITAR.cardio_indicaciones) {
+        cargarPasosCardio(RUTINA_EDITAR.cardio_indicaciones);
+      }
+    } else {
+      cargarPasosCardio('Trote a ritmo constante y controlado');
+    }
+
     const titleInp = document.getElementById('rutinaTitulo');
     if (titleInp && RUTINA_EDITAR.descripcion) {
       titleInp.value = RUTINA_EDITAR.descripcion;
@@ -2644,7 +3534,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, i * 60);
       });
     }
+  } else {
+    cargarPasosCardio('Trote a ritmo constante y controlado');
   }
+  actualizarBotonPlantilla('plantillas');
 });
 
 // Cerrar clickeando afuera
