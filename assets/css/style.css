@@ -227,7 +227,7 @@ body {
   /* fallback si la imagen falla */
   color: var(--text);
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 100lvh;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
@@ -247,12 +247,12 @@ html::before {
   left: 0;
   width: 100vw;
   height: 100vh;
-  height: 100lvh; /* Estable: previene que el fondo se mueva o agrande al ocultarse la barra del navegador móvil */
+  height: var(--xp-init-vh, 100lvh); /* Altura bloqueada: impide que el fondo cambie de tamaño al abrir el teclado móvil */
   z-index: -1;
   pointer-events: none;
   transform: translate3d(0, 0, 0);
   -webkit-transform: translate3d(0, 0, 0);
-  will-change: transform;
+  will-change: auto;
 
   background-image:
     linear-gradient(180deg,
@@ -266,8 +266,9 @@ html::before {
   background-position: center center;
 }
 
-/* ── Pantallas horizontales (Desktop / Mobile Landscape) ── */
-@media (orientation: landscape) {
+/* ── Pantallas horizontales reales (Desktop / Tablet Landscape > 768px) ── */
+/* Evita que abrir el teclado en un teléfono (width > height temporal) cambie la imagen de fondo */
+@media (min-width: 769px) and (orientation: landscape) {
   html::before {
     background-image:
       linear-gradient(180deg,
@@ -280,8 +281,8 @@ html::before {
   }
 }
 
-/* ── Mobile portrait (≤ 480px) ── */
-@media (max-width: 480px) and (orientation: portrait) {
+/* ── Mobile (≤ 768px): posición fija inmutable con o sin teclado abierto ── */
+@media (max-width: 768px) {
   html::before {
     background-position: 62% top;
   }
@@ -6106,13 +6107,7 @@ button, a, input, select, textarea, .btn-xp, .wd-check-btn, .wd-day-tab {
     background: rgba(10, 10, 16, 0.92) !important;
   }
 
-  /* 5. Cuando el teclado móvil está abierto (is-typing), 100% de GPU dedicada a la escritura */
-  body.is-typing *,
-  body.is-typing *::before,
-  body.is-typing *::after {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
+  /* 5. Cuando el teclado móvil está abierto (is-typing), pausar orbes sin alterar estilos ni tamaños de campos */
   body.is-typing .bg-orb {
     animation-play-state: paused !important;
   }

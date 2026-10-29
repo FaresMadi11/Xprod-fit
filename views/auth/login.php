@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
 <title>Acceso – Xprod Fit</title>
 <meta name="theme-color" content="#02040a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,7 +42,7 @@
     } catch (_) {}
   }
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(appBase + '/sw.js?v=3.2', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
+    navigator.serviceWorker.register(appBase + '/sw.js?v=3.3', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
   }
 })();
 
@@ -73,10 +73,12 @@ body{font-family:'Inter',sans-serif;background:#02040a;min-height:100dvh;display
    ══════════════════════════════════════════════════════ */
 #mahoragaCanvas {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 0;
   width: 100vw;
   height: 100vh;
+  height: 100lvh;
   pointer-events: none;
 }
 /* Vignette suave solo en esquinas, no toca los brazos */
@@ -92,20 +94,18 @@ body{font-family:'Inter',sans-serif;background:#02040a;min-height:100dvh;display
   );
 }
 
-/* ── Background orbs for extra depth ── */
-.bg-orb{position:fixed;border-radius:50%;pointer-events:none;filter:blur(90px);z-index:1;}
-.orb1{width:500px;height:500px;background:rgba(138,43,226,.08);top:-150px;left:-150px;animation:drift1 14s ease-in-out infinite alternate;}
-.orb2{width:400px;height:400px;background:rgba(56,100,240,.06);bottom:-120px;right:-120px;animation:drift2 11s ease-in-out infinite alternate;}
-@keyframes drift1{to{transform:translate(60px,50px);}}
-@keyframes drift2{to{transform:translate(-60px,-50px);}}
+/* ── Background orbs (Radial Gradient Zero-GPU-Blur) ── */
+.bg-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:1;}
+.orb1{width:520px;height:520px;background:radial-gradient(circle, rgba(138,43,226,0.14) 0%, rgba(138,43,226,0) 70%);top:-150px;left:-150px;}
+.orb2{width:440px;height:440px;background:radial-gradient(circle, rgba(56,100,240,0.11) 0%, rgba(56,100,240,0) 70%);bottom:-120px;right:-120px;}
 
-/* ── Modal / Auth Box (Con Filtro Difuminado sobre el Fondo) ── */
+/* ── Modal / Auth Box (Estable ante apertura de teclado móvil) ── */
 main#mainContent{
   position: fixed;
   inset: 0;
   z-index: 2;
   width: 100vw;
-  height: 100dvh;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,7 +302,7 @@ select:-webkit-autofill:active {
   -webkit-box-shadow: none !important;
   color: #fff;
   width: 100%;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-family:'Inter',sans-serif;
 }
 .input-box-group input{border-radius:6px;background:transparent !important;}
@@ -2611,7 +2611,7 @@ if (recoveryForm) {
   });
 }
 
-// ── MAHORAGA CANVAS GENERATOR ──
+// ── MAHORAGA CANVAS GENERATOR (Optimizado 60fps Móvil + Estable con Teclado) ──
 (function() {
   const canvas = document.getElementById('mahoragaCanvas');
   const ctx = canvas.getContext('2d', { alpha: false });
@@ -2626,6 +2626,24 @@ if (recoveryForm) {
   let scale = 1, offsetX = 0, offsetY = 0;
   let dpr = 1;
   let w = 0, h = 0;
+  let lastWidth = 0;
+  let isTypingLogin = false;
+
+  document.addEventListener('focusin', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) {
+      isTypingLogin = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('focusout', () => {
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'SELECT' && a.tagName !== 'TEXTAREA')) {
+        isTypingLogin = false;
+      }
+    }, 80);
+  }, { passive: true });
   
   img.onload = () => {
     imgW = img.width;
@@ -2638,8 +2656,9 @@ if (recoveryForm) {
     offCtx.drawImage(img, 0, 0);
     const imgData = offCtx.getImageData(0, 0, imgW, imgH).data;
     
-    // Paso más fino = más partículas = más nítido
-    const step = Math.max(1, Math.floor(imgW / 900)); 
+    // En teléfonos usamos densidad adaptativa para que corra a 60fps sin recalentar la GPU
+    const isMobileScreen = window.innerWidth < 768;
+    const step = Math.max(1, Math.floor(imgW / (isMobileScreen ? 460 : 850))); 
     
     for (let y = 0; y < imgH; y += step) {
       for (let x = 0; x < imgW; x += step) {
@@ -2648,7 +2667,7 @@ if (recoveryForm) {
         const lum = 0.299 * r + 0.587 * g + 0.114 * b;
         
         if (lum > 18) { 
-          const size = (lum / 255) * step * 1.1; 
+          const size = (lum / 255) * step * 1.12; 
           const p = { baseX: x, baseY: y, size: size };
           
           let yp = y / imgH;
@@ -2659,34 +2678,42 @@ if (recoveryForm) {
         }
       }
     }
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', () => {
+      // Ignorar cambios de altura provocados por la apertura del teclado virtual en móviles
+      if (Math.abs(window.innerWidth - lastWidth) > 20) {
+        resize();
+      }
+    }, { passive: true });
     resize();
     requestAnimationFrame(animate);
   };
 
   function resize() {
-    dpr = window.devicePixelRatio || 1;
+    const isMob = window.innerWidth < 768;
+    dpr = isMob ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2);
     w = window.innerWidth;
-    h = window.innerHeight;
-    // Canvas a resolución nativa del dispositivo para nitidez
+    // Fijar la altura máxima de pantalla para que el fondo NUNCA se achique al abrir el teclado
+    h = isMob ? Math.max(window.innerHeight, document.documentElement.clientHeight || 0) : window.innerHeight;
+    lastWidth = w;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     
-    // Escalar solo por altura para mantener el tamaño original,
-    // (el fix de ctx.fillRect(0,0,w,h) que ya añadimos es lo que evitará que se rompa/haga ruido a los lados)
     scale = h / imgH;
     offsetX = (w - imgW * scale) / 2;
     offsetY = 0;
+    drawFrame();
   }
   
   let time = 0;
+  let lastFrameTs = 0;
   
   // Partículas ambientales flotantes
   const ambientParticles = [];
-  for (let i = 0; i < 40; i++) {
+  const ambientCount = window.innerWidth < 768 ? 20 : 40;
+  for (let i = 0; i < ambientCount; i++) {
     ambientParticles.push({
       x: Math.random(), y: Math.random(),
       speed: 0.0002 + Math.random() * 0.0004,
@@ -2695,15 +2722,10 @@ if (recoveryForm) {
       phase: Math.random() * Math.PI * 2
     });
   }
-  
-  function animate() {
-    time += 0.035;
-    
-    // IMPORTANTE: limpiar usando 'w' y 'h' lógicos del contexto,
-    // ya que la matriz de transformación aplica el 'dpr' automáticamente
+
+  function drawFrame() {
     ctx.fillStyle = '#02040a';
     ctx.fillRect(0, 0, w, h);
-    
     ctx.fillStyle = '#ffffff';
     
     // Rueda flotando
@@ -2745,7 +2767,17 @@ if (recoveryForm) {
       ctx.fillRect(ax, ay, ap.size, ap.size);
     }
     ctx.globalAlpha = 1;
-    
+  }
+  
+  function animate(ts) {
+    // Mientras el usuario escribe en el teclado móvil, mantener el frame estático para dar 100% de fluidez al input
+    if (!isTypingLogin && !document.hidden) {
+      if (!ts || (ts - lastFrameTs) >= 24) {
+        lastFrameTs = ts || 0;
+        time += 0.045;
+        drawFrame();
+      }
+    }
     requestAnimationFrame(animate);
   }
 })();

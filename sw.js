@@ -2,7 +2,7 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v3.2';
+const CACHE_NAME = 'xprod-fit-v3.3';
 
 function safeCachePut(req, response) {
   if (!req || !req.url || !response || response.status !== 200) return;
@@ -192,12 +192,28 @@ self.addEventListener('fetch', event => {
             if (perfilKey) return await cache.match(perfilKey);
           }
 
-          // E. Fallback a cualquier página autenticada previamente cacheada de la app
-          const anyHtmlKey = keys.find(k => {
-            const u = k.url.toLowerCase();
-            return u.includes('/cliente/') || u.includes('/entrenador/');
-          });
-          if (anyHtmlKey) return await cache.match(anyHtmlKey);
+          // D. Módulos del entrenador (clientes, asistencias, configuración)
+          if (pathname.includes('/clientes')) {
+            const cliKey = keys.find(k => k.url.toLowerCase().includes('/entrenador/clientes'));
+            if (cliKey) return await cache.match(cliKey);
+          }
+          if (pathname.includes('/asistencias')) {
+            const asisKey = keys.find(k => k.url.toLowerCase().includes('/entrenador/asistencias'));
+            if (asisKey) return await cache.match(asisKey);
+          }
+          if (pathname.includes('/configuracion')) {
+            const cfgKey = keys.find(k => k.url.toLowerCase().includes('/entrenador/configuracion'));
+            if (cfgKey) return await cache.match(cfgKey);
+          }
+
+          // E. Fallback general SOLO si se abre la raíz o login (evita que al tocar un módulo específico muestre el contenido de otro módulo distinto)
+          if (isRootOrLogin) {
+            const anyHtmlKey = keys.find(k => {
+              const u = k.url.toLowerCase();
+              return u.includes('/cliente/') || u.includes('/entrenador/');
+            });
+            if (anyHtmlKey) return await cache.match(anyHtmlKey);
+          }
 
           // 3. Si realmente es la primera vez que abre y nunca se cacheó nada
           return new Response(

@@ -52,7 +52,6 @@ match($action) {
     'guardar-modificacion'    => cliGuardarModificacion(),
     'guardar-dias'            => cliGuardarDias(),
     'reordenar-ejercicios'    => cliReordenarEjercicios(),
-    'exportar-datos'          => cliExportarDatos(),
     default                   => cliDashboard(),
 };
 
@@ -2680,81 +2679,6 @@ function cliApiProgresoHistorial(): void {
     exit;
 }
 
-/*─────────────────────────────────────────────────────────────
-  PORTABILIDAD DE DATOS (RGPD ARTÍCULO 20 - EXPORTAR MIS DATOS)
-─────────────────────────────────────────────────────────────*/
-function cliExportarDatos(): void {
-    $clienteId = (int)($_SESSION['cliente_id'] ?? 0);
-    $userId    = (int)($_SESSION['user_id'] ?? 0);
-    session_write_close();
-
-    if (!$clienteId || !$userId) {
-        redirect('auth/login');
-    }
-
-    $db = getDB();
-
-    try {
-        // 1. Datos personales (excluyendo password_hash, tokens o respuestas de seguridad)
-        $stU = $db->prepare("SELECT nombre, email, auth_provider, creado_en FROM usuarios WHERE id = ?");
-        $stU->execute([$userId]);
-        $usuario = $stU->fetch(PDO::FETCH_ASSOC) ?: [];
-
-        $stC = $db->prepare("SELECT cedula, peso_kg, altura_cm, fecha_nac, objetivo, dias_entrenamiento FROM clientes WHERE id = ?");
-        $stC->execute([$clienteId]);
-        $cliente = $stC->fetch(PDO::FETCH_ASSOC) ?: [];
-
-        // 2. Historial de peso
-        $stP = $db->prepare("SELECT fecha, peso_kg FROM peso_historial WHERE cliente_id = ? ORDER BY fecha ASC");
-        $stP->execute([$clienteId]);
-        $pesos = $stP->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // 3. Rutinas asignadas
-        $stR = $db->prepare("SELECT id, descripcion, dias_semana, estado, creado_en FROM rutinas WHERE cliente_id = ? ORDER BY id DESC");
-        $stR->execute([$clienteId]);
-        $rutinas = $stR->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // 4. Historial de series/entrenamientos realizados
-        $stS = $db->prepare("SELECT fecha, ejercicio_nombre, numero_serie, reps_realizadas, peso_usado, unidad_carga, completado FROM sesion_series WHERE cliente_id = ? AND completado = 1 ORDER BY fecha DESC, id ASC");
-        $stS->execute([$clienteId]);
-        $series = $stS->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // 5. Asistencias
-        $stA = $db->prepare("SELECT inicio_en, fin_en, estado FROM sesiones_asistencia WHERE cliente_id = ? ORDER BY id DESC");
-        $stA->execute([$clienteId]);
-        $asistencias = $stA->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        // 6. Pagos registrados
-        $stPag = $db->prepare("SELECT concepto, monto, fecha_emision, fecha_vence, estado, referencia FROM pagos WHERE cliente_id = ? ORDER BY id DESC");
-        $stPag->execute([$clienteId]);
-        $pagos = $stPag->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-        $payload = [
-            'exportado_el'     => date('Y-m-d H:i:s'),
-            'plataforma'       => 'Xprod Fit',
-            'derecho_legal'    => 'RGPD Artículo 20 - Portabilidad de Datos',
-            'perfil'           => array_merge($usuario, $cliente),
-            'historial_peso'   => $pesos,
-            'rutinas'          => $rutinas,
-            'entrenamientos'   => $series,
-            'asistencias'      => $asistencias,
-            'pagos'            => $pagos,
-        ];
-
-        $nombreLimpio = preg_replace('/[^a-zA-Z0-9_]/', '', (string)($usuario['nombre'] ?? 'atleta'));
-        $filename     = 'xprodfit_mis_datos_' . $nombreLimpio . '_' . date('Ymd') . '.json';
-
-        header('Content-Type: application/json; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        header('Pragma: no-cache');
-        header('Expires: 0');
-        echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-        exit;
-    } catch (\Throwable $e) {
-        error_log('[cliExportarDatos] Error: ' . $e->getMessage());
-        redirect('cliente/perfil');
-    }
-}
 
 
 

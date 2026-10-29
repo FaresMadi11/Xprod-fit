@@ -25,54 +25,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, { passive: true });
 
-  // Navegación instantánea en barra de módulos: feedback visual en 0ms + prefetch anticipado en touchstart/pointerdown
-  const prefetchedUrls = new Set();
+  // Navegación confiable en barra de módulos: el estado .active solo cambia cuando realmente navega (nunca se queda seleccionado en falso)
   document.querySelectorAll('.xp-nav-links a').forEach(link => {
-    const triggerPrefetch = () => {
-      const href = link.href;
-      if (!href || prefetchedUrls.has(href) || href === window.location.href || !navigator.onLine) return;
-      prefetchedUrls.add(href);
-      const pf = document.createElement('link');
-      pf.rel = 'prefetch';
-      pf.href = href;
-      pf.as = 'document';
-      document.head.appendChild(pf);
-    };
+    let touchStartedHere = false;
 
     link.addEventListener('pointerdown', () => {
-      triggerPrefetch();
-      document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
-      link.classList.add('active', 'xp-nav-pressing');
+      touchStartedHere = true;
+      link.classList.add('xp-nav-pressing');
       setTimeout(() => link.classList.remove('xp-nav-pressing'), 180);
     }, { passive: true });
 
-    link.addEventListener('click', (e) => {
-      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      if (link.href && link.href !== window.location.href) {
-        let bar = document.getElementById('xpTopNavProgress');
-        if (!bar) {
-          bar = document.createElement('div');
-          bar.id = 'xpTopNavProgress';
-          bar.className = 'xp-top-nav-progress';
-          document.body.appendChild(bar);
+    // Si en móvil el pulgar se deslizó unos milímetros dentro del mismo botón y el navegador canceló el click, forzar la navegación en touchend
+    link.addEventListener('touchend', (e) => {
+      if (!touchStartedHere) return;
+      touchStartedHere = false;
+      const touch = e.changedTouches && e.changedTouches[0];
+      if (touch) {
+        const elAtEnd = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (elAtEnd && link.contains(elAtEnd) && link.href && link.href !== window.location.href) {
+          setTimeout(() => {
+            if (!document.body.dataset.navigatingTo) {
+              document.body.dataset.navigatingTo = link.href;
+              document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
+              link.classList.add('active');
+              window.location.href = link.href;
+            }
+          }, 40);
         }
-        requestAnimationFrame(() => bar.classList.add('is-loading'));
+      }
+    }, { passive: true });
+
+    link.addEventListener('click', (e) => {
+      touchStartedHere = false;
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (link.href) {
+        document.body.dataset.navigatingTo = link.href;
+        document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
+        link.classList.add('active');
+        if (link.href !== window.location.href) {
+          let bar = document.getElementById('xpTopNavProgress');
+          if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'xpTopNavProgress';
+            bar.className = 'xp-top-nav-progress';
+            document.body.appendChild(bar);
+          }
+          requestAnimationFrame(() => bar.classList.add('is-loading'));
+        }
       }
     });
   });
 
   if (typeof anime === 'function') {
     const allCards = Array.from(document.querySelectorAll('.dash-stat-card, .card-bento, .stat-card, .exercise-item, .auth-card'));
-    // En móvil animamos de forma sedosa y rápida las primeras 8 tarjetas visibles en viewport (0.28s) para no bloquear el hilo principal
     const animatedTargets = isMobile ? allCards.slice(0, 8) : allCards;
 
     if (animatedTargets.length > 0) {
+      // NUNCA poner opacity:0 para evitar que el contenido quede invisible si el usuario cambia rápido de módulo
       anime({
         targets: animatedTargets,
-        opacity: [0, 1],
-        translateY: [isMobile ? 10 : 18, 0],
-        delay: anime.stagger(isMobile ? 28 : 65),
-        duration: isMobile ? 280 : 520,
+        translateY: [isMobile ? 8 : 14, 0],
+        delay: anime.stagger(isMobile ? 22 : 45),
+        duration: isMobile ? 240 : 420,
         easing: 'easeOutCubic'
       });
     }
@@ -80,21 +94,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Animación del header principal
     anime({
       targets: '.sys-top-header > div',
-      opacity: [0, 1],
-      translateX: [isMobile ? -10 : -18, 0],
-      delay: anime.stagger(isMobile ? 40 : 100),
-      duration: isMobile ? 260 : 500,
+      translateX: [isMobile ? -8 : -14, 0],
+      delay: anime.stagger(isMobile ? 30 : 70),
+      duration: isMobile ? 220 : 400,
       easing: 'easeOutCubic'
     });
 
     // Efecto burbuja 'pop' para las acciones rápidas
     anime({
       targets: '.dash-meta-bubble',
-      opacity: [0, 1],
-      scale: [0.82, 1],
-      delay: anime.stagger(isMobile ? 35 : 65, { start: isMobile ? 80 : 180 }),
-      duration: isMobile ? 320 : 600,
-      easing: isMobile ? 'easeOutBack' : 'easeOutElastic(1, .6)'
+      scale: [0.9, 1],
+      delay: anime.stagger(isMobile ? 25 : 50, { start: isMobile ? 40 : 100 }),
+      duration: isMobile ? 260 : 450,
+      easing: 'easeOutBack'
     });
   }
 

@@ -14,7 +14,7 @@ addSecurityHeaders();
 <html lang="es" data-theme="dark" id="htmlRoot">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
   <title><?= e($pageTitle ?? 'Xprod Fit') ?> | Xprod Fit</title>
   <meta name="description" content="Xprod Fit – Sistema de gestión para entrenadores y atletas.">
   <meta name="theme-color" content="#02040a">
@@ -72,15 +72,19 @@ addSecurityHeaders();
     // Aplicar tema guardado ANTES de que se pinte el DOM (evita flash)
     (function() {
       const t = localStorage.getItem('xp_theme') || 'dark';
-      document.getElementById('htmlRoot').setAttribute('data-theme', t);
+      const rootEl = document.getElementById('htmlRoot');
+      rootEl.setAttribute('data-theme', t);
+      // Bloquear la altura inicial del fondo para que el teclado móvil nunca lo achique ni cambie su escala
+      const initH = Math.max(window.innerHeight || 0, document.documentElement.clientHeight || 0);
+      if (initH > 0) rootEl.style.setProperty('--xp-init-vh', initH + 'px');
       <?php if ($rolUser): ?>try { localStorage.setItem('xp_auth_active', '1'); localStorage.setItem('xp_auth_role', '<?= e($rolUser) ?>'); localStorage.setItem('xp_auth_home', window.APP + '/<?= $rolUser === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard' ?>'); } catch (_) {}<?php endif; ?>
       if ('caches' in window) {
         caches.keys().then(function(ks) {
-          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.2') caches.delete(k); });
+          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.3') caches.delete(k); });
         }).catch(function(){});
       }
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.2', { scope: window.APP + '/', updateViaCache: 'none' })
+        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.3', { scope: window.APP + '/', updateViaCache: 'none' })
           .then(function(r) { r.update().catch(function(){}); })
           .catch(function(){});
       }
