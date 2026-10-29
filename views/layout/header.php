@@ -2,6 +2,7 @@
 // views/layout/header.php
 $csrf    = csrfGenerate();
 $flash   = getFlash();
+if (function_exists('releaseSessionLockIfReadOnly')) { releaseSessionLockIfReadOnly(); }
 $rolUser = $_SESSION['rol'] ?? '';
 $nomUser = $_SESSION['nombre'] ?? '';
 global $route, $segment;
@@ -122,7 +123,7 @@ addSecurityHeaders();
         <span class="nav-icon"><i class="ti ti-layout-dashboard"></i></span>
         <span>Inicio</span>
       </a>
-      <a href="<?= APP_URL ?>/cliente/rutinas" class="<?= str_contains($currentAction, 'rutin') ? 'active' : '' ?>">
+      <a href="<?= APP_URL ?>/cliente/rutina-dia" class="<?= str_contains($currentAction, 'rutin') ? 'active' : '' ?>">
         <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:middle;display:inline-block;"><rect x="2" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/><rect x="5" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><line x1="8" y1="12" x2="16" y2="12" stroke-width="2.5"/><rect x="16" y="6" width="3" height="12" rx="1.5" fill="currentColor"/><rect x="19" y="9" width="3" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25"/></svg></span>
         <span>Rutina</span>
       </a>
@@ -417,9 +418,12 @@ addSecurityHeaders();
       if (e.key === 'Escape') closeXpNotifDropdown();
     });
 
-    // Sondeo silencioso cada 30 segundos
-    xpFetchNotificaciones(true);
-    setInterval(() => xpFetchNotificaciones(true), 30000);
+    // Sondeo silencioso diferido (usa primero el conteo SSR y evita bloquear la red al cambiar de módulo)
+    setInterval(() => {
+      if (!document.hidden && !document.body.classList.contains('is-typing')) {
+        xpFetchNotificaciones(true);
+      }
+    }, 35000);
   });
 
   // Revalidar en foco de pestaña

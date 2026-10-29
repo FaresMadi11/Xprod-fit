@@ -10,6 +10,7 @@ if (empty($_SESSION['cliente_id']) && !empty($_SESSION['user_id'])) {
     if ($cid) $_SESSION['cliente_id'] = $cid;
     else exit('Perfil de atleta no configurado.');
 }
+releaseSessionLockIfReadOnly();
 
 $action = $segment[1] ?? 'dashboard';
 

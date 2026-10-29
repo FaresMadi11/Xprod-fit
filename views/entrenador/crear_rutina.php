@@ -1645,14 +1645,18 @@ function updateConfirmBar() {
 }
 
 /* ────────────────────────────────────────────────────
-   SEARCH: filtrar ejercicios en tiempo real
+   SEARCH: filtrar ejercicios en tiempo real (RAF-debounced para 60fps en móvil)
 ──────────────────────────────────────────────────── */
+let _catsFilterRaf = null;
 function catsFilterExercises(value) {
-  renderExerciseList(_currentCategory, value, false);
-  /* Restaurar estado de selección visualmente */
-  document.querySelectorAll('.ex-list-item').forEach(item => {
-    const id = item.dataset.exId;
-    if (selectedExercises.has(id)) item.classList.add('selected');
+  if (_catsFilterRaf) cancelAnimationFrame(_catsFilterRaf);
+  _catsFilterRaf = requestAnimationFrame(() => {
+    renderExerciseList(_currentCategory, value, false);
+    /* Restaurar estado de selección visualmente */
+    document.querySelectorAll('.ex-list-item').forEach(item => {
+      const id = item.dataset.exId;
+      if (selectedExercises.has(id)) item.classList.add('selected');
+    });
   });
 }
 

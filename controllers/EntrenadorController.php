@@ -1,6 +1,7 @@
 <?php
 // controllers/EntrenadorController.php
 requireRole('entrenador');
+releaseSessionLockIfReadOnly();
 
 $action = $segment[1] ?? 'dashboard';
 

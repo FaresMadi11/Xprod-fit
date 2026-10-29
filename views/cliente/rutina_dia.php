@@ -2665,16 +2665,24 @@ function seleccionarCategoriaReemplazo(catId, catNom) {
   filtrarEjerciciosReemplazoList(catId, q);
 }
 
+let _rafCatReemplazo = null;
 function filtrarCategoriasReemplazo(val) {
-  const q = (val || '').toLowerCase().trim();
-  document.querySelectorAll('#gridCategoriasReemplazo .item-cat-card').forEach(el => {
-    const nom = (el.dataset.nombre || '').toLowerCase();
-    el.style.display = (!q || nom.includes(q)) ? 'flex' : 'none';
+  if (_rafCatReemplazo) cancelAnimationFrame(_rafCatReemplazo);
+  _rafCatReemplazo = requestAnimationFrame(() => {
+    const q = (val || '').toLowerCase().trim();
+    document.querySelectorAll('#gridCategoriasReemplazo .item-cat-card').forEach(el => {
+      const nom = (el.dataset.nombre || '').toLowerCase();
+      el.style.display = (!q || nom.includes(q)) ? 'flex' : 'none';
+    });
   });
 }
 
+let _rafEjReemplazo = null;
 function filtrarEjerciciosReemplazo(val) {
-  filtrarEjerciciosReemplazoList(categoriaSeleccionadaReemplazoId, (val || '').toLowerCase().trim());
+  if (_rafEjReemplazo) cancelAnimationFrame(_rafEjReemplazo);
+  _rafEjReemplazo = requestAnimationFrame(() => {
+    filtrarEjerciciosReemplazoList(categoriaSeleccionadaReemplazoId, (val || '').toLowerCase().trim());
+  });
 }
 
 function filtrarEjerciciosReemplazoList(catId, query) {

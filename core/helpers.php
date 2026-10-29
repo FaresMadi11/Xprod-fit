@@ -82,25 +82,44 @@ function requireLogin(): void {
     if (empty($_SESSION['user_id'])) {
         redirect('auth/login');
     }
-    // Verificación inquebrantable de estado de cuenta para atletas
+    // Verificación de estado de cuenta para atletas (cacheada 60s en sesión para ahorrar 1 query a TiDB por clic)
     if (($_SESSION['rol'] ?? '') !== 'entrenador') {
-        try {
-            $db = getDB();
-            $stmt = $db->prepare("SELECT estado_cuenta FROM usuarios WHERE id = ? LIMIT 1");
-            $stmt->execute([(int)$_SESSION['user_id']]);
-            $estado = $stmt->fetchColumn();
-            if ($estado !== 'activo') {
-                $_SESSION = [];
-                if (ini_get('session.use_cookies')) {
-                    $params = session_get_cookie_params();
-                    setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+        $now = time();
+        $lastCheck = (int)($_SESSION['_acc_ok_ts'] ?? 0);
+        if (($now - $lastCheck) > 60) {
+            try {
+                $db = getDB();
+                $stmt = $db->prepare("SELECT estado_cuenta FROM usuarios WHERE id = ? LIMIT 1");
+                $stmt->execute([(int)$_SESSION['user_id']]);
+                $estado = $stmt->fetchColumn();
+                if ($estado !== 'activo') {
+                    $_SESSION = [];
+                    if (ini_get('session.use_cookies')) {
+                        $params = session_get_cookie_params();
+                        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+                    }
+                    session_destroy();
+                    redirect('auth/login?standby=1');
                 }
-                session_destroy();
-                redirect('auth/login?standby=1');
+                $_SESSION['_acc_ok_ts'] = $now;
+            } catch (\Throwable $e) {
+                // Failsafe DB
             }
-        } catch (\Throwable $e) {
-            // Failsafe DB
         }
+    }
+}
+
+/**
+ * Libera el bloqueo de archivo de sesión PHP en peticiones GET de solo lectura.
+ * Permite que cambios rápidos de módulo y peticiones AJAX en el teléfono se ejecuten en paralelo sin hacer cola.
+ */
+function releaseSessionLockIfReadOnly(): void {
+    if (
+        session_status() === PHP_SESSION_ACTIVE &&
+        ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' &&
+        empty($_SESSION['flash'])
+    ) {
+        session_write_close();
     }
 }
 

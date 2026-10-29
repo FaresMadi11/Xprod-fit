@@ -1,46 +1,100 @@
 /* assets/js/app.js – Anime.js + Fetch + SweetAlert2 */
 'use strict';
 
-/* ─── Entrance animation for all cards ─────────────────── */
+/* ─── Entrance animation for all cards (Adaptive 60-120fps Mobile & Desktop) ─── */
 document.addEventListener('DOMContentLoaded', () => {
-  if (typeof anime === 'function') {
-    // Animación escalonada (staggered) de aparición para tarjetas y paneles
-    anime({
-      targets: '.dash-stat-card, .card-bento, .stat-card, .exercise-item, .auth-card',
-      opacity: [0, 1],
-      translateY: [20, 0],
-      delay: anime.stagger(100),
-      duration: 800,
-      easing: 'easeOutExpo'
+  const isMobile = window.innerWidth < 768;
+
+  // Modo escritura ultra-fluido en móvil: pausa efectos de fondo mientras el teclado está abierto
+  document.addEventListener('focusin', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
+      document.body.classList.add('is-typing');
+    }
+  }, { passive: true });
+
+  document.addEventListener('focusout', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
+      setTimeout(() => {
+        const a = document.activeElement;
+        if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'TEXTAREA' && a.tagName !== 'SELECT')) {
+          document.body.classList.remove('is-typing');
+        }
+      }, 60);
+    }
+  }, { passive: true });
+
+  // Navegación instantánea en barra de módulos: feedback visual en 0ms + prefetch anticipado en touchstart/pointerdown
+  const prefetchedUrls = new Set();
+  document.querySelectorAll('.xp-nav-links a').forEach(link => {
+    const triggerPrefetch = () => {
+      const href = link.href;
+      if (!href || prefetchedUrls.has(href) || href === window.location.href || !navigator.onLine) return;
+      prefetchedUrls.add(href);
+      const pf = document.createElement('link');
+      pf.rel = 'prefetch';
+      pf.href = href;
+      pf.as = 'document';
+      document.head.appendChild(pf);
+    };
+
+    link.addEventListener('pointerdown', () => {
+      triggerPrefetch();
+      document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
+      link.classList.add('active', 'xp-nav-pressing');
+      setTimeout(() => link.classList.remove('xp-nav-pressing'), 180);
+    }, { passive: true });
+
+    link.addEventListener('click', (e) => {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (link.href && link.href !== window.location.href) {
+        let bar = document.getElementById('xpTopNavProgress');
+        if (!bar) {
+          bar = document.createElement('div');
+          bar.id = 'xpTopNavProgress';
+          bar.className = 'xp-top-nav-progress';
+          document.body.appendChild(bar);
+        }
+        requestAnimationFrame(() => bar.classList.add('is-loading'));
+      }
     });
+  });
+
+  if (typeof anime === 'function') {
+    const allCards = Array.from(document.querySelectorAll('.dash-stat-card, .card-bento, .stat-card, .exercise-item, .auth-card'));
+    // En móvil animamos de forma sedosa y rápida las primeras 8 tarjetas visibles en viewport (0.28s) para no bloquear el hilo principal
+    const animatedTargets = isMobile ? allCards.slice(0, 8) : allCards;
+
+    if (animatedTargets.length > 0) {
+      anime({
+        targets: animatedTargets,
+        opacity: [0, 1],
+        translateY: [isMobile ? 10 : 18, 0],
+        delay: anime.stagger(isMobile ? 28 : 65),
+        duration: isMobile ? 280 : 520,
+        easing: 'easeOutCubic'
+      });
+    }
 
     // Animación del header principal
     anime({
       targets: '.sys-top-header > div',
       opacity: [0, 1],
-      translateX: [-20, 0],
-      delay: anime.stagger(150),
-      duration: 800,
-      easing: 'easeOutExpo'
+      translateX: [isMobile ? -10 : -18, 0],
+      delay: anime.stagger(isMobile ? 40 : 100),
+      duration: isMobile ? 260 : 500,
+      easing: 'easeOutCubic'
     });
 
     // Efecto burbuja 'pop' para las acciones rápidas
     anime({
       targets: '.dash-meta-bubble',
       opacity: [0, 1],
-      scale: [0.5, 1],
-      delay: anime.stagger(80, {start: 300}),
-      duration: 800,
-      easing: 'easeOutElastic(1, .6)'
-    });
-
-    // Animación del nav (fade in from bottom)
-    anime({
-      targets: '#mainNav',
-      opacity: [0, 1],
-      translateY: [30, 0],
-      duration: 800,
-      easing: 'easeOutExpo'
+      scale: [0.82, 1],
+      delay: anime.stagger(isMobile ? 35 : 65, { start: isMobile ? 80 : 180 }),
+      duration: isMobile ? 320 : 600,
+      easing: isMobile ? 'easeOutBack' : 'easeOutElastic(1, .6)'
     });
   }
 

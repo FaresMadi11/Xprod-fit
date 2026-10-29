@@ -342,14 +342,18 @@ html[data-theme="light"] .cl-count-badge { background:rgba(0,0,0,0.05); border-c
 
 <script>
 
+let _buscarAtletaTimer = null;
 function buscarAtleta(q) {
   const clearBtn = document.getElementById('clSearchClear');
-  clearBtn.style.display = q.trim() ? 'flex' : 'none';
-  const query = q.toLowerCase().trim();
-  document.querySelectorAll('#atletasGrid .ig-card').forEach(card => {
-    const name  = card.dataset.name  || '';
-    const email = card.dataset.email || '';
-    card.classList.toggle('search-hidden', query && !name.includes(query) && !email.includes(query));
+  if (clearBtn) clearBtn.style.display = q.trim() ? 'flex' : 'none';
+  if (_buscarAtletaTimer) cancelAnimationFrame(_buscarAtletaTimer);
+  _buscarAtletaTimer = requestAnimationFrame(() => {
+    const query = q.toLowerCase().trim();
+    document.querySelectorAll('#atletasGrid .ig-card').forEach(card => {
+      const name  = card.dataset.name  || '';
+      const email = card.dataset.email || '';
+      card.classList.toggle('search-hidden', !!(query && !name.includes(query) && !email.includes(query)));
+    });
   });
 }
 

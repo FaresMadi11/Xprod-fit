@@ -26,6 +26,9 @@ ini_set('session.gc_maxlifetime',    '7200'); // 2 horas
 
 session_start();
 $_SESSION['_initiated'] = true;
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 // ── 4. Constantes globales y detección dinámica de entorno ──────
 $protocol = $isHttps ? "https://" : "http://";

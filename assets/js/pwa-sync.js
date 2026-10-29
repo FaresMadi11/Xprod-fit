@@ -13,7 +13,7 @@
     initSW() {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          const swPath = (window.APP || '') + '/sw.js?v=3.0';
+          const swPath = (window.APP || '') + '/sw.js?v=3.1';
           navigator.serviceWorker.register(swPath, {
             scope: (window.APP || '') + '/',
             updateViaCache: 'none'
@@ -46,54 +46,84 @@
         setTimeout(() => this.flushQueue(), 1200);
       }
 
-      // Precalentar en segundo plano las pantallas clave para asegurar que estén listas offline
+      // Precalentar en segundo plano las pantallas clave (máximo 1 vez cada 10 min, de forma secuencial para no bloquear sesión ni red)
       if (navigator.onLine && 'serviceWorker' in navigator) {
-        setTimeout(() => {
-          const base = (window.APP || '').replace(/\/+$/, '');
-          const isAtleta = window.location.pathname.includes('/cliente');
-          const isEntrenador = window.location.pathname.includes('/entrenador');
-          const htmlOpts = { credentials: 'same-origin', headers: { 'Accept': 'text/html' } };
-          if (isAtleta) {
-            fetch(base + '/cliente/dashboard', htmlOpts).catch(() => {});
-            fetch(base + '/cliente/rutina-dia', htmlOpts).catch(() => {});
-            fetch(base + '/cliente/rutinas', htmlOpts).catch(() => {});
-            fetch(base + '/cliente/perfil', htmlOpts).catch(() => {});
-            fetch(base + '/cliente/estadisticas', htmlOpts)
-              .then(r => r.ok ? r.text() : '')
-              .then(html => {
-                if (!html) return;
-                const m = html.match(/<script id="xpStatsOfflineSnapshot" type="application\/json">([\s\S]*?)<\/script>/);
-                if (m && m[1]) {
-                  try {
-                    const parsed = JSON.parse(m[1]);
-                    if (parsed && parsed.cliente_id) {
-                      localStorage.setItem('xprod_stats_snapshot_v1', JSON.stringify(parsed));
-                      if (parsed.dias_historial) {
-                        Object.entries(parsed.dias_historial).forEach(([f, det]) => {
-                          localStorage.setItem('xprod_cal_dia_' + f, JSON.stringify(det));
-                        });
-                      }
-                      if (parsed.grupos_ejercicios) {
-                        Object.entries(parsed.grupos_ejercicios).forEach(([g, gData]) => {
-                          localStorage.setItem('xprod_st_ej_' + g, JSON.stringify(gData));
-                        });
-                      }
-                      if (parsed.ejercicios_historial) {
-                        Object.entries(parsed.ejercicios_historial).forEach(([nom, hData]) => {
-                          localStorage.setItem('xprod_st_hist_' + nom, JSON.stringify(hData));
-                        });
-                      }
-                    }
-                  } catch (_) {}
+        const lastPrewarm = parseInt(sessionStorage.getItem('xp_prewarm_ts') || '0', 10);
+        const nowTs = Date.now();
+        if ((nowTs - lastPrewarm) > 600000) {
+          sessionStorage.setItem('xp_prewarm_ts', String(nowTs));
+          const runPrewarm = async () => {
+            const base = (window.APP || '').replace(/\/+$/, '');
+            const curPath = window.location.pathname;
+            const isAtleta = curPath.includes('/cliente');
+            const isEntrenador = curPath.includes('/entrenador');
+            const htmlOpts = { credentials: 'same-origin', headers: { 'Accept': 'text/html' } };
+
+            const waitIdle = (ms) => new Promise(res => setTimeout(res, ms));
+
+            if (isAtleta) {
+              const urls = ['/cliente/dashboard', '/cliente/rutina-dia', '/cliente/perfil'];
+              for (const u of urls) {
+                if (curPath.endsWith(u) || !navigator.onLine) continue;
+                while (document.body && document.body.classList.contains('is-typing')) {
+                  await waitIdle(800);
                 }
-              })
-              .catch(() => {});
-          } else if (isEntrenador) {
-            fetch(base + '/entrenador/dashboard', htmlOpts).catch(() => {});
-            fetch(base + '/entrenador/clientes', htmlOpts).catch(() => {});
-            fetch(base + '/entrenador/asistencias', htmlOpts).catch(() => {});
-          }
-        }, 2500);
+                await fetch(base + u, htmlOpts).catch(() => {});
+                await waitIdle(500);
+              }
+              if (!curPath.endsWith('/cliente/estadisticas') && navigator.onLine) {
+                fetch(base + '/cliente/estadisticas', htmlOpts)
+                  .then(r => r.ok ? r.text() : '')
+                  .then(html => {
+                    if (!html) return;
+                    const m = html.match(/<script id="xpStatsOfflineSnapshot" type="application\/json">([\s\S]*?)<\/script>/);
+                    if (m && m[1]) {
+                      try {
+                        const parsed = JSON.parse(m[1]);
+                        if (parsed && parsed.cliente_id) {
+                          localStorage.setItem('xprod_stats_snapshot_v1', JSON.stringify(parsed));
+                          if (parsed.dias_historial) {
+                            Object.entries(parsed.dias_historial).forEach(([f, det]) => {
+                              localStorage.setItem('xprod_cal_dia_' + f, JSON.stringify(det));
+                            });
+                          }
+                          if (parsed.grupos_ejercicios) {
+                            Object.entries(parsed.grupos_ejercicios).forEach(([g, gData]) => {
+                              localStorage.setItem('xprod_st_ej_' + g, JSON.stringify(gData));
+                            });
+                          }
+                          if (parsed.ejercicios_historial) {
+                            Object.entries(parsed.ejercicios_historial).forEach(([nom, hData]) => {
+                              localStorage.setItem('xprod_st_hist_' + nom, JSON.stringify(hData));
+                            });
+                          }
+                        }
+                      } catch (_) {}
+                    }
+                  })
+                  .catch(() => {});
+              }
+            } else if (isEntrenador) {
+              const urls = ['/entrenador/dashboard', '/entrenador/clientes', '/entrenador/asistencias'];
+              for (const u of urls) {
+                if (curPath.endsWith(u) || !navigator.onLine) continue;
+                while (document.body && document.body.classList.contains('is-typing')) {
+                  await waitIdle(800);
+                }
+                await fetch(base + u, htmlOpts).catch(() => {});
+                await waitIdle(500);
+              }
+            }
+          };
+
+          setTimeout(() => {
+            if ('requestIdleCallback' in window) {
+              requestIdleCallback(() => runPrewarm(), { timeout: 5000 });
+            } else {
+              runPrewarm();
+            }
+          }, 4000);
+        }
       }
     },
 
