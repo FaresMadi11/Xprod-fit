@@ -1291,7 +1291,9 @@ function entAsistenciasFiltro(): void {
 
     $st = $db->prepare($sql);
     $st->execute($params);
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+    exit;
 }
 
 function entVerificarSesion(): void {

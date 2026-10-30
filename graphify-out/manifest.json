@@ -36,15 +36,15 @@
     "semantic_hash": ""
   },
   "controllers/ClienteController.php": {
-    "mtime": 1793323242.167797,
-    "seen": 1793323427.654967,
-    "ast_hash": "6363c5ee690af87fe84e504be052235d",
+    "mtime": 1793355006.2419097,
+    "seen": 1793355040.7035027,
+    "ast_hash": "eea9486013688d01b3765ddac144d990",
     "semantic_hash": ""
   },
   "controllers/EntrenadorController.php": {
-    "mtime": 1793323470.2986686,
-    "seen": 1793324572.4290183,
-    "ast_hash": "a7f38697bf37bb393e35963f47f4ea3d",
+    "mtime": 1793327389.9874291,
+    "seen": 1793355040.7035048,
+    "ast_hash": "f0a7f2905089afcc1a5f73519c99e43d",
     "semantic_hash": ""
   },
   "controllers/GoogleAuthController.php": {
@@ -216,9 +216,9 @@
     "semantic_hash": "ca6328d41cbcf6112d6fc81c7e2c8325"
   },
   "views/auth/login.php": {
-    "mtime": 1793326325.6199117,
-    "seen": 1793326349.3254738,
-    "ast_hash": "16346affcb96cf4af2639f59b1e979b4",
+    "mtime": 1793367432.9717767,
+    "seen": 1793367477.956605,
+    "ast_hash": "609309f5ee77074d3b7ff57b9593e316",
     "semantic_hash": ""
   },
   "views/auth/recuperar.php": {
@@ -360,9 +360,9 @@
     "semantic_hash": ""
   },
   "views/layout/header.php": {
-    "mtime": 1793326097.7792206,
-    "seen": 1793326349.3285224,
-    "ast_hash": "1e3bb4347e80f3cc79b251e0d0004636",
+    "mtime": 1793355111.2686923,
+    "seen": 1793355617.5393803,
+    "ast_hash": "43c8e2e7fbecfcae016e5c911afa7415",
     "semantic_hash": ""
   },
   "views/legal/privacidad.php": {
@@ -438,15 +438,15 @@
     "semantic_hash": ""
   },
   "assets/js/pwa-sync.js": {
-    "mtime": 1793326097.3566906,
-    "seen": 1793326349.321381,
-    "ast_hash": "4c70e02120c44b20ed1a9dec6a84abd3",
+    "mtime": 1793355111.1242366,
+    "seen": 1793355617.5305185,
+    "ast_hash": "4128f0e11e7b8afebbdbdd46d9239370",
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793326097.5679138,
-    "seen": 1793326349.3254716,
-    "ast_hash": "5e758c2c628fefe05842e378203d92dc",
+    "mtime": 1793355111.2314754,
+    "seen": 1793355617.5365148,
+    "ast_hash": "8808657d48c486d6ff009f4b219c30ca",
     "semantic_hash": ""
   },
   "core/media_storage.php": {

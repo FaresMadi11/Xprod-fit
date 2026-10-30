@@ -92,11 +92,11 @@ try {
       <?php if ($rolUser): ?>try { localStorage.setItem('xp_auth_active', '1'); localStorage.setItem('xp_auth_role', '<?= e($rolUser) ?>'); localStorage.setItem('xp_auth_home', window.APP + '/<?= $rolUser === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard' ?>'); } catch (_) {}<?php endif; ?>
       if ('caches' in window) {
         caches.keys().then(function(ks) {
-          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.3') caches.delete(k); });
+          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.6') caches.delete(k); });
         }).catch(function(){});
       }
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.4', { scope: window.APP + '/', updateViaCache: 'none' })
+        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.6', { scope: window.APP + '/', updateViaCache: 'none' })
           .then(function(r) { r.update().catch(function(){}); })
           .catch(function(){});
       }

@@ -70,6 +70,11 @@ RewriteRule ^(fix_|check|test_|kogane_).*\.php$ - [F,L]
 
     # HSTS — Solo activar con HTTPS real
     # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+    # Permitir carga y decodificación de assets estáticos locales en Canvas/PWA
+    <FilesMatch "\.(jpe?g|png|gif|svg|webp|ico|woff2?)$">
+        Header set Access-Control-Allow-Origin "*"
+    </FilesMatch>
 </IfModule>
 
 # ── Compresión Gzip / Deflate ──────────────────────────────────

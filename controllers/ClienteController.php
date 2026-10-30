@@ -710,6 +710,17 @@ function cliGuardarSerie(): void {
 
         $db->beginTransaction();
 
+        // Verificar que el ejercicio pertenezca a una rutina del cliente
+        $stCheck = $db->prepare(
+            "SELECT e.id FROM ejercicios e JOIN rutinas r ON r.id = e.rutina_id WHERE e.id = ? AND r.cliente_id = ?"
+        );
+        $stCheck->execute([$ejercicioId, $clienteId]);
+        if (!$stCheck->fetch()) {
+            $db->rollBack();
+            http_response_code(404);
+            jsonOut(false, 'Ese ejercicio no pertenece a tus rutinas.');
+        }
+
         // Historial permanente en sesion_series (upsert)
         $stSerie = $db->prepare(
             "INSERT INTO sesion_series
@@ -739,11 +750,7 @@ function cliGuardarSerie(): void {
             $ejercicioId, $clienteId
         ]);
 
-        if ($stSerie->rowCount() === 0) {
-            $db->rollBack();
-            http_response_code(404);
-            jsonOut(false, 'Ese ejercicio no pertenece a tus rutinas.');
-        }
+// Serie guardada o actualizada correctamente
 
         // Actualizar también sesiones (resumen: max reps de las series guardadas en fechaReal)
         $db->prepare(
@@ -835,7 +842,9 @@ function cliMarcarRutina(): void {
             SET estado = 'completado' 
             WHERE cliente_id = ? AND rutina_id = ? AND fecha_destino = ? AND estado = 'activo'
         ")->execute([$clienteId, $rutinaId, $fechaReal]);
-    } catch (\Throwable $e) {}
+    } catch (\Throwable $e) {
+        error_log('[cliMarcarRutina] Error actualizando aplazamiento: ' . $e->getMessage());
+    }
 
     // Notificar al entrenador asignado
     try {
@@ -1326,18 +1335,18 @@ function cliApiCambiarPassword(): void {
     }
 
     // Obtener hash actual
-    $st = $db->prepare("SELECT password FROM usuarios WHERE id = ?");
+    $st = $db->prepare("SELECT password_hash FROM usuarios WHERE id = ?");
     $st->execute([$userId]);
     $usuario = $st->fetch();
 
-    if (!$usuario || !password_verify($actual, $usuario['password'])) {
-        echo json_encode(['ok' => false, 'msg' => 'La contraseÃ±a actual es incorrecta.']);
+    if (!$usuario || !password_verify($actual, $usuario['password_hash'])) {
+        echo json_encode(['ok' => false, 'msg' => 'La contraseña actual es incorrecta.']);
         exit;
     }
 
     // Actualizar con nuevo hash
     $nuevoHash = password_hash($nueva, PASSWORD_DEFAULT);
-    $db->prepare("UPDATE usuarios SET password = ? WHERE id = ?")->execute([$nuevoHash, $userId]);
+    $db->prepare("UPDATE usuarios SET password_hash = ? WHERE id = ?")->execute([$nuevoHash, $userId]);
 
     echo json_encode(['ok' => true]);
     exit;

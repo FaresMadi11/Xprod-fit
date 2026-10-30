@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Acceso – Xprod Fit</title>
 <meta name="theme-color" content="#02040a">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,7 +42,7 @@
     } catch (_) {}
   }
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(appBase + '/sw.js?v=3.4', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
+    navigator.serviceWorker.register(appBase + '/sw.js?v=3.6', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
   }
 })();
 
@@ -52,10 +52,6 @@ function togglePassVisibility(btn, ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
   }
   if (!btn) return;
-  var now = Date.now();
-  if (btn._lastToggle && (now - btn._lastToggle) < 250) return;
-  btn._lastToggle = now;
-
   var targetId = btn.getAttribute('data-target');
   var inp = document.getElementById(targetId);
   if (!inp) return;
@@ -65,20 +61,21 @@ function togglePassVisibility(btn, ev) {
   if (icon) {
     icon.className = isPass ? 'ti ti-eye-off' : 'ti ti-eye';
   }
+  try {
+    inp.focus({ preventScroll: true });
+    var len = inp.value.length;
+    if (typeof inp.setSelectionRange === 'function') {
+      inp.setSelectionRange(len, len);
+    }
+  } catch (_) {}
 }
 window.togglePassVisibility = togglePassVisibility;
-
-document.addEventListener('DOMContentLoaded', function() {
-  document.addEventListener('click', function(ev) {
-    var btn = ev.target.closest ? ev.target.closest('.btn-eye') : null;
-    if (btn) {
-      togglePassVisibility(btn, ev);
-    }
-  });
-});
 </script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+button, a, input, select, .goal-chip, .subnivel-card, .wheel-item {
+  touch-action: manipulation;
+}
 html, body {
   width: 100%;
   height: 100%;
@@ -102,12 +99,14 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100lvh;
   z-index: 0;
   pointer-events: none;
   transform: translate3d(0, 0, 0);
   -webkit-transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  will-change: transform;
 }
 /* Vignette suave solo en esquinas, no toca los brazos */
 .mh-vignette {
@@ -196,10 +195,31 @@ select:-webkit-autofill:active {
     background: transparent !important;
     transition: background-color 5000000s ease-in-out 0s, color 5000000s ease-in-out 0s !important;
 }
-.pass-row{display:flex;align-items:center;}
-.pass-row input{flex:1;}
-.btn-eye{background:none;border:none;color:rgba(255,255,255,.28);cursor:pointer;font-size:1.1rem;padding:4px;transition:color .2s;}
-.btn-eye:hover{color:#fff;}
+.pass-row{display:flex;align-items:center;position:relative;width:100%;}
+.pass-row input{flex:1;min-width:0;padding-right:48px !important;}
+.btn-eye{
+  position:absolute;
+  right:4px;
+  top:50%;
+  transform:translateY(-50%);
+  background:transparent;
+  border:none;
+  color:rgba(255,255,255,.45);
+  cursor:pointer;
+  font-size:1.25rem;
+  padding:10px;
+  min-width:44px;
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transition:color .15s ease, transform .1s ease;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  z-index:3;
+}
+.btn-eye:hover,.btn-eye:focus{color:#ffffff;}
+.btn-eye:active{transform:translateY(-50%) scale(0.92);color:#a855f7;}
 .btn-eye i{pointer-events:none;}
 
 /* ── Submit ── */
@@ -359,7 +379,7 @@ select:-webkit-autofill:active {
 .ibg-error{display:none;font-size:.72rem;color:#fca5a5;margin-top:6px;line-height:1.3;font-weight:600;}
 .input-box-group.has-error .ibg-error{display:block;}
 
-@media (max-width:360px){.reg-grid-2{grid-template-columns:1fr;gap:0;}}
+@media (max-width:480px){.reg-grid-2{grid-template-columns:1fr;gap:0;}}
 
 /* ══ ONBOARDING WIZARD 3 PASOS (UI/UX Pro-Max Bento UI) ══ */
 .wizard-progress-wrap {
@@ -455,13 +475,13 @@ select:-webkit-autofill:active {
   left: 6px;
   right: 6px;
   height: 40px;
-  border-top: 1px solid rgba(138,43,226,0.45);
-  border-bottom: 1px solid rgba(138,43,226,0.45);
-  background: rgba(138,43,226,0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
   pointer-events: none;
   z-index: 2;
-  box-shadow: 0 0 16px rgba(138,43,226,0.15);
+  box-shadow: none;
 }
 .wheel-column {
   height: 120px;
@@ -491,9 +511,9 @@ select:-webkit-autofill:active {
 }
 .wheel-item.active {
   color: #ffffff;
-  font-weight: 700;
-  font-size: 1.05rem;
-  text-shadow: 0 0 10px rgba(179,136,255,0.6);
+  font-weight: 600;
+  font-size: 0.96rem;
+  text-shadow: none;
 }
 .reg-date-top {
   display: flex !important;
@@ -906,7 +926,7 @@ select:-webkit-autofill:active {
 <div class="bg-orb orb2" aria-hidden="true"></div>
 
 <script>
-// ── MAHORAGA CANVAS GENERATOR (Inmediato, Failsafe & Alta Definición) ──
+// ── MAHORAGA CANVAS GENERATOR (High-DPI Razor-Sharp Engine & Zero-Lag Particles) ──
 (function() {
   const canvas = document.getElementById('mahoragaCanvas');
   if (!canvas) return;
@@ -915,9 +935,9 @@ select:-webkit-autofill:active {
   img.crossOrigin = 'anonymous';
 
   let wheelParticles = [];
-  let headParticles = [];
+  let headParticles  = [];
   let chestParticles = [];
-  let lowerParticles = [];
+
   let imgW = 0, imgH = 0;
   let scale = 1, offsetX = 0, offsetY = 0;
   let dpr = 1;
@@ -928,69 +948,84 @@ select:-webkit-autofill:active {
   function initParticles() {
     if (initialized) return;
     initialized = true;
-    imgW = img.width || 266;
-    imgH = img.height || 472;
+    imgW = img.naturalWidth || img.width || 266;
+    imgH = img.naturalHeight || img.height || 472;
 
     try {
       const offCanvas = document.createElement('canvas');
       offCanvas.width = imgW;
       offCanvas.height = imgH;
-      const offCtx = offCanvas.getContext('2d');
+      const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
       offCtx.drawImage(img, 0, 0);
       const imgData = offCtx.getImageData(0, 0, imgW, imgH).data;
 
       wheelParticles = [];
-      headParticles = [];
+      headParticles  = [];
       chestParticles = [];
-      lowerParticles = [];
 
-      const step = 1;
+      // Muestreo optimizado de alta fidelidad: paso 2 para máxima nitidez y rendimiento de 60fps continuo
+      const step = 2;
       for (let y = 0; y < imgH; y += step) {
+        const yp = y / imgH;
+        // Omitir el tercio inferior para evitar ruido visual sobre los botones y textos del login
+        if (yp >= 0.62) continue;
+
         for (let x = 0; x < imgW; x += step) {
           const i = (y * imgW + x) * 4;
           const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
           const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-          if (lum > 18) {
-            const size = (lum / 255) * 1.10;
-            const p = { baseX: x, baseY: y, size: size };
+          if (lum > 20) {
+            // Tamaño proporcional al brillo para un efecto punteado de lujo y ultra nítido
+            const size = (lum / 255) * 1.35;
+            const p = { x: x, y: y, size: size };
 
-            let yp = y / imgH;
-            if (yp < 0.22) wheelParticles.push(p);
-            else if (yp < 0.38) headParticles.push(p);
-            else if (yp < 0.65) chestParticles.push(p);
-            else lowerParticles.push(p);
+            if (yp < 0.22) {
+              wheelParticles.push(p);
+            } else if (yp < 0.38) {
+              headParticles.push(p);
+            } else {
+              chestParticles.push(p);
+            }
           }
         }
       }
     } catch (err) {
-      console.warn('[Mahoraga] Fallback por restricción CORS en canvas:', err);
+      console.warn('[Mahoraga] Failsafe: modo fallback directo activo:', err);
     }
 
     window.addEventListener('resize', () => {
-      // Ignorar cambios de altura provocados por el teclado virtual en móviles
+      // Ignorar cambios de altura provocados por el teclado virtual móvil
       if (Math.abs(window.innerWidth - lastWidth) > 30) {
         resize();
       }
     }, { passive: true });
 
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('scroll', () => {
+        window.scrollTo(0, 0);
+      }, { passive: true });
+    }
+
     resize();
     requestAnimationFrame(animate);
   }
 
+  const basePath = <?= json_encode(rtrim(str_replace(' ', '%20', BASE_PATH), '/')) ?>;
+  const appBase  = <?= json_encode(rtrim(str_replace(' ', '%20', APP_URL), '/')) ?>;
+  const relSrc   = (basePath ? basePath : '') + '/assets/img/mahoraga1.jpg';
+
   img.onload = initParticles;
   img.onerror = () => {
     if (!img._retried) {
-      img._retried = true;
+      img._retried = 1;
+      img.src = appBase + '/assets/img/mahoraga1.jpg';
+    } else if (img._retried === 1) {
+      img._retried = 2;
       img.src = './assets/img/mahoraga1.jpg';
     }
   };
-
-  const cleanApp = '<?= APP_URL ?>';
-  const directSrc = (window.location.protocol === 'https:' && cleanApp.startsWith('http:'))
-    ? cleanApp.replace(/^http:/, 'https:')
-    : cleanApp;
-  img.src = (directSrc ? directSrc : '') + '/assets/img/mahoraga1.jpg';
+  img.src = relSrc;
 
   if (img.complete && img.naturalWidth > 0) {
     initParticles();
@@ -1000,23 +1035,33 @@ select:-webkit-autofill:active {
     const isMob = window.innerWidth < 768;
     dpr = isMob ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2);
     w = window.innerWidth;
-    h = window.innerHeight;
+
+    // En móviles, fijar altura estable para que el teclado NUNCA cambie la escala de Mahoraga
+    if (isMob) {
+      if (!window._mhBaseH || Math.abs(window.innerWidth - lastWidth) > 30) {
+        window._mhBaseH = Math.max(window.innerHeight, window.screen?.availHeight || 0);
+      }
+      h = window._mhBaseH;
+    } else {
+      h = window.innerHeight;
+    }
     lastWidth = w;
+
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Mahoraga GRANDE, nítido y bien encuadrado
+    // Mahoraga nítido, imponente y posicionado con la rueda y cuernos flotando en la parte superior
     if (isMob) {
-      scale = Math.max((w * 1.18) / imgW, (h * 1.12) / imgH);
+      scale = Math.max((w * 1.35) / imgW, (h * 1.05) / imgH);
       offsetX = (w - imgW * scale) / 2;
-      offsetY = (h - imgH * scale) * 0.08;
+      offsetY = (h - imgH * scale) * 0.04;
     } else {
-      scale = Math.max((w * 0.52) / imgW, (h * 1.14) / imgH);
+      scale = Math.max((w * 0.62) / imgW, (h * 1.15) / imgH);
       offsetX = (w - imgW * scale) / 2;
-      offsetY = (h - imgH * scale) * 0.16;
+      offsetY = (h - imgH * scale) * 0.10;
     }
     drawFrame();
   }
@@ -1025,7 +1070,7 @@ select:-webkit-autofill:active {
   let lastFrameTs = 0;
 
   const ambientParticles = [];
-  const ambientCount = window.innerWidth < 768 ? 20 : 40;
+  const ambientCount = window.innerWidth < 768 ? 16 : 28;
   for (let i = 0; i < ambientCount; i++) {
     ambientParticles.push({
       x: Math.random(), y: Math.random(),
@@ -1040,49 +1085,46 @@ select:-webkit-autofill:active {
     ctx.fillStyle = '#02040a';
     ctx.fillRect(0, 0, w, h);
 
-    if (wheelParticles.length === 0 && img.naturalWidth > 0) {
+    if (wheelParticles.length > 0 || headParticles.length > 0 || chestParticles.length > 0) {
+      ctx.fillStyle = '#ffffff';
+
+      // 1. Rueda flotando (halo superior independiente)
+      const wheelDy = Math.sin(time * 1.2) * 12 * scale;
+      for (let i = 0; i < wheelParticles.length; i++) {
+        const p = wheelParticles[i];
+        ctx.fillRect(offsetX + p.x * scale, offsetY + p.y * scale + wheelDy, p.size * scale, p.size * scale);
+      }
+
+      // 2. Cabeza y cuernos
+      const headDy = Math.sin(time * 0.8) * 3 * scale;
+      for (let i = 0; i < headParticles.length; i++) {
+        const p = headParticles[i];
+        ctx.fillRect(offsetX + p.x * scale, offsetY + p.y * scale + headDy, p.size * scale, p.size * scale);
+      }
+
+      // 3. Pecho respirando (expande y sube suavemente)
+      const chestDy = Math.sin(time * 0.8) * 4 * scale;
+      const chestScaleX = Math.sin(time * 0.8) * 0.02;
+      const imgCenter = imgW / 2;
+      for (let i = 0; i < chestParticles.length; i++) {
+        const p = chestParticles[i];
+        const dx = (p.x - imgCenter) * chestScaleX * scale;
+        ctx.fillRect(offsetX + p.x * scale + dx, offsetY + p.y * scale + chestDy, p.size * scale, p.size * scale);
+      }
+    } else if (img.naturalWidth > 0) {
+      // Fallback nítido si el navegador no permite lectura de canvas
       ctx.save();
       ctx.globalAlpha = 0.85;
       ctx.drawImage(img, offsetX, offsetY, imgW * scale, imgH * scale);
       ctx.restore();
-    } else {
-      ctx.fillStyle = '#ffffff';
-
-      // Rueda flotando
-      const wheelDy = Math.sin(time * 1.2) * 12 * scale;
-      for (let i = 0; i < wheelParticles.length; i++) {
-        const p = wheelParticles[i];
-        ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + wheelDy, p.size * scale, p.size * scale);
-      }
-      // Cabeza
-      const headDy = Math.sin(time * 0.8) * 3 * scale;
-      for (let i = 0; i < headParticles.length; i++) {
-        const p = headParticles[i];
-        ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + headDy, p.size * scale, p.size * scale);
-      }
-      // Pecho
-      const chestDy = Math.sin(time * 0.8) * 4 * scale;
-      const chestScaleX = Math.sin(time * 0.8) * 0.025;
-      const imgCenter = imgW / 2;
-      for (let i = 0; i < chestParticles.length; i++) {
-        const p = chestParticles[i];
-        const dx = (p.baseX - imgCenter) * chestScaleX * scale;
-        ctx.fillRect(offsetX + p.baseX * scale + dx, offsetY + p.baseY * scale + chestDy, p.size * scale, p.size * scale);
-      }
-      // Torso inferior
-      const lowerDy = Math.sin(time * 0.8) * 1 * scale;
-      for (let i = 0; i < lowerParticles.length; i++) {
-        const p = lowerParticles[i];
-        ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + lowerDy, p.size * scale, p.size * scale);
-      }
     }
 
-    // Partículas ambientales
+    // Partículas ambientales de fondo ultra-ligeras
     for (let i = 0; i < ambientParticles.length; i++) {
       const ap = ambientParticles[i];
       ap.y -= ap.speed;
       if (ap.y < -0.02) { ap.y = 1.02; ap.x = Math.random(); }
-      const ax = ap.x * w + Math.sin(time + ap.phase) * 20;
+      const ax = ap.x * w + Math.sin(time + ap.phase) * 15;
       const ay = ap.y * h;
       ctx.globalAlpha = ap.alpha * (0.5 + 0.5 * Math.sin(time * 2 + ap.phase));
       ctx.fillRect(ax, ay, ap.size, ap.size);
@@ -1133,7 +1175,7 @@ $esStandby  = ($vistaInicial === 'standby');
       <label for="login_pass">Contraseña</label>
       <div class="pass-row">
         <input type="password" id="login_pass" name="password" placeholder="••••••••" required autocomplete="current-password" aria-required="true">
-        <button type="button" class="btn-eye" data-target="login_pass" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
+        <button type="button" class="btn-eye" data-target="login_pass" onclick="togglePassVisibility(this, event)" onpointerdown="event.stopPropagation();" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
       </div>
     </div>
     <button type="submit" id="btnLogin" class="btn-submit">Iniciar Sesión</button>
@@ -1257,7 +1299,7 @@ $esStandby  = ($vistaInicial === 'standby');
           <label for="reg_pass">Contraseña</label>
           <div class="pass-row">
             <input type="password" id="reg_pass" name="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" aria-describedby="err_password">
-            <button type="button" class="btn-eye" data-target="reg_pass" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
+            <button type="button" class="btn-eye" data-target="reg_pass" onclick="togglePassVisibility(this, event)" onpointerdown="event.stopPropagation();" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
           </div>
           <small class="ibg-error" id="err_password" role="alert"></small>
         </div>
@@ -1265,10 +1307,10 @@ $esStandby  = ($vistaInicial === 'standby');
         <div class="input-box-group" id="group_reg_pregunta" <?= $isGoogleMode ? 'style="display:none;"' : '' ?>>
           <label for="reg_pregunta">Pregunta de Seguridad</label>
           <select id="reg_pregunta" name="pregunta_seguridad" autocomplete="off" aria-describedby="err_pregunta_seguridad">
-            <option value="" selected disabled>-- Selecciona una pregunta --</option>
-            <?php foreach (UsuarioModel::PREGUNTAS_SEGURIDAD as $q): ?>
+            <option value="<?= e(UsuarioModel::PREGUNTAS_SEGURIDAD[0]) ?>" selected><?= e(UsuarioModel::PREGUNTAS_SEGURIDAD[0]) ?></option>
+            <?php for ($i = 1; $i < count(UsuarioModel::PREGUNTAS_SEGURIDAD); $i++): $q = UsuarioModel::PREGUNTAS_SEGURIDAD[$i]; ?>
             <option value="<?= e($q) ?>"><?= e($q) ?></option>
-            <?php endforeach; ?>
+            <?php endfor; ?>
           </select>
           <small class="ibg-error" id="err_pregunta_seguridad" role="alert"></small>
         </div>
@@ -1289,7 +1331,7 @@ $esStandby  = ($vistaInicial === 'standby');
             <!-- Columna Día: 01 a 31 -->
             <div class="wheel-column" id="regWheelDay" tabindex="0" role="listbox" aria-label="Día de nacimiento">
               <?php for ($d = 1; $d <= 31; $d++): $padD = sprintf('%02d', $d); ?>
-                <div class="wheel-item<?= ($padD === '15') ? ' active' : '' ?>" data-val="<?= $padD ?>" role="option"><?= $padD ?></div>
+                <div class="wheel-item" data-val="<?= $padD ?>" role="option"><?= $padD ?></div>
               <?php endfor; ?>
             </div>
             <!-- Columna Mes: Ene a Dic -->
@@ -1301,13 +1343,13 @@ $esStandby  = ($vistaInicial === 'standby');
                 '09' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Dic'
               ];
               foreach ($mesesLista as $mNum => $mNom): ?>
-                <div class="wheel-item<?= ($mNum === '06') ? ' active' : '' ?>" data-val="<?= $mNum ?>" role="option"><?= $mNom ?></div>
+                <div class="wheel-item" data-val="<?= $mNum ?>" role="option"><?= $mNom ?></div>
               <?php endforeach; ?>
             </div>
             <!-- Columna Año: 1950 al año actual -->
             <div class="wheel-column" id="regWheelYear" tabindex="0" role="listbox" aria-label="Año de nacimiento">
               <?php $anoMax = (int)date('Y'); for ($y = 1950; $y <= $anoMax; $y++): ?>
-                <div class="wheel-item<?= ($y === 2005) ? ' active' : '' ?>" data-val="<?= $y ?>" role="option"><?= $y ?></div>
+                <div class="wheel-item" data-val="<?= $y ?>" role="option"><?= $y ?></div>
               <?php endfor; ?>
             </div>
           </div>
@@ -1323,6 +1365,11 @@ $esStandby  = ($vistaInicial === 'standby');
               } catch(_) {}
             })();
           </script>
+        </div>
+
+        <div id="step1ErrorBanner" style="display:none;margin-bottom:12px;padding:12px 16px;background:rgba(239,68,68,0.18);border:1px solid rgba(239,68,68,0.45);border-radius:14px;color:#fca5a5;font-size:0.875rem;font-weight:600;text-align:center;">
+          <i class="ti ti-alert-circle" style="vertical-align:middle;margin-right:6px;font-size:1.1rem;"></i>
+          <span id="step1ErrorText"></span>
         </div>
 
         <button type="button" id="btnWizardStep1Next" class="btn-submit btn-wizard-next btn-wizard-next-step1" onclick="handleWizardStep1Next(event)">
@@ -1596,7 +1643,7 @@ $esStandby  = ($vistaInicial === 'standby');
           <label for="rec_nueva_password">NUEVA CONTRASEÑA</label>
           <div class="pass-row">
             <input type="password" id="rec_nueva_password" name="nueva_password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" aria-describedby="err_rec_nueva_password">
-            <button type="button" class="btn-eye" data-target="rec_nueva_password" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña">
+            <button type="button" class="btn-eye" data-target="rec_nueva_password" onclick="togglePassVisibility(this, event)" onpointerdown="event.stopPropagation();" aria-label="Mostrar u ocultar contraseña">
               <i class="ti ti-eye" aria-hidden="true"></i>
             </button>
           </div>
@@ -1607,7 +1654,7 @@ $esStandby  = ($vistaInicial === 'standby');
           <label for="rec_confirmar_password">CONFIRMAR CONTRASEÑA</label>
           <div class="pass-row">
             <input type="password" id="rec_confirmar_password" name="confirmar_password" placeholder="Repite tu nueva contraseña" autocomplete="new-password" aria-describedby="err_rec_confirmar_password">
-            <button type="button" class="btn-eye" data-target="rec_confirmar_password" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña">
+            <button type="button" class="btn-eye" data-target="rec_confirmar_password" onclick="togglePassVisibility(this, event)" onpointerdown="event.stopPropagation();" aria-label="Mostrar u ocultar contraseña">
               <i class="ti ti-eye" aria-hidden="true"></i>
             </button>
           </div>
@@ -1707,7 +1754,7 @@ async function postApi(endpoint, body) {
 
 // ── LOGIN ──
 const origLogin = 'Iniciar Sesión';
-document.getElementById('loginForm').addEventListener('submit', async e => {
+document.getElementById('loginForm')?.addEventListener('submit', async e => {
   e.preventDefault();
   
   const userInp = document.getElementById('login_usuario').value.trim();
@@ -1865,6 +1912,8 @@ function clearRegErrors() {
     s.style.display = 'none';
   });
   document.querySelectorAll('[aria-invalid]').forEach(i => i.removeAttribute('aria-invalid'));
+  const b = document.getElementById('step1ErrorBanner');
+  if (b) b.style.display = 'none';
 }
 
 function setRegError(campo, msg) {
@@ -2119,13 +2168,16 @@ window.forceStepSwitch = function(from, to) {
   const p2 = document.getElementById('wizardStep2');
   const p3 = document.getElementById('wizardStep3');
 
+  // Asegurar visibilidad limpia e incondicional
   if (to === 2) {
     if (p1) p1.style.display = 'none';
     if (p3) p3.style.display = 'none';
     if (p2) {
       p2.style.display = 'block';
+      p2.style.opacity = '1';
+      p2.style.transform = 'none';
       if (typeof anime !== 'undefined') {
-        anime({ targets: p2, opacity: [0, 1], translateY: [12, 0], duration: 260, easing: 'easeOutQuad' });
+        anime({ targets: p2, opacity: [0, 1], translateY: [12, 0], duration: 240, easing: 'easeOutQuad' });
       }
     }
     wizardCurrentStep = 2;
@@ -2134,8 +2186,10 @@ window.forceStepSwitch = function(from, to) {
     if (p3) p3.style.display = 'none';
     if (p1) {
       p1.style.display = 'block';
+      p1.style.opacity = '1';
+      p1.style.transform = 'none';
       if (typeof anime !== 'undefined') {
-        anime({ targets: p1, opacity: [0, 1], translateY: [12, 0], duration: 260, easing: 'easeOutQuad' });
+        anime({ targets: p1, opacity: [0, 1], translateY: [12, 0], duration: 240, easing: 'easeOutQuad' });
       }
     }
     wizardCurrentStep = 1;
@@ -2145,14 +2199,16 @@ window.forceStepSwitch = function(from, to) {
     if (p2) p2.style.display = 'none';
     if (p3) {
       p3.style.display = 'block';
+      p3.style.opacity = '1';
+      p3.style.transform = 'none';
       if (typeof anime !== 'undefined') {
-        anime({ targets: p3, opacity: [0, 1], translateY: [12, 0], duration: 260, easing: 'easeOutQuad' });
+        anime({ targets: p3, opacity: [0, 1], translateY: [12, 0], duration: 240, easing: 'easeOutQuad' });
       }
     }
     wizardCurrentStep = 3;
   }
 
-  // Update navigation bubbles & bar
+  // Actualizar burbujas superiores de progreso y barra
   for (let i = 1; i <= 3; i++) {
     const node = document.getElementById('nodeStep' + i);
     const bubble = document.getElementById('bubbleStep' + i);
@@ -2174,12 +2230,12 @@ window.forceStepSwitch = function(from, to) {
     bar.style.width = to === 1 ? '33.33%' : (to === 2 ? '66.66%' : '100%');
   }
 
-  // Scroll to top
+  // Scroll al inicio inmediato en el contenedor de scroll
   const main = document.getElementById('mainContent');
   if (main) main.scrollTop = 0;
   const box = document.getElementById('authBox');
   if (box) box.scrollTop = 0;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'auto' });
 };
 
 window.goToWizardStep = function(step) {
@@ -2189,14 +2245,19 @@ window.goToWizardStep = function(step) {
 /* ── 6. Manejador Global e Incondicional de SIGUIENTE → (Paso 1) ── */
 window.handleWizardStep1Next = function(event) {
   if (event) {
-    event.preventDefault();
-    event.stopPropagation();
+    if (typeof event.preventDefault === 'function') event.preventDefault();
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
   }
 
   clearRegErrors();
 
   const isGoogle = (document.getElementById('regAuthProvider')?.value === 'google');
-  const reNombre = /^\p{L}[\p{L}\s'\u2019.\-]*$/u;
+  let reNombre;
+  try {
+    reNombre = new RegExp('^\\p{L}[\\p{L}\\s\'\\u2019.\\-]*$', 'u');
+  } catch (_) {
+    reNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\'\u2019.\-]+$/;
+  }
 
   const valNombres    = (document.getElementById('reg_nombres')?.value || '').trim().replace(/\s+/g, ' ');
   const valApellidos  = (document.getElementById('reg_apellidos')?.value || '').trim().replace(/\s+/g, ' ');
@@ -2221,7 +2282,7 @@ window.handleWizardStep1Next = function(event) {
     errorMsg   = 'Por favor ingresa tu número de cédula (solo números).';
   } else if (!valCedulaNorm) {
     errorField = 'reg_cedula';
-    errorMsg   = 'La cédula debe contener solo números (entre 5 y 8 dígitos).';
+    errorMsg   = 'La cédula debe contener entre 5 y 8 números sin letras.';
   } else if (!valEmail) {
     errorField = 'reg_email';
     errorMsg   = 'Por favor ingresa tu correo electrónico.';
@@ -2245,7 +2306,6 @@ window.handleWizardStep1Next = function(event) {
   }
 
   if (errorField) {
-    // 1. Highlight box with bright red/purple border #ff4d6d and shake
     const inp = document.getElementById(errorField);
     const box = inp ? inp.closest('.input-box-group') : null;
     if (box) {
@@ -2255,11 +2315,24 @@ window.handleWizardStep1Next = function(event) {
       box.classList.remove('ibg-shake');
       void box.offsetWidth;
       box.classList.add('ibg-shake');
-      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    const errId = errorField.replace(/^reg_/, 'err_');
-    const errSmall = box ? box.querySelector('.ibg-error') : document.getElementById(errId);
+    // Scroll inteligente del contenedor mainContent hacia el campo con error
+    const main = document.getElementById('mainContent');
+    if (box && main) {
+      const boxRect = box.getBoundingClientRect();
+      const mainRect = main.getBoundingClientRect();
+      const targetY = main.scrollTop + (boxRect.top - mainRect.top) - 60;
+      main.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    }
+
+    const errMap = {
+      reg_pass: 'err_password',
+      reg_pregunta: 'err_pregunta_seguridad',
+      reg_respuesta: 'err_respuesta_seguridad'
+    };
+    const errId = errMap[errorField] || errorField.replace(/^reg_/, 'err_');
+    const errSmall = (box ? box.querySelector('.ibg-error') : null) || document.getElementById(errId);
     if (errSmall) {
       errSmall.textContent = errorMsg;
       errSmall.style.display = 'block';
@@ -2267,22 +2340,41 @@ window.handleWizardStep1Next = function(event) {
 
     if (inp) {
       inp.setAttribute('aria-invalid', 'true');
-      setTimeout(() => inp.focus({ preventScroll: true }), 80);
+      setTimeout(() => {
+        try { inp.focus({ preventScroll: true }); } catch (_) {}
+      }, 100);
     }
 
-    if (typeof Toast !== 'undefined' && Toast?.fire) {
-      Toast.fire({
-        icon: 'warning',
-        title: errorMsg,
-      });
-    } else if (typeof Swal !== 'undefined' && Swal?.fire) {
+    // Feedback visual en el banner encima del botón
+    const banner = document.getElementById('step1ErrorBanner');
+    const bText = document.getElementById('step1ErrorText');
+    if (banner && bText) {
+      bText.textContent = errorMsg;
+      banner.style.display = 'block';
+    }
+
+    // Sacudir el botón para feedback táctil instantáneo
+    const nextBtn = document.getElementById('btnWizardStep1Next');
+    if (nextBtn) {
+      nextBtn.classList.remove('ibg-shake');
+      void nextBtn.offsetWidth;
+      nextBtn.classList.add('ibg-shake');
+    }
+
+    // Modal centrado e inconfundible con SweetAlert2
+    if (typeof Swal !== 'undefined' && Swal?.fire) {
       Swal.fire({
         icon: 'warning',
-        title: 'Campo obligatorio',
+        title: 'Falta información requerida',
         text: errorMsg,
         background: '#111827',
         color: '#fff',
+        confirmButtonText: 'Completar campo',
         confirmButtonColor: '#8a2be2',
+      }).then(() => {
+        if (inp) {
+          try { inp.focus({ preventScroll: true }); } catch (_) {}
+        }
       });
     } else {
       alert(errorMsg);
@@ -2290,7 +2382,7 @@ window.handleWizardStep1Next = function(event) {
     return;
   }
 
-  // All fields valid -> Immediate DOM switch to Step 2
+  // Todos los campos válidos: transición inmediata y garantizada al Paso 2
   window.forceStepSwitch(1, 2);
 };
 
@@ -2333,7 +2425,18 @@ async function submitRegistration(isOmitido = false) {
   clearRegErrors();
 
   if (!isOmitido && selectedGoals.size === 0) {
-    Toast.fire({ icon: 'warning', title: 'Por favor selecciona al menos una meta o pulsa "Omitir por ahora".' });
+    if (typeof Swal !== 'undefined' && Swal?.fire) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Selecciona una meta',
+        text: 'Por favor selecciona al menos una meta o pulsa "Omitir por ahora".',
+        background: '#111827',
+        color: '#fff',
+        confirmButtonColor: '#8a2be2',
+      });
+    } else {
+      alert('Por favor selecciona al menos una meta o pulsa "Omitir por ahora".');
+    }
     if (typeof anime !== 'undefined') {
       anime({ targets: '#goalsGrid', translateX: [0, -8, 8, -5, 5, 0], duration: 450, easing: 'linear' });
     }
@@ -2350,8 +2453,20 @@ async function submitRegistration(isOmitido = false) {
   } else if (selectedGoals.has('otros')) {
     const customTxt = (document.getElementById('inputMetaOtros')?.value || '').trim();
     if (!customTxt) {
-      Toast.fire({ icon: 'warning', title: 'Por favor escribe tu meta personalizada.' });
-      document.getElementById('inputMetaOtros')?.focus();
+      if (typeof Swal !== 'undefined' && Swal?.fire) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Meta personalizada',
+          text: 'Por favor escribe tu meta personalizada.',
+          background: '#111827',
+          color: '#fff',
+          confirmButtonColor: '#8a2be2',
+        }).then(() => {
+          document.getElementById('inputMetaOtros')?.focus();
+        });
+      } else {
+        alert('Por favor escribe tu meta personalizada.');
+      }
       return;
     }
     metasData = {
@@ -2468,7 +2583,13 @@ async function submitRegistration(isOmitido = false) {
 if (registerForm) {
   registerForm.addEventListener('submit', e => {
     e.preventDefault();
-    submitRegistration(false);
+    if (wizardCurrentStep === 1) {
+      window.handleWizardStep1Next(e);
+    } else if (wizardCurrentStep === 2) {
+      window.forceStepSwitch(2, 3);
+    } else {
+      submitRegistration(false);
+    }
   });
 }
 
@@ -2710,5 +2831,6 @@ if (recoveryForm) {
   });
 }
 
+</script>
 </body>
 </html>
