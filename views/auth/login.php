@@ -923,24 +923,7 @@ select:-webkit-autofill:active {
   let dpr = 1;
   let w = 0, h = 0;
   let lastWidth = 0;
-  let isTypingLogin = false;
   let initialized = false;
-
-  document.addEventListener('focusin', (e) => {
-    const t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) {
-      isTypingLogin = true;
-    }
-  }, { passive: true });
-
-  document.addEventListener('focusout', () => {
-    setTimeout(() => {
-      const a = document.activeElement;
-      if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'SELECT' && a.tagName !== 'TEXTAREA')) {
-        isTypingLogin = false;
-      }
-    }, 100);
-  }, { passive: true });
 
   function initParticles() {
     if (initialized) return;
@@ -1108,7 +1091,7 @@ select:-webkit-autofill:active {
   }
 
   function animate(ts) {
-    if (!isTypingLogin && !document.hidden) {
+    if (!document.hidden) {
       if (!ts || (ts - lastFrameTs) >= 28) {
         lastFrameTs = ts || 0;
         time += 0.045;

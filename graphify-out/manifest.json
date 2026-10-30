@@ -216,9 +216,9 @@
     "semantic_hash": "ca6328d41cbcf6112d6fc81c7e2c8325"
   },
   "views/auth/login.php": {
-    "mtime": 1793325723.1014285,
-    "seen": 1793325792.523012,
-    "ast_hash": "5605f62e09ae0ddc5790b574ba59ea6b",
+    "mtime": 1793326325.6199117,
+    "seen": 1793326349.3254738,
+    "ast_hash": "16346affcb96cf4af2639f59b1e979b4",
     "semantic_hash": ""
   },
   "views/auth/recuperar.php": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   "views/layout/header.php": {
-    "mtime": 1793325742.7055566,
-    "seen": 1793325792.5266397,
+    "mtime": 1793326097.7792206,
+    "seen": 1793326349.3285224,
     "ast_hash": "1e3bb4347e80f3cc79b251e0d0004636",
     "semantic_hash": ""
   },
@@ -438,14 +438,14 @@
     "semantic_hash": ""
   },
   "assets/js/pwa-sync.js": {
-    "mtime": 1793325755.4956489,
-    "seen": 1793325792.5190299,
+    "mtime": 1793326097.3566906,
+    "seen": 1793326349.321381,
     "ast_hash": "4c70e02120c44b20ed1a9dec6a84abd3",
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793325732.3919437,
-    "seen": 1793325792.5230095,
+    "mtime": 1793326097.5679138,
+    "seen": 1793326349.3254716,
     "ast_hash": "5e758c2c628fefe05842e378203d92dc",
     "semantic_hash": ""
   },
