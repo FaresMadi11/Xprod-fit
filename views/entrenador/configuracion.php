@@ -58,6 +58,57 @@ require __DIR__ . '/../layout/header.php';
   </button>
 </div>
 
+<!-- ── BENTO CARD: APARIENCIA Y PALETA DE COLORES ── -->
+<div class="form-container" style="width: 100%; margin-bottom: 25px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+    <h3 style="margin: 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+      <i class="ti ti-palette" style="color:var(--accent-primary, #8a2be2); font-size: 1.35rem;"></i> Apariencia y Paleta de Colores
+    </h3>
+    <span style="font-size:0.75rem; color:var(--muted); font-weight:600;">Personaliza el estilo visual de la web y PWA</span>
+  </div>
+
+  <div class="xp-theme-grid">
+    <!-- Tema 1: Xprod Clásico -->
+    <div class="xp-theme-card" id="themeCardClassic" onclick="solicitarCambioTema('classic', 'Estilo Clásico Xprod Fit')">
+      <div class="xp-theme-card-head">
+        <div class="xp-theme-info">
+          <div class="xp-theme-name">Estilo Clásico Xprod Fit</div>
+          <div class="xp-theme-desc">Morado Eléctrico, estética nocturna y wallpapers góticos</div>
+        </div>
+        <span class="xp-theme-badge" id="badgeThemeClassic"><i class="ti ti-check"></i> Activo</span>
+      </div>
+      <!-- Swatches Preview -->
+      <div class="xp-theme-swatches">
+        <span class="xp-swatch" style="background:#09090B;" title="Fondo #09090B"></span>
+        <span class="xp-swatch" style="background:#121217;" title="Tarjetas #121217"></span>
+        <span class="xp-swatch" style="background:#8a2be2;" title="Acento #8a2be2"></span>
+        <span class="xp-swatch" style="background:#b388ff;" title="Luz #b388ff"></span>
+        <span class="xp-swatch" style="background:#F4F4F5;" title="Texto #F4F4F5"></span>
+      </div>
+    </div>
+
+    <!-- Tema 2: Xprod Obsidian -->
+    <div class="xp-theme-card" id="themeCardObsidian" onclick="solicitarCambioTema('obsidian', 'Estilo Xprod Obsidian')">
+      <div class="xp-theme-card-head">
+        <div class="xp-theme-info">
+          <div class="xp-theme-name">Estilo Xprod Obsidian</div>
+          <div class="xp-theme-desc">Minimalismo puro, paleta lavanda nocturna y fondo limpio</div>
+        </div>
+        <span class="xp-theme-badge" id="badgeThemeObsidian"><i class="ti ti-check"></i> Activo</span>
+      </div>
+      <!-- Swatches Preview de la paleta solicitada -->
+      <div class="xp-theme-swatches">
+        <span class="xp-swatch" style="background:#17151C;" title="#17151C"></span>
+        <span class="xp-swatch" style="background:#292531;" title="#292531"></span>
+        <span class="xp-swatch" style="background:#45404F;" title="#45404F"></span>
+        <span class="xp-swatch" style="background:#716879;" title="#716879"></span>
+        <span class="xp-swatch" style="background:#AAA2B3;" title="#AAA2B3"></span>
+        <span class="xp-swatch" style="background:#E2DDE7;" title="#E2DDE7"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── Ajustes de Tienda (WhatsApp) ── -->
 <div class="form-container" style="width: 100%; margin-bottom: 25px;">
   <h3 style="margin: 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
@@ -1688,6 +1739,81 @@ function guardarAjustesWhatsApp() {
     Swal.fire({icon:"error", title:"Error", text:err.message});
   });
 }
+// ── Personalización de Temas Visuales (Bento UI) ──
+async function solicitarCambioTema(nuevoTema, nombre) {
+  const currentTema = document.getElementById('htmlRoot')?.getAttribute('data-theme') || localStorage.getItem('xp_theme') || 'classic';
+  const normalCurrent = (currentTema === 'dark') ? 'classic' : currentTema;
+  if (normalCurrent === nuevoTema) {
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast('info', `El estilo "${nombre}" ya está activo.`);
+    } else {
+      Swal.fire({ icon:'info', title:'Tema actual', text:`El estilo "${nombre}" ya está activo.`, timer:1500, showConfirmButton:false, background:'#121217', color:'#fff' });
+    }
+    return;
+  }
+
+  const result = await Swal.fire({
+    title: `¿Cambiar al ${nombre}?`,
+    text: 'Se actualizarán los colores, contrastes y fondos de pantalla en toda la aplicación.',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cambiar estilo',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#8a2be2',
+    cancelButtonColor: '#475569',
+    background: '#121217',
+    color: '#ffffff'
+  });
+
+  if (!result.isConfirmed) return;
+
+  // 1. Aplicar en caliente al DOM sin recarga
+  const rootEl = document.getElementById('htmlRoot');
+  if (rootEl) {
+    rootEl.setAttribute('data-theme', nuevoTema);
+  }
+
+  // 2. Guardar en localStorage (para PWA Offline)
+  try {
+    localStorage.setItem('xp_theme', nuevoTema);
+  } catch (_) {}
+
+  // 3. Actualizar badges en la vista de configuración
+  actualizarUISelectorTema(nuevoTema);
+
+  // 4. Guardar en backend (ajustes_globales)
+  try {
+    const res = await fetch(`${window.APP || ''}/entrenador/api-guardar-tema-sistema`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tema: nuevoTema, csrf_token: window.CSRF || '' })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('success', `¡${nombre} aplicado con éxito!`);
+      } else {
+        Swal.fire({ icon:'success', title:'Estilo aplicado', text:`¡${nombre} activado con éxito!`, timer:1600, showConfirmButton:false, background:'#121217', color:'#fff' });
+      }
+    }
+  } catch (err) {
+    console.warn('Error al guardar tema en backend:', err);
+  }
+}
+
+function actualizarUISelectorTema(tema) {
+  const isObsidian = (tema === 'obsidian');
+  const cardClassic = document.getElementById('themeCardClassic');
+  const cardObsidian = document.getElementById('themeCardObsidian');
+
+  if (cardClassic) cardClassic.classList.toggle('is-active', !isObsidian);
+  if (cardObsidian) cardObsidian.classList.toggle('is-active', isObsidian);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const currentTema = document.getElementById('htmlRoot')?.getAttribute('data-theme') || localStorage.getItem('xp_theme') || 'classic';
+  actualizarUISelectorTema(currentTema);
+});
 </script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>
 

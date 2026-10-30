@@ -10,8 +10,20 @@ $route   = $route ?? (($segment[0] ?? '') . '/' . ($segment[1] ?? ''));
 
 // Añadir security headers (antes de cualquier output HTML)
 addSecurityHeaders();
+
+$temaGlobalDefecto = 'classic';
+try {
+    if (function_exists('getAjustesGlobales')) {
+        $ajustesGlobalesTmp = getAjustesGlobales();
+        $temaGlobalDefecto = $ajustesGlobalesTmp['tema_sistema'] ?? 'classic';
+    } elseif (function_exists('getDB')) {
+        $dbTmp = getDB();
+        $stTmp = $dbTmp->query("SELECT valor FROM ajustes_globales WHERE clave = 'tema_sistema' LIMIT 1");
+        $temaGlobalDefecto = $stTmp->fetchColumn() ?: 'classic';
+    }
+} catch (\Throwable $e) {}
 ?><?php // No añadir salto de línea antes del DOCTYPE ?><!DOCTYPE html>
-<html lang="es" data-theme="dark" id="htmlRoot">
+<html lang="es" data-theme="<?= e($temaGlobalDefecto) ?>" id="htmlRoot">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
@@ -71,7 +83,7 @@ addSecurityHeaders();
 
     // Aplicar tema guardado ANTES de que se pinte el DOM (evita flash)
     (function() {
-      const t = localStorage.getItem('xp_theme') || 'dark';
+      const t = localStorage.getItem('xp_theme') || '<?= e($temaGlobalDefecto) ?>';
       const rootEl = document.getElementById('htmlRoot');
       rootEl.setAttribute('data-theme', t);
       // Bloquear la altura inicial del fondo para que el teclado móvil nunca lo achique ni cambie su escala

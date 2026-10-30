@@ -3,9 +3,10 @@
    Paleta: Midnight Blue, Navy, Teal, Pastel Amber + Dark Accents
    ═══════════════════════════════════════════════════════ */
 
-/* ── DARK THEME (default) ───────────── */
+/* ── DARK THEME (Clásico Xprod Fit / default) ───────────── */
 :root,
-html[data-theme="dark"] {
+html[data-theme="dark"],
+html[data-theme="classic"] {
   /* ── Backgrounds ── */
   --bg: #09090B;
   /* Pitch Dark (JJK theme) */
@@ -71,6 +72,60 @@ html[data-theme="dark"] {
   --card-border: rgba(255, 255, 255, 0.06);
   --input-bg: #1A1A22;
   --input-border: rgba(255, 255, 255, 0.12);
+}
+
+/* ── OBSIDIAN MINIMALIST THEME (Paleta @uiux.build) ───────────── */
+html[data-theme="obsidian"] {
+  /* ── Backgrounds ── */
+  --bg: #17151C;
+  --bg2: #292531;
+  --bg3: #383342;
+  --card: #292531;
+
+  /* ── Borders ── */
+  --border: #45404F;
+  --border-accent: rgba(226, 221, 231, 0.35);
+
+  /* ── Sistema Acento Minimalista (Lavanda Perla) ── */
+  --accent-primary: #E2DDE7;
+  --accent-hover: #FFFFFF;
+  --accent-bg: rgba(226, 221, 231, 0.14);
+  --text-purple: #AAA2B3;
+
+  /* ── Accents ── */
+  --accent: #E2DDE7;
+  --accent-light: #AAA2B3;
+
+  /* ── Secondary Accents ── */
+  --accent2: #201D27;
+  --accent-warm: #EF4444;
+
+  /* ── Estados Semánticos ── */
+  --danger: #F87171;
+  --danger-deep: #7F1D1D;
+  --warn: #F59E0B;
+  --success: #4ADE80;
+  --info: #AAA2B3;
+
+  /* ── Tipografía ── */
+  --text: #E2DDE7;
+  --text2: #AAA2B3;
+  --muted: #716879;
+
+  /* ── Formas y sombras ── */
+  --radius: 18px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.38);
+  --shadow-red: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --trans: .22s cubic-bezier(.4, 0, .2, 1);
+
+  /* ── Glass / Nav ── */
+  --nav-bg: #17151C;
+  --card-glass: rgba(41, 37, 49, 0.90);
+  --card-border: rgba(69, 64, 79, 0.65);
+  --input-bg: #201D27;
+  --input-border: #45404F;
 }
 
 /* ── LIGHT THEME ── */
@@ -295,6 +350,126 @@ html[data-theme="light"]::before {
 
 html[data-theme="light"] body {
   background-color: #f4f4f5;
+}
+
+/* ── Obsidian Minimalist theme background (sin wallpapers góticos) ── */
+html[data-theme="obsidian"]::before {
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(69, 64, 79, 0.45) 0%, rgba(23, 21, 28, 0.98) 75%),
+    linear-gradient(180deg, #17151C 0%, #17151C 100%) !important;
+  background-color: #17151C !important;
+}
+
+html[data-theme="obsidian"] body {
+  background-color: #17151C !important;
+}
+
+/* En Obsidian, los botones primarios usan texto oscuro sobre acento perlado para contraste óptimo */
+html[data-theme="obsidian"] .btn-primary,
+html[data-theme="obsidian"] .cr-btn-save,
+html[data-theme="obsidian"] .btn-xp-primary,
+html[data-theme="obsidian"] .form-submit-btn,
+html[data-theme="obsidian"] .xp-pwa-install-btn {
+  background: #E2DDE7 !important;
+  color: #17151C !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 16px rgba(226, 221, 231, 0.2) !important;
+}
+html[data-theme="obsidian"] .btn-primary:hover,
+html[data-theme="obsidian"] .cr-btn-save:hover,
+html[data-theme="obsidian"] .btn-xp-primary:hover,
+html[data-theme="obsidian"] .form-submit-btn:hover,
+html[data-theme="obsidian"] .xp-pwa-install-btn:hover {
+  background: #FFFFFF !important;
+  color: #17151C !important;
+  box-shadow: 0 6px 22px rgba(226, 221, 231, 0.3) !important;
+}
+
+html[data-theme="obsidian"] .xp-nav a.active,
+html[data-theme="obsidian"] .xp-nav a.active svg {
+  color: #E2DDE7 !important;
+}
+html[data-theme="obsidian"] .xp-nav a.active {
+  background: rgba(226, 221, 231, 0.1) !important;
+}
+
+/* ── Selector de Temas Visuales (Bento UI) ── */
+.xp-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+.xp-theme-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  user-select: none;
+}
+.xp-theme-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+.xp-theme-card.is-active {
+  border-color: var(--accent-primary, #8a2be2);
+  background: rgba(138, 43, 226, 0.08);
+  box-shadow: 0 4px 20px rgba(138, 43, 226, 0.2);
+}
+html[data-theme="obsidian"] .xp-theme-card.is-active {
+  border-color: #E2DDE7;
+  background: rgba(226, 221, 231, 0.08);
+  box-shadow: 0 4px 20px rgba(226, 221, 231, 0.15);
+}
+.xp-theme-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.xp-theme-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #fff;
+}
+.xp-theme-desc {
+  font-size: 0.76rem;
+  color: var(--muted, #94a3b8);
+  margin-top: 2px;
+}
+.xp-theme-badge {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: var(--accent-primary, #8a2be2);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+html[data-theme="obsidian"] .xp-theme-badge {
+  background: #E2DDE7;
+  color: #17151C;
+}
+.xp-theme-card.is-active .xp-theme-badge {
+  display: inline-flex;
+}
+.xp-theme-swatches {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.xp-swatch {
+  width: 28px;
+  height: 18px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
 }
 
 /* ── THEME TOGGLE BUTTON ──────────────────────────────── */

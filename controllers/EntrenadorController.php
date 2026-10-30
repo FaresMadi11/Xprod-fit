@@ -63,6 +63,7 @@ match($action) {
     'api-listar-plantillas-catalogo'  => entApiListarPlantillasCatalogo(),
     'api-guardar-plantilla-catalogo' => entApiGuardarPlantillaCatalogo(),
     'api-eliminar-plantilla-catalogo'=> entApiEliminarPlantillaCatalogo(),
+    'api-guardar-tema-sistema'       => entApiGuardarTemaSistema(),
     default             => entDashboard(),
 };
 
@@ -3154,6 +3155,32 @@ function entApiEliminarPlantillaCatalogo(): void {
     } catch (\Throwable $e) {
         if ($db->inTransaction()) $db->rollBack();
         echo json_encode(['ok' => false, 'msg' => 'Error al eliminar la plantilla.']);
+    }
+    exit;
+}
+
+function entApiGuardarTemaSistema(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json');
+
+    $raw  = file_get_contents('php://input');
+    $data = json_decode($raw, true);
+    $tema = trim($data['tema'] ?? '');
+
+    if (!in_array($tema, ['classic', 'obsidian', 'dark', 'light'], true)) {
+        echo json_encode(['ok' => false, 'msg' => 'Tema no válido.']);
+        exit;
+    }
+
+    try {
+        $db = getDB();
+        $st = $db->prepare("INSERT INTO ajustes_globales (clave, valor) VALUES ('tema_sistema', ?) ON DUPLICATE KEY UPDATE valor = ?");
+        $st->execute([$tema, $tema]);
+        echo json_encode(['ok' => true, 'msg' => 'Tema del sistema actualizado correctamente.', 'tema' => $tema]);
+    } catch (\Throwable $e) {
+        error_log('[Xprod] entApiGuardarTemaSistema: ' . $e->getMessage());
+        echo json_encode(['ok' => false, 'msg' => 'Error al guardar el tema: ' . $e->getMessage()]);
     }
     exit;
 }
