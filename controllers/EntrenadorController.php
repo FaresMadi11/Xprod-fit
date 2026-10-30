@@ -62,6 +62,7 @@ match($action) {
     'api-dias-atleta'          => entApiDiasAtleta(),
     'api-listar-plantillas-catalogo'  => entApiListarPlantillasCatalogo(),
     'api-guardar-plantilla-catalogo' => entApiGuardarPlantillaCatalogo(),
+    'api-guardar-rutina-como-plantilla' => entApiGuardarRutinaComoPlantilla(),
     'api-eliminar-plantilla-catalogo'=> entApiEliminarPlantillaCatalogo(),
     'api-guardar-tema-sistema'       => entApiGuardarTemaSistema(),
     default             => entDashboard(),
@@ -3104,6 +3105,130 @@ function entApiListarPlantillasCatalogo(): void {
     exit;
 }
 
+/**
+ * Calcula un hash/firma determinista de las características de una plantilla:
+ * orden de ejercicios, ejercicios, tipo de serie, cantidad de series, cardio, reps y pesos.
+ */
+function calcularFirmaPlantilla(int $cardioActivo, ?int $cardioTiempo, ?string $cardioIndicaciones, array $ejercicios): string {
+    $cAct = $cardioActivo ? 1 : 0;
+    $cTmp = $cAct ? (int)($cardioTiempo ?? 15) : 0;
+    $cInd = $cAct ? mb_strtolower(trim((string)$cardioIndicaciones)) : '';
+
+    $ejsList = array_values($ejercicios);
+    usort($ejsList, fn($a, $b) => ((int)($a['orden'] ?? 0)) <=> ((int)($b['orden'] ?? 0)));
+
+    $ejsNorm = [];
+    foreach ($ejsList as $idx => $ex) {
+        $nombre = mb_strtolower(trim((string)($ex['nombre'] ?? '')));
+        if (!$nombre) continue;
+
+        $seriesNorm = [];
+        $series = array_values($ex['series'] ?? []);
+        usort($series, fn($a, $b) => ((int)($a['numero_serie'] ?? 0)) <=> ((int)($b['numero_serie'] ?? 0)));
+
+        foreach ($series as $s) {
+            $tipo = in_array($s['tipo_serie'] ?? '', ['normal','calentamiento','fallo','drop'], true) ? $s['tipo_serie'] : 'normal';
+            $kg   = (is_numeric($s['kg_objetivo'] ?? null) && (float)$s['kg_objetivo'] > 0) ? round((float)$s['kg_objetivo'], 2) : 0.0;
+            $reps = is_numeric($s['reps_objetivo'] ?? null) ? (int)$s['reps_objetivo'] : 0;
+
+            $seriesNorm[] = [
+                't' => $tipo,
+                'k' => $kg,
+                'r' => $reps
+            ];
+        }
+
+        $ejsNorm[] = [
+            'o' => $idx + 1,
+            'n' => $nombre,
+            's' => $seriesNorm,
+        ];
+    }
+
+    return md5(json_encode([
+        'c' => ['a' => $cAct, 't' => $cTmp, 'i' => $cInd],
+        'e' => $ejsNorm
+    ]));
+}
+
+/**
+ * Comprueba si ya existe una plantilla en el catálogo del entrenador con las mismas características.
+ */
+function verificarPlantillaDuplicada(PDO $db, int $entId, int $cardioActivo, ?int $cardioTiempo, ?string $cardioIndicaciones, array $ejercicios): array {
+    $st = $db->prepare("
+        SELECT 
+            p.id, p.titulo, p.cardio_activo, p.cardio_tiempo, p.cardio_indicaciones,
+            pe.id AS pe_id, pe.nombre_override, pe.orden, pe.descanso_segundos, pe.tipo_implemento, pe.unidad_carga,
+            ps.numero_serie, ps.tipo_serie, ps.kg_objetivo, ps.reps_objetivo, ps.rir
+        FROM plantillas_rutinas p
+        LEFT JOIN plantilla_ejercicios pe ON pe.plantilla_id = p.id
+        LEFT JOIN plantilla_series ps ON ps.plantilla_ej_id = pe.id
+        WHERE p.entrenador_id = ? AND p.es_catalogo = 1
+        ORDER BY p.id DESC, pe.orden ASC, pe.id ASC, ps.numero_serie ASC, ps.id ASC
+    ");
+    $st->execute([$entId]);
+    $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($rows)) {
+        return ['duplicado' => false];
+    }
+
+    $existentes = [];
+    foreach ($rows as $r) {
+        $pid = (int)$r['id'];
+        if (!isset($existentes[$pid])) {
+            $existentes[$pid] = [
+                'titulo'              => $r['titulo'],
+                'cardio_activo'       => (int)$r['cardio_activo'],
+                'cardio_tiempo'       => $r['cardio_tiempo'] !== null ? (int)$r['cardio_tiempo'] : null,
+                'cardio_indicaciones' => $r['cardio_indicaciones'],
+                'ejercicios'          => []
+            ];
+        }
+        $peId = $r['pe_id'];
+        if ($peId) {
+            if (!isset($existentes[$pid]['ejercicios'][$peId])) {
+                $existentes[$pid]['ejercicios'][$peId] = [
+                    'nombre'            => $r['nombre_override'],
+                    'orden'             => (int)$r['orden'],
+                    'descanso_segundos' => $r['descanso_segundos'] !== null ? (int)$r['descanso_segundos'] : null,
+                    'tipo_implemento'   => $r['tipo_implemento'],
+                    'unidad_carga'      => $r['unidad_carga'],
+                    'series'            => []
+                ];
+            }
+            if ($r['numero_serie'] !== null) {
+                $existentes[$pid]['ejercicios'][$peId]['series'][] = [
+                    'numero_serie'  => (int)$r['numero_serie'],
+                    'tipo_serie'    => $r['tipo_serie'],
+                    'kg_objetivo'   => $r['kg_objetivo'] !== null ? (float)$r['kg_objetivo'] : null,
+                    'reps_objetivo' => $r['reps_objetivo'] !== null ? (int)$r['reps_objetivo'] : null,
+                    'rir'           => $r['rir'] !== null ? (int)$r['rir'] : null,
+                ];
+            }
+        }
+    }
+
+    $firmaNueva = calcularFirmaPlantilla($cardioActivo, $cardioTiempo, $cardioIndicaciones, $ejercicios);
+
+    foreach ($existentes as $exPl) {
+        $firmaExistente = calcularFirmaPlantilla(
+            $exPl['cardio_activo'],
+            $exPl['cardio_tiempo'],
+            $exPl['cardio_indicaciones'],
+            $exPl['ejercicios']
+        );
+        if ($firmaNueva === $firmaExistente) {
+            return [
+                'duplicado' => true,
+                'msg'       => 'Ya existe una plantilla con estas características' . ($exPl['titulo'] ? ' ("' . $exPl['titulo'] . '")' : '') . '.'
+            ];
+        }
+    }
+
+    return ['duplicado' => false];
+}
+
 function entApiGuardarPlantillaCatalogo(): void {
     requireRole('entrenador');
     csrfCheck();
@@ -3112,7 +3237,7 @@ function entApiGuardarPlantillaCatalogo(): void {
     $db    = getDB();
     $entId = (int)$_SESSION['user_id'];
     $raw   = file_get_contents('php://input');
-    $data  = json_decode($raw, true);
+    $data  = json_decode($raw, true) ?: [];
 
     $titulo = trim($data['titulo'] ?? '');
     if (!$titulo) {
@@ -3128,6 +3253,17 @@ function entApiGuardarPlantillaCatalogo(): void {
     $cardioActivo = !empty($data['cardio_activo']) ? 1 : 0;
     $cardioTiempo = (!empty($data['cardio_tiempo']) && is_numeric($data['cardio_tiempo'])) ? (int)$data['cardio_tiempo'] : null;
     $cardioIndicaciones = isset($data['cardio_indicaciones']) ? trim((string)$data['cardio_indicaciones']) : null;
+
+    // Validación preventiva de duplicados con aviso inteligente
+    $dupCheck = verificarPlantillaDuplicada($db, $entId, $cardioActivo, $cardioTiempo, $cardioIndicaciones, $ejercicios);
+    if ($dupCheck['duplicado']) {
+        echo json_encode([
+            'ok'        => false,
+            'duplicado' => true,
+            'msg'       => $dupCheck['msg']
+        ]);
+        exit;
+    }
 
     try {
         $db->beginTransaction();
@@ -3160,7 +3296,7 @@ function entApiGuardarPlantillaCatalogo(): void {
             $ejId = (int)$db->lastInsertId();
 
             foreach (($ex['series'] ?? []) as $s) {
-                $tipo = in_array($s['tipo_serie'] ?? '', ['normal','calentamiento','fallo','drop']) ? $s['tipo_serie'] : 'normal';
+                $tipo = in_array($s['tipo_serie'] ?? '', ['normal','calentamiento','fallo','drop'], true) ? $s['tipo_serie'] : 'normal';
                 $kg   = ($tipoImp !== 'sin_peso' && is_numeric($s['kg_objetivo'] ?? null) && (float)$s['kg_objetivo'] > 0) ? (float)$s['kg_objetivo'] : null;
                 $reps = is_numeric($s['reps_objetivo'] ?? null) ? (int)$s['reps_objetivo'] : null;
                 $rir  = (isset($s['rir']) && is_numeric($s['rir'])) ? max(0, min(5, (int)$s['rir'])) : null;
@@ -3178,6 +3314,150 @@ function entApiGuardarPlantillaCatalogo(): void {
     exit;
 }
 
+/**
+ * Guarda directamente la rutina asignada de un atleta como plantilla en el catálogo del entrenador.
+ */
+function entApiGuardarRutinaComoPlantilla(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json; charset=utf-8');
+
+    $db    = getDB();
+    $entId = (int)$_SESSION['user_id'];
+    $raw   = file_get_contents('php://input');
+    $data  = json_decode($raw, true) ?: [];
+
+    $rutinaId = (int)($data['rutina_id'] ?? 0);
+    $titulo   = trim((string)($data['titulo'] ?? ''));
+
+    if (!$rutinaId) {
+        echo json_encode(['ok' => false, 'msg' => 'ID de rutina no válido.']);
+        exit;
+    }
+
+    // 1. Obtener la rutina y validar que pertenezca a un atleta de este entrenador
+    $stR = $db->prepare("
+        SELECT r.*, c.usuario_id 
+        FROM rutinas r
+        JOIN clientes c ON c.id = r.cliente_id
+        WHERE r.id = ? AND (? IS NOT NULL)
+    ");
+    $stR->execute([$rutinaId, $entId]);
+    $rutina = $stR->fetch(PDO::FETCH_ASSOC);
+
+    if (!$rutina) {
+        echo json_encode(['ok' => false, 'msg' => 'Rutina no encontrada o sin permisos.']);
+        exit;
+    }
+
+    if (!$titulo) {
+        $titulo = trim((string)($rutina['descripcion'] ?? '')) ?: 'Plantilla de Rutina';
+    }
+
+    // 2. Obtener los ejercicios de la rutina
+    $stEj = $db->prepare("
+        SELECT id, nombre, series, repeticiones, orden, rir, nota_biomecanica, tipo_implemento, unidad_carga
+        FROM ejercicios
+        WHERE rutina_id = ?
+        ORDER BY orden ASC, id ASC
+    ");
+    $stEj->execute([$rutinaId]);
+    $ejerciciosDb = $stEj->fetchAll(PDO::FETCH_ASSOC);
+
+    if (empty($ejerciciosDb)) {
+        echo json_encode(['ok' => false, 'msg' => 'La rutina no contiene ejercicios para guardar.']);
+        exit;
+    }
+
+    $cardioActivo = !empty($rutina['cardio_activo']) ? 1 : 0;
+    $cardioTiempo = (!empty($rutina['cardio_tiempo']) && is_numeric($rutina['cardio_tiempo'])) ? (int)$rutina['cardio_tiempo'] : null;
+    $cardioIndicaciones = isset($rutina['cardio_indicaciones']) ? trim((string)$rutina['cardio_indicaciones']) : null;
+
+    // Construir estructura de ejercicios y series normalizadas
+    $ejerciciosPayload = [];
+    foreach ($ejerciciosDb as $idx => $eRow) {
+        $numSeries = max(1, min(12, (int)($eRow['series'] ?? 3)));
+        $repsStr   = trim((string)($eRow['repeticiones'] ?? '10'));
+        $repsNum   = is_numeric($repsStr) ? (int)$repsStr : ((int)filter_var($repsStr, FILTER_SANITIZE_NUMBER_INT) ?: 10);
+        $rirVal    = (isset($eRow['rir']) && is_numeric($eRow['rir'])) ? max(0, min(5, (int)$eRow['rir'])) : 2;
+        $tipoImp   = in_array($eRow['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true) ? $eRow['tipo_implemento'] : 'barra';
+        $uniCarga  = in_array($eRow['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true) ? $eRow['unidad_carga'] : 'kg';
+        if ($tipoImp === 'sin_peso') $uniCarga = 'ninguna';
+
+        $seriesList = [];
+        for ($s = 1; $s <= $numSeries; $s++) {
+            $seriesList[] = [
+                'numero_serie'  => $s,
+                'tipo_serie'    => 'normal',
+                'kg_objetivo'   => null,
+                'reps_objetivo' => $repsNum,
+                'rir'           => $rirVal,
+            ];
+        }
+
+        $ejerciciosPayload[] = [
+            'nombre'            => $eRow['nombre'],
+            'orden'             => (int)($eRow['orden'] ?? ($idx + 1)),
+            'tipo_implemento'   => $tipoImp,
+            'unidad_carga'      => $uniCarga,
+            'descanso_segundos' => 90,
+            'series'            => $seriesList,
+        ];
+    }
+
+    // 3. Chequeo de duplicados
+    $dupCheck = verificarPlantillaDuplicada($db, $entId, $cardioActivo, $cardioTiempo, $cardioIndicaciones, $ejerciciosPayload);
+    if ($dupCheck['duplicado']) {
+        echo json_encode([
+            'ok'        => false,
+            'duplicado' => true,
+            'msg'       => $dupCheck['msg']
+        ]);
+        exit;
+    }
+
+    // 4. Guardar como plantilla en catálogo
+    try {
+        $db->beginTransaction();
+
+        $stPl = $db->prepare(
+            "INSERT INTO plantillas_rutinas (entrenador_id, titulo, descripcion, es_catalogo, cardio_activo, cardio_tiempo, cardio_indicaciones)
+             VALUES (?, ?, ?, 1, ?, ?, ?)"
+        );
+        $stPl->execute([$entId, $titulo, $rutina['descripcion'] ?? '', $cardioActivo, $cardioTiempo, $cardioIndicaciones]);
+        $plantillaId = (int)$db->lastInsertId();
+
+        $stEx = $db->prepare(
+            "INSERT INTO plantilla_ejercicios (plantilla_id, nombre_override, orden, descanso_segundos, tipo_implemento, unidad_carga)
+             VALUES (?, ?, ?, ?, ?, ?)"
+        );
+        $stSerie = $db->prepare(
+            "INSERT INTO plantilla_series (plantilla_ej_id, numero_serie, tipo_serie, kg_objetivo, reps_objetivo, rir)
+             VALUES (?, ?, ?, ?, ?, ?)"
+        );
+
+        foreach ($ejerciciosPayload as $ex) {
+            $stEx->execute([$plantillaId, $ex['nombre'], $ex['orden'], $ex['descanso_segundos'], $ex['tipo_implemento'], $ex['unidad_carga']]);
+            $ejId = (int)$db->lastInsertId();
+
+            foreach ($ex['series'] as $s) {
+                $stSerie->execute([$ejId, $s['numero_serie'], $s['tipo_serie'], $s['kg_objetivo'], $s['reps_objetivo'], $s['rir']]);
+            }
+        }
+
+        $db->commit();
+        echo json_encode([
+            'ok'           => true,
+            'msg'          => 'Plantilla "' . $titulo . '" guardada en tu catálogo con éxito.',
+            'plantilla_id' => $plantillaId
+        ]);
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        error_log('[Xprod] entApiGuardarRutinaComoPlantilla: ' . $e->getMessage());
+        echo json_encode(['ok' => false, 'msg' => 'Error al guardar la plantilla: ' . $e->getMessage()]);
+    }
+    exit;
+}
 function entApiEliminarPlantillaCatalogo(): void {
     requireRole('entrenador');
     csrfCheck();

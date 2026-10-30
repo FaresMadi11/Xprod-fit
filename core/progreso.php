@@ -852,7 +852,10 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
             return array_merge($base, [
                 'accion'  => $accion,
                 'estado'  => $estado,
-                'rutina'  => ['nombre' => implode(' · ', array_column($hist['rutinas'], 'nombre'))],
+                'rutina'  => [
+                    'id'     => !empty($rutinasIds) ? (int)reset($rutinasIds) : null,
+                    'nombre' => implode(' · ', array_column($hist['rutinas'], 'nombre'))
+                ],
                 'resumen' => [
                     'ejercicios'          => count($hist['ejercicios']),
                     'series'              => $hist['series'],

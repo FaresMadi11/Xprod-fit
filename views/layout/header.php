@@ -92,7 +92,7 @@ try {
       <?php if ($rolUser): ?>try { localStorage.setItem('xp_auth_active', '1'); localStorage.setItem('xp_auth_role', '<?= e($rolUser) ?>'); localStorage.setItem('xp_auth_home', window.APP + '/<?= $rolUser === 'entrenador' ? 'entrenador/dashboard' : 'cliente/dashboard' ?>'); } catch (_) {}<?php endif; ?>
       if ('caches' in window) {
         caches.keys().then(function(ks) {
-          ks.forEach(function(k) { if (k !== 'xprod-fit-v3.9') caches.delete(k); });
+          ks.forEach(function(k) { if (k !== 'xprod-fit-v4.0') caches.delete(k); });
         }).catch(function(){});
       }
       if ('serviceWorker' in navigator) {

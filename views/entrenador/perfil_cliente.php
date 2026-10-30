@@ -2996,6 +2996,17 @@ if (document.readyState === 'complete') {
         `;
       }
 
+
+      if (data.rutina && data.rutina.id) {
+        html += `
+          <div style="margin-top:16px;">
+            <button type="button" class="dm-btn-rutina" style="width:100%;background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(168,85,247,0.3));border:1px solid rgba(168,85,247,0.5);color:#fff;" onclick="guardarRutinaAtletaComoPlantilla(${data.rutina.id}, '${esc(rutinaNombre)}')">
+              <i class="ti ti-device-floppy" aria-hidden="true"></i> Guardar como plantilla
+            </button>
+          </div>
+        `;
+      }
+
       bodyEl.innerHTML = html;
       return;
     }
@@ -3037,11 +3048,27 @@ if (document.readyState === 'complete') {
         `;
       });
 
+      const rutinaId = (data.rutina && data.rutina.id) ? data.rutina.id : null;
+      const btnGuardarPlantillaHtml = rutinaId ? `
+        <button type="button" class="dm-btn-rutina" style="flex:1;min-width:140px;background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(168,85,247,0.3));border:1px solid rgba(168,85,247,0.5);color:#fff;" onclick="guardarRutinaAtletaComoPlantilla(${rutinaId}, '${esc(data.rutina.nombre)}')">
+          <i class="ti ti-device-floppy" aria-hidden="true"></i> Guardar como plantilla
+        </button>
+      ` : '';
+
       if (data.accion && data.accion.url) {
         html += `
-          <a href="${esc(data.accion.url)}" class="dm-btn-rutina">
-            <i class="ti ti-edit" aria-hidden="true"></i> ${esc(data.accion.label || 'Editar rutina asignada')}
-          </a>
+          <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;">
+            <a href="${esc(data.accion.url)}" class="dm-btn-rutina" style="flex:1;min-width:140px;">
+              <i class="ti ti-edit" aria-hidden="true"></i> ${esc(data.accion.label || 'Editar rutina asignada')}
+            </a>
+            ${btnGuardarPlantillaHtml}
+          </div>
+        `;
+      } else if (btnGuardarPlantillaHtml) {
+        html += `
+          <div style="margin-top:16px;">
+            ${btnGuardarPlantillaHtml}
+          </div>
         `;
       }
 
@@ -3085,6 +3112,17 @@ if (document.readyState === 'complete') {
           </div>
         `;
       });
+
+
+      if (data.rutina && data.rutina.id) {
+        html += `
+          <div style="margin-top:16px;">
+            <button type="button" class="dm-btn-rutina" style="width:100%;background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(168,85,247,0.3));border:1px solid rgba(168,85,247,0.5);color:#fff;" onclick="guardarRutinaAtletaComoPlantilla(${data.rutina.id}, '${esc(rutinaNombre)}')">
+              <i class="ti ti-device-floppy" aria-hidden="true"></i> Guardar como plantilla
+            </button>
+          </div>
+        `;
+      }
 
       bodyEl.innerHTML = html;
       return;
@@ -3204,9 +3242,16 @@ if (document.readyState === 'complete') {
               <div class="crdi-rutina-name"><i class="ti ti-flame" style="color:${data.estado === 'incompleta' ? '#fb923c' : '#d8b4fe'};margin-right:4px;"></i> ${esc(data.rutina.nombre)}</div>
               <div class="crdi-rutina-stats">${numEjs} ejercicio${numEjs !== 1 ? 's' : ''} &middot; ${data.estado === 'incompleta' ? `${numSets} series completadas (de ${planSets || '—'})` : `${numSets} serie${numSets !== 1 ? 's' : ''} ${data.estado === 'completado' ? 'completadas' : 'programadas'}`}</div>
             </div>
-            <button type="button" class="crdi-btn-asignar" style="margin-top:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);" onclick="abrirModalDia('${esc(fecha)}')">
-              <i class="ti ti-maximize"></i> Ver Completo
-            </button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              ${data.rutina && data.rutina.id ? `
+                <button type="button" class="crdi-btn-asignar" style="margin-top:0;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.35);color:#d8b4fe;" onclick="guardarRutinaAtletaComoPlantilla(${data.rutina.id}, '${esc(data.rutina.nombre)}')" title="Guardar esta rutina como plantilla reusable">
+                  <i class="ti ti-device-floppy"></i> Guardar plantilla
+                </button>
+              ` : ''}
+              <button type="button" class="crdi-btn-asignar" style="margin-top:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);" onclick="abrirModalDia('${esc(fecha)}')">
+                <i class="ti ti-maximize"></i> Ver Completo
+              </button>
+            </div>
           </div>
           <div class="crdi-ejercicios-list">
         `;
@@ -3314,6 +3359,100 @@ if (document.readyState === 'complete') {
   window.cerrarModalDia = cerrarModalDia;
   window.cargarDetalleDiaInline = cargarDetalleDiaInline;
 })();
+
+async function guardarRutinaAtletaComoPlantilla(rutinaId, nombreRutina) {
+  if (!rutinaId) return;
+
+  const { value: nombrePlantilla } = await Swal.fire({
+    title: 'Guardar como plantilla',
+    text: 'Asigna un nombre a esta plantilla para reutilizarla con otros atletas:',
+    input: 'text',
+    inputValue: nombreRutina || 'Plantilla de Rutina',
+    inputPlaceholder: 'Ej: Rutina Hipertrofia Pierna',
+    showCancelButton: true,
+    confirmButtonText: 'Guardar plantilla',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#8b5cf6',
+    cancelButtonColor: '#475569',
+    background: '#12121a',
+    color: '#ffffff',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'Debes escribir un nombre para la plantilla.';
+      }
+    }
+  });
+
+  if (!nombrePlantilla) return;
+
+  try {
+    const res = await fetch(`${APP_URL_STATS}/entrenador/api-guardar-rutina-como-plantilla`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': typeof CSRF !== 'undefined' ? CSRF : '',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({
+        rutina_id: rutinaId,
+        titulo: nombrePlantilla.trim(),
+        csrf_token: typeof CSRF !== 'undefined' ? CSRF : ''
+      })
+    });
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+
+    if (data.ok) {
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('success', data.msg || 'Plantilla guardada con éxito.');
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Guardada!',
+          text: data.msg || 'Plantilla guardada con éxito en tu catálogo.',
+          timer: 2200,
+          showConfirmButton: false,
+          background: '#12121a',
+          color: '#ffffff'
+        });
+      }
+    } else {
+      if (data.duplicado) {
+        if (typeof Xp !== 'undefined' && Xp.toast) {
+          Xp.toast('warning', data.msg || 'Ya existe una plantilla con estas características.');
+        } else {
+          Swal.fire({
+            icon: 'info',
+            title: 'Plantilla existente',
+            text: data.msg || 'Ya existe una plantilla con estas características.',
+            confirmButtonColor: '#8b5cf6',
+            background: '#12121a',
+            color: '#ffffff'
+          });
+        }
+      } else {
+        if (typeof Xp !== 'undefined' && Xp.toast) {
+          Xp.toast('error', data.msg || 'No se pudo guardar la plantilla.');
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: data.msg || 'No se pudo guardar la plantilla.',
+            background: '#12121a',
+            color: '#ffffff'
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast('error', 'Error de conexión al guardar la plantilla.');
+    }
+  }
+}
+window.guardarRutinaAtletaComoPlantilla = guardarRutinaAtletaComoPlantilla;
 
 // ── Gráfica interactiva de series en el Modal del Calendario ──────────
 window.chartsSesion = window.chartsSesion || {};

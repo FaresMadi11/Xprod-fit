@@ -1133,6 +1133,43 @@
   box-shadow: 0 2px 10px rgba(138, 43, 226, 0.3);
 }
 
+.canvas-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 10px;
+  padding: 0 4px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.canvas-ex-count-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.canvas-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 520px) {
+  .canvas-header-bar {
+    gap: 8px;
+  }
+  .canvas-header-actions {
+    gap: 6px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .btn-plantilla-action {
+    padding: 5px 9px;
+    font-size: 0.76rem;
+  }
+}
+
 /* ── Panel Compacto de Cardio (Bento UI) ── */
 .cr-cardio-panel {
   background: rgba(18, 18, 26, 0.9);
@@ -1439,18 +1476,22 @@
     </div>
   </div>
 
-  <!-- Barra superior de ejercicios con contador, suiche Cardio y Plantillas / Guardar Plantilla -->
-  <div class="canvas-header-bar" id="canvasHeaderBar" style="display:flex; align-items:center; justify-content:space-between; margin:16px 0 10px; padding:0 4px; gap:8px;">
-    <span style="font-size:0.85rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em;" id="canvasExCount">Ejercicios</span>
-    <div style="display:flex; align-items:center; gap:8px;">
+  <!-- Barra superior de ejercicios con contador, suiche Cardio y Cargar / Guardar Plantilla -->
+  <div class="canvas-header-bar" id="canvasHeaderBar">
+    <span class="canvas-ex-count-badge" id="canvasExCount">Ejercicios</span>
+    <div class="canvas-header-actions">
       <button type="button" id="btnToggleCardio" class="cr-cardio-toggle" onclick="toggleCardioPanel()" title="Activar / Desactivar Cardio">
         <i class="ti ti-run"></i>
         <span>Cardio</span>
         <span class="cr-cardio-switch"><span class="cr-cardio-knob"></span></span>
       </button>
-      <button type="button" id="btnPlantillaAction" class="btn-plantilla-action" onclick="handlePlantillaClick()" title="Gestionar plantillas de rutina">
-        <i class="ti ti-template" id="iconPlantillaAction"></i>
-        <span id="txtPlantillaAction">Plantillas</span>
+      <button type="button" id="btnCargarPlantilla" class="btn-plantilla-action" onclick="abrirSheetPlantillas()" title="Cargar una plantilla guardada">
+        <i class="ti ti-folder-open"></i>
+        <span>Cargar plantilla</span>
+      </button>
+      <button type="button" id="btnGuardarPlantilla" class="btn-plantilla-action is-dirty" onclick="guardarComoPlantilla()" title="Guardar rutina actual como plantilla en tu catálogo">
+        <i class="ti ti-device-floppy"></i>
+        <span>Guardar plantilla</span>
       </button>
     </div>
   </div>
@@ -3082,31 +3123,17 @@ let plantillaEstado = 'plantillas'; // 'plantillas' | 'guardar'
 window._catalogoPlantillasCache = [];
 
 function actualizarBotonPlantilla(nuevoEstado) {
-  plantillaEstado = nuevoEstado;
-  const btn = document.getElementById('btnPlantillaAction');
-  const icon = document.getElementById('iconPlantillaAction');
-  const txt = document.getElementById('txtPlantillaAction');
-  if (!btn || !icon || !txt) return;
-
-  if (nuevoEstado === 'guardar') {
-    btn.classList.add('is-dirty');
-    icon.className = 'ti ti-device-floppy';
-    txt.textContent = 'Guardar plantilla';
-    btn.title = 'Guardar esta rutina como plantilla en tu catálogo';
-  } else {
-    btn.classList.remove('is-dirty');
-    icon.className = 'ti ti-template';
-    txt.textContent = 'Plantillas';
-    btn.title = 'Ver tus plantillas guardadas';
+  // Tenemos dos botones dedicados: #btnCargarPlantilla y #btnGuardarPlantilla.
+  // Mantenemos esta función para compatibilidad con eventos del canvas.
+  const btnGuardar = document.getElementById('btnGuardarPlantilla');
+  if (btnGuardar) {
+    const hasExercises = document.querySelectorAll('#exerciseCanvas .ex-block').length > 0;
+    btnGuardar.classList.toggle('is-dirty', hasExercises);
   }
 }
 
 function handlePlantillaClick() {
-  if (plantillaEstado === 'plantillas') {
-    abrirSheetPlantillas();
-  } else {
-    guardarComoPlantilla();
-  }
+  abrirSheetPlantillas();
 }
 
 async function abrirSheetPlantillas() {
@@ -3306,14 +3333,29 @@ async function eliminarPlantillaGuardada(id, titulo) {
 async function guardarComoPlantilla() {
   const serializado = serializarEjerciciosCanvas();
   if (!serializado.ok) {
-    if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('warning', serializado.msg);
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast('warning', serializado.msg || 'Agrega al menos un ejercicio a la rutina para guardarla como plantilla.');
+    } else {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Lienzo sin ejercicios',
+        text: serializado.msg || 'Agrega al menos un ejercicio a la rutina para guardarla como plantilla.',
+        confirmButtonColor: '#8b5cf6',
+        background: '#12121a',
+        color: '#ffffff'
+      });
+    }
     return;
   }
+
+  const defaultTitulo = (document.getElementById('rutinaTitulo')?.value.trim()) ||
+                        (typeof RUTINA_EDITAR !== 'undefined' && RUTINA_EDITAR?.descripcion) || '';
 
   const { value: nombrePlantilla } = await Swal.fire({
     title: 'Guardar como plantilla',
     text: 'Asigna un nombre a esta plantilla para reutilizarla:',
     input: 'text',
+    inputValue: defaultTitulo,
     inputPlaceholder: 'Ej: Pierna & Glúteos - Hipertrofia',
     showCancelButton: true,
     confirmButtonText: 'Guardar plantilla',
@@ -3331,16 +3373,21 @@ async function guardarComoPlantilla() {
 
   if (!nombrePlantilla) return;
 
-  const btn = document.getElementById('btnPlantillaAction');
+  const btn = document.getElementById('btnGuardarPlantilla');
+  const originalHtml = btn ? btn.innerHTML : null;
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i class="ti ti-loader-2 cr-spin"></i> Guardando...';
+    btn.innerHTML = '<i class="ti ti-loader-2 cr-spin"></i> <span>Guardando...</span>';
   }
 
   try {
     const res = await fetch(`${APP}/entrenador/api-guardar-plantilla-catalogo`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': window.CSRF,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
       body: JSON.stringify({
         titulo: nombrePlantilla.trim(),
         ejercicios: serializado.ejercicios,
@@ -3355,17 +3402,56 @@ async function guardarComoPlantilla() {
     const data = await res.json();
 
     if (data.ok) {
-      if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('success', data.msg || 'Plantilla guardada.');
-      actualizarBotonPlantilla('plantillas');
+      if (typeof Xp !== 'undefined' && Xp.toast) {
+        Xp.toast('success', data.msg || 'Plantilla guardada con éxito.');
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Guardada!',
+          text: data.msg || 'Plantilla guardada con éxito en tu catálogo.',
+          timer: 2000,
+          showConfirmButton: false,
+          background: '#12121a',
+          color: '#ffffff'
+        });
+      }
     } else {
-      if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('error', data.msg || 'No se pudo guardar la plantilla.');
+      if (data.duplicado) {
+        if (typeof Xp !== 'undefined' && Xp.toast) {
+          Xp.toast('warning', data.msg || 'Ya existe una plantilla con estas características.');
+        } else {
+          Swal.fire({
+            icon: 'info',
+            title: 'Plantilla existente',
+            text: data.msg || 'Ya existe una plantilla con estas características.',
+            confirmButtonColor: '#8b5cf6',
+            background: '#12121a',
+            color: '#ffffff'
+          });
+        }
+      } else {
+        if (typeof Xp !== 'undefined' && Xp.toast) {
+          Xp.toast('error', data.msg || 'No se pudo guardar la plantilla.');
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: data.msg || 'No se pudo guardar la plantilla.',
+            background: '#12121a',
+            color: '#ffffff'
+          });
+        }
+      }
     }
-  } catch (_) {
-    if (typeof Xp !== 'undefined' && Xp.toast) Xp.toast('error', 'Error al guardar la plantilla.');
+  } catch (err) {
+    console.error(err);
+    if (typeof Xp !== 'undefined' && Xp.toast) {
+      Xp.toast('error', 'Error al guardar la plantilla.');
+    }
   } finally {
-    if (btn) {
+    if (btn && originalHtml !== null) {
       btn.disabled = false;
-      actualizarBotonPlantilla(plantillaEstado);
+      btn.innerHTML = originalHtml;
     }
   }
 }

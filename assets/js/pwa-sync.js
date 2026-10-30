@@ -65,7 +65,7 @@
       if (navigator.onLine && 'caches' in window) {
         const runPrewarm = async () => {
           try {
-            const CACHE_NAME = 'xprod-fit-v3.9';
+            const CACHE_NAME = 'xprod-fit-v4.0';
             const cache = await caches.open(CACHE_NAME);
             const base = (window.APP || window.location.origin).replace(/\/+$/, '');
             const curPath = window.location.pathname;
