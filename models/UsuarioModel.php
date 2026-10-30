@@ -130,15 +130,22 @@ class UsuarioModel {
     }
 
     /**
-     * Normaliza una cédula/documento a 'V-12345678'. Acepta 'v12345678', 'V 12.345.678', etc.
-     * Devuelve null si no cumple (letra V/E/J/G/P + 5 a 9 dígitos).
+     * Normaliza una cédula/documento a formato 'V-12345678'.
+     * Acepta números puros de 5 a 8 dígitos (ej: '28123456' -> 'V-28123456')
+     * o con prefijo (ej: 'E12345678' -> 'E-12345678', 'V-12345678', etc.).
+     * Devuelve null si no cumple el formato o supera 8 dígitos.
      */
     public static function normalizarCedula(string $raw): ?string {
         $limpia = strtoupper(preg_replace('/[\s.\-]+/', '', trim($raw)) ?? '');
-        if (!preg_match('/^([VEJGP])(\d{5,9})$/', $limpia, $m)) {
-            return null;
+        // Caso 1: Solo números (5 a 8 dígitos) -> asigna prefijo venezolano por defecto
+        if (preg_match('/^\d{5,8}$/', $limpia)) {
+            return 'V-' . $limpia;
         }
-        return $m[1] . '-' . $m[2];
+        // Caso 2: Con prefijo explícito (V, E, J, G, P) + 5 a 8 dígitos
+        if (preg_match('/^([VEJGP])(\d{5,8})$/', $limpia, $m)) {
+            return $m[1] . '-' . $m[2];
+        }
+        return null;
     }
 
     public function emailExists(string $email): bool {

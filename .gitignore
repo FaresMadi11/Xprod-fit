@@ -53,3 +53,6 @@ fix_*.php
 check.php
 kogane_test.php
 diagrama.html
+
+# ── Graphify cache ──
+graphify-out/cache/

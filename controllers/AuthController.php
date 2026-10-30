@@ -203,7 +203,10 @@ function authDoRegistro(): void {
         $fechaNac    = preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaNacRaw) ? $fechaNacRaw : '2005-06-15';
         
         $pesoRaw     = (float)($in('peso_kg') ?: $in('peso'));
-        $pesoKg      = ($pesoRaw >= 20 && $pesoRaw <= 400) ? round($pesoRaw, 1) : 70.0;
+        if ($pesoRaw < 35 || $pesoRaw > 160) {
+            authRegistroError('El peso corporal debe estar entre 35 kg y 160 kg.', 'peso_kg');
+        }
+        $pesoKg      = round($pesoRaw, 1);
 
         $alturaRaw   = (float)($in('altura_cm') ?: $in('altura'));
         $alturaCm    = ($alturaRaw >= 100 && $alturaRaw <= 250) ? round($alturaRaw) : 170.0;
@@ -294,10 +297,40 @@ function authDoRegistro(): void {
             authRegistroError('Ingresa tus apellidos (mínimo 2 letras sin números ni símbolos).', 'apellidos');
         }
         if ($cedula === null) {
-            authRegistroError('La cédula no es válida. Ejemplo: V-12345678.', 'cedula');
+            authRegistroError('La cédula debe contener solo números (entre 5 y 8 dígitos).', 'cedula');
         }
         if ($email === '') {
             authRegistroError('El correo electrónico no es válido.', 'email');
+        }
+
+        // ── Validación de Dominio de Correo Real y Anti-Desechables ──
+        $emailParts = explode('@', $email);
+        $emailDomain = strtolower(trim($emailParts[1] ?? ''));
+
+        $disposableDomains = [
+            '10minutemail.com', 'tempmail.com', 'guerrillamail.com', 'yopmail.com', 'mailinator.com',
+            'trashmail.com', 'throwawaymail.com', 'dispostable.com', 'fakeinbox.com', 'mytemp.email',
+            'getairmail.com', 'sharklasers.com', 'nada.ltd', 'mohmal.com', 'crazymailing.com'
+        ];
+        if (in_array($emailDomain, $disposableDomains, true)) {
+            authRegistroError('No se permiten correos electrónicos temporales o desechables.', 'email');
+        }
+
+        $trustedDomains = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com', 'icloud.com', 'live.com'];
+        if (!in_array($emailDomain, $trustedDomains, true)) {
+            $hasMx = false;
+            try {
+                if (function_exists('checkdnsrr')) {
+                    $hasMx = checkdnsrr($emailDomain, 'MX') || checkdnsrr($emailDomain, 'A');
+                } else {
+                    $hasMx = true;
+                }
+            } catch (\Throwable $dnsEx) {
+                $hasMx = true;
+            }
+            if (!$hasMx) {
+                authRegistroError("El dominio del correo (@{$emailDomain}) no existe o no puede recibir mensajes. Ingresa un correo real.", 'email');
+            }
         }
 
         $um = new UsuarioModel();

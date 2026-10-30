@@ -1431,8 +1431,8 @@ function cliApiEditarPerfil(): void {
             $fechaNac = null;
         }
 
-        if ($peso !== null && ($peso < 10 || $peso > 400)) {
-            echo json_encode(['ok' => false, 'msg' => 'Peso fuera de rango (10 - 400 kg).']);
+        if ($peso !== null && ($peso < 35 || $peso > 160)) {
+        echo json_encode(['ok' => false, 'msg' => 'Peso fuera de rango (35-160 kg)']);
             exit;
         }
         if ($altura !== null && ($altura < 50 || $altura > 250)) {
@@ -1648,7 +1648,7 @@ function cliGuardarMedidas(): void {
     $peso      = (float)$pesoStr;
     $altura    = (float)$alturaStr;
 
-    if ($peso < 10 || $peso > 400 || $altura < 50 || $altura > 250) {
+    if ($peso < 35 || $peso > 160 || $altura < 50 || $altura > 250) {
         jsonOut(false, 'Valores de peso o altura fuera de rango.');
     }
 
@@ -2317,8 +2317,8 @@ function cliApiEditarPeso(): void {
         echo json_encode(['ok' => false, 'msg' => 'Fecha invÃ¡lida']);
         exit;
     }
-    if ($nuevoPeso < 10 || $nuevoPeso > 400) {
-        echo json_encode(['ok' => false, 'msg' => 'Peso fuera de rango (10â400 kg)']);
+    if ($nuevoPeso < 35 || $nuevoPeso > 160) {
+        echo json_encode(['ok' => false, 'msg' => 'Peso fuera de rango (35-160 kg)']);
         exit;
     }
 
@@ -2363,8 +2363,8 @@ function cliApiNuevoPeso(): void {
     $pesoStr   = str_replace(',', '.', $pesoRaw);
     $nuevoPeso = (float)$pesoStr;
 
-    if ($nuevoPeso < 10 || $nuevoPeso > 400) {
-        echo json_encode(['ok' => false, 'msg' => 'Peso fuera de rango (10â400 kg)']);
+    if ($nuevoPeso < 35 || $nuevoPeso > 160) {
+        echo json_encode(['ok' => false, 'msg' => 'Peso fuera de rango (35-160 kg)']);
         exit;
     }
 

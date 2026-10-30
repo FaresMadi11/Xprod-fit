@@ -52,6 +52,10 @@ function togglePassVisibility(btn, ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
   }
   if (!btn) return;
+  var now = Date.now();
+  if (btn._lastToggle && (now - btn._lastToggle) < 250) return;
+  btn._lastToggle = now;
+
   var targetId = btn.getAttribute('data-target');
   var inp = document.getElementById(targetId);
   if (!inp) return;
@@ -63,10 +67,31 @@ function togglePassVisibility(btn, ev) {
   }
 }
 window.togglePassVisibility = togglePassVisibility;
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(ev) {
+    var btn = ev.target.closest ? ev.target.closest('.btn-eye') : null;
+    if (btn) {
+      togglePassVisibility(btn, ev);
+    }
+  });
+});
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#02040a;min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow-x:hidden;overflow-y:auto;position:relative;}
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #02040a;
+}
+body {
+  font-family: 'Inter', sans-serif;
+  position: fixed;
+  inset: 0;
+}
 
 /* ══════════════════════════════════════════════════════
    MAHORAGA – CODE-GENERATED ANIMATED CHARACTER
@@ -75,11 +100,14 @@ body{font-family:'Inter',sans-serif;background:#02040a;min-height:100dvh;display
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 0;
   width: 100vw;
   height: 100vh;
-  height: 100lvh;
+  z-index: 0;
   pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 /* Vignette suave solo en esquinas, no toca los brazos */
 .mh-vignette {
@@ -89,7 +117,7 @@ body{font-family:'Inter',sans-serif;background:#02040a;min-height:100dvh;display
   pointer-events: none;
   background: radial-gradient(
     ellipse 95% 90% at 50% 50%,
-    transparent 55%,
+    transparent 60%,
     #02040a 100%
   );
 }
@@ -107,10 +135,10 @@ main#mainContent{
   width: 100vw;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 16px;
-  background: rgba(2, 4, 10, 0.46);
+  padding: 24px 16px;
+  background: rgba(2, 4, 10, 0.30);
   /* Scroll interno fluido cuando el wizard de registro o recuperación desborda la pantalla */
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -877,142 +905,6 @@ select:-webkit-autofill:active {
 <div class="bg-orb orb1" aria-hidden="true"></div>
 <div class="bg-orb orb2" aria-hidden="true"></div>
 
-<script>
-// ── MAHORAGA CANVAS GENERATOR (Inmediato e Independiente) ──
-(function() {
-  const canvas = document.getElementById('mahoragaCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d', { alpha: false });
-  const img = new Image();
-  
-  let wheelParticles = [];
-  let headParticles = [];
-  let chestParticles = [];
-  let lowerParticles = [];
-  let imgW = 0, imgH = 0;
-  let scale = 1, offsetX = 0, offsetY = 0;
-  let dpr = 1;
-  let w = 0, h = 0;
-  let animated = false;
-  
-  img.onload = () => {
-    if (animated) return;
-    animated = true;
-    imgW = img.width;
-    imgH = img.height;
-    
-    const offCanvas = document.createElement('canvas');
-    offCanvas.width = imgW;
-    offCanvas.height = imgH;
-    const offCtx = offCanvas.getContext('2d');
-    offCtx.drawImage(img, 0, 0);
-    const imgData = offCtx.getImageData(0, 0, imgW, imgH).data;
-    
-    const step = Math.max(1, Math.floor(imgW / 900)); 
-    
-    for (let y = 0; y < imgH; y += step) {
-      for (let x = 0; x < imgW; x += step) {
-        const i = (y * imgW + x) * 4;
-        const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        
-        if (lum > 18) { 
-          const size = (lum / 255) * step * 1.1; 
-          const p = { baseX: x, baseY: y, size: size };
-          
-          let yp = y / imgH;
-          if (yp < 0.22) wheelParticles.push(p);
-          else if (yp < 0.38) headParticles.push(p);
-          else if (yp < 0.65) chestParticles.push(p);
-          else lowerParticles.push(p);
-        }
-      }
-    }
-    window.addEventListener('resize', resize);
-    resize();
-    requestAnimationFrame(animate);
-  };
-
-  img.src = '<?= APP_URL ?>/assets/img/mahoraga1.jpg';
-  if (img.complete && img.naturalWidth > 0) {
-    img.onload();
-  }
-
-  function resize() {
-    dpr = window.devicePixelRatio || 1;
-    w = window.innerWidth;
-    h = window.innerHeight;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    
-    scale = h / imgH;
-    offsetX = (w - imgW * scale) / 2;
-    offsetY = 0;
-  }
-  
-  let time = 0;
-  
-  const ambientParticles = [];
-  for (let i = 0; i < 40; i++) {
-    ambientParticles.push({
-      x: Math.random(), y: Math.random(),
-      speed: 0.0002 + Math.random() * 0.0004,
-      size: 1 + Math.random() * 2,
-      alpha: 0.05 + Math.random() * 0.12,
-      phase: Math.random() * Math.PI * 2
-    });
-  }
-  
-  function animate() {
-    time += 0.035;
-    
-    ctx.fillStyle = '#02040a';
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#ffffff';
-    
-    const wheelDy = Math.sin(time * 1.2) * 12 * scale;
-    for (let i = 0; i < wheelParticles.length; i++) {
-      const p = wheelParticles[i];
-      ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + wheelDy, p.size * scale, p.size * scale);
-    }
-    const headDy = Math.sin(time * 0.8) * 3 * scale;
-    for (let i = 0; i < headParticles.length; i++) {
-      const p = headParticles[i];
-      ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + headDy, p.size * scale, p.size * scale);
-    }
-    const chestDy = Math.sin(time * 0.8) * 4 * scale;
-    const chestScaleX = Math.sin(time * 0.8) * 0.025; 
-    const imgCenter = imgW / 2;
-    for (let i = 0; i < chestParticles.length; i++) {
-      const p = chestParticles[i];
-      const dx = (p.baseX - imgCenter) * chestScaleX * scale;
-      ctx.fillRect(offsetX + p.baseX * scale + dx, offsetY + p.baseY * scale + chestDy, p.size * scale, p.size * scale);
-    }
-    const lowerDy = Math.sin(time * 0.8) * 1 * scale;
-    for (let i = 0; i < lowerParticles.length; i++) {
-      const p = lowerParticles[i];
-      ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + lowerDy, p.size * scale, p.size * scale);
-    }
-
-    for (let i = 0; i < ambientParticles.length; i++) {
-      const ap = ambientParticles[i];
-      ap.y -= ap.speed;
-      if (ap.y < -0.02) { ap.y = 1.02; ap.x = Math.random(); }
-      const ax = ap.x * w + Math.sin(time + ap.phase) * 20;
-      const ay = ap.y * h;
-      ctx.globalAlpha = ap.alpha * (0.5 + 0.5 * Math.sin(time * 2 + ap.phase));
-      ctx.fillRect(ax, ay, ap.size, ap.size);
-    }
-    ctx.globalAlpha = 1;
-    
-    requestAnimationFrame(animate);
-  }
-})();
-</script>
-
 <?php
 $vistaInicial = $vistaInicial ?? 'login';
 $isGoogleMode = (!empty($_SESSION['google_onboarding']) || isset($_GET['google']));
@@ -1121,6 +1013,22 @@ $esStandby  = ($vistaInicial === 'standby');
         <h1 class="form-title"><?= $isGoogleMode ? 'Completa tu Perfil' : 'Crear Cuenta' ?></h1>
         <p class="form-sub"><?= $isGoogleMode ? 'Paso 1: Completa tu cédula y fecha de nacimiento para continuar' : 'Paso 1: Datos de tu cuenta y fecha de nacimiento' ?></p>
 
+        <?php if (!$isGoogleMode): ?>
+        <!-- Botón Registro con Google (1-Click verificado) -->
+        <div style="margin-bottom: 20px;">
+          <a href="<?= APP_URL ?>/auth/google" class="btn-google" role="button" aria-label="Registrarse con Google">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Registrarse con Google
+          </a>
+          <div class="divider" style="margin: 18px 0 14px;"><span>o completa con tus datos</span></div>
+        </div>
+        <?php endif; ?>
+
         <!-- Fila doble con Nombre y Apellido -->
         <div class="reg-grid-2">
           <div class="input-box-group" id="group_reg_nombres">
@@ -1136,8 +1044,8 @@ $esStandby  = ($vistaInicial === 'standby');
         </div>
 
         <div class="input-box-group" id="group_reg_cedula">
-          <label for="reg_cedula">Cédula</label>
-          <input type="text" id="reg_cedula" name="cedula" value="<?= e($googleData['cedula'] ?? '') ?>" placeholder="V-12345678" maxlength="14" required autocomplete="off" autocapitalize="characters" spellcheck="false" aria-required="true" aria-describedby="err_cedula">
+          <label for="reg_cedula">Cédula / Documento (solo números)</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="reg_cedula" name="cedula" value="<?= e($googleData['cedula'] ?? '') ?>" placeholder="Ej: 28123456" maxlength="8" required autocomplete="off" spellcheck="false" aria-required="true" aria-describedby="err_cedula">
           <small class="ibg-error" id="err_cedula" role="alert"></small>
         </div>
 
@@ -1151,7 +1059,7 @@ $esStandby  = ($vistaInicial === 'standby');
           <label for="reg_pass">Contraseña</label>
           <div class="pass-row">
             <input type="password" id="reg_pass" name="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" aria-describedby="err_password">
-            <button type="button" class="btn-eye" data-target="reg_pass" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
+            <button type="button" class="btn-eye" data-target="reg_pass" onclick="togglePassVisibility(this, event)" aria-label="Mostrar u ocultar contraseña"><i class="ti ti-eye" aria-hidden="true"></i></button>
           </div>
           <small class="ibg-error" id="err_password" role="alert"></small>
         </div>
@@ -1247,13 +1155,13 @@ $esStandby  = ($vistaInicial === 'standby');
               <i class="ti ti-minus"></i>
             </button>
             <div class="ruler-track-box">
-              <input type="range" id="regPesoRange" min="30" max="200" step="0.5" value="70.0" class="ruler-range" aria-label="Selector de peso corporal">
+              <input type="range" id="regPesoRange" min="35" max="160" step="0.5" value="70.0" class="ruler-range" aria-label="Selector de peso corporal">
               <div class="ruler-legend" aria-hidden="true">
-                <span>30 kg</span>
-                <span>70 kg</span>
-                <span>115 kg</span>
+                <span>35 kg</span>
+                <span>65 kg</span>
+                <span>95 kg</span>
+                <span>125 kg</span>
                 <span>160 kg</span>
-                <span>200 kg</span>
               </div>
             </div>
             <button type="button" class="weight-btn" id="btnRegPesoPlus" title="Aumentar 0.5 kg" aria-label="Aumentar peso">
@@ -1555,15 +1463,6 @@ const safeAnime = window.anime;
 // Entrance
 safeAnime({ targets:'#authBox', opacity:[0,1], translateY:[20,0], duration:800, easing:'easeOutExpo' });
 
-// ── Field micro-animations ──
-const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-if (motionOK && typeof anime !== 'undefined') {
-  document.querySelectorAll('.field input, .input-box-group input').forEach(el => {
-    el.addEventListener('focus', () => safeAnime({ targets: el.closest('.field, .input-box-group'), scale:[1,1.018], duration:350, easing:'easeOutElastic(1,.6)' }));
-    el.addEventListener('blur',  () => safeAnime({ targets: el.closest('.field, .input-box-group'), scale:1, duration:300, easing:'easeOutCubic' }));
-  });
-}
-
 // ── Toast Defensivo ──
 const Toast = {
   fire(opts) {
@@ -1807,13 +1706,15 @@ document.addEventListener('input', e => {
 });
 
 function normalizarCedula(raw) {
-  const limpia = String(raw || '').toUpperCase().replace(/[\s.\-]+/g, '');
-  const m = limpia.match(/^([VEJGP])(\d{5,9})$/);
-  return m ? m[1] + '-' + m[2] : null;
+  const limpia = String(raw || '').replace(/\D/g, '').slice(0, 8);
+  return (limpia.length >= 5 && limpia.length <= 8) ? limpia : null;
 }
 
 const inpCedula = document.getElementById('reg_cedula');
 if (inpCedula) {
+  inpCedula.addEventListener('input', e => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
+  });
   inpCedula.addEventListener('blur', e => {
     const n = normalizarCedula(e.target.value);
     if (n) e.target.value = n;
@@ -1909,7 +1810,7 @@ const btnPesoPlus  = document.getElementById('btnRegPesoPlus');
 function setRegPeso(val) {
   let num = parseFloat(val);
   if (isNaN(num)) num = 70.0;
-  num = Math.max(30, Math.min(200, Math.round(num * 10) / 10));
+  num = Math.max(35, Math.min(160, Math.round(num * 10) / 10));
   const formatted = num.toFixed(1);
   if (regPesoRange) regPesoRange.value = formatted;
   if (regPesoNum)   regPesoNum.textContent = formatted;
@@ -2119,10 +2020,10 @@ window.handleWizardStep1Next = function(event) {
     errorMsg   = !valApellidos ? 'Por favor ingresa tus apellidos.' : 'Tus apellidos deben tener al menos 2 letras válidas (sin números).';
   } else if (!valCedulaRaw) {
     errorField = 'reg_cedula';
-    errorMsg   = 'Por favor ingresa tu número de cédula (Ej: V-12345678).';
+    errorMsg   = 'Por favor ingresa tu número de cédula (solo números).';
   } else if (!valCedulaNorm) {
     errorField = 'reg_cedula';
-    errorMsg   = 'Formato de cédula no válido. Usa por ejemplo V-12345678.';
+    errorMsg   = 'La cédula debe contener solo números (entre 5 y 8 dígitos).';
   } else if (!valEmail) {
     errorField = 'reg_email';
     errorMsg   = 'Por favor ingresa tu correo electrónico.';
@@ -2614,9 +2515,9 @@ if (recoveryForm) {
 // ── MAHORAGA CANVAS GENERATOR (Optimizado 60fps Móvil + Estable con Teclado) ──
 (function() {
   const canvas = document.getElementById('mahoragaCanvas');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d', { alpha: false });
   const img = new Image();
-  img.src = '<?= APP_URL ?>/assets/img/mahoraga1.jpg';
   
   let wheelParticles = [];
   let headParticles = [];
@@ -2642,7 +2543,7 @@ if (recoveryForm) {
       if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'SELECT' && a.tagName !== 'TEXTAREA')) {
         isTypingLogin = false;
       }
-    }, 80);
+    }, 100);
   }, { passive: true });
   
   img.onload = () => {
@@ -2656,9 +2557,8 @@ if (recoveryForm) {
     offCtx.drawImage(img, 0, 0);
     const imgData = offCtx.getImageData(0, 0, imgW, imgH).data;
     
-    // En teléfonos usamos densidad adaptativa para que corra a 60fps sin recalentar la GPU
-    const isMobileScreen = window.innerWidth < 768;
-    const step = Math.max(1, Math.floor(imgW / (isMobileScreen ? 460 : 850))); 
+    // Step = 2 garantiza definición HD nítida sin sobrecargar la GPU con 38.000 polígonos
+    const step = 2; 
     
     for (let y = 0; y < imgH; y += step) {
       for (let x = 0; x < imgW; x += step) {
@@ -2667,7 +2567,7 @@ if (recoveryForm) {
         const lum = 0.299 * r + 0.587 * g + 0.114 * b;
         
         if (lum > 18) { 
-          const size = (lum / 255) * step * 1.12; 
+          const size = (lum / 255) * step * 1.25; 
           const p = { baseX: x, baseY: y, size: size };
           
           let yp = y / imgH;
@@ -2678,32 +2578,47 @@ if (recoveryForm) {
         }
       }
     }
+
     window.addEventListener('resize', () => {
-      // Ignorar cambios de altura provocados por la apertura del teclado virtual en móviles
-      if (Math.abs(window.innerWidth - lastWidth) > 20) {
+      // Ignorar cambios de altura provocados por la apertura o cierre del teclado virtual en móviles
+      if (Math.abs(window.innerWidth - lastWidth) > 30) {
         resize();
       }
     }, { passive: true });
+
     resize();
     requestAnimationFrame(animate);
   };
+
+  img.src = '<?= APP_URL ?>/assets/img/mahoraga1.jpg';
+  if (img.complete && img.naturalWidth > 0) {
+    img.onload();
+  }
 
   function resize() {
     const isMob = window.innerWidth < 768;
     dpr = isMob ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2);
     w = window.innerWidth;
-    // Fijar la altura máxima de pantalla para que el fondo NUNCA se achique al abrir el teclado
-    h = isMob ? Math.max(window.innerHeight, document.documentElement.clientHeight || 0) : window.innerHeight;
+    // Fijar la altura física de pantalla para que el fondo NUNCA se encoja o mueva al abrir el teclado
+    const screenH = Math.max(window.screen?.availHeight || 0, window.screen?.height || 0, window.innerHeight || 0);
+    h = isMob ? screenH : window.innerHeight;
     lastWidth = w;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     
-    scale = h / imgH;
-    offsetX = (w - imgW * scale) / 2;
-    offsetY = 0;
+    // Mahoraga GRANDE e imponente en Login, Registro y Olvido de contraseña
+    if (isMob) {
+      scale = Math.max((w * 1.45) / imgW, (h * 1.20) / imgH);
+      offsetX = (w - imgW * scale) / 2;
+      offsetY = Math.max(-25, (h - imgH * scale) * 0.10);
+    } else {
+      scale = Math.max((w * 0.65) / imgW, (h * 1.22) / imgH);
+      offsetX = (w - imgW * scale) / 2;
+      offsetY = (h - imgH * scale) * 0.20;
+    }
     drawFrame();
   }
   
@@ -2772,7 +2687,7 @@ if (recoveryForm) {
   function animate(ts) {
     // Mientras el usuario escribe en el teclado móvil, mantener el frame estático para dar 100% de fluidez al input
     if (!isTypingLogin && !document.hidden) {
-      if (!ts || (ts - lastFrameTs) >= 24) {
+      if (!ts || (ts - lastFrameTs) >= 28) {
         lastFrameTs = ts || 0;
         time += 0.045;
         drawFrame();

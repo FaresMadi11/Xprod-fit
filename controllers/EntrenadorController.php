@@ -262,7 +262,7 @@ function entGuardarCliente(): void {
     $fechaNac    = preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaNacRaw) ? $fechaNacRaw : '2005-06-15';
 
     $pesoRaw     = (float)($in['peso_kg'] ?? ($in['peso'] ?? 70.0));
-    $pesoKg      = ($pesoRaw >= 20 && $pesoRaw <= 400) ? round($pesoRaw, 1) : 70.0;
+    $pesoKg      = ($pesoRaw >= 35 && $pesoRaw <= 160) ? round($pesoRaw, 1) : 70.0;
 
     $alturaRaw   = (float)($in['altura_cm'] ?? ($in['altura'] ?? 170.0));
     $alturaCm    = ($alturaRaw >= 100 && $alturaRaw <= 250) ? round($alturaRaw) : 170.0;

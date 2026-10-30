@@ -692,8 +692,8 @@ require __DIR__ . '/../layout/header.php';
         </div>
 
         <div class="input-box-group" id="grp_cedula">
-          <label for="reg_cedula">Cédula de Identidad *</label>
-          <input type="text" id="reg_cedula" name="cedula" placeholder="V-12345678" maxlength="14" required autocapitalize="characters" spellcheck="false">
+          <label for="reg_cedula">Cédula de Identidad (solo números) *</label>
+          <input type="text" inputmode="numeric" pattern="[0-9]*" id="reg_cedula" name="cedula" placeholder="Ej: 28123456" maxlength="8" required spellcheck="false" oninput="this.value=this.value.replace(/\D/g,'').slice(0,8)">
           <small class="ibg-error" id="err_cedula"></small>
         </div>
 
@@ -786,13 +786,13 @@ require __DIR__ . '/../layout/header.php';
               <i class="ti ti-minus"></i>
             </button>
             <div class="ruler-track-box">
-              <input type="range" id="pesoRange" min="30" max="200" step="0.5" value="70.0" class="ruler-range" oninput="actualizarPeso(this.value)">
+              <input type="range" id="pesoRange" min="35" max="160" step="0.5" value="70.0" class="ruler-range" oninput="actualizarPeso(this.value)">
               <div class="ruler-legend" aria-hidden="true">
-                <span>30 kg</span>
-                <span>70 kg</span>
-                <span>115 kg</span>
+                <span>35 kg</span>
+                <span>65 kg</span>
+                <span>95 kg</span>
+                <span>125 kg</span>
                 <span>160 kg</span>
-                <span>200 kg</span>
               </div>
             </div>
             <button type="button" class="weight-btn" onclick="ajustarPeso(0.5)" aria-label="Subir peso">
@@ -1007,7 +1007,7 @@ function validarPaso1(avanzar = true) {
 
   if (!nombres) { setError('nombres', 'Ingresa los nombres del atleta'); valid = false; }
   if (!apellidos) { setError('apellidos', 'Ingresa los apellidos'); valid = false; }
-  if (!cedula) { setError('cedula', 'Ingresa la cédula (ej. V-12345678)'); valid = false; }
+  if (!cedula || cedula.length < 5) { setError('cedula', 'Ingresa una cédula válida (5 a 8 números)'); valid = false; }
   if (!email || !email.includes('@')) { setError('email', 'Correo electrónico inválido'); valid = false; }
   if (password.length < 8) { setError('password', 'La contraseña debe tener al menos 8 caracteres'); valid = false; }
   if (!respuesta) { setError('respuesta', 'La respuesta de seguridad es requerida'); valid = false; }
@@ -1077,7 +1077,7 @@ function actualizarPeso(val) {
 }
 function ajustarPeso(delta) {
   const cur = parseFloat(document.getElementById('pesoRange').value) || 70.0;
-  const nxt = Math.max(30, Math.min(200, cur + delta));
+  const nxt = Math.max(35, Math.min(160, cur + delta));
   actualizarPeso(nxt);
 }
 
