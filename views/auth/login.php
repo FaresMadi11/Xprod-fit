@@ -42,7 +42,7 @@
     } catch (_) {}
   }
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(appBase + '/sw.js?v=3.7', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
+    navigator.serviceWorker.register(appBase + '/sw.js?v=3.8', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
   }
 })();
 
@@ -1057,7 +1057,7 @@ select:-webkit-autofill:active {
 <div class="bg-orb orb2" aria-hidden="true"></div>
 
 <script>
-// ── MAHORAGA CANVAS GENERATOR (High-DPI Razor-Sharp Engine & Zero-Lag Particles) ──
+// ── MAHORAGA CANVAS GENERATOR (High-Definition Razor-Sharp Engine & Continuous 60fps) ──
 (function() {
   const canvas = document.getElementById('mahoragaCanvas');
   if (!canvas) return;
@@ -1068,6 +1068,7 @@ select:-webkit-autofill:active {
   let wheelParticles = [];
   let headParticles  = [];
   let chestParticles = [];
+  let lowerParticles = [];
 
   let imgW = 0, imgH = 0;
   let scale = 1, offsetX = 0, offsetY = 0;
@@ -1093,30 +1094,30 @@ select:-webkit-autofill:active {
       wheelParticles = [];
       headParticles  = [];
       chestParticles = [];
+      lowerParticles = [];
 
-      // Muestreo optimizado de alta fidelidad: paso 2 para máxima nitidez y rendimiento de 60fps continuo
-      const step = 2;
+      // Muestreo 1:1 de máxima resolución y nitidez absoluta (sin cuadrículas ni puntos separados)
+      const step = Math.max(1, Math.floor(imgW / 900)); // = 1
       for (let y = 0; y < imgH; y += step) {
         const yp = y / imgH;
-        // Omitir el tercio inferior para evitar ruido visual sobre los botones y textos del login
-        if (yp >= 0.62) continue;
-
         for (let x = 0; x < imgW; x += step) {
           const i = (y * imgW + x) * 4;
           const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
           const lum = 0.299 * r + 0.587 * g + 0.114 * b;
 
-          if (lum > 20) {
-            // Tamaño proporcional al brillo para un efecto punteado de lujo y ultra nítido
-            const size = (lum / 255) * 1.35;
+          if (lum > 18) {
+            // Tamaño proporcional al brillo: contornos suaves, vectoriales y ultra nítidos
+            const size = (lum / 255) * step * 1.12;
             const p = { x: x, y: y, size: size };
 
             if (yp < 0.22) {
               wheelParticles.push(p);
             } else if (yp < 0.38) {
               headParticles.push(p);
-            } else {
+            } else if (yp < 0.65) {
               chestParticles.push(p);
+            } else {
+              lowerParticles.push(p);
             }
           }
         }
@@ -1186,13 +1187,13 @@ select:-webkit-autofill:active {
 
     // Mahoraga nítido, imponente y posicionado con la rueda y cuernos flotando en la parte superior
     if (isMob) {
-      scale = Math.max((w * 1.35) / imgW, (h * 1.05) / imgH);
+      scale = Math.max((w * 1.45) / imgW, (h * 1.20) / imgH);
       offsetX = (w - imgW * scale) / 2;
-      offsetY = (h - imgH * scale) * 0.04;
+      offsetY = Math.max(-25, (h - imgH * scale) * 0.10);
     } else {
-      scale = Math.max((w * 0.62) / imgW, (h * 1.15) / imgH);
+      scale = Math.max((w * 0.65) / imgW, (h * 1.22) / imgH);
       offsetX = (w - imgW * scale) / 2;
-      offsetY = (h - imgH * scale) * 0.10;
+      offsetY = (h - imgH * scale) * 0.18;
     }
     drawFrame();
   }
@@ -1216,31 +1217,38 @@ select:-webkit-autofill:active {
     ctx.fillStyle = '#02040a';
     ctx.fillRect(0, 0, w, h);
 
-    if (wheelParticles.length > 0 || headParticles.length > 0 || chestParticles.length > 0) {
+    if (wheelParticles.length > 0 || headParticles.length > 0 || chestParticles.length > 0 || lowerParticles.length > 0) {
       ctx.fillStyle = '#ffffff';
 
       // 1. Rueda flotando (halo superior independiente)
       const wheelDy = Math.sin(time * 1.2) * 12 * scale;
-      for (let i = 0; i < wheelParticles.length; i++) {
+      for (let i = 0, len = wheelParticles.length; i < len; i++) {
         const p = wheelParticles[i];
         ctx.fillRect(offsetX + p.x * scale, offsetY + p.y * scale + wheelDy, p.size * scale, p.size * scale);
       }
 
       // 2. Cabeza y cuernos
       const headDy = Math.sin(time * 0.8) * 3 * scale;
-      for (let i = 0; i < headParticles.length; i++) {
+      for (let i = 0, len = headParticles.length; i < len; i++) {
         const p = headParticles[i];
         ctx.fillRect(offsetX + p.x * scale, offsetY + p.y * scale + headDy, p.size * scale, p.size * scale);
       }
 
       // 3. Pecho respirando (expande y sube suavemente)
       const chestDy = Math.sin(time * 0.8) * 4 * scale;
-      const chestScaleX = Math.sin(time * 0.8) * 0.02;
+      const chestScaleX = Math.sin(time * 0.8) * 0.022;
       const imgCenter = imgW / 2;
-      for (let i = 0; i < chestParticles.length; i++) {
+      for (let i = 0, len = chestParticles.length; i < len; i++) {
         const p = chestParticles[i];
         const dx = (p.x - imgCenter) * chestScaleX * scale;
         ctx.fillRect(offsetX + p.x * scale + dx, offsetY + p.y * scale + chestDy, p.size * scale, p.size * scale);
+      }
+
+      // 4. Torso inferior y silueta completa
+      const lowerDy = Math.sin(time * 0.8) * 1.2 * scale;
+      for (let i = 0, len = lowerParticles.length; i < len; i++) {
+        const p = lowerParticles[i];
+        ctx.fillRect(offsetX + p.x * scale, offsetY + p.y * scale + lowerDy, p.size * scale, p.size * scale);
       }
     } else if (img.naturalWidth > 0) {
       // Fallback nítido si el navegador no permite lectura de canvas
@@ -1251,7 +1259,7 @@ select:-webkit-autofill:active {
     }
 
     // Partículas ambientales de fondo ultra-ligeras
-    for (let i = 0; i < ambientParticles.length; i++) {
+    for (let i = 0, len = ambientParticles.length; i < len; i++) {
       const ap = ambientParticles[i];
       ap.y -= ap.speed;
       if (ap.y < -0.02) { ap.y = 1.02; ap.x = Math.random(); }
@@ -1265,9 +1273,9 @@ select:-webkit-autofill:active {
 
   function animate(ts) {
     if (!document.hidden) {
-      if (!ts || (ts - lastFrameTs) >= 28) {
+      if (!ts || (ts - lastFrameTs) >= 16) {
         lastFrameTs = ts || 0;
-        time += 0.045;
+        time += 0.035;
         drawFrame();
       }
     }
