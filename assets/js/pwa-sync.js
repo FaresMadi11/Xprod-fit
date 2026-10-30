@@ -2,7 +2,7 @@
 //  Xprod Fit — PWA & Offline Sync Manager (Patrón Outbox)
 // ══════════════════════════════════════════════════════════════
 
-(function(window) {
+(function (window) {
   'use strict';
 
   const STORAGE_KEY = 'xp_offline_queue';
@@ -19,7 +19,7 @@
             updateViaCache: 'none'
           })
             .then(reg => {
-              reg.update().catch(() => {});
+              reg.update().catch(() => { });
             })
             .catch(err => {
               console.warn('[PWA] Error registrando Service Worker:', err);
@@ -36,7 +36,7 @@
             localStorage.removeItem('xp_auth_role');
             localStorage.removeItem('xp_auth_home');
             sessionStorage.removeItem('xp_prewarm_ts');
-          } catch (_) {}
+          } catch (_) { }
         }
       }, true);
 
@@ -90,9 +90,9 @@
             if (!curCached || isStale) {
               const curRes = await fetch(window.location.href, htmlOpts).catch(() => null);
               if (curRes && curRes.ok) {
-                await cache.put(window.location.href, curRes.clone()).catch(() => {});
+                await cache.put(window.location.href, curRes.clone()).catch(() => { });
                 if (curPath.includes('/dashboard') || curPath.includes('/perfil')) {
-                  await cache.put(base + '/', curRes.clone()).catch(() => {});
+                  await cache.put(base + '/', curRes.clone()).catch(() => { });
                 }
               }
             }
@@ -113,7 +113,7 @@
 
               const res = await fetch(fullUrl, htmlOpts).catch(() => null);
               if (res && res.ok && res.url && (res.url.includes('/cliente/') || res.url.includes('/entrenador/'))) {
-                await cache.put(fullUrl, res.clone()).catch(() => {});
+                await cache.put(fullUrl, res.clone()).catch(() => { });
 
                 // Si es el módulo de estadísticas, extraer también el snapshot JSON para el calendario y grupos musculares offline
                 if (u === '/cliente/estadisticas') {
@@ -140,7 +140,7 @@
                           });
                         }
                       }
-                    } catch (_) {}
+                    } catch (_) { }
                   }
                 }
               }
@@ -148,7 +148,7 @@
             }
 
             sessionStorage.setItem('xp_prewarm_ts', String(Date.now()));
-          } catch (_) {}
+          } catch (_) { }
         };
 
         setTimeout(() => runPrewarm(), 600);
@@ -362,13 +362,13 @@
         pill.className = 'xp-pwa-header-pill offline';
         pill.innerHTML = `<span class="xp-status-dot"></span><span class="xp-status-text">Offline${count > 0 ? ' (' + count + ')' : ''}</span>`;
         pill.title = count > 0 ? `Modo offline: ${count} serie(s) guardadas localmente` : 'Modo offline (Sin conexión)';
-      } 
+      }
       // 4. Pendiente: punto azul índigo FIJO + palabra Pendiente
       else if (count > 0) {
         pill.className = 'xp-pwa-header-pill pending';
         pill.innerHTML = '<span class="xp-status-dot"></span><span class="xp-status-text">Pendiente</span>';
         pill.title = `${count} serie(s) por guardar en la base de datos`;
-      } 
+      }
       // 5. Online: punto verde esmeralda FIJO + palabra Online
       else {
         pill.className = 'xp-pwa-header-pill online';

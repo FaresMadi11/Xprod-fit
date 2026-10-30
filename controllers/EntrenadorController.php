@@ -724,7 +724,41 @@ function entCrearRutina(): void {
             $atleta_id = (int)$rutinaEditar['cliente_id'];
             $stEj = $db->prepare("SELECT * FROM ejercicios WHERE rutina_id = ? ORDER BY orden ASC");
             $stEj->execute([$rutina_id]);
-            $ejerciciosEditar = $stEj->fetchAll();
+            $ejerciciosEditar = $stEj->fetchAll(PDO::FETCH_ASSOC);
+
+            // Cargar series detalladas para cada ejercicio desde plantilla_series si existe
+            $plantillaId = (int)($rutinaEditar['plantilla_id'] ?? 0);
+            foreach ($ejerciciosEditar as &$ej) {
+                $seriesList = [];
+                if ($plantillaId > 0) {
+                    $stS = $db->prepare("
+                        SELECT ps.numero_serie, ps.tipo_serie, ps.kg_objetivo, ps.reps_objetivo, ps.rir
+                        FROM plantilla_ejercicios pe
+                        JOIN plantilla_series ps ON ps.plantilla_ej_id = pe.id
+                        WHERE pe.plantilla_id = ? AND (pe.orden = ? OR LOWER(TRIM(pe.nombre_override)) = LOWER(TRIM(?)))
+                        ORDER BY ps.numero_serie ASC
+                    ");
+                    $stS->execute([$plantillaId, (int)$ej['orden'], $ej['nombre']]);
+                    $seriesList = $stS->fetchAll(PDO::FETCH_ASSOC);
+                }
+
+                if (empty($seriesList)) {
+                    $numS = max(1, (int)($ej['series'] ?? 3));
+                    $repsNum = is_numeric($ej['repeticiones'] ?? null) ? (int)$ej['repeticiones'] : 10;
+                    $rirNum  = $ej['rir'] !== null ? (int)$ej['rir'] : 2;
+                    for ($s = 1; $s <= $numS; $s++) {
+                        $seriesList[] = [
+                            'numero_serie'  => $s,
+                            'tipo_serie'    => 'normal',
+                            'kg_objetivo'   => null,
+                            'reps_objetivo' => $repsNum,
+                            'rir'           => $rirNum
+                        ];
+                    }
+                }
+                $ej['series'] = $seriesList;
+            }
+            unset($ej);
         }
     }
 
@@ -3373,9 +3407,27 @@ function entApiGuardarRutinaComoPlantilla(): void {
     $cardioTiempo = (!empty($rutina['cardio_tiempo']) && is_numeric($rutina['cardio_tiempo'])) ? (int)$rutina['cardio_tiempo'] : null;
     $cardioIndicaciones = isset($rutina['cardio_indicaciones']) ? trim((string)$rutina['cardio_indicaciones']) : null;
 
+    // Cargar series detalladas desde la plantilla base si existe para preservar tipo de serie (fallo, calentamiento, etc.), kilos, placas y reps
+    $plantillaIdRutina = (int)($rutina['plantilla_id'] ?? 0);
+    $seriesPorOrden = [];
+    if ($plantillaIdRutina > 0) {
+        $stPlS = $db->prepare("
+            SELECT pe.orden, ps.numero_serie, ps.tipo_serie, ps.kg_objetivo, ps.reps_objetivo, ps.rir
+            FROM plantilla_ejercicios pe
+            JOIN plantilla_series ps ON ps.plantilla_ej_id = pe.id
+            WHERE pe.plantilla_id = ?
+            ORDER BY pe.orden, ps.numero_serie
+        ");
+        $stPlS->execute([$plantillaIdRutina]);
+        foreach ($stPlS->fetchAll(PDO::FETCH_ASSOC) as $psRow) {
+            $seriesPorOrden[(int)$psRow['orden']][] = $psRow;
+        }
+    }
+
     // Construir estructura de ejercicios y series normalizadas
     $ejerciciosPayload = [];
     foreach ($ejerciciosDb as $idx => $eRow) {
+        $ord       = (int)($eRow['orden'] ?? ($idx + 1));
         $numSeries = max(1, min(12, (int)($eRow['series'] ?? 3)));
         $repsStr   = trim((string)($eRow['repeticiones'] ?? '10'));
         $repsNum   = is_numeric($repsStr) ? (int)$repsStr : ((int)filter_var($repsStr, FILTER_SANITIZE_NUMBER_INT) ?: 10);
@@ -3385,19 +3437,31 @@ function entApiGuardarRutinaComoPlantilla(): void {
         if ($tipoImp === 'sin_peso') $uniCarga = 'ninguna';
 
         $seriesList = [];
-        for ($s = 1; $s <= $numSeries; $s++) {
-            $seriesList[] = [
-                'numero_serie'  => $s,
-                'tipo_serie'    => 'normal',
-                'kg_objetivo'   => null,
-                'reps_objetivo' => $repsNum,
-                'rir'           => $rirVal,
-            ];
+        if (!empty($seriesPorOrden[$ord])) {
+            foreach ($seriesPorOrden[$ord] as $psRow) {
+                $seriesList[] = [
+                    'numero_serie'  => (int)$psRow['numero_serie'],
+                    'tipo_serie'    => in_array($psRow['tipo_serie'] ?? '', ['normal','calentamiento','fallo','drop']) ? $psRow['tipo_serie'] : 'normal',
+                    'kg_objetivo'   => is_numeric($psRow['kg_objetivo'] ?? null) ? (float)$psRow['kg_objetivo'] : null,
+                    'reps_objetivo' => is_numeric($psRow['reps_objetivo'] ?? null) ? (int)$psRow['reps_objetivo'] : $repsNum,
+                    'rir'           => (isset($psRow['rir']) && is_numeric($psRow['rir'])) ? max(0, min(5, (int)$psRow['rir'])) : $rirVal,
+                ];
+            }
+        } else {
+            for ($s = 1; $s <= $numSeries; $s++) {
+                $seriesList[] = [
+                    'numero_serie'  => $s,
+                    'tipo_serie'    => 'normal',
+                    'kg_objetivo'   => null,
+                    'reps_objetivo' => $repsNum,
+                    'rir'           => $rirVal,
+                ];
+            }
         }
 
         $ejerciciosPayload[] = [
             'nombre'            => $eRow['nombre'],
-            'orden'             => (int)($eRow['orden'] ?? ($idx + 1)),
+            'orden'             => $ord,
             'tipo_implemento'   => $tipoImp,
             'unidad_carga'      => $uniCarga,
             'descanso_segundos' => 90,

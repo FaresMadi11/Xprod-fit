@@ -1657,8 +1657,19 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
           $prevPeso = $prevData ? $prevData['peso_usado'] : null;
           $prevUnit = $prevData ? ($prevData['unidad_carga'] ?? 'kg') : 'kg';
 
+          // Serie configurada específicamente en la plantilla si existe
+          $serieCfg   = $ej['series_configuradas'][$s] ?? null;
+          $cfgKg      = ($serieCfg && isset($serieCfg['kg_objetivo']) && is_numeric($serieCfg['kg_objetivo'])) ? (float)$serieCfg['kg_objetivo'] : null;
+          $cfgReps    = ($serieCfg && isset($serieCfg['reps_objetivo']) && is_numeric($serieCfg['reps_objetivo'])) ? (int)$serieCfg['reps_objetivo'] : null;
+          $cfgRir     = ($serieCfg && isset($serieCfg['rir']) && is_numeric($serieCfg['rir'])) ? (int)$serieCfg['rir'] : null;
+
+          // Valores iniciales calculados respetando registro guardado o configuración de plantilla
+          $valReps    = ($savedReps !== '' && $savedReps !== null) ? $savedReps : ($cfgReps !== null ? $cfgReps : $ej['repeticiones']);
+          $valPeso    = ($savedPeso !== '' && $savedPeso !== null) ? $savedPeso : ($cfgKg !== null ? $cfgKg : '');
+          $displayRir = ($cfgRir !== null) ? $cfgRir : (($ej['rir'] !== null && $ej['rir'] !== '') ? $ej['rir'] : null);
+
           // Lógica condicional de tipos de serie para paridad visual estricta
-          $rawTipo = $serieData['tipo_serie'] ?? ($ej['tipos_configurados'][$s] ?? 'normal');
+          $rawTipo = $serieData['tipo_serie'] ?? ($serieCfg['tipo_serie'] ?? ($ej['tipos_configurados'][$s] ?? 'normal'));
           $rawTipo = strtolower(trim((string)$rawTipo));
 
           if ($rawTipo === 'calentamiento') {
@@ -1693,7 +1704,7 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
             <input type="number" min="0" max="100"
                    class="wd-input-reps <?= $inputLockedClass ?>"
                    id="reps_<?= $ej['id'] ?>_<?= $s ?>"
-                   value="<?= $savedReps !== '' ? e($savedReps) : e($ej['repeticiones']) ?>"
+                   value="<?= e($valReps) ?>"
                    placeholder="Reps"
                    oninput="if(parseFloat(this.value)>100) this.value=100; if(parseFloat(this.value)<0) this.value=0;"
                    <?= $inputDisabledAttr ?>>
@@ -1714,12 +1725,12 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
               <input type="number" min="0" max="200" step="0.5"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
-                     value="<?= $savedPeso !== '' && $savedPeso !== null ? e($savedPeso) : '' ?>"
+                     value="<?= $valPeso !== '' && $valPeso !== null ? e($valPeso) : '' ?>"
                      placeholder="Kg c/u"
                      oninput="if(parseFloat(this.value)>200) this.value=200; if(parseFloat(this.value)<0) this.value=0; actualizarMancuernaAtleta(<?= $ej['id'] ?>, <?= $s ?>, this)"
                      <?= $inputDisabledAttr ?>>
               <span class="wd-mancuerna-x2-hint" id="hintManc_<?= $ej['id'] ?>_<?= $s ?>">
-                <?= ($savedPeso > 0) ? "({$savedPeso} kg c/u = " . ($savedPeso * 2) . " kg tot)" : '' ?>
+                <?= ($valPeso > 0) ? "({$valPeso} kg c/u = " . ($valPeso * 2) . " kg tot)" : '' ?>
               </span>
               <?php if ($prevPeso !== null): ?>
                 <span class="wd-prev-ref" title="Sesión anterior: <?= $prevPeso ?> kg por mancuerna">Ant: <?= $prevPeso ?>k c/u</span>
@@ -1729,7 +1740,7 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
               <input type="number" min="0" max="<?= $maxPol ?>" step="<?= $uni === 'placas' ? '1' : '0.5' ?>"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
-                     value="<?= $savedPeso !== '' && $savedPeso !== null ? e($savedPeso) : '' ?>"
+                     value="<?= $valPeso !== '' && $valPeso !== null ? e($valPeso) : '' ?>"
                      placeholder="<?= $uni === 'placas' ? 'N° Placas' : 'Kg' ?>"
                      oninput="if(parseFloat(this.value)><?= $maxPol ?>) this.value=<?= $maxPol ?>; if(parseFloat(this.value)<0) this.value=0;"
                      <?= $inputDisabledAttr ?>>
@@ -1740,7 +1751,7 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
               <input type="number" min="0" max="500" step="0.5"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
-                     value="<?= $savedPeso !== '' && $savedPeso !== null ? e($savedPeso) : '' ?>"
+                     value="<?= $valPeso !== '' && $valPeso !== null ? e($valPeso) : '' ?>"
                      placeholder="Kg"
                      oninput="if(parseFloat(this.value)>500) this.value=500; if(parseFloat(this.value)<0) this.value=0;"
                      <?= $inputDisabledAttr ?>>
@@ -1751,7 +1762,7 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
           </td>
           <td style="text-align:center">
             <span style="font-size:0.75rem;color:#c4b5fd;font-weight:700;background:rgba(138,43,226,0.12);padding:2px 6px;border-radius:6px;border:1px solid rgba(138,43,226,0.25);" title="Reps en reserva objetivo">
-              <?= ($ej['rir'] !== null && $ej['rir'] !== '') ? ('@' . e($ej['rir'])) : '—' ?>
+              <?= ($displayRir !== null) ? ('@' . e($displayRir)) : '—' ?>
             </span>
           </td>
           <td style="text-align:right">

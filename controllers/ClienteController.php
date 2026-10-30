@@ -476,19 +476,21 @@ function cliRutinaDia(): void {
                 $prevPorEjercicio[$pr['ejercicio_id']][$pr['numero_serie']] = $pr;
             }
 
-            // Tipos de series configurados en plantilla si la rutina tiene plantilla_id
+            // Tipos y detalles de series configurados en plantilla si la rutina tiene plantilla_id
             $tiposPorPlantilla = [];
+            $seriesPorPlantilla = [];
             if (!empty($rutina['plantilla_id'])) {
                 $stPlSeries = $db->prepare(
-                    "SELECT pe.orden, ps.numero_serie, ps.tipo_serie
+                    "SELECT pe.orden, ps.numero_serie, ps.tipo_serie, ps.kg_objetivo, ps.reps_objetivo, ps.rir
                      FROM plantilla_ejercicios pe
                      JOIN plantilla_series ps ON ps.plantilla_ej_id = pe.id
                      WHERE pe.plantilla_id = ?
                      ORDER BY pe.orden, ps.numero_serie"
                 );
                 $stPlSeries->execute([(int)$rutina['plantilla_id']]);
-                foreach ($stPlSeries->fetchAll() as $ps) {
+                foreach ($stPlSeries->fetchAll(PDO::FETCH_ASSOC) as $ps) {
                     $tiposPorPlantilla[(int)$ps['orden']][(int)$ps['numero_serie']] = $ps['tipo_serie'];
+                    $seriesPorPlantilla[(int)$ps['orden']][(int)$ps['numero_serie']] = $ps;
                 }
             }
 
@@ -498,6 +500,7 @@ function cliRutinaDia(): void {
                 $ej['series_completadas'] = count(array_filter($ej['series_hoy'], fn($s) => $s['completado']));
                 $ej['series_previas'] = $prevPorEjercicio[$ej['id']] ?? [];
                 $ej['tipos_configurados'] = $tiposPorPlantilla[(int)$ej['orden']] ?? [];
+                $ej['series_configuradas'] = $seriesPorPlantilla[(int)$ej['orden']] ?? [];
             }
             unset($ej);
 

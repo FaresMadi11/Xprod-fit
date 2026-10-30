@@ -2203,9 +2203,12 @@ function getExercisesForCategory(catNombre) {
 
 /* ═══════════════════════════════════════════════════
    VISTA A — Canvas: añadir ejercicio
-   Acepta: objeto { id, nombre, descripcion, imagen_path, tipo_implemento, unidad_carga }
+   Acepta: objeto { id, nombre, descripcion, imagen_path, tipo_implemento, unidad_carga, series }
            o string (retrocompat con replaceExercise)
 ═══════════════════════════════════════════════════ */
+const typeLabels = { calentamiento:'W', normal:null, fallo:'F', drop:'D' };
+const typeNames  = { calentamiento:'calentamiento', normal:'normal', fallo:'fallo', drop:'drop set' };
+
 function addExercise(exOrName) {
   /* Normalizar: acepta string o objeto de ejercicio */
   const ex = (typeof exOrName === 'string')
@@ -2343,27 +2346,47 @@ function addExercise(exOrName) {
       const lastRow = rows[rows.length - 1];
       if (lastRow) {
         const badge = lastRow.querySelector('.set-badge');
-        if (badge && s.tipo_serie && s.tipo_serie !== 'normal') {
-          badge.dataset.type = s.tipo_serie;
-          badge.textContent = typeLabels[s.tipo_serie] || lastRow.dataset.serieNum;
+        const tipoSerie = s.tipo_serie || s.tipo || 'normal';
+        if (badge) {
+          badge.dataset.type = tipoSerie;
+          badge.textContent = (tipoSerie === 'normal') ? lastRow.dataset.serieNum : (typeLabels[tipoSerie] || lastRow.dataset.serieNum);
+          badge.setAttribute('aria-label', `Serie ${lastRow.dataset.serieNum}, tipo: ${typeNames[tipoSerie] || tipoSerie}. Toca para cambiar`);
         }
         const wInput = lastRow.querySelector('.set-input-weight');
-        if (wInput && s.kg_objetivo !== null && s.kg_objetivo !== undefined && s.kg_objetivo !== '') {
-          wInput.value = s.kg_objetivo;
+        const pesoVal = (s.kg_objetivo !== null && s.kg_objetivo !== undefined && s.kg_objetivo !== '') ? s.kg_objetivo : (s.peso ?? s.kg ?? null);
+        if (wInput && pesoVal !== null && pesoVal !== undefined && pesoVal !== '') {
+          wInput.value = pesoVal;
           actualizarHintMancuerna(wInput);
         }
         const rInput = lastRow.querySelector('.set-input-reps');
-        if (rInput && s.reps_objetivo !== null && s.reps_objetivo !== undefined && s.reps_objetivo !== '') {
-          rInput.value = s.reps_objetivo;
+        const repsVal = (s.reps_objetivo !== null && s.reps_objetivo !== undefined && s.reps_objetivo !== '') ? s.reps_objetivo : (s.reps ?? s.repeticiones ?? null);
+        if (rInput && repsVal !== null && repsVal !== undefined && repsVal !== '') {
+          rInput.value = repsVal;
         }
         const rirInput = lastRow.querySelector('.set-input-rir');
-        if (rirInput && s.rir !== null && s.rir !== undefined && s.rir !== '') {
-          rirInput.value = s.rir;
+        const rirVal = (s.rir !== null && s.rir !== undefined && s.rir !== '') ? s.rir : null;
+        if (rirInput && rirVal !== null) {
+          rirInput.value = rirVal;
         }
       }
     });
   } else {
-    addSet(idx);
+    const countSets = (typeof ex.series === 'number' && ex.series > 0) ? ex.series : (parseInt(ex.series || 1) || 1);
+    for (let si = 0; si < countSets; si++) {
+      addSet(idx);
+      const rows = block.querySelectorAll('.set-row');
+      const lastRow = rows[rows.length - 1];
+      if (lastRow) {
+        if (ex.repeticiones) {
+          const rInput = lastRow.querySelector('.set-input-reps');
+          if (rInput) rInput.value = ex.repeticiones;
+        }
+        if (ex.rir !== undefined && ex.rir !== null && ex.rir !== '') {
+          const rirInput = lastRow.querySelector('.set-input-rir');
+          if (rirInput) rirInput.value = ex.rir;
+        }
+      }
+    }
   }
 
   if (ex.descanso_segundos && parseInt(ex.descanso_segundos) > 0) {
@@ -2648,9 +2671,6 @@ function actualizarHintMancuerna(input) {
 
 /* Vista D: abrir / cambiar / eliminar */
 function openSetTypeSheet(badge) { activeBadgeEl = badge; openSheet('sheetSetType','overlaySetType'); }
-
-const typeLabels = { calentamiento:'W', normal:null, fallo:'F', drop:'D' };
-const typeNames  = { calentamiento:'calentamiento', normal:'normal', fallo:'fallo', drop:'drop set' };
 
 function setSerieType(type) {
   if (!activeBadgeEl) return;
@@ -2952,8 +2972,9 @@ function serializarEjerciciosCanvas() {
       if (rirVal !== null && rirVal > 5) rirVal = 5;
       if (rirVal !== null && rirVal < 0) rirVal = 0;
 
-      let pesoVal = (impl !== 'sin_peso' && weightInput && weightInput.value !== '' && weightInput.value !== '0')
+      let pesoVal = (impl !== 'sin_peso' && weightInput && weightInput.value !== '')
                       ? parseFloat(weightInput.value) : null;
+      if (pesoVal !== null && isNaN(pesoVal)) pesoVal = null;
       if (pesoVal !== null && pesoVal > 0) tienePesoValido = true;
 
       if (pesoVal !== null) {
@@ -2973,11 +2994,7 @@ function serializarEjerciciosCanvas() {
     }
 
     let finalImpl = impl;
-    let finalUnit = unit;
-    if (impl === 'sin_peso' || (!tienePesoValido && impl !== 'polea_maquina')) {
-      finalImpl = 'sin_peso';
-      finalUnit = 'ninguna';
-    }
+    let finalUnit = (impl === 'sin_peso') ? 'ninguna' : unit;
 
     if (nombre) ejercicios.push({
       nombre,
@@ -3680,7 +3697,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nota_default: ej.nota_biomecanica || '',
             tipo_implemento: ej.tipo_implemento || 'barra',
             unidad_carga: ej.unidad_carga || 'kg',
-            series: parseInt(ej.series || 3),
+            series: Array.isArray(ej.series) ? ej.series : parseInt(ej.series || 3),
             repeticiones: ej.repeticiones || '10-12',
             rir: ej.rir || '',
           });

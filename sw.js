@@ -2,7 +2,7 @@
 //  Xprod Fit — Service Worker (PWA & Offline-First Core v2.0)
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = 'xprod-fit-v4.0';
+const CACHE_NAME = 'xprod-fit-v4.1';
 
 function safeCachePut(req, response) {
   if (!req || !req.url || !response || response.status !== 200) return;
