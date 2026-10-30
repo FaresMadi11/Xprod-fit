@@ -42,7 +42,7 @@
     } catch (_) {}
   }
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(appBase + '/sw.js?v=3.6', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
+    navigator.serviceWorker.register(appBase + '/sw.js?v=3.7', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
   }
 })();
 
@@ -327,16 +327,16 @@ select:-webkit-autofill:active {
 }
 
 /* Fila doble Nombres / Apellidos */
-.reg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.reg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .reg-grid-2 .input-box-group{min-width:0;}
 
-/* Campo = bloque redondeado con la etiqueta DENTRO (arriba a la izquierda) */
+/* Campo = bloque redondeado compacto con la etiqueta DENTRO (arriba a la izquierda) */
 .input-box-group{
   background: rgba(15, 15, 20, 0.55);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 12px 16px;
-  margin-bottom: 14px;
+  border-radius: 14px;
+  padding: 9px 13px;
+  margin-bottom: 9px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .input-box-group:focus-within{border-color:#8a2be2;box-shadow:0 0 0 3px rgba(138,43,226,.15);}
@@ -379,7 +379,7 @@ select:-webkit-autofill:active {
 .ibg-error{display:none;font-size:.72rem;color:#fca5a5;margin-top:6px;line-height:1.3;font-weight:600;}
 .input-box-group.has-error .ibg-error{display:block;}
 
-@media (max-width:480px){.reg-grid-2{grid-template-columns:1fr;gap:0;}}
+@media (max-width:330px){.reg-grid-2{grid-template-columns:1fr;gap:0;}}
 
 /* ══ ONBOARDING WIZARD 3 PASOS (UI/UX Pro-Max Bento UI) ══ */
 .wizard-progress-wrap {
@@ -534,15 +534,15 @@ select:-webkit-autofill:active {
   background: rgba(9,6,17,0.85);
   border: 1px solid rgba(138,43,226,0.28);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 10px 14px;
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.7);
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 .weight-top-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 .weight-label {
   font-size: 0.77rem;
@@ -558,15 +558,15 @@ select:-webkit-autofill:active {
   gap: 4px;
 }
 .weight-num {
-  font-size: 1.85rem;
+  font-size: 1.55rem;
   font-weight: 900;
   color: #b388ff;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 18px rgba(179,136,255,0.55);
+  text-shadow: 0 0 14px rgba(179,136,255,0.45);
 }
 .weight-unit {
-  font-size: 0.82rem;
+  font-size: 0.80rem;
   font-weight: 700;
   color: rgba(179,136,255,0.85);
   text-transform: uppercase;
@@ -574,13 +574,13 @@ select:-webkit-autofill:active {
 .weight-ctrls-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 6px;
+  gap: 8px;
+  margin-top: 4px;
 }
 .weight-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: rgba(138,43,226,0.15);
   border: 1px solid rgba(138,43,226,0.35);
   color: #b388ff;
@@ -588,7 +588,7 @@ select:-webkit-autofill:active {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
   transition: all .18s ease;
 }
@@ -606,15 +606,15 @@ select:-webkit-autofill:active {
   background: rgba(9,6,17,0.85);
   border: 1px solid rgba(138,43,226,0.28);
   border-radius: 14px;
-  padding: 14px 16px 12px;
+  padding: 10px 14px 8px;
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.7);
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .ruler-top-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .ruler-label {
   font-size: 0.77rem;
@@ -631,15 +631,15 @@ select:-webkit-autofill:active {
   gap: 3px;
 }
 .ruler-num {
-  font-size: 1.85rem;
+  font-size: 1.55rem;
   font-weight: 900;
   color: #b388ff;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 18px rgba(179,136,255,0.55);
+  text-shadow: 0 0 14px rgba(179,136,255,0.45);
 }
 .ruler-unit {
-  font-size: 0.82rem;
+  font-size: 0.80rem;
   font-weight: 700;
   color: rgba(179,136,255,0.85);
   text-transform: uppercase;
@@ -647,13 +647,13 @@ select:-webkit-autofill:active {
 .ruler-controls-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 6px;
+  gap: 8px;
+  margin-top: 4px;
 }
 .ruler-step-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: rgba(138,43,226,0.15);
   border: 1px solid rgba(138,43,226,0.35);
   color: #b388ff;
@@ -661,7 +661,7 @@ select:-webkit-autofill:active {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
   transition: all .18s ease;
 }
@@ -753,18 +753,15 @@ select:-webkit-autofill:active {
 /* ── Goals Grid (Step 3) ── */
 .goals-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-@media (max-width: 380px) {
-  .goals-grid { grid-template-columns: 1fr; }
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
 }
 .goal-chip {
   background: rgba(15, 15, 20, 0.65);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 12px 14px;
+  border-radius: 12px;
+  padding: 9px 11px;
   cursor: pointer;
   position: relative;
   transition: all 0.22s ease;
@@ -772,7 +769,8 @@ select:-webkit-autofill:active {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 86px;
+  min-height: 62px;
+  box-sizing: border-box;
 }
 .goal-chip:hover {
   border-color: rgba(138, 43, 226, 0.45);
@@ -782,7 +780,13 @@ select:-webkit-autofill:active {
 .goal-chip.selected {
   border-color: #8a2be2;
   background: rgba(138, 43, 226, 0.16);
-  box-shadow: 0 0 20px rgba(138, 43, 226, 0.35);
+  box-shadow: 0 0 16px rgba(138, 43, 226, 0.35);
+}
+.goal-chip.goal-chip-otros.selected {
+  grid-column: 1 / -1;
+  background: rgba(236, 72, 153, 0.12);
+  border-color: #ec4899;
+  box-shadow: 0 0 18px rgba(236, 72, 153, 0.3);
 }
 .goal-chip-top {
   display: flex;
@@ -791,17 +795,17 @@ select:-webkit-autofill:active {
   width: 100%;
 }
 .goal-chip-icon {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
 }
 .goal-chip-check {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 1.5px solid rgba(255,255,255,0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   color: transparent;
   transition: all 0.2s ease;
 }
@@ -809,14 +813,141 @@ select:-webkit-autofill:active {
   background: #8a2be2;
   border-color: #8a2be2;
   color: #fff;
-  box-shadow: 0 0 10px rgba(138,43,226,0.6);
+  box-shadow: 0 0 8px rgba(138,43,226,0.6);
+}
+.goal-chip.goal-chip-otros.selected .goal-chip-check {
+  background: #ec4899;
+  border-color: #ec4899;
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
 }
 .goal-chip-title {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+  margin-top: 5px;
+}
+
+/* ── Campo integrado para 'Otros' dentro de la tarjeta ── */
+.goal-chip-custom-wrap {
+  width: 100%;
+  margin-top: 8px;
+  animation: slideDownCustom 0.22s ease-out forwards;
+}
+@keyframes slideDownCustom {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.custom-goal-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 10, 16, 0.85);
+  border: 1px solid rgba(236, 72, 153, 0.45);
+  border-radius: 10px;
+  padding: 7px 11px;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+}
+.custom-goal-field:focus-within {
+  border-color: #ec4899;
+  background: rgba(16, 12, 22, 0.95);
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.25), inset 0 2px 6px rgba(0,0,0,0.5);
+}
+.custom-goal-icon {
+  color: #ec4899;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.custom-goal-input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  font-size: 0.82rem !important;
+  font-family: 'Inter', sans-serif !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+.custom-goal-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.78rem;
+}
+
+/* ── Sub-nivel de Hipertrofia compacto Bento UI ── */
+.subnivel-drilldown-box {
+  margin-top: 10px;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: rgba(138, 43, 226, 0.06);
+  border: 1px solid rgba(138, 43, 226, 0.22);
+  border-radius: 12px;
+}
+.subnivel-header h4 {
+  font-size: 0.82rem;
   font-weight: 700;
   color: #fff;
-  line-height: 1.25;
-  margin-top: 8px;
+  margin: 0 0 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.subnivel-header p {
+  font-size: 0.70rem;
+  color: #94a3b8;
+  margin: 0 0 8px;
+}
+.subnivel-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.subnivel-card {
+  background: rgba(15, 15, 20, 0.65);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 9px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+.subnivel-card:hover {
+  border-color: rgba(138, 43, 226, 0.45);
+  background: rgba(138, 43, 226, 0.1);
+}
+.subnivel-card.selected {
+  border-color: #8a2be2;
+  background: rgba(138, 43, 226, 0.18);
+  box-shadow: 0 0 14px rgba(138, 43, 226, 0.35);
+}
+.subnivel-silhouette {
+  font-size: 1.15rem;
+  margin-bottom: 2px;
+}
+.subnivel-card-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+}
+.subnivel-card-desc {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  line-height: 1.2;
+  margin-bottom: 5px;
+}
+.subnivel-card-pill {
+  font-size: 0.62rem;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: rgba(138, 43, 226, 0.2);
+  color: #d8b4fe;
+  align-self: flex-start;
+  font-weight: 600;
 }
 
 /* ── Wizard Navigation Buttons ── */
@@ -1514,24 +1645,18 @@ $esStandby  = ($vistaInicial === 'standby');
             <div class="goal-chip-title">Salud y bienestar general</div>
           </div>
 
-          <!-- Opción 'Otros' con Burbuja Animada -->
+          <!-- Opción 'Otros' con campo integrado Bento UI -->
           <div class="goal-chip goal-chip-otros" data-goal="otros" data-id="otros" data-color="#ec4899" data-icon="ti-edit" role="checkbox" aria-checked="false" tabindex="0">
             <div class="goal-chip-top">
               <span class="goal-chip-icon" style="color:#ec4899;"><i class="ti ti-edit"></i></span>
               <span class="goal-chip-check"><i class="ti ti-check"></i></span>
             </div>
             <div class="goal-chip-title">Otros (Personalizado)</div>
-          </div>
-        </div>
-
-        <!-- Desplegable Burbuja de Texto para 'Otros' -->
-        <div id="boxMetaOtros" class="meta-otros-expandable" style="display:none; max-height:0; opacity:0;">
-          <div class="meta-otros-bubble">
-            <label for="inputMetaOtros" class="meta-otros-label">
-              <i class="ti ti-sparkles"></i> ¿Cuál es tu meta específica?
-            </label>
-            <div class="meta-otros-input-wrap">
-              <input type="text" id="inputMetaOtros" maxlength="150" placeholder="Ej: Preparación para triatlón, rehabilitación, crossfit..." class="meta-otros-input" autocomplete="off">
+            <div class="goal-chip-custom-wrap" id="boxMetaOtros" style="display:none;" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+              <div class="custom-goal-field">
+                <i class="ti ti-sparkles custom-goal-icon" aria-hidden="true"></i>
+                <input type="text" id="inputMetaOtros" maxlength="150" placeholder="Ej: Preparación para triatlón..." class="custom-goal-input" autocomplete="off" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
+              </div>
             </div>
           </div>
         </div>
@@ -2095,9 +2220,15 @@ const inputMetaOtros = document.getElementById('inputMetaOtros');
 const boxSubHipertrofia = document.getElementById('boxSubnivelHipertrofia');
 
 document.querySelectorAll('#goalsGrid .goal-chip').forEach(chip => {
-  chip.addEventListener('click', () => {
+  chip.addEventListener('click', (e) => {
+    // Si el clic ocurrió dentro del input personalizado de otros, no alternar el chip
+    if (e.target && e.target.closest('#inputMetaOtros')) {
+      return;
+    }
+
     const goal = chip.getAttribute('data-goal');
     const isSelected = chip.classList.contains('selected');
+    const boxMetaOtros = chip.querySelector('#boxMetaOtros') || document.getElementById('boxMetaOtros');
 
     if (isSelected) {
       chip.classList.remove('selected');
@@ -2105,9 +2236,7 @@ document.querySelectorAll('#goalsGrid .goal-chip').forEach(chip => {
       selectedGoals.delete(goal);
 
       if (goal === 'otros' && boxMetaOtros) {
-        boxMetaOtros.style.maxHeight = '0';
-        boxMetaOtros.style.opacity = '0';
-        setTimeout(() => { boxMetaOtros.style.display = 'none'; }, 300);
+        boxMetaOtros.style.display = 'none';
       }
       if (goal === 'Ganar masa muscular (Hipertrofia)' && boxSubHipertrofia) {
         boxSubHipertrofia.style.display = 'none';
@@ -2118,23 +2247,18 @@ document.querySelectorAll('#goalsGrid .goal-chip').forEach(chip => {
       selectedGoals.add(goal);
 
       if (typeof anime !== 'undefined') {
-        anime({ targets: chip, scale: [1, 1.04, 1], duration: 240, easing: 'easeOutQuad' });
+        anime({ targets: chip, scale: [1, 1.03, 1], duration: 220, easing: 'easeOutQuad' });
       }
 
       if (goal === 'otros' && boxMetaOtros) {
         boxMetaOtros.style.display = 'block';
-        boxMetaOtros.classList.remove('anim-bubble-pop');
-        void boxMetaOtros.offsetWidth;
-        boxMetaOtros.classList.add('anim-bubble-pop');
-        boxMetaOtros.style.maxHeight = '140px';
-        boxMetaOtros.style.opacity = '1';
-        setTimeout(() => inputMetaOtros?.focus(), 150);
+        const inp = document.getElementById('inputMetaOtros');
+        setTimeout(() => {
+          try { inp?.focus(); } catch (_) {}
+        }, 120);
       }
       if (goal === 'Ganar masa muscular (Hipertrofia)' && boxSubHipertrofia) {
         boxSubHipertrofia.style.display = 'block';
-        boxSubHipertrofia.classList.remove('anim-bubble-pop');
-        void boxSubHipertrofia.offsetWidth;
-        boxSubHipertrofia.classList.add('anim-bubble-pop');
       }
     }
   });

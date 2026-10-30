@@ -216,9 +216,9 @@
     "semantic_hash": "ca6328d41cbcf6112d6fc81c7e2c8325"
   },
   "views/auth/login.php": {
-    "mtime": 1793357744.0064545,
-    "seen": 1793357779.8177078,
-    "ast_hash": "13ed066081cf7eb4bc50a8025c918360",
+    "mtime": 1793367432.9717767,
+    "seen": 1793367477.956605,
+    "ast_hash": "609309f5ee77074d3b7ff57b9593e316",
     "semantic_hash": ""
   },
   "views/auth/recuperar.php": {
