@@ -518,31 +518,36 @@ require __DIR__ . '/../layout/header.php';
       <div id="drillView1" class="drill-view" style="display:block;">
         <div id="drillCategoriesGrid">
           <!-- Upper Body -->
-          <h4 style="color:#fff; margin-bottom:12px; font-size:1rem;">Upper Body</h4>
+          <h4 style="color:#fff; margin-bottom:12px; font-size:1rem;"><i class="ti ti-barbell" style="color:var(--accent);"></i> Upper Body</h4>
           <div class="cat-grid" style="margin-bottom: 24px;">
-            <div class="btn-categoria" onclick="abrirCategoria('pecho')"><i class="ti ti-stretching"></i><span>Pecho</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('espalda')"><i class="ti ti-stretching"></i><span>Espalda</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('hombro')"><i class="ti ti-stretching"></i><span>Hombro</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('bíceps')"><i class="ti ti-stretching"></i><span>Bíceps</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('tríceps')"><i class="ti ti-stretching"></i><span>Tríceps</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Pecho')"><i class="ti ti-heart"></i><span>Pecho</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Espalda')"><i class="ti ti-arrow-autofit-up"></i><span>Espalda</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Hombros')"><i class="ti ti-arrow-up-circle"></i><span>Hombros</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Bíceps')"><i class="ti ti-arm"></i><span>Bíceps</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Tríceps')"><i class="ti ti-wave-sine"></i><span>Tríceps</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Trapecio')"><i class="ti ti-triangle"></i><span>Trapecio</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Antebrazos')"><i class="ti ti-hand-finger"></i><span>Antebrazos</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Cuello')"><i class="ti ti-man"></i><span>Cuello</span></div>
           </div>
 
           <!-- Lower Body -->
-          <h4 style="color:#fff; margin-bottom:12px; font-size:1rem;">Lower Body</h4>
+          <h4 style="color:#fff; margin-bottom:12px; font-size:1rem;"><i class="ti ti-run" style="color:var(--accent);"></i> Lower Body</h4>
           <div class="cat-grid" style="margin-bottom: 24px;">
-            <div class="btn-categoria" onclick="abrirCategoria('cuádriceps')"><i class="ti ti-stretching"></i><span>Cuádriceps</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('femoral')"><i class="ti ti-stretching"></i><span>Femoral</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('glúteos')"><i class="ti ti-stretching"></i><span>Glúteos</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('gemelos')"><i class="ti ti-stretching"></i><span>Gemelos</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Cuádriceps')"><i class="ti ti-run"></i><span>Cuádriceps</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Femoral')"><i class="ti ti-run"></i><span>Femoral</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Glúteos')"><i class="ti ti-user"></i><span>Glúteos</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Gemelos')"><i class="ti ti-anchor"></i><span>Gemelos</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Abductores')"><i class="ti ti-layout-sidebar"></i><span>Abductores</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Aductores')"><i class="ti ti-layout-sidebar-right"></i><span>Aductores</span></div>
           </div>
 
           <!-- Core / Otros -->
-          <h4 style="color:#fff; margin-bottom:12px; font-size:1rem;">Core & Otros</h4>
+          <h4 style="color:#fff; margin-bottom:12px; font-size:1rem;"><i class="ti ti-flame" style="color:var(--accent);"></i> Core & Otros</h4>
           <div class="cat-grid">
-            <div class="btn-categoria" onclick="abrirCategoria('abdomen')"><i class="ti ti-stretching"></i><span>Abdomen</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('full body')"><i class="ti ti-activity"></i><span>Full Body</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('cardio')"><i class="ti ti-heart-rate-monitor"></i><span>Cardio</span></div>
-            <div class="btn-categoria" onclick="abrirCategoria('otro')"><i class="ti ti-dots"></i><span>Otros / Sin Grupo</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Abdomen')"><i class="ti ti-layout-bottombar"></i><span>Abdomen</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Full Body')"><i class="ti ti-body-scan"></i><span>Full Body</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Cardio')"><i class="ti ti-heart-rate-monitor"></i><span>Cardio</span></div>
+            <div class="btn-categoria" onclick="abrirCategoria('Otro')"><i class="ti ti-dots"></i><span>Otros / Sin Grupo</span></div>
           </div>
         </div>
       </div>
@@ -579,21 +584,30 @@ require __DIR__ . '/../layout/header.php';
             <div style="position:relative;">
               <select id="ej_grupo" name="grupo_muscular" class="sys-input">
                 <option value="">-- Sin grupo --</option>
-                <option value="pecho">Pecho</option>
-                <option value="espalda">Espalda</option>
-                <option value="hombro">Hombro</option>
-                <option value="bíceps">Bíceps</option>
-                <option value="tríceps">Tríceps</option>
-                <option value="trapecio">Trapecio</option>
-                <option value="cuádriceps">Cuádriceps</option>
-                <option value="femoral">Femoral</option>
-                <option value="glúteos">Glúteos</option>
-                <option value="gemelos">Gemelos</option>
-                <option value="abductores">Abductores</option>
-                <option value="abdomen">Abdomen</option>
-                <option value="full_body">Full Body</option>
-                <option value="cardio">Cardio</option>
-                <option value="otro">Otro</option>
+                <optgroup label="Upper Body">
+                  <option value="Pecho">Pecho</option>
+                  <option value="Espalda">Espalda</option>
+                  <option value="Hombros">Hombros</option>
+                  <option value="Bíceps">Bíceps</option>
+                  <option value="Tríceps">Tríceps</option>
+                  <option value="Trapecio">Trapecio</option>
+                  <option value="Antebrazos">Antebrazos</option>
+                  <option value="Cuello">Cuello</option>
+                </optgroup>
+                <optgroup label="Lower Body">
+                  <option value="Cuádriceps">Cuádriceps</option>
+                  <option value="Femoral">Femoral</option>
+                  <option value="Glúteos">Glúteos</option>
+                  <option value="Gemelos">Gemelos</option>
+                  <option value="Abductores">Abductores</option>
+                  <option value="Aductores">Aductores</option>
+                </optgroup>
+                <optgroup label="Core & Otros">
+                  <option value="Abdomen">Abdomen</option>
+                  <option value="Full Body">Full Body</option>
+                  <option value="Cardio">Cardio</option>
+                  <option value="Otro">Otro</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -1415,9 +1429,33 @@ window.volverNivel = function(nivel) {
   window.irNivel(nivel);
 };
 
+window.getCanonicalMuscleGroup = function(str) {
+  if (!str) return 'otro';
+  const s = String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (s.includes('pech') || s.includes('pector')) return 'pecho';
+  if (s.includes('espalda') || s.includes('dorsal')) return 'espalda';
+  if (s.includes('hombr') || s.includes('deltoid')) return 'hombros';
+  if (s.includes('bicep')) return 'biceps';
+  if (s.includes('tricep')) return 'triceps';
+  if (s.includes('trapeci')) return 'trapecio';
+  if (s.includes('antebraz')) return 'antebrazos';
+  if (s.includes('cuello')) return 'cuello';
+  if (s.includes('cuadicep') || s.includes('cuadricep')) return 'cuadriceps';
+  if (s.includes('femor') || s.includes('isquio')) return 'femoral';
+  if (s.includes('glute')) return 'gluteos';
+  if (s.includes('gemel') || s.includes('pantorrill')) return 'gemelos';
+  if (s.includes('abduct')) return 'abductores';
+  if (s.includes('aduct')) return 'aductores';
+  if (s.includes('abdom') || s.includes('core')) return 'abdomen';
+  if (s.includes('cardio') || s.includes('aerob')) return 'cardio';
+  if (s.includes('full') || s.includes('cuerpo') || s.includes('entero')) return 'full_body';
+  return 'otro';
+};
+
 window.abrirCategoria = function(catId) {
   window.activeCategoria = catId;
-  const dispName = catId === 'otro' ? 'Otros / Sin Grupo' : catId;
+  const isOtro = window.getCanonicalMuscleGroup(catId) === 'otro';
+  const dispName = isOtro ? 'Otros / Sin Grupo' : catId;
   const titleEl = document.getElementById('nivel2Title');
   if (titleEl) titleEl.textContent = dispName;
   
@@ -1426,21 +1464,23 @@ window.abrirCategoria = function(catId) {
   listCont.innerHTML = '';
   
   let ejerciciosCat = [];
-  const normCat = (catId || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  const targetCanon = window.getCanonicalMuscleGroup(catId);
   const catData = window.catalogoCompleto || {};
   
   for (const group in catData) {
-      const gNorm = (group || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-      if (normCat === 'otro') {
-          if (!group || gNorm === 'sin grupo' || gNorm === 'otro') {
-              ejerciciosCat = ejerciciosCat.concat(catData[group] || []);
-          }
-      } else {
-          if (gNorm === normCat) {
-              ejerciciosCat = ejerciciosCat.concat(catData[group] || []);
-          }
+      const gCanon = window.getCanonicalMuscleGroup(group);
+      if (gCanon === targetCanon) {
+          ejerciciosCat = ejerciciosCat.concat(catData[group] || []);
       }
   }
+
+  // Quitar duplicados por ID
+  const seenIds = new Set();
+  ejerciciosCat = ejerciciosCat.filter(e => {
+    if (seenIds.has(e.id)) return false;
+    seenIds.add(e.id);
+    return true;
+  });
 
   if (ejerciciosCat.length === 0) {
       listCont.innerHTML = `
@@ -1540,11 +1580,13 @@ window.abrirFormulario = function(modo) {
   const select = document.getElementById('ej_grupo');
   if (select) {
       select.value = "";
-      if (modo === 'NUEVO_EN_CAT' && window.activeCategoria && window.activeCategoria !== 'otro') {
-          const activeNorm = window.activeCategoria.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (modo === 'NUEVO_EN_CAT' && window.activeCategoria) {
+          const activeCanon = window.getCanonicalMuscleGroup(window.activeCategoria);
           for (let i = 0; i < select.options.length; i++) {
-              const optNorm = select.options[i].value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-              if (optNorm === activeNorm) { select.selectedIndex = i; break; }
+              if (window.getCanonicalMuscleGroup(select.options[i].value) === activeCanon) {
+                  select.selectedIndex = i;
+                  break;
+              }
           }
           window.activeNivelAnt = 2;
       } else {
@@ -1594,11 +1636,14 @@ window.editarEjercicio = function(id, nivelOrigen) {
   const select = document.getElementById('ej_grupo');
   if (select) {
       select.value = "";
-      if (ej.grupo_muscular) {
-         const ejGroupNorm = ej.grupo_muscular.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const grp = ej.categoria_nombre || ej.grupo_muscular;
+      if (grp) {
+         const ejCanon = window.getCanonicalMuscleGroup(grp);
          for (let i = 0; i < select.options.length; i++) {
-            const optNorm = select.options[i].value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            if (optNorm === ejGroupNorm) { select.selectedIndex = i; break; }
+            if (window.getCanonicalMuscleGroup(select.options[i].value) === ejCanon) {
+                select.selectedIndex = i;
+                break;
+            }
          }
       }
   }

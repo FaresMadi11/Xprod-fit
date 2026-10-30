@@ -3,7 +3,7 @@
   "4": "login.php",
   "6": "progreso.php",
   "7": "run_migration_v24.php",
-  "8": ".normalizeBreaks",
+  "8": ".strlen",
   "10": "EntrenadorController.php",
   "11": ".addOrEnqueueAnAddress",
   "13": "sw.js",

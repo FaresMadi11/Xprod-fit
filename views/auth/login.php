@@ -42,7 +42,7 @@
     } catch (_) {}
   }
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(appBase + '/sw.js?v=3.8', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
+    navigator.serviceWorker.register(appBase + '/sw.js?v=3.9', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
   }
 })();
 

@@ -698,11 +698,18 @@ function entCrearRutina(): void {
     $stmt->execute([$entId]);
     $clientes = $stmt->fetchAll();
 
-    $catalogo = $db->query("SELECT id, nombre, nota_default, equipamiento, tipo_implemento, unidad_carga, imagen_path FROM catalogo_ejercicios ORDER BY nombre")->fetchAll();
+    $catalogo = $db->query(
+        "SELECT c.id, c.nombre, c.grupo_muscular, c.descripcion, c.imagen_path, c.video_url,
+                c.nota_default, c.equipamiento, c.tipo_implemento, c.unidad_carga, c.categoria_id,
+                cm.nombre AS categoria_nombre
+         FROM catalogo_ejercicios c
+         LEFT JOIN categorias_musculares cm ON cm.id = c.categoria_id
+         ORDER BY c.nombre"
+    )->fetchAll();
 
     // Categorías musculares para Vista B
     $categorias = $db->query(
-        "SELECT id, grupo, nombre, icono FROM categorias_musculares ORDER BY orden"
+        "SELECT id, grupo, nombre, icono FROM categorias_musculares ORDER BY orden, id"
     )->fetchAll();
 
     $rutina_id = isset($_GET['rutina_id']) ? (int)$_GET['rutina_id'] : null;
@@ -1770,16 +1777,20 @@ function entConfiguracion(): void {
     $stAtl->execute([$entId]);
     $atletasList = $stAtl->fetchAll();
 
+    // Categorias de la BD para el catalogo
+    $categorias = $db->query("SELECT id, grupo, nombre, icono FROM categorias_musculares ORDER BY orden, id")->fetchAll();
+
     // Catálogo de ejercicios agrupados por grupo_muscular
     $stCat = $db->query(
-        "SELECT id, nombre, grupo_muscular, descripcion, imagen_path, video_path, video_url
-         FROM catalogo_ejercicios
-         ORDER BY grupo_muscular, nombre"
+        "SELECT c.id, c.nombre, c.grupo_muscular, c.categoria_id, c.descripcion, c.imagen_path, c.video_path, c.video_url, cm.nombre as categoria_nombre
+         FROM catalogo_ejercicios c
+         LEFT JOIN categorias_musculares cm ON cm.id = c.categoria_id
+         ORDER BY c.grupo_muscular, c.nombre"
     );
     $catalogoRaw = $stCat->fetchAll();
     $catalogoPorGrupo = [];
     foreach ($catalogoRaw as $ej) {
-        $grupo = $ej['grupo_muscular'] ?: 'Sin grupo';
+        $grupo = $ej['categoria_nombre'] ?: ($ej['grupo_muscular'] ?: 'Sin grupo');
         $catalogoPorGrupo[$grupo][] = $ej;
     }
     ksort($catalogoPorGrupo);
@@ -2578,8 +2589,47 @@ function entApiRutinaLive(): void {
 /*─────────────────────────────────────────────────────────────
   CATÁLOGO CMS (CRUD Nivel 3)
 ─────────────────────────────────────────────────────────────*/
+function resolverCategoriaId(PDO $db, ?string $grupo): ?int {
+    if (!$grupo) return null;
+    $g = mb_strtolower(trim($grupo), 'UTF-8');
+    $buscar = ['á','é','í','ó','ú','ü','ñ'];
+    $reempl = ['a','e','i','o','u','u','n'];
+    $norm = str_replace($buscar, $reempl, $g);
+
+    $canon = 'Otro';
+    if (strpos($norm, 'pech') !== false || strpos($norm, 'pector') !== false) $canon = 'Pecho';
+    elseif (strpos($norm, 'espalda') !== false || strpos($norm, 'dorsal') !== false) $canon = 'Espalda';
+    elseif (strpos($norm, 'hombr') !== false || strpos($norm, 'deltoid') !== false) $canon = 'Hombros';
+    elseif (strpos($norm, 'bicep') !== false) $canon = 'Bíceps';
+    elseif (strpos($norm, 'tricep') !== false) $canon = 'Tríceps';
+    elseif (strpos($norm, 'trapeci') !== false) $canon = 'Trapecio';
+    elseif (strpos($norm, 'antebraz') !== false) $canon = 'Antebrazos';
+    elseif (strpos($norm, 'cuello') !== false) $canon = 'Cuello';
+    elseif (strpos($norm, 'cuadicep') !== false || strpos($norm, 'cuadricep') !== false) $canon = 'Cuádriceps';
+    elseif (strpos($norm, 'femor') !== false || strpos($norm, 'isquio') !== false) $canon = 'Femoral';
+    elseif (strpos($norm, 'glute') !== false) $canon = 'Glúteos';
+    elseif (strpos($norm, 'gemel') !== false || strpos($norm, 'pantorrill') !== false) $canon = 'Gemelos';
+    elseif (strpos($norm, 'abduct') !== false) $canon = 'Abductores';
+    elseif (strpos($norm, 'aduct') !== false) $canon = 'Aductores';
+    elseif (strpos($norm, 'abdom') !== false || strpos($norm, 'core') !== false) $canon = 'Abdomen';
+    elseif (strpos($norm, 'cardio') !== false || strpos($norm, 'aerob') !== false) $canon = 'Cardio';
+    elseif (strpos($norm, 'full') !== false || strpos($norm, 'cuerpo') !== false || strpos($norm, 'entero') !== false) $canon = 'Full Body';
+
+    $st = $db->prepare("SELECT id FROM categorias_musculares WHERE nombre = ? LIMIT 1");
+    $st->execute([$canon]);
+    $id = $st->fetchColumn();
+    return $id ? (int)$id : null;
+}
+
 function entApiCatalogoList(): void {
-    jsonOut(true, 'ok', getCatalogoEjerciciosGlobal($_SESSION['user_id']));
+    $db = getDB();
+    $rows = $db->query(
+        "SELECT c.id, c.nombre, c.grupo_muscular, c.categoria_id, c.descripcion, c.imagen_path, c.video_url, cm.nombre as categoria_nombre
+         FROM catalogo_ejercicios c
+         LEFT JOIN categorias_musculares cm ON cm.id = c.categoria_id
+         ORDER BY c.nombre"
+    )->fetchAll(PDO::FETCH_ASSOC);
+    jsonOut(true, 'ok', $rows);
 }
 
 function entApiCatalogoAgregar(): void {
@@ -2588,7 +2638,7 @@ function entApiCatalogoAgregar(): void {
     $entId = $_SESSION['user_id'];
     
     $nombre = trim($_POST['nombre'] ?? '');
-    $grupo = trim($_POST['grupo_muscular'] ?? 'otro');
+    $grupo = trim($_POST['grupo_muscular'] ?? 'Otro');
     $desc = trim($_POST['descripcion'] ?? '');
     $videoUrl = trim($_POST['video_url'] ?? '');
     
@@ -2609,12 +2659,14 @@ function entApiCatalogoAgregar(): void {
         }
     }
     
+    $catId = resolverCategoriaId($db, $grupo);
+
     $stmt = $db->prepare(
-        "INSERT INTO catalogo_ejercicios (nombre, grupo_muscular, descripcion, imagen_path, video_url, nota_default)
-         VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO catalogo_ejercicios (nombre, grupo_muscular, categoria_id, descripcion, imagen_path, video_url, nota_default)
+         VALUES (?, ?, ?, ?, ?, ?, ?)"
     );
     
-    if ($stmt->execute([$nombre, $grupo, $desc, $mediaPath, $videoUrl, ''])) {
+    if ($stmt->execute([$nombre, $grupo, $catId, $desc, $mediaPath, $videoUrl, ''])) {
         jsonOut(true, 'Ejercicio agregado al catálogo correctamente.');
     } else {
         jsonOut(false, 'Error al guardar el ejercicio.');
@@ -2628,7 +2680,7 @@ function entApiCatalogoEditar(): void {
     
     $id = (int)($_POST['id'] ?? 0);
     $nombre = trim($_POST['nombre'] ?? '');
-    $grupo = trim($_POST['grupo_muscular'] ?? 'otro');
+    $grupo = trim($_POST['grupo_muscular'] ?? 'Otro');
     $desc = trim($_POST['descripcion'] ?? '');
     $videoUrl = trim($_POST['video_url'] ?? '');
     
@@ -2655,11 +2707,13 @@ function entApiCatalogoEditar(): void {
         }
     }
     
+    $catId = resolverCategoriaId($db, $grupo);
+
     $stmt = $db->prepare(
-        "UPDATE catalogo_ejercicios SET nombre = ?, grupo_muscular = ?, descripcion = ?, imagen_path = ?, video_url = ?
+        "UPDATE catalogo_ejercicios SET nombre = ?, grupo_muscular = ?, categoria_id = ?, descripcion = ?, imagen_path = ?, video_url = ?
          WHERE id = ?"
     );
-    if ($stmt->execute([$nombre, $grupo, $desc, $mediaPath, $videoUrl, $id])) {
+    if ($stmt->execute([$nombre, $grupo, $catId, $desc, $mediaPath, $videoUrl, $id])) {
         jsonOut(true, 'Ejercicio actualizado.');
     } else {
         jsonOut(false, 'Error al actualizar el ejercicio.');

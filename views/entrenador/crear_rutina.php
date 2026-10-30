@@ -1784,37 +1784,60 @@ document.addEventListener('keydown', e => {
    CATEGORÍAS + EJERCICIOS — Drill-down & Multi-select
 ═══════════════════════════════════════════════════ */
 const iconMap = {
-  'abdominales':'ti-layout-bottombar', 'antebrazos':'ti-hand-finger',
-  'biceps':'ti-arm', 'bíceps':'ti-arm', 'cuello':'ti-man',
-  'dorsales':'ti-arrow-autofit-up', 'espalda baja':'ti-spine',
-  'espalda superior':'ti-arrow-autofit-up', 'hombros':'ti-arrow-up-circle',
-  'pecho':'ti-heart-filled', 'trapecio':'ti-triangle',
-  'triceps':'ti-wave-sine', 'tríceps':'ti-wave-sine',
-  'abductores':'ti-layout-sidebar', 'aductores':'ti-layout-sidebar-right',
-  'cuadriceps':'ti-run', 'cuádriceps':'ti-run', 'gluteos':'ti-user', 'glúteos':'ti-user',
-  'isquiotibiales':'ti-run', 'pantorrillas':'ti-anchor',
-  'cardio':'ti-heart-rate-monitor', 'cuerpo entero':'ti-body-scan', 'otro':'ti-dots',
+  'pecho':'ti-heart',
+  'espalda':'ti-arrow-autofit-up',
+  'dorsales':'ti-arrow-autofit-up',
+  'hombros':'ti-arrow-up-circle',
+  'hombro':'ti-arrow-up-circle',
+  'biceps':'ti-arm',
+  'bíceps':'ti-arm',
+  'triceps':'ti-wave-sine',
+  'tríceps':'ti-wave-sine',
+  'trapecio':'ti-triangle',
+  'antebrazos':'ti-hand-finger',
+  'cuello':'ti-man',
+  'cuadriceps':'ti-run',
+  'cuádriceps':'ti-run',
+  'femoral':'ti-run',
+  'isquiotibiales':'ti-run',
+  'gluteos':'ti-user',
+  'glúteos':'ti-user',
+  'gemelos':'ti-anchor',
+  'pantorrillas':'ti-anchor',
+  'abductores':'ti-layout-sidebar',
+  'aductores':'ti-layout-sidebar-right',
+  'abdomen':'ti-layout-bottombar',
+  'abdominales':'ti-layout-bottombar',
+  'full body':'ti-body-scan',
+  'cuerpo entero':'ti-body-scan',
+  'cardio':'ti-heart-rate-monitor',
+  'otro':'ti-dots',
 };
 
 const fallbackCats = [
-  {grupo:'upper_body',nombre:'Abdominales'},{grupo:'upper_body',nombre:'Antebrazos'},
-  {grupo:'upper_body',nombre:'Bíceps'},{grupo:'upper_body',nombre:'Cuello'},
-  {grupo:'upper_body',nombre:'Dorsales'},{grupo:'upper_body',nombre:'Espalda Baja'},
-  {grupo:'upper_body',nombre:'Espalda Superior'},{grupo:'upper_body',nombre:'Hombros'},
-  {grupo:'upper_body',nombre:'Pecho'},{grupo:'upper_body',nombre:'Trapecio'},{grupo:'upper_body',nombre:'Tríceps'},
-  {grupo:'lower_body',nombre:'Abductores'},{grupo:'lower_body',nombre:'Aductores'},
-  {grupo:'lower_body',nombre:'Cuádriceps'},{grupo:'lower_body',nombre:'Glúteos'},
-  {grupo:'lower_body',nombre:'Isquiotibiales'},{grupo:'lower_body',nombre:'Pantorrillas'},
-  {grupo:'other',nombre:'Cardio'},{grupo:'other',nombre:'Cuerpo Entero'},{grupo:'other',nombre:'Otro'},
+  { grupo: 'upper_body', nombre: 'Pecho',      icono: 'ti-heart' },
+  { grupo: 'upper_body', nombre: 'Espalda',    icono: 'ti-arrow-autofit-up' },
+  { grupo: 'upper_body', nombre: 'Hombros',    icono: 'ti-arrow-up-circle' },
+  { grupo: 'upper_body', nombre: 'Bíceps',     icono: 'ti-arm' },
+  { grupo: 'upper_body', nombre: 'Tríceps',    icono: 'ti-wave-sine' },
+  { grupo: 'upper_body', nombre: 'Trapecio',   icono: 'ti-triangle' },
+  { grupo: 'upper_body', nombre: 'Antebrazos', icono: 'ti-hand-finger' },
+  { grupo: 'upper_body', nombre: 'Cuello',     icono: 'ti-man' },
+  { grupo: 'lower_body', nombre: 'Cuádriceps', icono: 'ti-run' },
+  { grupo: 'lower_body', nombre: 'Femoral',    icono: 'ti-run' },
+  { grupo: 'lower_body', nombre: 'Glúteos',    icono: 'ti-user' },
+  { grupo: 'lower_body', nombre: 'Gemelos',    icono: 'ti-anchor' },
+  { grupo: 'lower_body', nombre: 'Abductores', icono: 'ti-layout-sidebar' },
+  { grupo: 'lower_body', nombre: 'Aductores',  icono: 'ti-layout-sidebar-right' },
+  { grupo: 'other',      nombre: 'Abdomen',    icono: 'ti-layout-bottombar' },
+  { grupo: 'other',      nombre: 'Full Body',  icono: 'ti-body-scan' },
+  { grupo: 'other',      nombre: 'Cardio',     icono: 'ti-heart-rate-monitor' },
+  { grupo: 'other',      nombre: 'Otro',       icono: 'ti-dots' },
 ];
 
-/* ── Mock de ejercicios (por categoría)
-   Estructura espeja el futuro SELECT del CRUD:
-   { id, nombre, descripcion, imagen_path, categoria }
-   imagen_path = null → se muestra ícono fallback
-──────────────────────────────────────────────── */
+/* ── Mock de ejercicios (por categoría - fallback secundario si DB no tiene) ── */
 const mockExercises = {
-  'Abdominales': [
+  'Abdomen': [
     { id:'abs_1', nombre:'Crunch abdominal',    descripcion:'Contracción abdominal clásica',  imagen_path:null },
     { id:'abs_2', nombre:'Plancha',             descripcion:'Isométrico de core completo',    imagen_path:null },
     { id:'abs_3', nombre:'Rueda abdominal',     descripcion:'Ab roller para core avanzado',   imagen_path:null },
@@ -1834,7 +1857,7 @@ const mockExercises = {
     { id:'pec_4', nombre:'Fondos en paralelas', descripcion:'Calisténico para pecho y tríceps',imagen_path:null },
     { id:'pec_5', nombre:'Pullover',            descripcion:'Expansión de caja torácica',     imagen_path:null },
   ],
-  'Dorsales': [
+  'Espalda': [
     { id:'dor_1', nombre:'Dominadas',           descripcion:'Jalón con peso corporal',       imagen_path:null },
     { id:'dor_2', nombre:'Jalón al pecho',      descripcion:'Polea alta, ancho de dorsales', imagen_path:null },
     { id:'dor_3', nombre:'Remo con barra',      descripcion:'Remo horizontal con barra',     imagen_path:null },
@@ -1863,6 +1886,38 @@ const mockExercises = {
 let selectedExercises = new Map(); /* key=id, value=objeto ejercicio */
 let _currentCategory  = null;
 
+/* Helper URL limpia de miniatura */
+function getExerciseThumbUrl(path) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+  const clean = path.replace(/^\/+/, '').replace(/^public\//, '');
+  return `${APP}/${clean}`;
+}
+
+/* Helper normalizador canónico para grupos musculares */
+function getCanonicalMuscleGroup(str) {
+  if (!str) return 'otro';
+  const s = String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+  if (s.includes('pech') || s.includes('pector')) return 'pecho';
+  if (s.includes('espalda') || s.includes('dorsal')) return 'espalda';
+  if (s.includes('hombr') || s.includes('deltoid')) return 'hombros';
+  if (s.includes('bicep')) return 'biceps';
+  if (s.includes('tricep')) return 'triceps';
+  if (s.includes('trapeci')) return 'trapecio';
+  if (s.includes('antebraz')) return 'antebrazos';
+  if (s.includes('cuello')) return 'cuello';
+  if (s.includes('cuadicep') || s.includes('cuadricep')) return 'cuadriceps';
+  if (s.includes('femor') || s.includes('isquio')) return 'femoral';
+  if (s.includes('glute')) return 'gluteos';
+  if (s.includes('gemel') || s.includes('pantorrill')) return 'gemelos';
+  if (s.includes('abduct')) return 'abductores';
+  if (s.includes('aduct')) return 'aductores';
+  if (s.includes('abdom') || s.includes('core')) return 'abdomen';
+  if (s.includes('cardio') || s.includes('aerob')) return 'cardio';
+  if (s.includes('full') || s.includes('cuerpo') || s.includes('entero')) return 'full_body';
+  return 'otro';
+}
+
 /* ────────────────────────────────────────────────────
    CONSTRUCCIÓN DE LA GRILLA DE CATEGORÍAS
 ──────────────────────────────────────────────────── */
@@ -1873,7 +1928,7 @@ let _currentCategory  = null;
   cats.forEach(cat => {
     const grid = document.getElementById(grids[cat.grupo]);
     if (!grid) return;
-    const icon = iconMap[cat.nombre.toLowerCase()] || 'ti-dumbbell';
+    const icon = cat.icono || iconMap[(cat.nombre || '').toLowerCase()] || 'ti-dumbbell';
 
     const card = document.createElement('div');
     card.className = 'cat-card';
@@ -1961,7 +2016,7 @@ function renderExerciseList(catNombre, filter, isSingle) {
 
     /* Miniatura: imagen si existe, ícono fallback si no */
     const thumbInner = ex.imagen_path
-      ? `<img src="${APP}/uploads/${ex.imagen_path}" alt="${ex.nombre}" loading="lazy">`
+      ? `<img src="${getExerciseThumbUrl(ex.imagen_path)}" alt="${ex.nombre}" loading="lazy">`
       : `<i class="ti ti-dumbbell" aria-hidden="true"></i>`;
 
     item.innerHTML = `
@@ -1992,7 +2047,7 @@ function toggleExerciseSelection(ex, itemEl, isSingle) {
       if (nameEl) nameEl.textContent = ex.nombre;
       if (thumbEl) {
         thumbEl.innerHTML = ex.imagen_path
-          ? `<img src="${APP}/uploads/${ex.imagen_path}" alt="${ex.nombre}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">`
+          ? `<img src="${getExerciseThumbUrl(ex.imagen_path)}" alt="${ex.nombre}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">`
           : `<i class="ti ti-dumbbell"></i>`;
 
       }
@@ -2083,14 +2138,26 @@ function openCategorySheet() {
    → Prioriza catálogo PHP; si vacío, usa mock
 ──────────────────────────────────────────────────── */
 function getExercisesForCategory(catNombre) {
-  /* Cuando el backend los envíe, catalogoEjercicios tendrá estructura:
-     [ { id, nombre, descripcion, imagen_path, grupo_muscular }, … ]
-     Por ahora usa mockExercises como fallback */
-  const fromDB = (catalogoEjercicios || []).filter(e =>
-    (e.grupo_muscular || '').toLowerCase() === catNombre.toLowerCase()
-  );
-  if (fromDB.length) return fromDB;
-  return mockExercises[catNombre] || [];
+  const targetCanon = getCanonicalMuscleGroup(catNombre);
+
+  // 1. Filtrar ejercicios reales de la base de datos pertenecientes a la categoría
+  const fromDB = (catalogoEjercicios || []).filter(e => {
+    if (e.categoria_nombre && getCanonicalMuscleGroup(e.categoria_nombre) === targetCanon) return true;
+    return getCanonicalMuscleGroup(e.grupo_muscular) === targetCanon;
+  });
+
+  if (fromDB.length) {
+    return fromDB;
+  }
+
+  // 2. Fallback a mock si la categoría en BD está completamente vacía
+  for (const mockCat in mockExercises) {
+    if (getCanonicalMuscleGroup(mockCat) === targetCanon) {
+      return mockExercises[mockCat] || [];
+    }
+  }
+
+  return [];
 }
 
 /* ═══════════════════════════════════════════════════
@@ -2143,7 +2210,7 @@ function addExercise(exOrName) {
 
   /* Miniatura: imagen si existe, ícono fallback */
   const thumbContent = ex.imagen_path
-    ? `<img src="${APP}/uploads/${ex.imagen_path}" alt="${ex.nombre}"
+    ? `<img src="${getExerciseThumbUrl(ex.imagen_path)}" alt="${ex.nombre}"
             style="width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;inset:0;"
             loading="lazy">`
     : `<i class="ti ti-dumbbell" aria-hidden="true"></i>`;
