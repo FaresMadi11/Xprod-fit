@@ -13,7 +13,7 @@
     initSW() {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          const swPath = (window.APP || '') + '/sw.js?v=3.3';
+          const swPath = (window.APP || '') + '/sw.js?v=3.4';
           navigator.serviceWorker.register(swPath, {
             scope: (window.APP || '') + '/',
             updateViaCache: 'none'

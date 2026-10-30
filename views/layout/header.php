@@ -96,7 +96,7 @@ try {
         }).catch(function(){});
       }
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.3', { scope: window.APP + '/', updateViaCache: 'none' })
+        navigator.serviceWorker.register(window.APP + '/sw.js?v=3.4', { scope: window.APP + '/', updateViaCache: 'none' })
           .then(function(r) { r.update().catch(function(){}); })
           .catch(function(){});
       }

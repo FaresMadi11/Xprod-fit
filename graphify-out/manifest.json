@@ -216,9 +216,9 @@
     "semantic_hash": "ca6328d41cbcf6112d6fc81c7e2c8325"
   },
   "views/auth/login.php": {
-    "mtime": 1793324535.4980865,
-    "seen": 1793324572.4328089,
-    "ast_hash": "67265a954a0e13be82b8fdb0c06bbee4",
+    "mtime": 1793325723.1014285,
+    "seen": 1793325792.523012,
+    "ast_hash": "5605f62e09ae0ddc5790b574ba59ea6b",
     "semantic_hash": ""
   },
   "views/auth/recuperar.php": {
@@ -360,9 +360,9 @@
     "semantic_hash": ""
   },
   "views/layout/header.php": {
-    "mtime": 1793319040.720585,
-    "seen": 1793320554.3298757,
-    "ast_hash": "bb8ae98b98472151478a73169921e6ee",
+    "mtime": 1793325742.7055566,
+    "seen": 1793325792.5266397,
+    "ast_hash": "1e3bb4347e80f3cc79b251e0d0004636",
     "semantic_hash": ""
   },
   "views/legal/privacidad.php": {
@@ -438,15 +438,15 @@
     "semantic_hash": ""
   },
   "assets/js/pwa-sync.js": {
-    "mtime": 1793312822.777587,
-    "seen": 1793315590.1628642,
-    "ast_hash": "75e7960fc0a4831e5a7284e14110fd03",
+    "mtime": 1793325755.4956489,
+    "seen": 1793325792.5190299,
+    "ast_hash": "4c70e02120c44b20ed1a9dec6a84abd3",
     "semantic_hash": ""
   },
   "sw.js": {
-    "mtime": 1793272163.0095756,
-    "seen": 1793272322.2355587,
-    "ast_hash": "405593b9199a5d918f51443e20329a61",
+    "mtime": 1793325732.3919437,
+    "seen": 1793325792.5230095,
+    "ast_hash": "5e758c2c628fefe05842e378203d92dc",
     "semantic_hash": ""
   },
   "core/media_storage.php": {

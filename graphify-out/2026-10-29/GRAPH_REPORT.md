@@ -1,13 +1,13 @@
 # Graph Report - Xprod Fit  (2026-10-29)
 
 ## Corpus Check
-- 107 files · ~223,344 words
+- 107 files · ~222,795 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: (none) 7, .css 2, .conf 1)
 
 ## Summary
 - 1027 nodes · 2137 edges · 78 communities (29 shown, 49 thin omitted)
-- Extraction: 77% EXTRACTED · 23% INFERRED · 0% AMBIGUOUS · INFERRED: 492 edges (avg confidence: 0.85)
+- Extraction: 77% EXTRACTED · 23% INFERRED · 0% AMBIGUOUS · INFERRED: 491 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness

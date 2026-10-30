@@ -42,7 +42,7 @@
     } catch (_) {}
   }
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register(appBase + '/sw.js?v=3.3', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
+    navigator.serviceWorker.register(appBase + '/sw.js?v=3.4', { scope: appBase + '/', updateViaCache: 'none' }).catch(function(){});
   }
 })();
 
@@ -904,6 +904,221 @@ select:-webkit-autofill:active {
 
 <div class="bg-orb orb1" aria-hidden="true"></div>
 <div class="bg-orb orb2" aria-hidden="true"></div>
+
+<script>
+// ── MAHORAGA CANVAS GENERATOR (Inmediato, Failsafe & Alta Definición) ──
+(function() {
+  const canvas = document.getElementById('mahoragaCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+
+  let wheelParticles = [];
+  let headParticles = [];
+  let chestParticles = [];
+  let lowerParticles = [];
+  let imgW = 0, imgH = 0;
+  let scale = 1, offsetX = 0, offsetY = 0;
+  let dpr = 1;
+  let w = 0, h = 0;
+  let lastWidth = 0;
+  let isTypingLogin = false;
+  let initialized = false;
+
+  document.addEventListener('focusin', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) {
+      isTypingLogin = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('focusout', () => {
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'SELECT' && a.tagName !== 'TEXTAREA')) {
+        isTypingLogin = false;
+      }
+    }, 100);
+  }, { passive: true });
+
+  function initParticles() {
+    if (initialized) return;
+    initialized = true;
+    imgW = img.width || 266;
+    imgH = img.height || 472;
+
+    try {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = imgW;
+      offCanvas.height = imgH;
+      const offCtx = offCanvas.getContext('2d');
+      offCtx.drawImage(img, 0, 0);
+      const imgData = offCtx.getImageData(0, 0, imgW, imgH).data;
+
+      wheelParticles = [];
+      headParticles = [];
+      chestParticles = [];
+      lowerParticles = [];
+
+      const step = 1;
+      for (let y = 0; y < imgH; y += step) {
+        for (let x = 0; x < imgW; x += step) {
+          const i = (y * imgW + x) * 4;
+          const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+          const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+          if (lum > 18) {
+            const size = (lum / 255) * 1.10;
+            const p = { baseX: x, baseY: y, size: size };
+
+            let yp = y / imgH;
+            if (yp < 0.22) wheelParticles.push(p);
+            else if (yp < 0.38) headParticles.push(p);
+            else if (yp < 0.65) chestParticles.push(p);
+            else lowerParticles.push(p);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[Mahoraga] Fallback por restricción CORS en canvas:', err);
+    }
+
+    window.addEventListener('resize', () => {
+      // Ignorar cambios de altura provocados por el teclado virtual en móviles
+      if (Math.abs(window.innerWidth - lastWidth) > 30) {
+        resize();
+      }
+    }, { passive: true });
+
+    resize();
+    requestAnimationFrame(animate);
+  }
+
+  img.onload = initParticles;
+  img.onerror = () => {
+    if (!img._retried) {
+      img._retried = true;
+      img.src = './assets/img/mahoraga1.jpg';
+    }
+  };
+
+  const cleanApp = '<?= APP_URL ?>';
+  const directSrc = (window.location.protocol === 'https:' && cleanApp.startsWith('http:'))
+    ? cleanApp.replace(/^http:/, 'https:')
+    : cleanApp;
+  img.src = (directSrc ? directSrc : '') + '/assets/img/mahoraga1.jpg';
+
+  if (img.complete && img.naturalWidth > 0) {
+    initParticles();
+  }
+
+  function resize() {
+    const isMob = window.innerWidth < 768;
+    dpr = isMob ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth;
+    h = window.innerHeight;
+    lastWidth = w;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Mahoraga GRANDE, nítido y bien encuadrado
+    if (isMob) {
+      scale = Math.max((w * 1.18) / imgW, (h * 1.12) / imgH);
+      offsetX = (w - imgW * scale) / 2;
+      offsetY = (h - imgH * scale) * 0.08;
+    } else {
+      scale = Math.max((w * 0.52) / imgW, (h * 1.14) / imgH);
+      offsetX = (w - imgW * scale) / 2;
+      offsetY = (h - imgH * scale) * 0.16;
+    }
+    drawFrame();
+  }
+
+  let time = 0;
+  let lastFrameTs = 0;
+
+  const ambientParticles = [];
+  const ambientCount = window.innerWidth < 768 ? 20 : 40;
+  for (let i = 0; i < ambientCount; i++) {
+    ambientParticles.push({
+      x: Math.random(), y: Math.random(),
+      speed: 0.0002 + Math.random() * 0.0004,
+      size: 1 + Math.random() * 2,
+      alpha: 0.05 + Math.random() * 0.12,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+
+  function drawFrame() {
+    ctx.fillStyle = '#02040a';
+    ctx.fillRect(0, 0, w, h);
+
+    if (wheelParticles.length === 0 && img.naturalWidth > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.drawImage(img, offsetX, offsetY, imgW * scale, imgH * scale);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#ffffff';
+
+      // Rueda flotando
+      const wheelDy = Math.sin(time * 1.2) * 12 * scale;
+      for (let i = 0; i < wheelParticles.length; i++) {
+        const p = wheelParticles[i];
+        ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + wheelDy, p.size * scale, p.size * scale);
+      }
+      // Cabeza
+      const headDy = Math.sin(time * 0.8) * 3 * scale;
+      for (let i = 0; i < headParticles.length; i++) {
+        const p = headParticles[i];
+        ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + headDy, p.size * scale, p.size * scale);
+      }
+      // Pecho
+      const chestDy = Math.sin(time * 0.8) * 4 * scale;
+      const chestScaleX = Math.sin(time * 0.8) * 0.025;
+      const imgCenter = imgW / 2;
+      for (let i = 0; i < chestParticles.length; i++) {
+        const p = chestParticles[i];
+        const dx = (p.baseX - imgCenter) * chestScaleX * scale;
+        ctx.fillRect(offsetX + p.baseX * scale + dx, offsetY + p.baseY * scale + chestDy, p.size * scale, p.size * scale);
+      }
+      // Torso inferior
+      const lowerDy = Math.sin(time * 0.8) * 1 * scale;
+      for (let i = 0; i < lowerParticles.length; i++) {
+        const p = lowerParticles[i];
+        ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + lowerDy, p.size * scale, p.size * scale);
+      }
+    }
+
+    // Partículas ambientales
+    for (let i = 0; i < ambientParticles.length; i++) {
+      const ap = ambientParticles[i];
+      ap.y -= ap.speed;
+      if (ap.y < -0.02) { ap.y = 1.02; ap.x = Math.random(); }
+      const ax = ap.x * w + Math.sin(time + ap.phase) * 20;
+      const ay = ap.y * h;
+      ctx.globalAlpha = ap.alpha * (0.5 + 0.5 * Math.sin(time * 2 + ap.phase));
+      ctx.fillRect(ax, ay, ap.size, ap.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function animate(ts) {
+    if (!isTypingLogin && !document.hidden) {
+      if (!ts || (ts - lastFrameTs) >= 28) {
+        lastFrameTs = ts || 0;
+        time += 0.045;
+        drawFrame();
+      }
+    }
+    requestAnimationFrame(animate);
+  }
+})();
+</script>
 
 <?php
 $vistaInicial = $vistaInicial ?? 'login';
@@ -2512,190 +2727,5 @@ if (recoveryForm) {
   });
 }
 
-// ── MAHORAGA CANVAS GENERATOR (Optimizado 60fps Móvil + Estable con Teclado) ──
-(function() {
-  const canvas = document.getElementById('mahoragaCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d', { alpha: false });
-  const img = new Image();
-  
-  let wheelParticles = [];
-  let headParticles = [];
-  let chestParticles = [];
-  let lowerParticles = [];
-  let imgW = 0, imgH = 0;
-  let scale = 1, offsetX = 0, offsetY = 0;
-  let dpr = 1;
-  let w = 0, h = 0;
-  let lastWidth = 0;
-  let isTypingLogin = false;
-
-  document.addEventListener('focusin', (e) => {
-    const t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) {
-      isTypingLogin = true;
-    }
-  }, { passive: true });
-
-  document.addEventListener('focusout', () => {
-    setTimeout(() => {
-      const a = document.activeElement;
-      if (!a || (a.tagName !== 'INPUT' && a.tagName !== 'SELECT' && a.tagName !== 'TEXTAREA')) {
-        isTypingLogin = false;
-      }
-    }, 100);
-  }, { passive: true });
-  
-  img.onload = () => {
-    imgW = img.width;
-    imgH = img.height;
-    
-    const offCanvas = document.createElement('canvas');
-    offCanvas.width = imgW;
-    offCanvas.height = imgH;
-    const offCtx = offCanvas.getContext('2d');
-    offCtx.drawImage(img, 0, 0);
-    const imgData = offCtx.getImageData(0, 0, imgW, imgH).data;
-    
-    // Step = 2 garantiza definición HD nítida sin sobrecargar la GPU con 38.000 polígonos
-    const step = 2; 
-    
-    for (let y = 0; y < imgH; y += step) {
-      for (let x = 0; x < imgW; x += step) {
-        const i = (y * imgW + x) * 4;
-        const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        
-        if (lum > 18) { 
-          const size = (lum / 255) * step * 1.25; 
-          const p = { baseX: x, baseY: y, size: size };
-          
-          let yp = y / imgH;
-          if (yp < 0.22) wheelParticles.push(p);
-          else if (yp < 0.38) headParticles.push(p);
-          else if (yp < 0.65) chestParticles.push(p);
-          else lowerParticles.push(p);
-        }
-      }
-    }
-
-    window.addEventListener('resize', () => {
-      // Ignorar cambios de altura provocados por la apertura o cierre del teclado virtual en móviles
-      if (Math.abs(window.innerWidth - lastWidth) > 30) {
-        resize();
-      }
-    }, { passive: true });
-
-    resize();
-    requestAnimationFrame(animate);
-  };
-
-  img.src = '<?= APP_URL ?>/assets/img/mahoraga1.jpg';
-  if (img.complete && img.naturalWidth > 0) {
-    img.onload();
-  }
-
-  function resize() {
-    const isMob = window.innerWidth < 768;
-    dpr = isMob ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(window.devicePixelRatio || 1, 2);
-    w = window.innerWidth;
-    // Fijar la altura física de pantalla para que el fondo NUNCA se encoja o mueva al abrir el teclado
-    const screenH = Math.max(window.screen?.availHeight || 0, window.screen?.height || 0, window.innerHeight || 0);
-    h = isMob ? screenH : window.innerHeight;
-    lastWidth = w;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    
-    // Mahoraga GRANDE e imponente en Login, Registro y Olvido de contraseña
-    if (isMob) {
-      scale = Math.max((w * 1.45) / imgW, (h * 1.20) / imgH);
-      offsetX = (w - imgW * scale) / 2;
-      offsetY = Math.max(-25, (h - imgH * scale) * 0.10);
-    } else {
-      scale = Math.max((w * 0.65) / imgW, (h * 1.22) / imgH);
-      offsetX = (w - imgW * scale) / 2;
-      offsetY = (h - imgH * scale) * 0.20;
-    }
-    drawFrame();
-  }
-  
-  let time = 0;
-  let lastFrameTs = 0;
-  
-  // Partículas ambientales flotantes
-  const ambientParticles = [];
-  const ambientCount = window.innerWidth < 768 ? 20 : 40;
-  for (let i = 0; i < ambientCount; i++) {
-    ambientParticles.push({
-      x: Math.random(), y: Math.random(),
-      speed: 0.0002 + Math.random() * 0.0004,
-      size: 1 + Math.random() * 2,
-      alpha: 0.05 + Math.random() * 0.12,
-      phase: Math.random() * Math.PI * 2
-    });
-  }
-
-  function drawFrame() {
-    ctx.fillStyle = '#02040a';
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#ffffff';
-    
-    // Rueda flotando
-    const wheelDy = Math.sin(time * 1.2) * 12 * scale;
-    for (let i = 0; i < wheelParticles.length; i++) {
-      const p = wheelParticles[i];
-      ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + wheelDy, p.size * scale, p.size * scale);
-    }
-    // Cabeza
-    const headDy = Math.sin(time * 0.8) * 3 * scale;
-    for (let i = 0; i < headParticles.length; i++) {
-      const p = headParticles[i];
-      ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + headDy, p.size * scale, p.size * scale);
-    }
-    // Pecho (Respiración, expande y sube)
-    const chestDy = Math.sin(time * 0.8) * 4 * scale;
-    const chestScaleX = Math.sin(time * 0.8) * 0.025; 
-    const imgCenter = imgW / 2;
-    for (let i = 0; i < chestParticles.length; i++) {
-      const p = chestParticles[i];
-      const dx = (p.baseX - imgCenter) * chestScaleX * scale;
-      ctx.fillRect(offsetX + p.baseX * scale + dx, offsetY + p.baseY * scale + chestDy, p.size * scale, p.size * scale);
-    }
-    // Torso inferior
-    const lowerDy = Math.sin(time * 0.8) * 1 * scale;
-    for (let i = 0; i < lowerParticles.length; i++) {
-      const p = lowerParticles[i];
-      ctx.fillRect(offsetX + p.baseX * scale, offsetY + p.baseY * scale + lowerDy, p.size * scale, p.size * scale);
-    }
-
-    // ── Partículas ambientales flotantes ──
-    for (let i = 0; i < ambientParticles.length; i++) {
-      const ap = ambientParticles[i];
-      ap.y -= ap.speed;
-      if (ap.y < -0.02) { ap.y = 1.02; ap.x = Math.random(); }
-      const ax = ap.x * w + Math.sin(time + ap.phase) * 20;
-      const ay = ap.y * h;
-      ctx.globalAlpha = ap.alpha * (0.5 + 0.5 * Math.sin(time * 2 + ap.phase));
-      ctx.fillRect(ax, ay, ap.size, ap.size);
-    }
-    ctx.globalAlpha = 1;
-  }
-  
-  function animate(ts) {
-    // Mientras el usuario escribe en el teclado móvil, mantener el frame estático para dar 100% de fluidez al input
-    if (!isTypingLogin && !document.hidden) {
-      if (!ts || (ts - lastFrameTs) >= 28) {
-        lastFrameTs = ts || 0;
-        time += 0.045;
-        drawFrame();
-      }
-    }
-    requestAnimationFrame(animate);
-  }
-})();
-</script>
 </body>
 </html>
