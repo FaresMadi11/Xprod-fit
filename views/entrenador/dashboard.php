@@ -128,7 +128,7 @@
   border: none; background: transparent; letter-spacing: 0.5px;
 }
 .t-filter-btn.active {
-  background: var(--accent-primary, #8a2be2); color: #fff; font-weight: 700;
+  background: var(--accent-primary, #8a2be2); color: var(--btn-text, #fff); font-weight: 700;
   box-shadow: 0 2px 10px rgba(138,43,226,0.35);
 }
 
@@ -137,17 +137,19 @@
 }
 
 .t-card {
-  background: #27272a; border-radius: 14px; padding: 10px;
+  background: var(--card, #27272a); border-radius: 14px; padding: 10px;
   display: flex; flex-direction: column; gap: 10px;
   position: relative; overflow: hidden;
-  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-  border: 1px solid transparent;
+  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(0,0,0,0.3));
 }
 
 .t-card-img {
   background: #f8fafc; border-radius: 10px; height: 130px;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
   position: relative;
+  border: 1px solid var(--border, rgba(0,0,0,0.06));
 }
 .t-card-img img { 
   max-width: 80%; max-height: 80%; object-fit: contain; mix-blend-mode: multiply; 

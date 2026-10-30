@@ -3168,7 +3168,7 @@ function entApiGuardarTemaSistema(): void {
     $data = json_decode($raw, true);
     $tema = trim($data['tema'] ?? '');
 
-    if (!in_array($tema, ['classic', 'obsidian', 'dark', 'light'], true)) {
+    if (!in_array($tema, ['classic', 'obsidian', 'royal-plum', 'deep-ocean', 'nordic-frost', 'dark', 'light'], true)) {
         echo json_encode(['ok' => false, 'msg' => 'Tema no válido.']);
         exit;
     }

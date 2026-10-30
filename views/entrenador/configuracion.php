@@ -92,7 +92,7 @@ require __DIR__ . '/../layout/header.php';
       <div class="xp-theme-card-head">
         <div class="xp-theme-info">
           <div class="xp-theme-name">Estilo Xprod Obsidian</div>
-          <div class="xp-theme-desc">Minimalismo puro, paleta lavanda nocturna y fondo limpio</div>
+          <div class="xp-theme-desc">Minimalismo puro, morado lavanda y fondo limpio</div>
         </div>
         <span class="xp-theme-badge" id="badgeThemeObsidian"><i class="ti ti-check"></i> Activo</span>
       </div>
@@ -104,6 +104,63 @@ require __DIR__ . '/../layout/header.php';
         <span class="xp-swatch" style="background:#716879;" title="#716879"></span>
         <span class="xp-swatch" style="background:#AAA2B3;" title="#AAA2B3"></span>
         <span class="xp-swatch" style="background:#E2DDE7;" title="#E2DDE7"></span>
+      </div>
+    </div>
+
+    <!-- Tema 3: Royal Plum (Paleta Imagen 3) -->
+    <div class="xp-theme-card" id="themeCardPlum" onclick="solicitarCambioTema('royal-plum', 'Estilo Royal Plum')">
+      <div class="xp-theme-card-head">
+        <div class="xp-theme-info">
+          <div class="xp-theme-name">Estilo Royal Plum</div>
+          <div class="xp-theme-desc">Ciruela profundo, púrpura imperial y rosa lavanda</div>
+        </div>
+        <span class="xp-theme-badge" id="badgeThemePlum"><i class="ti ti-check"></i> Activo</span>
+      </div>
+      <div class="xp-theme-swatches">
+        <span class="xp-swatch" style="background:#190019;" title="#190019"></span>
+        <span class="xp-swatch" style="background:#2B124C;" title="#2B124C"></span>
+        <span class="xp-swatch" style="background:#522B5B;" title="#522B5B"></span>
+        <span class="xp-swatch" style="background:#854F6C;" title="#854F6C"></span>
+        <span class="xp-swatch" style="background:#DFB6B2;" title="#DFB6B2"></span>
+        <span class="xp-swatch" style="background:#FBE4D8;" title="#FBE4D8"></span>
+      </div>
+    </div>
+
+    <!-- Tema 4: Deep Ocean (Paleta Imagen 4) -->
+    <div class="xp-theme-card" id="themeCardOcean" onclick="solicitarCambioTema('deep-ocean', 'Estilo Deep Ocean')">
+      <div class="xp-theme-card-head">
+        <div class="xp-theme-info">
+          <div class="xp-theme-name">Estilo Deep Ocean</div>
+          <div class="xp-theme-desc">Abismo marino, acero y escarcha ártica</div>
+        </div>
+        <span class="xp-theme-badge" id="badgeThemeOcean"><i class="ti ti-check"></i> Activo</span>
+      </div>
+      <div class="xp-theme-swatches">
+        <span class="xp-swatch" style="background:#06141B;" title="#06141B"></span>
+        <span class="xp-swatch" style="background:#11212D;" title="#11212D"></span>
+        <span class="xp-swatch" style="background:#253745;" title="#253745"></span>
+        <span class="xp-swatch" style="background:#4A5C6A;" title="#4A5C6A"></span>
+        <span class="xp-swatch" style="background:#9BA8AB;" title="#9BA8AB"></span>
+        <span class="xp-swatch" style="background:#CCD0CF;" title="#CCD0CF"></span>
+      </div>
+    </div>
+
+    <!-- Tema 5: Nordic Frost (Paleta Imagen 5) -->
+    <div class="xp-theme-card" id="themeCardFrost" onclick="solicitarCambioTema('nordic-frost', 'Estilo Nordic Frost')">
+      <div class="xp-theme-card-head">
+        <div class="xp-theme-info">
+          <div class="xp-theme-name">Estilo Nordic Frost</div>
+          <div class="xp-theme-desc">Lienzo nórdico limpio, menta aqua y blush pastel</div>
+        </div>
+        <span class="xp-theme-badge" id="badgeThemeFrost"><i class="ti ti-check"></i> Activo</span>
+      </div>
+      <div class="xp-theme-swatches">
+        <span class="xp-swatch" style="background:#F1F7F7;" title="#F1F7F7"></span>
+        <span class="xp-swatch" style="background:#DDD3D3;" title="#DDD3D3"></span>
+        <span class="xp-swatch" style="background:#D5E5E5;" title="#D5E5E5"></span>
+        <span class="xp-swatch" style="background:#B0D7D8;" title="#B0D7D8"></span>
+        <span class="xp-swatch" style="background:#F7CBCA;" title="#F7CBCA"></span>
+        <span class="xp-swatch" style="background:#5D6B6B;" title="#5D6B6B"></span>
       </div>
     </div>
   </div>
@@ -377,19 +434,22 @@ require __DIR__ . '/../layout/header.php';
 
 /* Drill Buttons */
 .btn-drill {
-  background: var(--accent);
-  color: #fff;
+  background: var(--accent-primary, #8a2be2);
+  color: var(--btn-text, #fff);
   border: none;
   padding: 14px 24px;
   border-radius: 14px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: all 0.2s;
   width: 100%;
 }
-.btn-drill:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-drill i {
+  color: inherit;
+}
+.btn-drill:hover { background: var(--accent-hover, #9d4edd); color: var(--btn-text, #fff); transform: translateY(-1px); }
 
 /* Form styles (dropzone, steps) reused from previous */
 .drill-dropzone {
@@ -1802,12 +1862,21 @@ async function solicitarCambioTema(nuevoTema, nombre) {
 }
 
 function actualizarUISelectorTema(tema) {
-  const isObsidian = (tema === 'obsidian');
-  const cardClassic = document.getElementById('themeCardClassic');
-  const cardObsidian = document.getElementById('themeCardObsidian');
+  const normTema = (tema === 'dark') ? 'classic' : (tema || 'classic');
+  const mapa = {
+    'classic': 'themeCardClassic',
+    'obsidian': 'themeCardObsidian',
+    'royal-plum': 'themeCardPlum',
+    'deep-ocean': 'themeCardOcean',
+    'nordic-frost': 'themeCardFrost'
+  };
 
-  if (cardClassic) cardClassic.classList.toggle('is-active', !isObsidian);
-  if (cardObsidian) cardObsidian.classList.toggle('is-active', isObsidian);
+  Object.entries(mapa).forEach(([slug, elId]) => {
+    const card = document.getElementById(elId);
+    if (card) {
+      card.classList.toggle('is-active', (normTema === slug));
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

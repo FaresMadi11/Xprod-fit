@@ -72,6 +72,7 @@ html[data-theme="classic"] {
   --card-border: rgba(255, 255, 255, 0.06);
   --input-bg: #1A1A22;
   --input-border: rgba(255, 255, 255, 0.12);
+  --btn-text: #ffffff;
 }
 
 /* ── OBSIDIAN MINIMALIST THEME (Paleta @uiux.build) ───────────── */
@@ -84,17 +85,17 @@ html[data-theme="obsidian"] {
 
   /* ── Borders ── */
   --border: #45404F;
-  --border-accent: rgba(226, 221, 231, 0.35);
+  --border-accent: rgba(170, 162, 179, 0.45);
 
-  /* ── Sistema Acento Minimalista (Lavanda Perla) ── */
-  --accent-primary: #E2DDE7;
-  --accent-hover: #FFFFFF;
-  --accent-bg: rgba(226, 221, 231, 0.14);
+  /* ── Sistema Acento (Lavanda Morado @uiux.build) ── */
+  --accent-primary: #AAA2B3;
+  --accent-hover: #E2DDE7;
+  --accent-bg: rgba(170, 162, 179, 0.18);
   --text-purple: #AAA2B3;
 
   /* ── Accents ── */
-  --accent: #E2DDE7;
-  --accent-light: #AAA2B3;
+  --accent: #AAA2B3;
+  --accent-light: #E2DDE7;
 
   /* ── Secondary Accents ── */
   --accent2: #201D27;
@@ -126,6 +127,139 @@ html[data-theme="obsidian"] {
   --card-border: rgba(69, 64, 79, 0.65);
   --input-bg: #201D27;
   --input-border: #45404F;
+  --btn-text: #17151C;
+}
+
+/* ── ROYAL PLUM THEME (Paleta Ciruela & Lavanda Real) ───────────── */
+html[data-theme="royal-plum"] {
+  --bg: #190019;
+  --bg2: #2B124C;
+  --bg3: #3B1B66;
+  --card: #2B124C;
+  --border: #522B5B;
+  --border-accent: rgba(223, 182, 178, 0.45);
+
+  --accent-primary: #DFB6B2;
+  --accent-hover: #FBE4D8;
+  --accent-bg: rgba(223, 182, 178, 0.18);
+  --text-purple: #DFB6B2;
+
+  --accent: #DFB6B2;
+  --accent-light: #FBE4D8;
+  --accent2: #2B124C;
+  --accent-warm: #E11D48;
+
+  --danger: #F87171;
+  --danger-deep: #7F1D1D;
+  --warn: #F59E0B;
+  --success: #4ADE80;
+  --info: #DFB6B2;
+
+  --text: #FBE4D8;
+  --text2: #DFB6B2;
+  --muted: #854F6C;
+
+  --radius: 18px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-red: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --trans: .22s cubic-bezier(.4, 0, .2, 1);
+
+  --nav-bg: #190019;
+  --card-glass: rgba(43, 18, 76, 0.92);
+  --card-border: rgba(82, 43, 91, 0.65);
+  --input-bg: #1E0D35;
+  --input-border: #522B5B;
+  --btn-text: #190019;
+}
+
+/* ── DEEP OCEAN THEME (Paleta Abismo Ártico @uiuxaadi) ───────────── */
+html[data-theme="deep-ocean"] {
+  --bg: #06141B;
+  --bg2: #11212D;
+  --bg3: #1B2F3E;
+  --card: #11212D;
+  --border: #253745;
+  --border-accent: rgba(155, 168, 171, 0.45);
+
+  --accent-primary: #9BA8AB;
+  --accent-hover: #CCD0CF;
+  --accent-bg: rgba(155, 168, 171, 0.18);
+  --text-purple: #9BA8AB;
+
+  --accent: #9BA8AB;
+  --accent-light: #CCD0CF;
+  --accent2: #11212D;
+  --accent-warm: #EF4444;
+
+  --danger: #F87171;
+  --danger-deep: #7F1D1D;
+  --warn: #F59E0B;
+  --success: #4ADE80;
+  --info: #9BA8AB;
+
+  --text: #CCD0CF;
+  --text2: #9BA8AB;
+  --muted: #4A5C6A;
+
+  --radius: 18px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-red: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --trans: .22s cubic-bezier(.4, 0, .2, 1);
+
+  --nav-bg: #06141B;
+  --card-glass: rgba(17, 33, 45, 0.92);
+  --card-border: rgba(37, 55, 69, 0.7);
+  --input-bg: #0B1923;
+  --input-border: #253745;
+  --btn-text: #06141B;
+}
+
+/* ── NORDIC FROST THEME (Paleta Menta & Rosa Pastel @uiuxaadi) ───── */
+html[data-theme="nordic-frost"] {
+  --bg: #F1F7F7;
+  --bg2: #E3EDED;
+  --bg3: #D5E5E5;
+  --card: #FFFFFF;
+  --border: #DDD3D3;
+  --border-accent: rgba(93, 107, 107, 0.4);
+
+  --accent-primary: #5D6B6B;
+  --accent-hover: #4A5757;
+  --accent-bg: rgba(176, 215, 216, 0.3);
+  --text-purple: #5D6B6B;
+
+  --accent: #5D6B6B;
+  --accent-light: #B0D7D8;
+  --accent2: #F7CBCA;
+  --accent-warm: #F7CBCA;
+
+  --danger: #EF4444;
+  --danger-deep: #991B1B;
+  --warn: #D97706;
+  --success: #16A34A;
+  --info: #5D6B6B;
+
+  --text: #2D3737;
+  --text2: #5D6B6B;
+  --muted: #7E8C8C;
+
+  --radius: 18px;
+  --radius-sm: 10px;
+  --shadow: 0 6px 24px rgba(93, 107, 107, 0.12);
+  --shadow-sm: 0 2px 8px rgba(93, 107, 107, 0.08);
+  --shadow-red: 0 6px 24px rgba(239, 68, 68, 0.15);
+  --trans: .22s cubic-bezier(.4, 0, .2, 1);
+
+  --nav-bg: #FFFFFF;
+  --card-glass: rgba(255, 255, 255, 0.94);
+  --card-border: #DDD3D3;
+  --input-bg: #FFFFFF;
+  --input-border: #DDD3D3;
+  --btn-text: #FFFFFF;
 }
 
 /* ── LIGHT THEME ── */
@@ -364,33 +498,183 @@ html[data-theme="obsidian"] body {
   background-color: #17151C !important;
 }
 
-/* En Obsidian, los botones primarios usan texto oscuro sobre acento perlado para contraste óptimo */
+/* En Obsidian, los botones primarios usan morado lavanda #AAA2B3 con texto oscuro #17151C */
 html[data-theme="obsidian"] .btn-primary,
 html[data-theme="obsidian"] .cr-btn-save,
 html[data-theme="obsidian"] .btn-xp-primary,
 html[data-theme="obsidian"] .form-submit-btn,
-html[data-theme="obsidian"] .xp-pwa-install-btn {
-  background: #E2DDE7 !important;
+html[data-theme="obsidian"] .btn-drill,
+html[data-theme="obsidian"] .xp-pwa-install-btn,
+html[data-theme="obsidian"] .t-filter-btn.active {
+  background: #AAA2B3 !important;
   color: #17151C !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px 16px rgba(226, 221, 231, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(170, 162, 179, 0.25) !important;
 }
 html[data-theme="obsidian"] .btn-primary:hover,
 html[data-theme="obsidian"] .cr-btn-save:hover,
 html[data-theme="obsidian"] .btn-xp-primary:hover,
 html[data-theme="obsidian"] .form-submit-btn:hover,
+html[data-theme="obsidian"] .btn-drill:hover,
 html[data-theme="obsidian"] .xp-pwa-install-btn:hover {
-  background: #FFFFFF !important;
+  background: #E2DDE7 !important;
   color: #17151C !important;
-  box-shadow: 0 6px 22px rgba(226, 221, 231, 0.3) !important;
+  box-shadow: 0 6px 22px rgba(226, 221, 231, 0.35) !important;
+}
+html[data-theme="obsidian"] .btn-drill i,
+html[data-theme="obsidian"] .btn-primary i,
+html[data-theme="obsidian"] .form-submit-btn i {
+  color: #17151C !important;
 }
 
 html[data-theme="obsidian"] .xp-nav a.active,
 html[data-theme="obsidian"] .xp-nav a.active svg {
-  color: #E2DDE7 !important;
+  color: #AAA2B3 !important;
 }
 html[data-theme="obsidian"] .xp-nav a.active {
-  background: rgba(226, 221, 231, 0.1) !important;
+  background: rgba(170, 162, 179, 0.12) !important;
+}
+
+/* ── Royal Plum theme background (sin wallpapers góticos) ── */
+html[data-theme="royal-plum"]::before {
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(82, 43, 91, 0.55) 0%, rgba(25, 0, 25, 0.98) 75%),
+    linear-gradient(180deg, #190019 0%, #190019 100%) !important;
+  background-color: #190019 !important;
+}
+html[data-theme="royal-plum"] body {
+  background-color: #190019 !important;
+}
+html[data-theme="royal-plum"] .btn-primary,
+html[data-theme="royal-plum"] .cr-btn-save,
+html[data-theme="royal-plum"] .btn-xp-primary,
+html[data-theme="royal-plum"] .form-submit-btn,
+html[data-theme="royal-plum"] .btn-drill,
+html[data-theme="royal-plum"] .xp-pwa-install-btn,
+html[data-theme="royal-plum"] .t-filter-btn.active {
+  background: #DFB6B2 !important;
+  color: #190019 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 16px rgba(223, 182, 178, 0.25) !important;
+}
+html[data-theme="royal-plum"] .btn-primary:hover,
+html[data-theme="royal-plum"] .cr-btn-save:hover,
+html[data-theme="royal-plum"] .btn-xp-primary:hover,
+html[data-theme="royal-plum"] .form-submit-btn:hover,
+html[data-theme="royal-plum"] .btn-drill:hover,
+html[data-theme="royal-plum"] .xp-pwa-install-btn:hover {
+  background: #FBE4D8 !important;
+  color: #190019 !important;
+  box-shadow: 0 6px 22px rgba(251, 228, 216, 0.35) !important;
+}
+html[data-theme="royal-plum"] .btn-drill i,
+html[data-theme="royal-plum"] .btn-primary i,
+html[data-theme="royal-plum"] .form-submit-btn i {
+  color: #190019 !important;
+}
+html[data-theme="royal-plum"] .xp-nav a.active,
+html[data-theme="royal-plum"] .xp-nav a.active svg {
+  color: #DFB6B2 !important;
+}
+html[data-theme="royal-plum"] .xp-nav a.active {
+  background: rgba(223, 182, 178, 0.12) !important;
+}
+
+/* ── Deep Ocean theme background (sin wallpapers góticos) ── */
+html[data-theme="deep-ocean"]::before {
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(37, 55, 69, 0.55) 0%, rgba(6, 20, 27, 0.98) 75%),
+    linear-gradient(180deg, #06141B 0%, #06141B 100%) !important;
+  background-color: #06141B !important;
+}
+html[data-theme="deep-ocean"] body {
+  background-color: #06141B !important;
+}
+html[data-theme="deep-ocean"] .btn-primary,
+html[data-theme="deep-ocean"] .cr-btn-save,
+html[data-theme="deep-ocean"] .btn-xp-primary,
+html[data-theme="deep-ocean"] .form-submit-btn,
+html[data-theme="deep-ocean"] .btn-drill,
+html[data-theme="deep-ocean"] .xp-pwa-install-btn,
+html[data-theme="deep-ocean"] .t-filter-btn.active {
+  background: #9BA8AB !important;
+  color: #06141B !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 16px rgba(155, 168, 171, 0.25) !important;
+}
+html[data-theme="deep-ocean"] .btn-primary:hover,
+html[data-theme="deep-ocean"] .cr-btn-save:hover,
+html[data-theme="deep-ocean"] .btn-xp-primary:hover,
+html[data-theme="deep-ocean"] .form-submit-btn:hover,
+html[data-theme="deep-ocean"] .btn-drill:hover,
+html[data-theme="deep-ocean"] .xp-pwa-install-btn:hover {
+  background: #CCD0CF !important;
+  color: #06141B !important;
+  box-shadow: 0 6px 22px rgba(204, 208, 207, 0.35) !important;
+}
+html[data-theme="deep-ocean"] .btn-drill i,
+html[data-theme="deep-ocean"] .btn-primary i,
+html[data-theme="deep-ocean"] .form-submit-btn i {
+  color: #06141B !important;
+}
+html[data-theme="deep-ocean"] .xp-nav a.active,
+html[data-theme="deep-ocean"] .xp-nav a.active svg {
+  color: #9BA8AB !important;
+}
+html[data-theme="deep-ocean"] .xp-nav a.active {
+  background: rgba(155, 168, 171, 0.12) !important;
+}
+
+/* ── Nordic Frost theme background (sin wallpapers góticos) ── */
+html[data-theme="nordic-frost"]::before {
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(176, 215, 216, 0.45) 0%, rgba(241, 247, 247, 0.96) 75%),
+    linear-gradient(180deg, #F1F7F7 0%, #F1F7F7 100%) !important;
+  background-color: #F1F7F7 !important;
+}
+html[data-theme="nordic-frost"] body {
+  background-color: #F1F7F7 !important;
+  color: #2D3737 !important;
+}
+html[data-theme="nordic-frost"] .btn-primary,
+html[data-theme="nordic-frost"] .cr-btn-save,
+html[data-theme="nordic-frost"] .btn-xp-primary,
+html[data-theme="nordic-frost"] .form-submit-btn,
+html[data-theme="nordic-frost"] .btn-drill,
+html[data-theme="nordic-frost"] .xp-pwa-install-btn,
+html[data-theme="nordic-frost"] .t-filter-btn.active {
+  background: #5D6B6B !important;
+  color: #FFFFFF !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 16px rgba(93, 107, 107, 0.25) !important;
+}
+html[data-theme="nordic-frost"] .btn-primary:hover,
+html[data-theme="nordic-frost"] .cr-btn-save:hover,
+html[data-theme="nordic-frost"] .btn-xp-primary:hover,
+html[data-theme="nordic-frost"] .form-submit-btn:hover,
+html[data-theme="nordic-frost"] .btn-drill:hover,
+html[data-theme="nordic-frost"] .xp-pwa-install-btn:hover {
+  background: #4A5757 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 6px 20px rgba(74, 87, 87, 0.3) !important;
+}
+html[data-theme="nordic-frost"] .btn-drill i,
+html[data-theme="nordic-frost"] .btn-primary i,
+html[data-theme="nordic-frost"] .form-submit-btn i {
+  color: #FFFFFF !important;
+}
+html[data-theme="nordic-frost"] .xp-nav a.active,
+html[data-theme="nordic-frost"] .xp-nav a.active svg {
+  color: #5D6B6B !important;
+}
+html[data-theme="nordic-frost"] .xp-nav a.active {
+  background: rgba(176, 215, 216, 0.35) !important;
+}
+html[data-theme="nordic-frost"] .t-card-title,
+html[data-theme="nordic-frost"] .t-card-price,
+html[data-theme="nordic-frost"] .t-header-left,
+html[data-theme="nordic-frost"] .xp-theme-name {
+  color: #2D3737 !important;
 }
 
 /* ── Selector de Temas Visuales (Bento UI) ── */
@@ -420,9 +704,24 @@ html[data-theme="obsidian"] .xp-nav a.active {
   box-shadow: 0 4px 20px rgba(138, 43, 226, 0.2);
 }
 html[data-theme="obsidian"] .xp-theme-card.is-active {
-  border-color: #E2DDE7;
-  background: rgba(226, 221, 231, 0.08);
-  box-shadow: 0 4px 20px rgba(226, 221, 231, 0.15);
+  border-color: #AAA2B3;
+  background: rgba(170, 162, 179, 0.08);
+  box-shadow: 0 4px 20px rgba(170, 162, 179, 0.2);
+}
+html[data-theme="royal-plum"] .xp-theme-card.is-active {
+  border-color: #DFB6B2;
+  background: rgba(223, 182, 178, 0.1);
+  box-shadow: 0 4px 20px rgba(223, 182, 178, 0.2);
+}
+html[data-theme="deep-ocean"] .xp-theme-card.is-active {
+  border-color: #9BA8AB;
+  background: rgba(155, 168, 171, 0.1);
+  box-shadow: 0 4px 20px rgba(155, 168, 171, 0.2);
+}
+html[data-theme="nordic-frost"] .xp-theme-card.is-active {
+  border-color: #5D6B6B;
+  background: rgba(176, 215, 216, 0.18);
+  box-shadow: 0 4px 20px rgba(93, 107, 107, 0.15);
 }
 .xp-theme-card-head {
   display: flex;

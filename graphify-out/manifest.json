@@ -42,9 +42,9 @@
     "semantic_hash": ""
   },
   "controllers/EntrenadorController.php": {
-    "mtime": 1793318732.1615684,
-    "seen": 1793318934.0702271,
-    "ast_hash": "7940a82b6afe86294a3331f8d162576a",
+    "mtime": 1793320481.0539708,
+    "seen": 1793320554.323335,
+    "ast_hash": "650d4dfc69db31f6e4826fbf9f1a8f11",
     "semantic_hash": ""
   },
   "controllers/GoogleAuthController.php": {
@@ -228,9 +228,9 @@
     "semantic_hash": ""
   },
   "views/cliente/dashboard.php": {
-    "mtime": 1792951493.3058758,
-    "seen": 1793272322.2360795,
-    "ast_hash": "c639810e18c9034dfe4de01fe9570299",
+    "mtime": 1793320458.353928,
+    "seen": 1793320554.3274605,
+    "ast_hash": "42fcd472e3841bd1a50ba0d603c2e45b",
     "semantic_hash": ""
   },
   "views/cliente/estadisticas.php": {
@@ -282,9 +282,9 @@
     "semantic_hash": ""
   },
   "views/entrenador/configuracion.php": {
-    "mtime": 1793318898.7542546,
-    "seen": 1793318934.075043,
-    "ast_hash": "49ac873d21b07f7b8481f6ca20d58b5c",
+    "mtime": 1793320518.5730388,
+    "seen": 1793320554.328488,
+    "ast_hash": "1eae3ca989aaf094c7d5daaba8908e03",
     "semantic_hash": ""
   },
   "views/entrenador/crear_rutina.php": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "views/entrenador/dashboard.php": {
-    "mtime": 1792955671.5989044,
-    "seen": 1793272322.236621,
-    "ast_hash": "f16c0149e8824c8d4b31382e9de22393",
+    "mtime": 1793320398.3640058,
+    "seen": 1793320554.328604,
+    "ast_hash": "c835f0a62723c9f3ea04897ce152111f",
     "semantic_hash": ""
   },
   "views/entrenador/estadisticas_cliente.php": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   "views/layout/header.php": {
-    "mtime": 1793318776.389564,
-    "seen": 1793318934.0761514,
+    "mtime": 1793319040.720585,
+    "seen": 1793320554.3298757,
     "ast_hash": "bb8ae98b98472151478a73169921e6ee",
     "semantic_hash": ""
   },
