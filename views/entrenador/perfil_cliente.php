@@ -83,6 +83,8 @@ $fechasEntrenadas     = $offlineStatsSnapshot['fechas_entrenadas'] ?? [];
 $fechasIncompletas    = $offlineStatsSnapshot['fechas_incompletas'] ?? [];
 $rutinasProgMap       = obtenerRutinasProgramadasPorDia($db, (int)$cliente['id']);
 $diasProgramados      = $offlineStatsSnapshot['dias_programados'] ?? array_keys($rutinasProgMap);
+$diasProgramadosOrdenados = array_values(array_unique(array_map('intval', $diasProgramados)));
+sort($diasProgramadosOrdenados);
 
 // Construcción de semanas (Lunes a Domingo, 7 columnas completas)
 $primerDia = new DateTime(sprintf('%04d-%02d-01', $calAno, $calMes));
@@ -905,6 +907,65 @@ $grupoIconos = [
   color: #f87171;
 }
 
+/* ── Botón Discreto de Eliminar Rutina ── */
+.crdi-btn-del-rutina {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.crdi-btn-del-rutina:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+/* ── Barra de Días Programados (Estilo Atleta) ── */
+.crdi-days-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.crdi-day-chip {
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.crdi-day-chip:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.crdi-day-chip.active {
+  background: linear-gradient(135deg, #8a2be2, #9d4edd);
+  color: #fff;
+  font-weight: 800;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(138, 43, 226, 0.4);
+}
+
 .crdi-rutina-card {
   background: rgba(138, 43, 226, 0.10);
   border: 1px solid rgba(138, 43, 226, 0.25);
@@ -932,54 +993,135 @@ $grupoIconos = [
   flex-direction: column;
   gap: 8px;
 }
-.crdi-ejercicio-item {
+
+/* ── Tarjetas de Ejercicios Limpias con Acordeón (Clean Bento) ── */
+.crdi-ej-card {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.crdi-ej-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.045);
+}
+.crdi-ej-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
 }
-.crdi-ej-left {
+.crdi-ej-head-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
+  flex: 1;
 }
 .crdi-ej-num {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 0.72rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
   font-weight: 800;
-  color: #cbd5e1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: #9ca3af;
   flex-shrink: 0;
 }
 .crdi-ej-nombre {
-  font-size: 0.88rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #fff;
-  white-space: nowrap;
+  line-height: 1.3;
+  word-break: break-word;
+}
+.crdi-ej-head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.crdi-ej-chevron {
+  font-size: 1.05rem;
+  color: #64748b;
+  transition: transform 0.25s ease;
+}
+.crdi-ej-card:not(.is-collapsed) .crdi-ej-chevron {
+  transform: rotate(180deg);
+  color: #a78bfa;
+}
+.crdi-ej-card:not(.is-collapsed) {
+  border-color: rgba(138, 43, 226, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+.crdi-ej-body {
+  max-height: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
+  padding: 0 16px;
 }
-.crdi-ej-meta {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-top: 1px;
+.crdi-ej-card:not(.is-collapsed) .crdi-ej-body {
+  max-height: 600px;
+  padding: 0 16px 14px;
 }
-.crdi-ej-params {
-  font-size: 0.78rem;
+
+/* Tabla de series dentro del acordeón */
+.crdi-series-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+.crdi-st-head {
+  display: grid;
+  grid-template-columns: 50px 1fr 1fr 60px;
+  gap: 8px;
+  padding: 4px 6px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.crdi-st-head.no-rir {
+  grid-template-columns: 50px 1fr 1fr;
+}
+.crdi-st-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 1fr 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 6px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+.crdi-st-row.no-rir {
+  grid-template-columns: 50px 1fr 1fr;
+}
+.crdi-st-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+.crdi-st-badge-serie {
+  font-weight: 800;
+  color: #a78bfa;
+}
+.crdi-st-val {
   font-weight: 700;
-  color: #c4b5fd;
-  white-space: nowrap;
-  text-align: right;
+  color: #fff;
+  text-align: center;
+}
+.crdi-st-val.rir {
+  color: #38bdf8;
 }
 .crdi-empty-box {
   padding: 30px 20px;
@@ -1561,11 +1703,18 @@ $grupoIconos = [
         <div class="cal-rutina-dia-inline" id="calRutinaDiaInline">
           <div class="crdi-header">
             <div>
-              <span class="crdi-eyebrow">Rutina del Día Seleccionado</span>
+              <span class="crdi-eyebrow">Rutina Asignada</span>
               <h3 class="crdi-title" id="crdiTituloFecha">Cargando...</h3>
             </div>
-            <div id="crdiBadge" class="crdi-badge">Hoy</div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div id="crdiBadge" class="crdi-badge">Hoy</div>
+              <button type="button" class="crdi-btn-del-rutina" id="btnDelRutinaTop" style="display:none;" onclick="confirmarEliminarRutinaCompleta()" title="Eliminar rutina completa">
+                <i class="ti ti-trash"></i> Eliminar
+              </button>
+            </div>
           </div>
+          <!-- Barra con solo los días en los que el atleta tiene rutina -->
+          <div class="crdi-days-bar" id="crdiDaysBar"></div>
           <div class="crdi-content" id="crdiContent">
             <div class="crdi-empty-box">
               <div class="dia-modal-spinner" aria-hidden="true"></div>
@@ -3162,6 +3311,140 @@ if (document.readyState === 'complete') {
   }
 
   let fechaGlobalInline = FECHA_HOY;
+  let rutinaIdActual = null;
+  const DIAS_PROGRAMADOS = <?= json_encode($diasProgramadosOrdenados) ?>;
+  const DIAS_NOMBRES = { 1:'Lun', 2:'Mar', 3:'Mié', 4:'Jue', 5:'Vie', 6:'Sáb', 7:'Dom' };
+
+  function renderizarBarraDias(fechaActual) {
+    const bar = document.getElementById('crdiDaysBar');
+    if (!bar) return;
+
+    if (!DIAS_PROGRAMADOS || DIAS_PROGRAMADOS.length === 0) {
+      bar.innerHTML = '';
+      return;
+    }
+
+    const dt = new Date(fechaActual + 'T00:00:00');
+    let currentDow = dt.getDay();
+    if (currentDow === 0) currentDow = 7; // 1=Lun ... 7=Dom
+
+    let html = '';
+    DIAS_PROGRAMADOS.forEach(d => {
+      const nombre = DIAS_NOMBRES[d] || `Día ${d}`;
+      const isActive = (d === currentDow);
+      html += `
+        <button type="button" class="crdi-day-chip ${isActive ? 'active' : ''}" 
+                onclick="seleccionarDiaRutina(${d}, '${fechaActual}')">
+          <i class="ti ti-calendar-check"></i> ${nombre}
+        </button>
+      `;
+    });
+    bar.innerHTML = html;
+  }
+
+  function seleccionarDiaRutina(targetDow, fechaBaseStr) {
+    const base = new Date(fechaBaseStr + 'T00:00:00');
+    let currentDow = base.getDay();
+    if (currentDow === 0) currentDow = 7;
+    const diff = targetDow - currentDow;
+    const targetDate = new Date(base);
+    targetDate.setDate(base.getDate() + diff);
+    const y = targetDate.getFullYear();
+    const m = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const d = String(targetDate.getDate()).padStart(2, '0');
+    const nuevaFecha = `${y}-${m}-${d}`;
+    cargarDetalleDiaInline(nuevaFecha);
+  }
+
+  function toggleCrdiEjercicio(cardEl) {
+    if (!cardEl) return;
+    cardEl.classList.toggle('is-collapsed');
+  }
+
+  async function confirmarEliminarRutinaCompleta(rutId) {
+    const id = rutId || rutinaIdActual;
+    if (!id) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Sin rutina',
+        text: 'No hay ninguna rutina asignada para eliminar.',
+        background: '#121217',
+        color: '#fff',
+        confirmButtonColor: '#8a2be2'
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: '¿Desea eliminar la rutina completa?',
+      text: 'Esta acción eliminará la rutina asignada y todos sus ejercicios programados. No se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      reverseButtons: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: 'rgba(255,255,255,0.15)',
+      background: '#121217',
+      color: '#fff'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        Swal.fire({
+          title: 'Eliminando rutina...',
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading(); },
+          background: '#121217',
+          color: '#fff'
+        });
+
+        const res = await fetch(`${APP_URL_STATS}/entrenador/api-eliminar-rutina`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': typeof CSRF !== 'undefined' ? CSRF : ''
+          },
+          body: JSON.stringify({
+            rutina_id: id,
+            cliente_id: CLIENTE_ID_STATS
+          })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Rutina eliminada',
+            text: data.msg || 'La rutina ha sido eliminada con éxito.',
+            timer: 1600,
+            showConfirmButton: false,
+            background: '#121217',
+            color: '#fff'
+          });
+          window.location.reload();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: data.msg || 'No se pudo eliminar la rutina.',
+            background: '#121217',
+            color: '#fff',
+            confirmButtonColor: '#8a2be2'
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de red',
+          text: 'Ocurrió un error al intentar eliminar la rutina.',
+          background: '#121217',
+          color: '#fff',
+          confirmButtonColor: '#8a2be2'
+        });
+      }
+    }
+  }
 
   // Carga y renderiza el detalle de la rutina debajo del calendario
   async function cargarDetalleDiaInline(fecha) {
@@ -3170,6 +3453,7 @@ if (document.readyState === 'complete') {
     const titleEl   = document.getElementById('crdiTituloFecha');
     const badgeEl   = document.getElementById('crdiBadge');
     const contentEl = document.getElementById('crdiContent');
+    const btnDelTop = document.getElementById('btnDelRutinaTop');
     if (!container || !contentEl) return;
 
     titleEl.textContent = formatoFechaLarga(fecha);
@@ -3192,6 +3476,7 @@ if (document.readyState === 'complete') {
       if (!data || !data.ok) {
         badgeEl.className = 'crdi-badge badge-sin-rutina';
         badgeEl.textContent = 'Error';
+        if (btnDelTop) btnDelTop.style.display = 'none';
         contentEl.innerHTML = `<div class="crdi-empty-box"><i class="ti ti-alert-triangle" style="color:#f87171"></i><p>${esc(data?.msg || 'Error al consultar el día')}</p></div>`;
         return;
       }
@@ -3219,6 +3504,16 @@ if (document.readyState === 'complete') {
       } else {
         badgeEl.innerHTML = '<i class="ti ti-barbell"></i> Programado';
       }
+
+      if (data.rutina && data.rutina.id) {
+        rutinaIdActual = data.rutina.id;
+        if (btnDelTop) btnDelTop.style.display = 'inline-flex';
+      } else {
+        rutinaIdActual = null;
+        if (btnDelTop) btnDelTop.style.display = 'none';
+      }
+
+      renderizarBarraDias(fecha);
 
       if (data.rutina && Array.isArray(data.ejercicios) && data.ejercicios.length > 0) {
         const numEjs = data.ejercicios.length;
@@ -3257,21 +3552,61 @@ if (document.readyState === 'complete') {
         `;
 
         data.ejercicios.forEach((ej, idx) => {
-          const setsVal = ej.series_total || ej.series?.length || 1;
-          const repsVal = ej.repeticiones || ej.series?.[0]?.reps || '10';
-          const rirVal  = ej.rir != null ? ` · RIR ${ej.rir}` : '';
-          const impVal  = ej.tipo_implemento ? ` · ${esc(ej.tipo_implemento)}` : '';
+          const setsList = ej.series_detalle || [];
+          const hasRir = !ej.rir_desmarcado && ej.rir != null;
+          
+          let seriesRows = '';
+          if (setsList.length > 0) {
+            setsList.forEach(s => {
+              const pVal = s.peso !== null && s.peso !== '' ? `${s.peso} kg` : '—';
+              const rVal = s.reps ? `${s.reps} reps` : '—';
+              const rirCol = hasRir ? `<span class="crdi-st-val rir">${s.rir !== null ? `RIR ${s.rir}` : '—'}</span>` : '';
+              seriesRows += `
+                <div class="crdi-st-row ${!hasRir ? 'no-rir' : ''}">
+                  <span class="crdi-st-badge-serie">S${s.numero}</span>
+                  <span class="crdi-st-val">${pVal}</span>
+                  <span class="crdi-st-val">${rVal}</span>
+                  ${rirCol}
+                </div>
+              `;
+            });
+          } else {
+            const numSets = ej.series_total || ej.series || 1;
+            const repsBase = ej.repeticiones || '10';
+            for (let i = 1; i <= numSets; i++) {
+              const rirCol = hasRir ? `<span class="crdi-st-val rir">RIR ${ej.rir}</span>` : '';
+              seriesRows += `
+                <div class="crdi-st-row ${!hasRir ? 'no-rir' : ''}">
+                  <span class="crdi-st-badge-serie">S${i}</span>
+                  <span class="crdi-st-val">—</span>
+                  <span class="crdi-st-val">${esc(repsBase)} reps</span>
+                  ${rirCol}
+                </div>
+              `;
+            }
+          }
+
           html += `
-            <div class="crdi-ejercicio-item">
-              <div class="crdi-ej-left">
-                <span class="crdi-ej-num">${idx + 1}</span>
-                <div>
-                  <div class="crdi-ej-nombre">${esc(ej.nombre)}</div>
-                  <div class="crdi-ej-meta">${esc(ej.grupo_muscular || 'General')}${impVal}</div>
+            <div class="crdi-ej-card is-collapsed" id="crdi-ej-${ej.id}">
+              <div class="crdi-ej-header" onclick="toggleCrdiEjercicio(this.closest('.crdi-ej-card'))">
+                <div class="crdi-ej-head-left">
+                  <span class="crdi-ej-num">${idx + 1}</span>
+                  <span class="crdi-ej-nombre">${esc(ej.nombre)}</span>
+                </div>
+                <div class="crdi-ej-head-right">
+                  <i class="ti ti-chevron-down crdi-ej-chevron"></i>
                 </div>
               </div>
-              <div class="crdi-ej-params">
-                ${setsVal} series &times; ${repsVal} reps${rirVal}
+              <div class="crdi-ej-body">
+                <div class="crdi-series-table">
+                  <div class="crdi-st-head ${!hasRir ? 'no-rir' : ''}">
+                    <span>SERIE</span>
+                    <span style="text-align:center;">PESO</span>
+                    <span style="text-align:center;">REPS</span>
+                    ${hasRir ? '<span style="text-align:center;">RIR</span>' : ''}
+                  </div>
+                  ${seriesRows}
+                </div>
               </div>
             </div>
           `;
@@ -3358,6 +3693,9 @@ if (document.readyState === 'complete') {
   window.abrirModalDia  = abrirModalDia;
   window.cerrarModalDia = cerrarModalDia;
   window.cargarDetalleDiaInline = cargarDetalleDiaInline;
+  window.confirmarEliminarRutinaCompleta = confirmarEliminarRutinaCompleta;
+  window.toggleCrdiEjercicio = toggleCrdiEjercicio;
+  window.seleccionarDiaRutina = seleccionarDiaRutina;
 })();
 
 async function guardarRutinaAtletaComoPlantilla(rutinaId, nombreRutina) {

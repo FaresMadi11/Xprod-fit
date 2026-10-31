@@ -627,9 +627,8 @@
   font-size: 0.88rem;
   font-weight: 700;
   color: #fff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  word-break: break-word;
 }
 .cdd-btn-dots {
   width: 34px;
@@ -2652,7 +2651,6 @@ function renderRutinaDrawer(drawer, data, modoTab) {
               <i class="ti ${icono}"></i>
               <span>${esc(grupoNombre.toUpperCase())}</span>
             </div>
-            <span class="cdd-group-pill">${cantEj} ${cantEj === 1 ? 'ejercicio' : 'ejercicios'} &middot; ${totalSeriesGrupo} series</span>
           </div>
           <div class="cdd-ejercicios">
       `;
@@ -2870,12 +2868,11 @@ function renderRutinaDrawer(drawer, data, modoTab) {
                 <div class="cdd-ej-info">
                   <div class="cdd-ej-name-row">
                     <span class="cdd-ej-nombre">${esc(ej.nombre)}</span>
-                    ${implBadge}
                   </div>
                 </div>
               </div>
               <div class="cdd-ej-right">
-                <span class="cdd-ej-summary-pill">${seriesCount} series &middot; ${esc(reps)} reps</span>
+                <span class="cdd-ej-summary-pill">${seriesCount} ${seriesCount === 1 ? 'serie' : 'series'}</span>
                 ${dotsBtn}
                 <i class="ti ti-chevron-down cdd-ej-chevron"></i>
               </div>

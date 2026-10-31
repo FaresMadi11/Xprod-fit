@@ -552,7 +552,7 @@ require __DIR__ . '/../layout/header.php';
   border-radius: 10px;
   border: none;
   background: transparent;
-  color: var(--muted);
+  color: #cbd5e1;
   font-size: 0.88rem;
   font-weight: 700;
   display: flex;
@@ -562,10 +562,15 @@ require __DIR__ . '/../layout/header.php';
   cursor: pointer;
   transition: all 0.2s ease;
 }
+.drill-tab-btn:hover:not(.active) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+}
 .drill-tab-btn.active {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(139,92,246,0.35);
+  background: linear-gradient(135deg, #8a2be2, #9d4edd);
+  color: #ffffff !important;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(138, 43, 226, 0.45);
 }
 .paso-cfg-item {
   background: rgba(255,255,255,0.03);
@@ -815,35 +820,10 @@ require __DIR__ . '/../layout/header.php';
             </button>
           </div>
 
-          <!-- PANEL 2: CONFIGURACIÓN (Ajuste de Máquina / Implemento con Fotos/Videos) -->
+          <!-- PANEL 2: CONFIGURACIÓN (Pasos de Ajuste de Máquina con Fotos/Videos) -->
           <div id="panelFormConfig" class="drill-form-panel" style="display:none;">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
-              <div class="sys-input-group" style="margin-bottom:0;">
-                <label for="ej_implemento" style="font-size:0.8rem;">Implemento / Equipo</label>
-                <select id="ej_implemento" name="tipo_implemento" class="sys-input" style="padding:10px;">
-                  <option value="barra">Barra / Libre</option>
-                  <option value="mancuerna">Mancuernas (×2)</option>
-                  <option value="polea_maquina">Polea / Máquina</option>
-                  <option value="sin_peso">Sin peso / Corporal</option>
-                </select>
-              </div>
-              <div class="sys-input-group" style="margin-bottom:0;">
-                <label for="ej_unidad" style="font-size:0.8rem;">Unidad de Carga</label>
-                <select id="ej_unidad" name="unidad_carga" class="sys-input" style="padding:10px;">
-                  <option value="kg">Kilos (KG)</option>
-                  <option value="placas">Placas</option>
-                  <option value="ninguna">Ninguna</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="sys-input-group" style="margin-bottom:14px;">
-              <label for="ej_video_url" style="font-size:0.8rem;">Video Demostrativo de YouTube (Opcional)</label>
-              <input type="url" id="ej_video_url" name="video_url" class="sys-input" placeholder="https://youtube.com/watch?v=...">
-            </div>
-
             <!-- Pasos para Configurar una Máquina con foto/video -->
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; margin-top:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; margin-top:6px;">
               <label style="font-size:0.88rem; font-weight:700; color:#fff; margin:0;">
                 <i class="ti ti-tool" style="color:#38bdf8;"></i> Pasos para Configurar la Máquina
               </label>

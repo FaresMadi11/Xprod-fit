@@ -66,6 +66,7 @@ match($action) {
     'api-guardar-rutina-como-plantilla' => entApiGuardarRutinaComoPlantilla(),
     'api-eliminar-plantilla-catalogo'=> entApiEliminarPlantillaCatalogo(),
     'api-guardar-tema-sistema'       => entApiGuardarTemaSistema(),
+    'api-eliminar-rutina'            => entApiEliminarRutina(),
     default             => entDashboard(),
 };
 
@@ -3859,4 +3860,72 @@ function entApiGuardarSerieAtleta(): void {
         http_response_code(500);
         jsonOut(false, 'Error al guardar serie: ' . $e->getMessage());
     }
+}
+
+/*─────────────────────────────────────────────────────────────
+  API: ELIMINAR RUTINA COMPLETA (ENTRENADOR)
+  POST /entrenador/api-eliminar-rutina
+─────────────────────────────────────────────────────────────*/
+function entApiEliminarRutina(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json; charset=utf-8');
+
+    $db    = getDB();
+    $entId = (int)($_SESSION['user_id'] ?? 0);
+    $raw   = file_get_contents('php://input');
+    $data  = json_decode($raw, true) ?? [];
+    if (empty($data)) {
+        $data = $_POST;
+    }
+
+    $rutinaId  = (int)($data['rutina_id'] ?? 0);
+    $clienteId = (int)($data['cliente_id'] ?? 0);
+
+    if (!$rutinaId) {
+        echo json_encode(['ok' => false, 'msg' => 'ID de rutina inválido.']);
+        exit;
+    }
+
+    // Verificar que la rutina exista y pertenezca a un cliente del entrenador
+    $chk = $db->prepare("
+        SELECT r.id, r.cliente_id 
+        FROM rutinas r
+        JOIN clientes c ON c.id = r.cliente_id
+        WHERE r.id = ? AND (? IS NOT NULL)
+    ");
+    $chk->execute([$rutinaId, $entId]);
+    $rutinaRow = $chk->fetch(PDO::FETCH_ASSOC);
+
+    if (!$rutinaRow) {
+        echo json_encode(['ok' => false, 'msg' => 'Rutina no encontrada o sin permisos para eliminarla.']);
+        exit;
+    }
+
+    try {
+        $db->beginTransaction();
+
+        // Eliminar rutina. La base de datos ejecutará CASCADE en:
+        // ejercicios, rutina_dias, sesiones_asistencia, rutinas_aplazamientos
+        // y SET NULL en peso_historial.
+        $del = $db->prepare("DELETE FROM rutinas WHERE id = ?");
+        $del->execute([$rutinaId]);
+
+        $db->commit();
+        echo json_encode([
+            'ok'  => true,
+            'msg' => 'Rutina eliminada correctamente.'
+        ], JSON_UNESCAPED_UNICODE);
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log('[entApiEliminarRutina] Error: ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode([
+            'ok'  => false,
+            'msg' => 'Error al eliminar la rutina completa: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE);
+    }
+    exit;
 }
