@@ -967,15 +967,14 @@ $grupoIconos = [
 }
 
 .crdi-rutina-card {
-  background: rgba(138, 43, 226, 0.08);
-  border: 1px solid rgba(138, 43, 226, 0.22);
-  border-radius: 16px;
-  padding: 14px 18px;
-  margin-bottom: 14px;
+  background: transparent !important;
+  border: none !important;
+  padding: 4px 0 10px 0 !important;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 12px;
 }
 .crdi-rutina-info {
@@ -991,12 +990,14 @@ $grupoIconos = [
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 .crdi-rutina-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 .crdi-btn-action {
   display: inline-flex;
@@ -1010,6 +1011,7 @@ $grupoIconos = [
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
+  white-space: nowrap;
 }
 .crdi-btn-guardar {
   background: rgba(139, 92, 246, 0.16);
@@ -1051,51 +1053,312 @@ $grupoIconos = [
   color: #fff;
 }
 
-/* ── Banner de Modo Edición ── */
-.crdi-edit-banner {
-  background: linear-gradient(135deg, rgba(138, 43, 226, 0.14), rgba(59, 130, 246, 0.10));
-  border: 1px dashed rgba(168, 85, 247, 0.45);
-  border-radius: 12px;
-  padding: 10px 14px;
+/* ── Tarjetas de Edición Estilo Crear Rutina (Image 1) ── */
+.ex-block {
+  background: #121216;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  overflow: hidden;
   margin-bottom: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.ex-block:hover {
+  border-color: rgba(138, 43, 226, 0.3);
+}
+.ex-block-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 14px 10px;
+}
+.ex-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(139,92,246,.15);
+  border: 1.5px solid rgba(139,92,246,.35);
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  color: #d8b4fe;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.ex-name {
+  flex: 1;
+  font-size: .95rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ex-btn-dots {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.ex-btn-dots:hover {
+  color: #fff;
+  background: rgba(255,255,255,.08);
+}
+.ex-impl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+  margin-bottom: 6px;
+}
+.ex-impl-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.impl-chip {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.impl-chip:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.impl-chip.active {
+  background: rgba(139,92,246,0.18);
+  border-color: rgba(139,92,246,0.45);
+  color: #d8b4fe;
+}
+.impl-chip.active[data-impl="mancuerna"] {
+  background: rgba(168,85,247,0.18);
+  border-color: rgba(168,85,247,0.5);
+  color: #c084fc;
+}
+.impl-chip.active[data-impl="sin_peso"] {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.4);
+  color: #4ade80;
+}
+.impl-chip.active[data-impl="polea_maquina"] {
+  background: rgba(56,189,248,0.15);
+  border-color: rgba(56,189,248,0.4);
+  color: #38bdf8;
+}
+.ex-rest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 10px;
+  cursor: pointer;
+}
+.ex-rest-label {
+  font-size: .78rem;
+  color: #a78bfa;
+  font-weight: 600;
+}
+.ex-rest-input {
+  display: none;
+  width: 64px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #fff;
+  font-size: .8rem;
+  text-align: center;
+  outline: none;
+}
+.ex-rest-row.active .ex-rest-input { display: inline-block; }
+.ex-rest-row.active .ex-rest-toggle-label { display: none; }
+.set-cols {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 6px 14px 4px;
+}
+.set-col-label {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  text-align: center;
+}
+.rir-toggle-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  user-select: none;
+}
+.rir-status-pill {
+  font-size: .58rem;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(139,92,246,.25);
+  color: #c4b5fd;
+  font-weight: 800;
+}
+.ex-block.rir-disabled .rir-status-pill {
+  background: rgba(239,68,68,.2);
+  color: #f87171;
+}
+.ex-block.rir-disabled .rir-toggle-header {
+  opacity: .5;
+  text-decoration: line-through;
+}
+.ex-block.rir-disabled .set-input-rir {
+  opacity: .2;
+  pointer-events: none;
+  background: rgba(255,255,255,.02) !important;
+}
+.set-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr 1fr;
+  gap: 6px;
+  padding: 5px 14px;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.set-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: .83rem;
+  font-weight: 800;
+  border: 1.5px solid rgba(139,92,246,.35);
+  background: rgba(139,92,246,.14);
+  color: #a78bfa;
+  justify-self: center;
+}
+.set-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 8px 6px;
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+.set-input:focus {
+  border-color: #8a2be2;
+  background: rgba(255,255,255,0.08);
+}
+.set-input:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.btn-add-set {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: calc(100% - 28px);
+  margin: 10px 14px 14px;
+  min-height: 40px;
+  background: rgba(139,92,246,.06);
+  border: 1.5px dashed rgba(139,92,246,.35);
+  border-radius: 12px;
+  color: #d8b4fe;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-add-set:hover {
+  background: rgba(139,92,246,.14);
+  border-color: #8a2be2;
+  color: #fff;
+}
+
+/* ── Toggle Switch Cardio Superior ── */
+.crdi-cardio-switch-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 10px;
+  padding: 10px 14px;
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 14px;
+  margin-bottom: 12px;
 }
-.crdi-eb-left {
-  display: flex;
+.crdi-cardio-toggle {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
 }
-.crdi-eb-left i {
-  font-size: 1.35rem;
-  color: #a78bfa;
+.crdi-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
 }
-.crdi-eb-left strong {
-  display: block;
-  font-size: 0.85rem;
-  color: #f3e8ff;
+.crdi-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
-.crdi-eb-left p {
-  margin: 0;
-  font-size: 0.74rem;
-  color: #cbd5e1;
+.crdi-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: rgba(255,255,255,0.15);
+  transition: .3s;
+  border-radius: 22px;
 }
-.crdi-eb-pill {
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(168, 85, 247, 0.25);
-  color: #d8b4fe;
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  white-space: nowrap;
+.crdi-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+.crdi-switch input:checked + .crdi-slider {
+  background-color: #38bdf8;
+}
+.crdi-switch input:checked + .crdi-slider:before {
+  transform: translateX(18px);
 }
 
-/* ── Tarjeta de Cardio ── */
+/* ── Tarjeta de Cardio Normal (Modo Lectura) ── */
 .crdi-cardio-card {
   background: rgba(56, 189, 248, 0.07);
   border: 1px solid rgba(56, 189, 248, 0.25);
@@ -1137,56 +1400,8 @@ $grupoIconos = [
   color: #94a3b8;
   margin-top: 2px;
 }
-.crdi-cardio-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.crdi-btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.crdi-btn-icon:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
-.crdi-btn-icon.del:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #f87171;
-}
-.crdi-add-cardio-box {
-  background: rgba(56, 189, 248, 0.04);
-  border: 1px dashed rgba(56, 189, 248, 0.35);
-  border-radius: 12px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: #38bdf8;
-  font-size: 0.84rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.crdi-add-cardio-box:hover {
-  background: rgba(56, 189, 248, 0.1);
-  border-color: rgba(56, 189, 248, 0.55);
-  transform: translateY(-1px);
-}
 
-/* ── Tarjetas de Ejercicios Limpias con Acordeón (Clean Bento) ── */
+/* ── Tarjetas de Ejercicios Limpias (Modo Lectura) ── */
 .crdi-ejercicios-list {
   display: flex;
   flex-direction: column;
@@ -1272,23 +1487,6 @@ $grupoIconos = [
   gap: 8px;
   flex-shrink: 0;
 }
-.crdi-btn-dots {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #cbd5e1;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.crdi-btn-dots:hover {
-  background: rgba(168, 85, 247, 0.25);
-  border-color: rgba(168, 85, 247, 0.45);
-  color: #fff;
-}
 .crdi-ej-chevron {
   font-size: 1.05rem;
   color: #64748b;
@@ -1313,7 +1511,7 @@ $grupoIconos = [
   padding: 0 16px 14px;
 }
 
-/* Tabla de series dentro del acordeón */
+/* Tabla de series dentro del acordeón (Modo Lectura) */
 .crdi-series-table {
   width: 100%;
   display: flex;
@@ -1365,29 +1563,7 @@ $grupoIconos = [
   color: #38bdf8;
 }
 
-/* Botones de acción en modo edición */
-.crdi-btn-add-ej {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 18px;
-  border-radius: 12px;
-  border: 1px dashed rgba(168, 85, 247, 0.45);
-  background: rgba(168, 85, 247, 0.08);
-  color: #d8b4fe;
-  font-size: 0.86rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-.crdi-btn-add-ej:hover {
-  background: rgba(168, 85, 247, 0.16);
-  border-color: rgba(168, 85, 247, 0.7);
-  color: #fff;
-  transform: translateY(-1px);
-}
+/* Botones de acción */
 .crdi-btn-save-big {
   display: flex;
   align-items: center;
@@ -3733,10 +3909,16 @@ if (document.readyState === 'complete') {
   }
 
   // Carga y renderiza el detalle de la rutina debajo del calendario
-    // Estado global de la rutina en visualización inline y modo edición
   let rutinaInlineState = null;
   let modoEdicionActivo = false;
   let catalogoEjerciciosCache = null;
+
+  function getExerciseThumbUrl(path) {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const clean = path.replace(/^\/+/, '').replace(/^public\//, '');
+    return `${APP_URL_STATS}/${clean}`;
+  }
 
   async function cargarDetalleDiaInline(fecha) {
     fechaGlobalInline = fecha;
@@ -3807,7 +3989,6 @@ if (document.readyState === 'complete') {
       renderizarBarraDias(fecha);
 
       if (data.rutina && Array.isArray(data.ejercicios) && data.ejercicios.length > 0) {
-        // Inicializar estado local de la rutina
         rutinaInlineState = {
           fecha: fecha,
           rutina_id: data.rutina.id,
@@ -3816,23 +3997,42 @@ if (document.readyState === 'complete') {
           cardio_tiempo: data.rutina.cardio_tiempo ? parseInt(data.rutina.cardio_tiempo) : 20,
           cardio_indicaciones: data.rutina.cardio_indicaciones || '',
           ejercicios: data.ejercicios.map((e, idx) => {
-            const sets = e.series_detalle || [];
-            let pesoDef = null;
-            if (sets.length > 0 && sets[0].peso !== null && sets[0].peso !== undefined) {
-              pesoDef = sets[0].peso;
-            } else if (e.descripcion) {
-              const m = e.descripcion.match(/(\d+(?:\.\d+)?)/);
-              if (m) pesoDef = parseFloat(m[1]);
+            const rawSets = e.series_detalle || [];
+            let sets = [];
+            if (rawSets.length > 0) {
+              sets = rawSets.map(s => ({
+                numero: s.numero || 1,
+                peso: (s.peso !== null && s.peso !== undefined && s.peso !== '') ? parseFloat(s.peso) : null,
+                reps: s.reps || e.repeticiones || '10',
+                rir: (s.rir !== null && s.rir !== undefined && s.rir !== '') ? parseInt(s.rir) : (e.rir !== null ? parseInt(e.rir) : 2)
+              }));
+            } else {
+              const numS = parseInt(e.series_total || e.series || 3);
+              let pesoDef = null;
+              if (e.descripcion) {
+                const m = e.descripcion.match(/(\d+(?:\.\d+)?)/);
+                if (m) pesoDef = parseFloat(m[1]);
+              }
+              for (let s = 1; s <= numS; s++) {
+                sets.push({
+                  numero: s,
+                  peso: pesoDef,
+                  reps: e.repeticiones || '10',
+                  rir: e.rir !== null ? parseInt(e.rir) : 2
+                });
+              }
             }
             return {
               id: e.id,
               nombre: e.nombre,
-              series: parseInt(e.series_total || e.series || 3),
+              imagen_path: e.imagen_path || null,
+              series: sets.length,
               repeticiones: e.repeticiones || '10',
               rir: (e.rir_desmarcado || e.rir === null) ? null : parseInt(e.rir),
-              peso: pesoDef,
+              peso: sets[0]?.peso || null,
               tipo_implemento: e.tipo_implemento || 'barra',
               unidad_carga: e.unidad_carga || 'kg',
+              descanso: e.descanso_segundos || null,
               series_detalle: sets
             };
           })
@@ -3872,14 +4072,14 @@ if (document.readyState === 'complete') {
     }
   }
 
-  // Renderiza la vista de rutina (solo información relevante, sin banner incompleto ni estadísticas redundantes)
+  // Renderiza la vista de rutina
   function renderizarRutinaInline() {
     const contentEl = document.getElementById('crdiContent');
     if (!contentEl || !rutinaInlineState) return;
 
     let html = '';
 
-    // 1. Tarjeta Cabecera con SOLO "Guardar rutina" y "Actualizar"
+    // 1. Cabecera LIMPIA (Sin cuadro morado, botones lado a lado)
     html += `
       <div class="crdi-rutina-card">
         <div class="crdi-rutina-info">
@@ -3893,7 +4093,7 @@ if (document.readyState === 'complete') {
             <button type="button" class="crdi-btn-action crdi-btn-guardar" onclick="guardarRutinaAtletaComoPlantilla(${rutinaInlineState.rutina_id}, '${esc(rutinaInlineState.nombre)}')" title="Guardar como plantilla reusable">
               <i class="ti ti-device-floppy"></i> Guardar rutina
             </button>
-            <button type="button" class="crdi-btn-action crdi-btn-actualizar" onclick="activarModoEdicionRutina()" title="Habilitar modo edición de rutina">
+            <button type="button" class="crdi-btn-action crdi-btn-actualizar" onclick="activarModoEdicionRutina()" title="Habilitar modo edición">
               <i class="ti ti-edit"></i> Actualizar
             </button>
           ` : `
@@ -3908,132 +4108,119 @@ if (document.readyState === 'complete') {
       </div>
     `;
 
-    // 2. Banner de Modo Edición Activo
+    // NOTA: El aviso de modo edición ha sido eliminado completamente según requerimiento.
+
     if (modoEdicionActivo) {
+      // ══════════════════════════════════════════════════════════
+      // MODO EDICIÓN: VISTA EXACTA AL MÓDULO DE CREAR RUTINA (Image 1)
+      // ══════════════════════════════════════════════════════════
+
+      // Barra superior de Cardio con Switch
       html += `
-        <div class="crdi-edit-banner">
-          <div class="crdi-eb-left">
-            <i class="ti ti-edit-circle"></i>
-            <div>
-              <strong>Modo Edición Activado</strong>
-              <p>Modifica ejercicios, series, reps, pesos, RIR y cardio para este atleta.</p>
-            </div>
+        <div class="crdi-cardio-switch-bar">
+          <label class="crdi-cardio-toggle">
+            <i class="ti ti-run" style="font-size:1.15rem;color:#38bdf8;"></i>
+            <span style="font-size:0.88rem;font-weight:700;color:#fff;">Cardio</span>
+            <label class="crdi-switch">
+              <input type="checkbox" id="toggleCardioInline" ${rutinaInlineState.cardio_activo == 1 ? 'checked' : ''} onchange="toggleCardioSwitchInline(this.checked)">
+              <span class="crdi-slider"></span>
+            </label>
+          </label>
+          <div style="${rutinaInlineState.cardio_activo == 1 ? 'display:flex;' : 'display:none;'} align-items:center; gap:8px; flex:1; max-width:340px;">
+            <input type="number" min="1" max="180" class="set-input" style="width:70px;padding:6px;font-size:0.8rem;" value="${rutinaInlineState.cardio_tiempo || 20}" placeholder="min" oninput="rutinaInlineState.cardio_tiempo = parseInt(this.value)||20">
+            <span style="color:#94a3b8;font-size:0.75rem;">min</span>
+            <input type="text" class="set-input" style="flex:1;padding:6px 10px;font-size:0.8rem;text-align:left;" value="${esc(rutinaInlineState.cardio_indicaciones || '')}" placeholder="Indicaciones (ej. caminadora)" oninput="rutinaInlineState.cardio_indicaciones = this.value">
           </div>
-          <span class="crdi-eb-pill">En edición</span>
         </div>
       `;
-    }
 
-    // 3. Sección de Cardio (si está activo o botón para agregarlo en modo edición)
-    if (rutinaInlineState.cardio_activo == 1) {
-      html += `
-        <div class="crdi-cardio-card">
-          <div class="crdi-cardio-left">
-            <div class="crdi-cardio-icon"><i class="ti ti-run"></i></div>
-            <div class="crdi-cardio-details">
-              <div class="crdi-cardio-title">Cardio &middot; <span>${rutinaInlineState.cardio_tiempo || 20} min</span></div>
-              ${rutinaInlineState.cardio_indicaciones ? `<div class="crdi-cardio-ind">${esc(rutinaInlineState.cardio_indicaciones)}</div>` : ''}
-            </div>
-          </div>
-          ${modoEdicionActivo ? `
-            <div class="crdi-cardio-actions">
-              <button type="button" class="crdi-btn-icon" onclick="abrirModalEditarCardio()" title="Editar cardio"><i class="ti ti-edit"></i></button>
-              <button type="button" class="crdi-btn-icon del" onclick="quitarCardioEdicion()" title="Eliminar cardio"><i class="ti ti-trash"></i></button>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    } else if (modoEdicionActivo) {
-      html += `
-        <div class="crdi-add-cardio-box" onclick="abrirModalEditarCardio()">
-          <i class="ti ti-plus"></i>
-          <span>Agregar Cardio a la Rutina</span>
-        </div>
-      `;
-    }
+      // Tarjetas de Ejercicios idénticas a crear_rutina.php
+      html += '<div class="crdi-ejercicios-list">';
+      rutinaInlineState.ejercicios.forEach((ej, idx) => {
+        const impl = ej.tipo_implemento || 'barra';
+        const hasRir = ej.rir !== null && ej.rir !== undefined;
+        const sets = ej.series_detalle || [];
 
-    // 4. Lista de Ejercicios Limpia (Sin sobreposiciones de texto)
-    html += '<div class="crdi-ejercicios-list">';
-    rutinaInlineState.ejercicios.forEach((ej, idx) => {
-      const hasRir = ej.rir !== null && ej.rir !== undefined;
-      const pesoStr = (ej.peso !== null && ej.peso !== undefined && ej.peso !== '') ? `${ej.peso} kg` : '—';
-      const setsList = ej.series_detalle || [];
+        let labelColWeight = 'KG';
+        if (impl === 'mancuerna') labelColWeight = 'KG (c/u) ×2';
+        else if (impl === 'polea_maquina') labelColWeight = 'KG / PLACAS';
+        else if (impl === 'sin_peso') labelColWeight = 'SIN PESO';
 
-      // Construcción de filas de series dentro del acordeón
-      let seriesRows = '';
-      if (setsList.length > 0) {
-        setsList.forEach(s => {
-          const pVal = s.peso !== null && s.peso !== '' && s.peso !== undefined ? `${s.peso} kg` : pesoStr;
-          const rVal = s.reps ? `${s.reps} reps` : `${esc(ej.repeticiones)} reps`;
-          const rirCol = hasRir ? `<span class="crdi-st-val rir">${s.rir !== null && s.rir !== undefined ? `RIR ${s.rir}` : `RIR ${ej.rir}`}</span>` : '';
-          seriesRows += `
-            <div class="crdi-st-row ${!hasRir ? 'no-rir' : ''}">
-              <span class="crdi-st-badge-serie">S${s.numero || 1}</span>
-              <span class="crdi-st-val">${pVal}</span>
-              <span class="crdi-st-val">${rVal}</span>
-              ${rirCol}
+        let setRowsHtml = '';
+        sets.forEach((s, sIdx) => {
+          const wVal = (s.peso !== null && s.peso !== undefined && s.peso !== '') ? s.peso : '';
+          const rVal = (s.reps !== null && s.reps !== undefined) ? s.reps : '';
+          const rirVal = (hasRir && s.rir !== null && s.rir !== undefined) ? s.rir : '';
+
+          setRowsHtml += `
+            <div class="set-row" data-serie-idx="${sIdx}">
+              <div class="set-badge" title="Serie ${sIdx + 1}">${sIdx + 1}</div>
+              <input type="number" step="0.5" class="set-input set-input-weight" value="${wVal}" placeholder="${impl === 'sin_peso' ? 'Sin peso' : '—'}" oninput="actualizarSerieValor(${idx}, ${sIdx}, 'peso', this.value)" ${impl === 'sin_peso' ? 'disabled' : ''}>
+              <input type="text" class="set-input set-input-reps" value="${esc(rVal)}" placeholder="—" oninput="actualizarSerieValor(${idx}, ${sIdx}, 'reps', this.value)">
+              <input type="number" min="0" max="5" class="set-input set-input-rir" value="${rirVal}" placeholder="RIR" oninput="actualizarSerieValor(${idx}, ${sIdx}, 'rir', this.value)" ${!hasRir ? 'disabled style="opacity:0.2;"' : ''}>
             </div>
           `;
         });
-      } else {
-        const numSets = ej.series || 3;
-        for (let i = 1; i <= numSets; i++) {
-          const rirCol = hasRir ? `<span class="crdi-st-val rir">RIR ${ej.rir}</span>` : '';
-          seriesRows += `
-            <div class="crdi-st-row ${!hasRir ? 'no-rir' : ''}">
-              <span class="crdi-st-badge-serie">S${i}</span>
-              <span class="crdi-st-val">${pesoStr}</span>
-              <span class="crdi-st-val">${esc(ej.repeticiones)} reps</span>
-              ${rirCol}
-            </div>
-          `;
-        }
-      }
 
-      html += `
-        <div class="crdi-ej-card is-collapsed" id="crdi-ej-${idx}">
-          <div class="crdi-ej-header" onclick="toggleCrdiEjercicio(this.closest('.crdi-ej-card'), event)">
-            <div class="crdi-ej-head-left">
-              <span class="crdi-ej-num">${idx + 1}</span>
-              <div class="crdi-ej-titles">
-                <span class="crdi-ej-nombre">${esc(ej.nombre)}</span>
-                <div class="crdi-ej-pills">
-                  <span class="crdi-pill">${ej.series} series &times; ${esc(ej.repeticiones)} reps</span>
-                  ${pesoStr !== '—' ? `<span class="crdi-pill">${pesoStr}</span>` : ''}
-                  ${hasRir ? `<span class="crdi-pill pill-rir">RIR ${ej.rir}</span>` : ''}
-                </div>
+        html += `
+          <div class="ex-block ${!hasRir ? 'rir-disabled' : ''}" data-idx="${idx}">
+            <div class="ex-block-head">
+              <div class="ex-thumb" style="position:relative;overflow:hidden;">
+                ${ej.imagen_path ? `<img src="${getExerciseThumbUrl(ej.imagen_path)}" alt="${esc(ej.nombre)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">` : `<i class="ti ti-dumbbell"></i>`}
               </div>
+              <div class="ex-name">${esc(ej.nombre)}</div>
+              <button type="button" class="ex-btn-dots" onclick="abrirMenuOpcionesEjercicio(${idx}, event)" title="Opciones de ${esc(ej.nombre)}">
+                <i class="ti ti-dots-vertical"></i>
+              </button>
             </div>
-            <div class="crdi-ej-head-right">
-              ${modoEdicionActivo ? `
-                <button type="button" class="crdi-btn-dots" onclick="abrirMenuOpcionesEjercicio(${idx}, event)" title="Opciones del ejercicio">
-                  <i class="ti ti-dots-vertical"></i>
+
+            <div class="ex-impl-toolbar">
+              <div class="ex-impl-chips">
+                <button type="button" class="impl-chip ${impl === 'mancuerna' ? 'active' : ''}" data-impl="mancuerna" onclick="cambiarImplementoEdicion(${idx}, 'mancuerna')">
+                  <i class="ti ti-barbell"></i> Mancuernas (×2)
                 </button>
-              ` : ''}
-              <i class="ti ti-chevron-down crdi-ej-chevron"></i>
-            </div>
-          </div>
-          <div class="crdi-ej-body">
-            <div class="crdi-series-table">
-              <div class="crdi-st-head ${!hasRir ? 'no-rir' : ''}">
-                <span>SERIE</span>
-                <span style="text-align:center;">PESO</span>
-                <span style="text-align:center;">REPS</span>
-                ${hasRir ? '<span style="text-align:center;">RIR</span>' : ''}
+                <button type="button" class="impl-chip ${impl === 'barra' ? 'active' : ''}" data-impl="barra" onclick="cambiarImplementoEdicion(${idx}, 'barra')">
+                  <i class="ti ti-barbell-off"></i> Barra / Libre
+                </button>
+                <button type="button" class="impl-chip ${impl === 'polea_maquina' ? 'active' : ''}" data-impl="polea_maquina" onclick="cambiarImplementoEdicion(${idx}, 'polea_maquina')">
+                  <i class="ti ti-circuit-switch-open"></i> Polea / Máq
+                </button>
+                <button type="button" class="impl-chip ${impl === 'sin_peso' ? 'active' : ''}" data-impl="sin_peso" onclick="cambiarImplementoEdicion(${idx}, 'sin_peso')">
+                  <i class="ti ti-user-check"></i> Sin peso
+                </button>
               </div>
-              ${seriesRows}
             </div>
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
 
-    // 5. Botones de Agregar Ejercicio y Guardar Rutina al final (en modo edición)
-    if (modoEdicionActivo) {
+            <div class="ex-rest-row" onclick="toggleRestEdicion(${idx})">
+              <i class="ti ti-clock" style="font-size:.9rem;color:#a78bfa;"></i>
+              <span class="ex-rest-label">Descanso: <strong>${ej.descanso ? `${ej.descanso} seg` : 'APAGADO'}</strong></span>
+            </div>
+
+            <div class="set-cols">
+              <div class="set-col-label">SERIE</div>
+              <div class="set-col-label">${labelColWeight}</div>
+              <div class="set-col-label">REPS</div>
+              <div class="set-col-label rir-toggle-header" onclick="toggleRirEdicion(${idx})" title="Toca para activar/desactivar RIR">
+                RIR <span class="rir-status-pill">${hasRir ? 'ON' : 'OFF'}</span>
+              </div>
+            </div>
+
+            <div class="sets-body">
+              ${setRowsHtml}
+            </div>
+
+            <button type="button" class="btn-add-set" onclick="agregarSerieEdicion(${idx})">
+              <i class="ti ti-plus"></i> Agregar Serie
+            </button>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      // Botón para agregar más ejercicios y Guardar
       html += `
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
-          <button type="button" class="crdi-btn-add-ej" onclick="abrirModalAgregarEjercicio()">
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+          <button type="button" class="btn-add-set" style="width:100%;margin:0;min-height:48px;background:rgba(139,92,246,0.08);border:1.5px dashed rgba(139,92,246,0.4);" onclick="abrirModalAgregarEjercicio()">
             <i class="ti ti-circle-plus"></i> + Agregar Ejercicio a la Rutina
           </button>
           <button type="button" class="crdi-btn-save-big" onclick="guardarCambiosRutinaEdicion()">
@@ -4041,6 +4228,84 @@ if (document.readyState === 'complete') {
           </button>
         </div>
       `;
+
+    } else {
+      // ══════════════════════════════════════════════════════════
+      // MODO LECTURA: VISTA LIMPIA Y ORDENADA
+      // ══════════════════════════════════════════════════════════
+
+      // Cardio si existe
+      if (rutinaInlineState.cardio_activo == 1) {
+        html += `
+          <div class="crdi-cardio-card">
+            <div class="crdi-cardio-left">
+              <div class="crdi-cardio-icon"><i class="ti ti-run"></i></div>
+              <div class="crdi-cardio-details">
+                <div class="crdi-cardio-title">Cardio &middot; <span>${rutinaInlineState.cardio_tiempo || 20} min</span></div>
+                ${rutinaInlineState.cardio_indicaciones ? `<div class="crdi-cardio-ind">${esc(rutinaInlineState.cardio_indicaciones)}</div>` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Lista de ejercicios modo lectura
+      html += '<div class="crdi-ejercicios-list">';
+      rutinaInlineState.ejercicios.forEach((ej, idx) => {
+        const hasRir = ej.rir !== null && ej.rir !== undefined;
+        const pesoStr = (ej.peso !== null && ej.peso !== undefined && ej.peso !== '') ? `${ej.peso} kg` : '—';
+        const setsList = ej.series_detalle || [];
+
+        let seriesRows = '';
+        if (setsList.length > 0) {
+          setsList.forEach(s => {
+            const pVal = (s.peso !== null && s.peso !== '' && s.peso !== undefined) ? `${s.peso} kg` : pesoStr;
+            const rVal = s.reps ? `${s.reps} reps` : `${esc(ej.repeticiones)} reps`;
+            const rirCol = hasRir ? `<span class="crdi-st-val rir">${s.rir !== null && s.rir !== undefined ? `RIR ${s.rir}` : `RIR ${ej.rir}`}</span>` : '';
+            seriesRows += `
+              <div class="crdi-st-row ${!hasRir ? 'no-rir' : ''}">
+                <span class="crdi-st-badge-serie">S${s.numero || 1}</span>
+                <span class="crdi-st-val">${pVal}</span>
+                <span class="crdi-st-val">${rVal}</span>
+                ${rirCol}
+              </div>
+            `;
+          });
+        }
+
+        html += `
+          <div class="crdi-ej-card is-collapsed" id="crdi-ej-${idx}">
+            <div class="crdi-ej-header" onclick="toggleCrdiEjercicio(this.closest('.crdi-ej-card'), event)">
+              <div class="crdi-ej-head-left">
+                <span class="crdi-ej-num">${idx + 1}</span>
+                <div class="crdi-ej-titles">
+                  <span class="crdi-ej-nombre">${esc(ej.nombre)}</span>
+                  <div class="crdi-ej-pills">
+                    <span class="crdi-pill">${ej.series} series &times; ${esc(ej.repeticiones)} reps</span>
+                    ${pesoStr !== '—' ? `<span class="crdi-pill">${pesoStr}</span>` : ''}
+                    ${hasRir ? `<span class="crdi-pill pill-rir">RIR ${ej.rir}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="crdi-ej-head-right">
+                <i class="ti ti-chevron-down crdi-ej-chevron"></i>
+              </div>
+            </div>
+            <div class="crdi-ej-body">
+              <div class="crdi-series-table">
+                <div class="crdi-st-head ${!hasRir ? 'no-rir' : ''}">
+                  <span>SERIE</span>
+                  <span style="text-align:center;">PESO</span>
+                  <span style="text-align:center;">REPS</span>
+                  ${hasRir ? '<span style="text-align:center;">RIR</span>' : ''}
+                </div>
+                ${seriesRows}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
     }
 
     contentEl.innerHTML = html;
@@ -4057,6 +4322,96 @@ if (document.readyState === 'complete') {
     cargarDetalleDiaInline(fechaGlobalInline);
   }
 
+  // Funciones interactivas del modo edición estilo crear_rutina
+  function cambiarImplementoEdicion(idx, nuevoImpl) {
+    if (!rutinaInlineState || !rutinaInlineState.ejercicios[idx]) return;
+    rutinaInlineState.ejercicios[idx].tipo_implemento = nuevoImpl;
+    if (nuevoImpl === 'sin_peso') {
+      rutinaInlineState.ejercicios[idx].series_detalle.forEach(s => s.peso = null);
+    }
+    renderizarRutinaInline();
+  }
+
+  function toggleRirEdicion(idx) {
+    if (!rutinaInlineState || !rutinaInlineState.ejercicios[idx]) return;
+    const ej = rutinaInlineState.ejercicios[idx];
+    if (ej.rir !== null && ej.rir !== undefined) {
+      ej.rir = null;
+      ej.series_detalle.forEach(s => s.rir = null);
+    } else {
+      ej.rir = 2;
+      ej.series_detalle.forEach(s => s.rir = 2);
+    }
+    renderizarRutinaInline();
+  }
+
+  async function toggleRestEdicion(idx) {
+    if (!rutinaInlineState || !rutinaInlineState.ejercicios[idx]) return;
+    const ej = rutinaInlineState.ejercicios[idx];
+    const { value: segs } = await Swal.fire({
+      title: 'Tiempo de Descanso',
+      input: 'number',
+      inputValue: ej.descanso || 60,
+      inputLabel: 'Segundos de descanso entre series (0 para apagar):',
+      inputAttributes: { min: 0, max: 600, step: 5 },
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#8a2be2',
+      background: '#12121a',
+      color: '#ffffff'
+    });
+    if (segs !== undefined) {
+      const val = parseInt(segs, 10);
+      ej.descanso = val > 0 ? val : null;
+      renderizarRutinaInline();
+    }
+  }
+
+  function actualizarSerieValor(idx, sIdx, campo, valor) {
+    if (!rutinaInlineState || !rutinaInlineState.ejercicios[idx]) return;
+    const ej = rutinaInlineState.ejercicios[idx];
+    if (!ej.series_detalle[sIdx]) return;
+
+    if (campo === 'peso') {
+      const p = valor !== '' && !isNaN(parseFloat(valor)) ? parseFloat(valor) : null;
+      ej.series_detalle[sIdx].peso = p;
+      if (sIdx === 0) ej.peso = p;
+    } else if (campo === 'reps') {
+      ej.series_detalle[sIdx].reps = valor.trim();
+      if (sIdx === 0) ej.repeticiones = valor.trim();
+    } else if (campo === 'rir') {
+      const r = valor !== '' && !isNaN(parseInt(valor, 10)) ? parseInt(valor, 10) : null;
+      ej.series_detalle[sIdx].rir = r;
+      if (sIdx === 0 && r !== null) ej.rir = r;
+    }
+  }
+
+  function agregarSerieEdicion(idx) {
+    if (!rutinaInlineState || !rutinaInlineState.ejercicios[idx]) return;
+    const ej = rutinaInlineState.ejercicios[idx];
+    const currentNum = ej.series_detalle.length;
+    const lastSet = ej.series_detalle[currentNum - 1] || {};
+
+    ej.series_detalle.push({
+      numero: currentNum + 1,
+      peso: lastSet.peso !== undefined ? lastSet.peso : ej.peso,
+      reps: lastSet.reps || ej.repeticiones || '10',
+      rir: lastSet.rir !== undefined ? lastSet.rir : ej.rir
+    });
+    ej.series = ej.series_detalle.length;
+    renderizarRutinaInline();
+  }
+
+  function toggleCardioSwitchInline(activo) {
+    if (!rutinaInlineState) return;
+    rutinaInlineState.cardio_activo = activo ? 1 : 0;
+    if (activo && (!rutinaInlineState.cardio_tiempo || rutinaInlineState.cardio_tiempo < 1)) {
+      rutinaInlineState.cardio_tiempo = 20;
+    }
+    renderizarRutinaInline();
+  }
+
   // Opciones de los 3 puntos en modo edición
   async function abrirMenuOpcionesEjercicio(idx, ev) {
     if (ev) ev.stopPropagation();
@@ -4066,7 +4421,7 @@ if (document.readyState === 'complete') {
 
     const { value: accion } = await Swal.fire({
       title: esc(ej.nombre),
-      text: 'Selecciona una acción para este ejercicio:',
+      text: 'Opciones de este ejercicio:',
       showCancelButton: true,
       cancelButtonText: 'Cancelar',
       showConfirmButton: false,
@@ -4074,14 +4429,11 @@ if (document.readyState === 'complete') {
       color: '#ffffff',
       html: `
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;text-align:left;">
-          <button type="button" class="crdi-btn-add-ej" style="justify-content:flex-start;padding:10px 14px;background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);color:#fff;" onclick="Swal.clickConfirm(); window.ejActionChosen='reemplazar';">
-            <i class="ti ti-replace" style="color:#38bdf8;"></i> Reemplazar ejercicio
+          <button type="button" class="btn-add-set" style="justify-content:flex-start;padding:10px 14px;margin:0;width:100%;background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);color:#fff;" onclick="Swal.clickConfirm(); window.ejActionChosen='reemplazar';">
+            <i class="ti ti-replace" style="color:#38bdf8;"></i> Reemplazar por otro ejercicio
           </button>
-          <button type="button" class="crdi-btn-add-ej" style="justify-content:flex-start;padding:10px 14px;background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);color:#fff;" onclick="Swal.clickConfirm(); window.ejActionChosen='editar';">
-            <i class="ti ti-adjustments" style="color:#c084fc;"></i> Editar series, reps, peso y RIR
-          </button>
-          <button type="button" class="crdi-btn-add-ej" style="justify-content:flex-start;padding:10px 14px;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171;" onclick="Swal.clickConfirm(); window.ejActionChosen='eliminar';">
-            <i class="ti ti-trash" style="color:#f87171;"></i> Eliminar de la rutina
+          <button type="button" class="btn-add-set" style="justify-content:flex-start;padding:10px 14px;margin:0;width:100%;background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.3);color:#f87171;" onclick="Swal.clickConfirm(); window.ejActionChosen='eliminar';">
+            <i class="ti ti-trash" style="color:#f87171;"></i> Eliminar ejercicio de la rutina
           </button>
         </div>
       `
@@ -4092,8 +4444,6 @@ if (document.readyState === 'complete') {
 
     if (choice === 'reemplazar') {
       abrirModalReemplazarEjercicio(idx);
-    } else if (choice === 'editar') {
-      abrirModalEditarEjercicio(idx);
     } else if (choice === 'eliminar') {
       eliminarEjercicioEdicion(idx);
     }
@@ -4154,86 +4504,7 @@ if (document.readyState === 'complete') {
       ej.nombre = formValues;
       renderizarRutinaInline();
       if (typeof Xp !== 'undefined' && Xp.toast) {
-        Xp.toast('success', `Ejercicio cambiado a ${formValues}`);
-      }
-    }
-  }
-
-  // Editar series, reps, peso y RIR de un ejercicio
-  async function abrirModalEditarEjercicio(idx) {
-    const ej = rutinaInlineState.ejercicios[idx];
-    const tieneRir = ej.rir !== null && ej.rir !== undefined;
-
-    const { value: formValues } = await Swal.fire({
-      title: 'Editar Ejercicio',
-      html: `
-        <div style="text-align:left;font-size:0.85rem;display:flex;flex-direction:column;gap:12px;">
-          <div style="font-weight:800;color:#fff;font-size:0.95rem;">${esc(ej.nombre)}</div>
-          
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Series:</label>
-              <input id="swalSeries" type="number" min="1" max="25" value="${ej.series || 3}" class="swal2-input" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
-            </div>
-            <div>
-              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Repeticiones:</label>
-              <input id="swalReps" type="text" value="${esc(ej.repeticiones || '10')}" class="swal2-input" placeholder="Ej: 10 o 8-12" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Peso asignado (kg):</label>
-              <input id="swalPeso" type="number" step="0.5" min="0" max="600" value="${ej.peso !== null && ej.peso !== undefined ? ej.peso : ''}" placeholder="Opcional" class="swal2-input" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
-            </div>
-            <div>
-              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;display:flex;align-items:center;gap:6px;">
-                <input id="swalCheckRir" type="checkbox" ${tieneRir ? 'checked' : ''} onchange="document.getElementById('swalRirVal').disabled = !this.checked;">
-                Habilitar RIR
-              </label>
-              <input id="swalRirVal" type="number" min="0" max="5" value="${tieneRir ? ej.rir : 2}" ${!tieneRir ? 'disabled' : ''} class="swal2-input" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
-            </div>
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Aplicar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#8a2be2',
-      cancelButtonColor: '#475569',
-      background: '#12121a',
-      color: '#ffffff',
-      preConfirm: () => {
-        const series = parseInt(document.getElementById('swalSeries').value) || 3;
-        const reps   = document.getElementById('swalReps').value.trim() || '10';
-        const pesoRaw = document.getElementById('swalPeso').value;
-        const peso   = pesoRaw !== '' && !isNaN(parseFloat(pesoRaw)) ? parseFloat(pesoRaw) : null;
-        const rirAct = document.getElementById('swalCheckRir').checked;
-        const rirVal = rirAct ? (parseInt(document.getElementById('swalRirVal').value) || 0) : null;
-        return { series, reps, peso, rirVal };
-      }
-    });
-
-    if (formValues) {
-      ej.series = formValues.series;
-      ej.repeticiones = formValues.reps;
-      ej.peso = formValues.peso;
-      ej.rir = formValues.rirVal;
-
-      // Reconstruir series_detalle
-      ej.series_detalle = [];
-      for (let s = 1; s <= ej.series; s++) {
-        ej.series_detalle.push({
-          numero: s,
-          peso: ej.peso,
-          reps: ej.repeticiones,
-          rir: ej.rir
-        });
-      }
-
-      renderizarRutinaInline();
-      if (typeof Xp !== 'undefined' && Xp.toast) {
-        Xp.toast('success', 'Ejercicio actualizado');
+        Xp.toast('success', `Ejercicio cambiado a "${formValues}"`);
       }
     }
   }
@@ -4243,7 +4514,7 @@ if (document.readyState === 'complete') {
     const ej = rutinaInlineState.ejercicios[idx];
     const { isConfirmed } = await Swal.fire({
       title: '¿Eliminar ejercicio?',
-      text: `Se quitará "${ej.nombre}" de la rutina para este atleta.`,
+      text: `Se quitará "${ej.nombre}" de la rutina.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Sí, eliminar',
@@ -4280,26 +4551,12 @@ if (document.readyState === 'complete') {
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
-              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Series:</label>
+              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Series iniciales:</label>
               <input id="swalAddSeries" type="number" min="1" max="25" value="3" class="swal2-input" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
             </div>
             <div>
               <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Repeticiones:</label>
               <input id="swalAddReps" type="text" value="10" class="swal2-input" placeholder="Ej: 10 o 12" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
-            </div>
-          </div>
-
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Peso inicial (kg):</label>
-              <input id="swalAddPeso" type="number" step="0.5" min="0" max="600" placeholder="Opcional" class="swal2-input" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
-            </div>
-            <div>
-              <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;display:flex;align-items:center;gap:6px;">
-                <input id="swalAddCheckRir" type="checkbox" checked onchange="document.getElementById('swalAddRirVal').disabled = !this.checked;">
-                Habilitar RIR
-              </label>
-              <input id="swalAddRirVal" type="number" min="0" max="5" value="2" class="swal2-input" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
             </div>
           </div>
         </div>
@@ -4319,11 +4576,7 @@ if (document.readyState === 'complete') {
         }
         const series = parseInt(document.getElementById('swalAddSeries').value) || 3;
         const reps   = document.getElementById('swalAddReps').value.trim() || '10';
-        const pesoRaw = document.getElementById('swalAddPeso').value;
-        const peso   = pesoRaw !== '' && !isNaN(parseFloat(pesoRaw)) ? parseFloat(pesoRaw) : null;
-        const rirAct = document.getElementById('swalAddCheckRir').checked;
-        const rirVal = rirAct ? (parseInt(document.getElementById('swalAddRirVal').value) || 0) : null;
-        return { nombre: nom, series, reps, peso, rirVal };
+        return { nombre: nom, series, reps };
       }
     });
 
@@ -4332,9 +4585,9 @@ if (document.readyState === 'complete') {
       for (let s = 1; s <= formValues.series; s++) {
         sets.push({
           numero: s,
-          peso: formValues.peso,
+          peso: null,
           reps: formValues.reps,
-          rir: formValues.rirVal
+          rir: 2
         });
       }
 
@@ -4343,10 +4596,11 @@ if (document.readyState === 'complete') {
         nombre: formValues.nombre,
         series: formValues.series,
         repeticiones: formValues.reps,
-        rir: formValues.rirVal,
-        peso: formValues.peso,
+        rir: 2,
+        peso: null,
         tipo_implemento: 'barra',
         unidad_carga: 'kg',
+        descanso: null,
         series_detalle: sets
       });
 
@@ -4354,55 +4608,6 @@ if (document.readyState === 'complete') {
       if (typeof Xp !== 'undefined' && Xp.toast) {
         Xp.toast('success', `"${formValues.nombre}" agregado.`);
       }
-    }
-  }
-
-  // Editar o agregar cardio
-  async function abrirModalEditarCardio() {
-    const { value: formValues } = await Swal.fire({
-      title: 'Configurar Cardio',
-      html: `
-        <div style="text-align:left;font-size:0.85rem;display:flex;flex-direction:column;gap:12px;">
-          <div>
-            <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Duración en minutos:</label>
-            <input id="swalCardioMin" type="number" min="1" max="180" value="${rutinaInlineState.cardio_tiempo || 20}" class="swal2-input" style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;">
-          </div>
-          <div>
-            <label style="color:#cbd5e1;font-size:0.75rem;font-weight:700;">Indicaciones adicionales (opcional):</label>
-            <textarea id="swalCardioInd" class="swal2-textarea" placeholder="Ej: Caminadora inclinación 8 a 5.5 km/h al terminar la sesión..." style="width:100%;margin:4px 0 0;box-sizing:border-box;background:#1a1a24;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:0.85rem;height:80px;">${esc(rutinaInlineState.cardio_indicaciones || '')}</textarea>
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Guardar cardio',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#8a2be2',
-      cancelButtonColor: '#475569',
-      background: '#12121a',
-      color: '#ffffff',
-      preConfirm: () => {
-        const tiempo = parseInt(document.getElementById('swalCardioMin').value) || 20;
-        const ind = document.getElementById('swalCardioInd').value.trim();
-        return { tiempo, ind };
-      }
-    });
-
-    if (formValues) {
-      rutinaInlineState.cardio_activo = 1;
-      rutinaInlineState.cardio_tiempo = formValues.tiempo;
-      rutinaInlineState.cardio_indicaciones = formValues.ind;
-      renderizarRutinaInline();
-      if (typeof Xp !== 'undefined' && Xp.toast) {
-        Xp.toast('success', 'Cardio configurado.');
-      }
-    }
-  }
-
-  function quitarCardioEdicion() {
-    rutinaInlineState.cardio_activo = 0;
-    renderizarRutinaInline();
-    if (typeof Xp !== 'undefined' && Xp.toast) {
-      Xp.toast('info', 'Cardio removido de la rutina.');
     }
   }
 
@@ -4420,6 +4625,38 @@ if (document.readyState === 'complete') {
       });
       return;
     }
+
+    // Sincronizar cualquier valor de input que esté en pantalla
+    document.querySelectorAll('#crdiContent .ex-block').forEach(block => {
+      const exIdx = parseInt(block.dataset.idx, 10);
+      const ej = rutinaInlineState.ejercicios[exIdx];
+      if (!ej) return;
+
+      const rows = block.querySelectorAll('.set-row');
+      const sets = [];
+      rows.forEach((r, sIdx) => {
+        const wInp = r.querySelector('.set-input-weight');
+        const rInp = r.querySelector('.set-input-reps');
+        const rirInp = r.querySelector('.set-input-rir');
+
+        const pesoVal = (wInp && wInp.value !== '' && !wInp.disabled) ? parseFloat(wInp.value) : null;
+        const repsVal = (rInp && rInp.value !== '') ? rInp.value.trim() : '10';
+        const rirVal  = (rirInp && rirInp.value !== '' && !rirInp.disabled) ? parseInt(rirInp.value, 10) : null;
+
+        sets.push({
+          numero: sIdx + 1,
+          peso: pesoVal,
+          reps: repsVal,
+          rir: rirVal
+        });
+      });
+
+      ej.series_detalle = sets;
+      ej.series = sets.length;
+      ej.repeticiones = sets[0]?.reps || '10';
+      ej.peso = sets[0]?.peso || null;
+      ej.rir = block.classList.contains('rir-disabled') ? null : (sets[0]?.rir ?? 2);
+    });
 
     Swal.fire({
       title: 'Guardando rutina...',
@@ -4541,13 +4778,16 @@ if (document.readyState === 'complete') {
   window.toggleCrdiEjercicio = toggleCrdiEjercicio;
   window.activarModoEdicionRutina = activarModoEdicionRutina;
   window.cancelarModoEdicionRutina = cancelarModoEdicionRutina;
+  window.cambiarImplementoEdicion = cambiarImplementoEdicion;
+  window.toggleRirEdicion = toggleRirEdicion;
+  window.toggleRestEdicion = toggleRestEdicion;
+  window.actualizarSerieValor = actualizarSerieValor;
+  window.agregarSerieEdicion = agregarSerieEdicion;
+  window.toggleCardioSwitchInline = toggleCardioSwitchInline;
   window.abrirMenuOpcionesEjercicio = abrirMenuOpcionesEjercicio;
   window.abrirModalReemplazarEjercicio = abrirModalReemplazarEjercicio;
-  window.abrirModalEditarEjercicio = abrirModalEditarEjercicio;
   window.eliminarEjercicioEdicion = eliminarEjercicioEdicion;
   window.abrirModalAgregarEjercicio = abrirModalAgregarEjercicio;
-  window.abrirModalEditarCardio = abrirModalEditarCardio;
-  window.quitarCardioEdicion = quitarCardioEdicion;
   window.guardarCambiosRutinaEdicion = guardarCambiosRutinaEdicion;
   window.seleccionarDiaRutina = seleccionarDiaRutina;
 })();
