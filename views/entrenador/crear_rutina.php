@@ -1395,6 +1395,184 @@
   border-radius: 6px;
   white-space: nowrap;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DRUM WHEEL PICKER (ROSCAS iOS 3D) PARA CARGA Y REPS
+   ═══════════════════════════════════════════════════════════════ */
+.set-wheel-trigger {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 10px;
+  padding: 8px 6px;
+  color: var(--text);
+  font-size: .95rem;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--trans), background var(--trans), transform 0.12s ease;
+  user-select: none;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.set-wheel-trigger:hover {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.08);
+}
+.set-wheel-trigger:active {
+  transform: scale(0.96);
+}
+.set-val-display {
+  font-weight: 800;
+  color: #fff;
+  font-size: 0.95rem;
+}
+.set-val-display[data-empty="true"],
+.set-val-display:empty {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Drum Wheel Sheet & Container */
+.wheel-picker-header {
+  text-align: center;
+  padding: 4px 16px 10px;
+}
+.wheel-picker-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+}
+.wheel-picker-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.wheel-picker-labels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 16px 6px;
+  text-align: center;
+}
+.wheel-picker-lbl {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a78bfa;
+}
+.wheel-dual-container {
+  position: relative !important;
+  height: 140px !important;
+  background: rgba(9, 6, 17, 0.94) !important;
+  border: 1px solid rgba(138, 43, 226, 0.35) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  margin: 0 16px 14px !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.8) !important;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%) !important;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%) !important;
+}
+.wheel-dual-container .date-wheel-highlight {
+  position: absolute !important;
+  top: 50px !important;
+  left: 8px !important;
+  right: 8px !important;
+  height: 40px !important;
+  border-radius: 10px !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+  box-shadow: 0 0 18px rgba(138, 43, 226, 0.25) !important;
+  background: rgba(138, 43, 226, 0.16) !important;
+  border: 1.5px solid rgba(179, 136, 255, 0.45) !important;
+}
+.wheel-dual-container .wheel-column {
+  height: 140px !important;
+  overflow-y: scroll !important;
+  scroll-snap-type: y mandatory !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  padding: 50px 0 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+.wheel-dual-container .wheel-column::-webkit-scrollbar { display: none !important; }
+.wheel-dual-container .wheel-item {
+  height: 40px !important;
+  line-height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  font-size: 1rem !important;
+  transition: color 0.12s ease, font-weight 0.12s ease, font-size 0.12s ease !important;
+}
+.wheel-dual-container .wheel-item.active {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 1.25rem !important;
+  text-shadow: 0 0 12px rgba(179, 136, 255, 0.75) !important;
+}
+.wheel-picker-footer {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 14px;
+}
+.btn-wheel-all {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+.btn-wheel-all:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #fff;
+}
+.btn-wheel-done {
+  flex: 1.2;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent, #8a2be2), #9d4edd);
+  border: none;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(138, 43, 226, 0.4);
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+.btn-wheel-done:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(138, 43, 226, 0.55);
+}
+.btn-wheel-done:active {
+  transform: scale(0.98);
+}
 </style>
 
 <div class="cr-wrapper">
@@ -1600,6 +1778,39 @@
 </div>
 
 <!-- ════ BOTTOM SHEET: Tipo de Serie (Vista D) ════ -->
+
+<!-- ════ BOTTOM SHEET: Drum Wheel Picker Carga & Reps (iOS 3D Style) ════ -->
+<div class="bs-overlay" id="overlayWheelPicker" aria-hidden="true" onclick="cerrarWheelPicker()"></div>
+<div class="bs-sheet" id="sheetWheelPicker" role="dialog" aria-modal="true" aria-label="Ajustar carga y repeticiones">
+  <div class="bs-handle" aria-hidden="true"></div>
+  <div class="wheel-picker-header">
+    <div class="wheel-picker-title" id="wheelPickerTitle">Serie 1</div>
+    <div class="wheel-picker-sub" id="wheelPickerSub">Ajustar Carga y Reps</div>
+  </div>
+
+  <div class="wheel-picker-labels">
+    <div class="wheel-picker-lbl" id="lblWheelCarga">CARGA (KG)</div>
+    <div class="wheel-picker-lbl" id="lblWheelReps">REPETICIONES</div>
+  </div>
+
+  <div class="date-wheel-container wheel-dual-container" id="wheelContainer">
+    <div class="date-wheel-highlight" aria-hidden="true"></div>
+    <!-- Columna Carga -->
+    <div class="wheel-column" id="wheelColCarga" tabindex="0" role="listbox" aria-label="Carga"></div>
+    <!-- Columna Reps -->
+    <div class="wheel-column" id="wheelColReps" tabindex="0" role="listbox" aria-label="Repeticiones"></div>
+  </div>
+
+  <div class="wheel-picker-footer">
+    <button type="button" class="btn-wheel-all" onclick="copiarValoresATodasLasSeries()" title="Aplicar a todas las series de este ejercicio">
+      <i class="ti ti-copy"></i> Copiar a todas
+    </button>
+    <button type="button" class="btn-wheel-done" onclick="cerrarWheelPicker()">
+      <i class="ti ti-check"></i> Listo
+    </button>
+  </div>
+</div>
+
 <div class="bs-overlay" id="overlaySetType" aria-hidden="true" onclick="closeSheet('sheetSetType')"></div>
 <div class="bs-sheet"  id="sheetSetType"   role="dialog" aria-modal="true" aria-label="Tipo de serie">
   <div class="bs-handle" aria-hidden="true"></div>
@@ -2358,6 +2569,7 @@ function addExercise(exOrName) {
           wInput.value = pesoVal;
           actualizarHintMancuerna(wInput);
         }
+        syncRowDisplay(lastRow);
         const rInput = lastRow.querySelector('.set-input-reps');
         const repsVal = (s.reps_objetivo !== null && s.reps_objetivo !== undefined && s.reps_objetivo !== '') ? s.reps_objetivo : (s.reps ?? s.repeticiones ?? null);
         if (rInput && repsVal !== null && repsVal !== undefined && repsVal !== '') {
@@ -2381,6 +2593,7 @@ function addExercise(exOrName) {
           const rInput = lastRow.querySelector('.set-input-reps');
           if (rInput) rInput.value = ex.repeticiones;
         }
+        syncRowDisplay(lastRow);
         if (ex.rir !== undefined && ex.rir !== null && ex.rir !== '') {
           const rirInput = lastRow.querySelector('.set-input-rir');
           if (rirInput) rirInput.value = ex.rir;
@@ -2407,6 +2620,249 @@ function addExercise(exOrName) {
 
   updateCanvasHeader();
   setTimeout(() => block.scrollIntoView({behavior:'smooth',block:'nearest'}), 60);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   DRUM WHEEL PICKER (ROSCAS iOS 3D) — LÓGICA Y SINCRONIZACIÓN
+   ═══════════════════════════════════════════════════════════════ */
+let currentWheelRow = null;
+let currentWheelBlock = null;
+
+function syncRowDisplay(row) {
+  if (!row) return;
+  const wInp = row.querySelector('.set-input-weight');
+  const wDisp = row.querySelector('.set-weight-display');
+  if (wInp && wDisp) {
+    const val = wInp.value;
+    const isSinPeso = row.closest('.ex-block')?.dataset.implemento === 'sin_peso';
+    if (isSinPeso) {
+      wDisp.textContent = 'Sin peso';
+      wDisp.removeAttribute('data-empty');
+    } else if (val !== '' && val !== null && val !== '0') {
+      wDisp.textContent = val;
+      wDisp.removeAttribute('data-empty');
+    } else {
+      wDisp.textContent = '—';
+      wDisp.setAttribute('data-empty', 'true');
+    }
+  }
+
+  const rInp = row.querySelector('.set-input-reps');
+  const rDisp = row.querySelector('.set-reps-display');
+  if (rInp && rDisp) {
+    const val = rInp.value;
+    if (val !== '' && val !== null) {
+      rDisp.textContent = val;
+      rDisp.removeAttribute('data-empty');
+    } else {
+      rDisp.textContent = '—';
+      rDisp.setAttribute('data-empty', 'true');
+    }
+  }
+}
+
+function abrirWheelPicker(row, focusTarget) {
+  currentWheelRow = row;
+  currentWheelBlock = row.closest('.ex-block');
+  if (!currentWheelRow || !currentWheelBlock) return;
+
+  const sNum = currentWheelRow.dataset.serieNum || '1';
+  const exName = currentWheelBlock.querySelector('.ex-name')?.textContent.trim() || 'Ejercicio';
+  const impl = currentWheelBlock.dataset.implemento || 'barra';
+  const unit = currentWheelBlock.dataset.unidad || 'kg';
+
+  const titEl = document.getElementById('wheelPickerTitle');
+  const subEl = document.getElementById('wheelPickerSub');
+  if (titEl) titEl.textContent = `Serie ${sNum}`;
+  if (subEl) subEl.textContent = exName;
+
+  const lblCarga = document.getElementById('lblWheelCarga');
+  const lblReps = document.getElementById('lblWheelReps');
+  if (lblCarga) {
+    if (impl === 'sin_peso') lblCarga.textContent = 'SIN PESO';
+    else if (unit === 'placas') lblCarga.textContent = 'PLACAS';
+    else if (unit === 'lbs') lblCarga.textContent = 'CARGA (LBS)';
+    else lblCarga.textContent = 'CARGA (KG)';
+  }
+  if (lblReps) lblReps.textContent = 'REPETICIONES';
+
+  const colCarga = document.getElementById('wheelColCarga');
+  const colReps = document.getElementById('wheelColReps');
+  if (!colCarga || !colReps) return;
+
+  // 1. Población Columna Carga
+  colCarga.innerHTML = '';
+  if (impl === 'sin_peso') {
+    const item = document.createElement('div');
+    item.className = 'wheel-item active';
+    item.dataset.val = '0';
+    item.textContent = 'Sin peso';
+    colCarga.appendChild(item);
+  } else if (unit === 'placas') {
+    for (let p = 1; p <= 30; p++) {
+      const item = document.createElement('div');
+      item.className = 'wheel-item';
+      item.dataset.val = String(p);
+      item.textContent = String(p);
+      const curIdx = p - 1;
+      item.onclick = () => {
+        colCarga.scrollTop = curIdx * 40;
+      };
+      colCarga.appendChild(item);
+    }
+  } else {
+    // KG o LBS: de 0 a 350 en saltos de 2.5
+    for (let w = 0; w <= 350; w += 2.5) {
+      const valStr = (w % 1 === 0) ? String(w) : w.toFixed(1);
+      const item = document.createElement('div');
+      item.className = 'wheel-item';
+      item.dataset.val = valStr;
+      item.textContent = valStr;
+      const curIdx = Math.round(w / 2.5);
+      item.onclick = () => {
+        colCarga.scrollTop = curIdx * 40;
+      };
+      colCarga.appendChild(item);
+    }
+  }
+
+  // 2. Población Columna Repeticiones: de 1 a 100 de 1 en 1
+  colReps.innerHTML = '';
+  for (let r = 1; r <= 100; r++) {
+    const item = document.createElement('div');
+    item.className = 'wheel-item';
+    item.dataset.val = String(r);
+    item.textContent = String(r);
+    const curIdx = r - 1;
+    item.onclick = () => {
+      colReps.scrollTop = curIdx * 40;
+    };
+    colReps.appendChild(item);
+  }
+
+  // 3. Obtener valores actuales
+  const curWeightInput = currentWheelRow.querySelector('.set-input-weight');
+  const curRepsInput = currentWheelRow.querySelector('.set-input-reps');
+
+  let curWeightVal = (curWeightInput && curWeightInput.value !== '') ? parseFloat(curWeightInput.value) : 20;
+  if (isNaN(curWeightVal) || curWeightVal < 0) curWeightVal = (impl === 'sin_peso') ? 0 : 20;
+
+  let curRepsVal = (curRepsInput && curRepsInput.value !== '') ? parseInt(curRepsInput.value, 10) : 10;
+  if (isNaN(curRepsVal) || curRepsVal < 1) curRepsVal = 10;
+
+  // 4. Posicionar scrolls de las roscas
+  setTimeout(() => {
+    if (impl === 'sin_peso') {
+      colCarga.scrollTop = 0;
+      actualizarWheelActivo(colCarga, '0');
+    } else if (unit === 'placas') {
+      const pIdx = Math.max(0, Math.min(29, Math.round(curWeightVal) - 1));
+      colCarga.scrollTop = pIdx * 40;
+      actualizarWheelActivo(colCarga, String(pIdx + 1));
+    } else {
+      const roundKg = Math.round(curWeightVal / 2.5) * 2.5;
+      const wIdx = Math.max(0, Math.min(140, Math.round(roundKg / 2.5)));
+      colCarga.scrollTop = wIdx * 40;
+      const vStr = (roundKg % 1 === 0) ? String(roundKg) : roundKg.toFixed(1);
+      actualizarWheelActivo(colCarga, vStr);
+    }
+
+    const rIdx = Math.max(0, Math.min(99, curRepsVal - 1));
+    colReps.scrollTop = rIdx * 40;
+    actualizarWheelActivo(colReps, String(curRepsVal));
+  }, 35);
+
+  // Abrir Bottom Sheet
+  openSheet('sheetWheelPicker', 'overlayWheelPicker');
+}
+
+function actualizarWheelActivo(col, targetVal) {
+  const items = col.querySelectorAll('.wheel-item');
+  items.forEach(it => {
+    it.classList.toggle('active', it.dataset.val === targetVal);
+  });
+}
+
+function initWheelEvents() {
+  const colCarga = document.getElementById('wheelColCarga');
+  const colReps = document.getElementById('wheelColReps');
+
+  if (colCarga && !colCarga._hasWheelInit) {
+    colCarga._hasWheelInit = true;
+    colCarga.addEventListener('scroll', () => {
+      clearTimeout(colCarga._t);
+      colCarga._t = setTimeout(() => {
+        const idx = Math.max(0, Math.round(colCarga.scrollTop / 40));
+        const items = colCarga.querySelectorAll('.wheel-item');
+        items.forEach((it, i) => it.classList.toggle('active', i === idx));
+        const activeItem = items[idx];
+        if (activeItem && currentWheelRow) {
+          const val = activeItem.dataset.val;
+          const wInp = currentWheelRow.querySelector('.set-input-weight');
+          if (wInp) {
+            wInp.value = val;
+            actualizarHintMancuerna(wInp);
+          }
+          syncRowDisplay(currentWheelRow);
+        }
+      }, 45);
+    }, { passive: true });
+  }
+
+  if (colReps && !colReps._hasWheelInit) {
+    colReps._hasWheelInit = true;
+    colReps.addEventListener('scroll', () => {
+      clearTimeout(colReps._t);
+      colReps._t = setTimeout(() => {
+        const idx = Math.max(0, Math.round(colReps.scrollTop / 40));
+        const items = colReps.querySelectorAll('.wheel-item');
+        items.forEach((it, i) => it.classList.toggle('active', i === idx));
+        const activeItem = items[idx];
+        if (activeItem && currentWheelRow) {
+          const val = activeItem.dataset.val;
+          const rInp = currentWheelRow.querySelector('.set-input-reps');
+          if (rInp) {
+            rInp.value = val;
+          }
+          syncRowDisplay(currentWheelRow);
+        }
+      }, 45);
+    }, { passive: true });
+  }
+}
+
+function cerrarWheelPicker() {
+  if (currentWheelRow) {
+    syncRowDisplay(currentWheelRow);
+  }
+  closeSheet('sheetWheelPicker');
+}
+
+function copiarValoresATodasLasSeries() {
+  if (!currentWheelRow || !currentWheelBlock) return;
+  const wInp = currentWheelRow.querySelector('.set-input-weight');
+  const rInp = currentWheelRow.querySelector('.set-input-reps');
+  const peso = wInp ? wInp.value : '';
+  const reps = rInp ? rInp.value : '';
+
+  currentWheelBlock.querySelectorAll('.set-row').forEach(row => {
+    const rwInp = row.querySelector('.set-input-weight');
+    const rrInp = row.querySelector('.set-input-reps');
+    if (rwInp && row.closest('.ex-block')?.dataset.implemento !== 'sin_peso') {
+      rwInp.value = peso;
+      actualizarHintMancuerna(rwInp);
+    }
+    if (rrInp) {
+      rrInp.value = reps;
+    }
+    syncRowDisplay(row);
+  });
+
+  if (typeof Xp !== 'undefined' && Xp.toast) {
+    Xp.toast('success', 'Valores aplicados a todas las series.');
+  }
+  cerrarWheelPicker();
 }
 
 function toggleRestTimer(rowEl) {
@@ -2473,7 +2929,6 @@ function addSet(exIdx) {
 
   const currentCount = body.querySelectorAll('.set-row').length;
   if (currentCount >= 12) {
-    // Límite estricto de 12 series: no permitir añadir más silenciosamente
     return;
   }
 
@@ -2499,7 +2954,7 @@ function addSet(exIdx) {
   badge.onkeydown = e => { if(e.key==='Enter'||e.key===' ') openSetTypeSheet(badge); };
   row.appendChild(badge);
 
-  // Columna Carga: si es sin_peso vs con carga
+  // Columna Carga con Rosca Drum Wheel
   const weightWrap = document.createElement('div');
   weightWrap.className = 'set-weight-cell';
 
@@ -2508,35 +2963,24 @@ function addSet(exIdx) {
       <div class="set-bodyweight-pill" title="Sin peso / Peso corporal">
         <i class="ti ti-user-check"></i> Sin peso
       </div>
-      <input type="number" class="set-input set-input-weight" style="display:none" value="0">`;
+      <input type="hidden" class="set-input set-input-weight" value="0">`;
   } else {
-    let ph = 'Kg';
-    let step = '0.5';
-    let maxW = 500;
-    if (impl === 'mancuerna') {
-      ph = 'Kg c/u';
-      maxW = 200;
-    } else if (impl === 'polea_maquina' && unit === 'placas') {
-      ph = 'Placas';
-      step = '1';
-      maxW = 30;
-    } else if (impl === 'polea_maquina') {
-      maxW = 500;
-    } else if (impl === 'barra') {
-      maxW = 500;
-    }
     weightWrap.innerHTML = `
-      <input type="number" class="set-input set-input-weight" placeholder="${ph}" min="0" max="${maxW}" step="${step}"
-             data-max="${maxW}" inputmode="decimal" aria-label="Carga objetivo"
-             onkeydown="prevenirExcesoMax(event, ${maxW})"
-             oninput="validarMaxInput(this, ${maxW}); actualizarHintMancuerna(this)">
+      <div class="set-wheel-trigger set-weight-trigger" onclick="abrirWheelPicker(this.closest('.set-row'), 'weight')" role="button" tabindex="0" title="Toca para ajustar carga con la rosca">
+        <span class="set-val-display set-weight-display">—</span>
+        <input type="hidden" class="set-input set-input-weight" value="">
+      </div>
       <span class="dumbbell-hint" style="display:none"></span>`;
   }
   row.appendChild(weightWrap);
 
-  // Columna REPS (máximo 100 reps)
+  // Columna REPS con Rosca Drum Wheel
   const repsWrap = document.createElement('div');
-  repsWrap.innerHTML = `<input type="number" class="set-input set-input-reps" placeholder="—" min="1" max="100" step="1" inputmode="numeric" aria-label="Repeticiones objetivo" onkeydown="prevenirExcesoMax(event, 100)" oninput="validarMaxInput(this, 100)">`;
+  repsWrap.innerHTML = `
+    <div class="set-wheel-trigger set-reps-trigger" onclick="abrirWheelPicker(this.closest('.set-row'), 'reps')" role="button" tabindex="0" title="Toca para ajustar repeticiones con la rosca">
+      <span class="set-val-display set-reps-display">—</span>
+      <input type="hidden" class="set-input set-input-reps" value="">
+    </div>`;
   row.appendChild(repsWrap);
 
   // Columna RIR (máximo RIR 5)
@@ -2545,6 +2989,7 @@ function addSet(exIdx) {
   row.appendChild(rirWrap);
 
   body.appendChild(row);
+  syncRowDisplay(row);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -2597,27 +3042,20 @@ function cambiarImplemento(exIdx, nuevoImpl) {
         <div class="set-bodyweight-pill" title="Sin peso / Peso corporal">
           <i class="ti ti-user-check"></i> Sin peso
         </div>
-        <input type="number" class="set-input set-input-weight" style="display:none" value="0">`;
+        <input type="hidden" class="set-input set-input-weight" value="0">`;
     } else {
-      let ph = 'Kg';
-      let step = '0.5';
-      let maxW = 500;
-      if (nuevoImpl === 'mancuerna') { ph = 'Kg c/u'; maxW = 200; }
-      else if (nuevoImpl === 'polea_maquina' && unit === 'placas') { ph = 'Placas'; step = '1'; maxW = 30; }
-      else if (nuevoImpl === 'barra') { maxW = 500; }
-      
       const existingInput = weightCell.querySelector('.set-input-weight');
       let val = (existingInput && existingInput.value !== '0') ? existingInput.value : '';
-      if (val !== '' && parseFloat(val) > maxW) val = maxW;
       weightCell.innerHTML = `
-        <input type="number" class="set-input set-input-weight" value="${val}" placeholder="${ph}" min="0" max="${maxW}" step="${step}"
-               data-max="${maxW}" inputmode="decimal" aria-label="Carga objetivo"
-               onkeydown="prevenirExcesoMax(event, ${maxW})"
-               oninput="validarMaxInput(this, ${maxW}); actualizarHintMancuerna(this)">
+        <div class="set-wheel-trigger set-weight-trigger" onclick="abrirWheelPicker(this.closest('.set-row'), 'weight')" role="button" tabindex="0" title="Toca para ajustar carga con la rosca">
+          <span class="set-val-display set-weight-display">${val || '—'}</span>
+          <input type="hidden" class="set-input set-input-weight" value="${val || ''}">
+        </div>
         <span class="dumbbell-hint" style="display:none"></span>`;
       const input = weightCell.querySelector('.set-input-weight');
       if (input && val) actualizarHintMancuerna(input);
     }
+    syncRowDisplay(row);
   });
 }
 
@@ -2968,7 +3406,7 @@ function serializarEjerciciosCanvas() {
       if (repsVal !== null && repsVal > 100) repsVal = 100;
       if (repsVal !== null && repsVal < 1)   repsVal = 1;
 
-      let rirVal = (rirInput && rirInput.value !== '') ? parseInt(rirInput.value, 10) : 2;
+      let rirVal = b.classList.contains('rir-disabled') ? null : ((rirInput && rirInput.value !== '') ? parseInt(rirInput.value, 10) : 2);
       if (rirVal !== null && rirVal > 5) rirVal = 5;
       if (rirVal !== null && rirVal < 0) rirVal = 0;
 
@@ -3002,6 +3440,7 @@ function serializarEjerciciosCanvas() {
       tipo_implemento: finalImpl,
       unidad_carga: finalUnit,
       descanso_segundos: descanso > 600 ? 600 : descanso,
+      rir_desmarcado: b.classList.contains('rir-disabled'),
       series
     });
   }
@@ -3660,6 +4099,7 @@ function toggleRirExercise(idx) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initWheelEvents();
   const initCid = document.getElementById('selectAtleta') ? document.getElementById('selectAtleta').value : '';
   if (initCid) {
     cargarDiasAtleta(initCid);

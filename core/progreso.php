@@ -622,10 +622,16 @@ function obtenerHistorialDia(PDO $db, int $clienteId, string $fecha): array {
 
         if (!isset($ejercicios[$key])) {
             $ejercicios[$key] = [
-                'nombre'         => $nombre,
-                'grupo_muscular' => inferirGrupoMuscularProgreso($nombre, $row['grupo_muscular']),
-                'equipamiento'   => $row['equipamiento'] ?: inferirEquipamientoProgreso($nombre),
-                'series'         => [],
+                'id'                    => (int)($row['ejercicio_id'] ?? 0),
+                'nombre'                => $nombre,
+                'grupo_muscular'        => inferirGrupoMuscularProgreso($nombre, $row['grupo_muscular']),
+                'equipamiento'          => $row['equipamiento'] ?: inferirEquipamientoProgreso($nombre),
+                'imagen_path'           => $row['imagen_path'] ?? null,
+                'imagen_demo_path'      => $row['imagen_demo_path'] ?? null,
+                'video_url'             => $row['video_url'] ?? null,
+                'indicaciones'          => $row['indicaciones'] ?? null,
+                'configuracion_maquina' => $row['configuracion_maquina'] ?? null,
+                'series'                => [],
             ];
         }
 
@@ -661,7 +667,7 @@ function obtenerHistorialDia(PDO $db, int $clienteId, string $fecha): array {
 /**
  * Ejercicios asignados por el entrenador a una rutina (vista previa/planificación).
  */
-function obtenerEjerciciosProgramados(PDO $db, int $rutinaId): array {
+function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = null, ?string $fecha = null): array {
     $stRut = $db->prepare("SELECT plantilla_id FROM rutinas WHERE id = ?");
     $stRut->execute([$rutinaId]);
     $plantillaId = $stRut->fetchColumn();
@@ -698,7 +704,12 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId): array {
                     (SELECT c.equipamiento FROM catalogo_ejercicios c
                       WHERE LOWER(TRIM(c.nombre)) = LOWER(TRIM(e.nombre)) AND c.equipamiento IS NOT NULL LIMIT 1),
                     e.tipo_implemento
-                ) AS equipamiento
+                ) AS equipamiento,
+                COALESCE(e.imagen_path, (SELECT c.imagen_path FROM catalogo_ejercicios c WHERE LOWER(TRIM(c.nombre)) = LOWER(TRIM(e.nombre)) LIMIT 1)) AS imagen_path,
+                COALESCE(e.imagen_demo_path, (SELECT c.imagen_demo_path FROM catalogo_ejercicios c WHERE LOWER(TRIM(c.nombre)) = LOWER(TRIM(e.nombre)) LIMIT 1)) AS imagen_demo_path,
+                COALESCE(e.video_url, (SELECT c.video_url FROM catalogo_ejercicios c WHERE LOWER(TRIM(c.nombre)) = LOWER(TRIM(e.nombre)) LIMIT 1)) AS video_url,
+                COALESCE(e.nota_biomecanica, (SELECT c.indicaciones FROM catalogo_ejercicios c WHERE LOWER(TRIM(c.nombre)) = LOWER(TRIM(e.nombre)) LIMIT 1)) AS indicaciones,
+                COALESCE(e.configuracion_maquina, (SELECT c.configuracion_maquina FROM catalogo_ejercicios c WHERE LOWER(TRIM(c.nombre)) = LOWER(TRIM(e.nombre)) LIMIT 1)) AS configuracion_maquina
            FROM ejercicios e
           WHERE e.rutina_id = ?
           ORDER BY e.orden, e.id"
@@ -742,18 +753,54 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId): array {
             }
         }
 
+        // Si tenemos clienteId y fecha, mapear si alguna serie ya fue completada hoy
+        if ($clienteId !== null && $fecha !== null) {
+            $stSeriesHoy = $db->prepare(
+                "SELECT numero_serie, reps_realizadas, peso_usado, completado, tipo_serie 
+                 FROM sesion_series 
+                 WHERE cliente_id = ? AND ejercicio_id = ? AND fecha = ? AND completado = 1"
+            );
+            $stSeriesHoy->execute([$clienteId, (int)$e['id'], $fecha]);
+            $completadasHoy = [];
+            foreach ($stSeriesHoy->fetchAll(PDO::FETCH_ASSOC) as $sHoy) {
+                $completadasHoy[(int)$sHoy['numero_serie']] = $sHoy;
+            }
+
+            foreach ($seriesDetalle as &$sRow) {
+                $sNum = (int)$sRow['numero'];
+                if (isset($completadasHoy[$sNum])) {
+                    $sRow['completado'] = true;
+                    if ($completadasHoy[$sNum]['reps_realizadas'] !== null) {
+                        $sRow['reps'] = (string)$completadasHoy[$sNum]['reps_realizadas'];
+                    }
+                    if ($completadasHoy[$sNum]['peso_usado'] !== null) {
+                        $sRow['peso'] = (float)$completadasHoy[$sNum]['peso_usado'];
+                    }
+                } else {
+                    $sRow['completado'] = false;
+                }
+            }
+            unset($sRow);
+        }
+
         $ejercicios[] = [
-            'id'              => (int)$e['id'],
-            'rutina_id'       => (int)$e['rutina_id'],
-            'nombre'          => (string)$e['nombre'],
-            'grupo_muscular'  => inferirGrupoMuscularProgreso((string)$e['nombre'], $e['grupo_muscular']),
-            'equipamiento'    => inferirEquipamientoProgreso((string)$e['nombre'], $e['equipamiento']),
-            'tipo_implemento' => (string)($e['tipo_implemento'] ?: 'barra'),
-            'unidad_carga'    => (string)($e['unidad_carga'] ?: 'kg'),
-            'series_total'    => count($seriesDetalle),
-            'repeticiones'    => $repsBase,
-            'rir'             => $rirBase,
-            'series_detalle'  => $seriesDetalle,
+            'id'                    => (int)$e['id'],
+            'rutina_id'             => (int)$e['rutina_id'],
+            'nombre'                => (string)$e['nombre'],
+            'grupo_muscular'        => inferirGrupoMuscularProgreso((string)$e['nombre'], $e['grupo_muscular']),
+            'equipamiento'          => inferirEquipamientoProgreso((string)$e['nombre'], $e['equipamiento']),
+            'tipo_implemento'       => (string)($e['tipo_implemento'] ?: 'barra'),
+            'unidad_carga'          => (string)($e['unidad_carga'] ?: 'kg'),
+            'series_total'          => count($seriesDetalle),
+            'repeticiones'          => $repsBase,
+            'rir'                   => $rirBase,
+            'rir_desmarcado'        => ($e['rir'] === null),
+            'imagen_path'           => $e['imagen_path'] ?? null,
+            'imagen_demo_path'      => $e['imagen_demo_path'] ?? null,
+            'video_url'             => $e['video_url'] ?? null,
+            'indicaciones'          => $e['indicaciones'] ?? null,
+            'configuracion_maquina' => $e['configuracion_maquina'] ?? null,
+            'series_detalle'        => $seriesDetalle,
         ];
     }
 
@@ -878,7 +925,7 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
             $stAsist->execute([$clienteId, $fecha, $fecha]);
             $asistRow = $stAsist->fetch(PDO::FETCH_ASSOC);
             if ($asistRow && !empty($asistRow['rutina_id'])) {
-                $ejs = obtenerEjerciciosProgramados($db, (int)$asistRow['rutina_id']);
+                $ejs = obtenerEjerciciosProgramados($db, (int)$asistRow['rutina_id'], $clienteId, $fecha);
                 $planificadas = array_sum(array_column($ejs, 'series_total'));
                 $isInc = ($asistRow['estado'] === 'incompleta' || $asistRow['estado'] === 'iniciada');
                 if ($isInc || $asistRow['estado'] === 'completada') {
@@ -917,7 +964,7 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
         return array_merge($base, ['estado' => 'sin_rutina', 'rutina' => null, 'resumen' => null, 'ejercicios' => []]);
     }
 
-    $ejs = obtenerEjerciciosProgramados($db, $prog['id']);
+    $ejs = obtenerEjerciciosProgramados($db, $prog['id'], $clienteId, $fecha);
     return array_merge($base, [
         'estado'  => $modo === 'hoy' ? 'pendiente' : 'programado',
         'rutina'  => ['id' => $prog['id'], 'nombre' => $prog['nombre']],

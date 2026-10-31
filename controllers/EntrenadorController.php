@@ -59,6 +59,7 @@ match($action) {
     'api-progreso-historial'   => entApiProgresoHistorial(),
     'api-dia-detalle'          => entApiDiaDetalle(),
     'api-rutina-ejercicio'     => entApiRutinaEjercicio(),
+    'api-guardar-serie-atleta' => entApiGuardarSerieAtleta(),
     'api-dias-atleta'          => entApiDiasAtleta(),
     'api-listar-plantillas-catalogo'  => entApiListarPlantillasCatalogo(),
     'api-guardar-plantilla-catalogo' => entApiGuardarPlantillaCatalogo(),
@@ -1817,7 +1818,9 @@ function entConfiguracion(): void {
 
     // Catálogo de ejercicios agrupados por grupo_muscular
     $stCat = $db->query(
-        "SELECT c.id, c.nombre, c.grupo_muscular, c.categoria_id, c.descripcion, c.imagen_path, c.video_path, c.video_url, cm.nombre as categoria_nombre
+        "SELECT c.id, c.nombre, c.grupo_muscular, c.categoria_id, c.descripcion, c.imagen_path, c.imagen_demo_path,
+                c.video_path, c.video_url, c.indicaciones, c.configuracion_maquina, c.tipo_implemento, c.unidad_carga,
+                c.equipamiento, cm.nombre as categoria_nombre
          FROM catalogo_ejercicios c
          LEFT JOIN categorias_musculares cm ON cm.id = c.categoria_id
          ORDER BY c.grupo_muscular, c.nombre"
@@ -2667,6 +2670,65 @@ function entApiCatalogoList(): void {
     jsonOut(true, 'ok', $rows);
 }
 
+function entProcesarMediaCatalogo(array $fileInfo, string $prefijo = 'ej_'): ?string {
+    if (!isset($fileInfo['error']) || $fileInfo['error'] !== UPLOAD_ERR_OK) {
+        return null;
+    }
+    $ext = strtolower(pathinfo((string)$fileInfo['name'], PATHINFO_EXTENSION));
+    $validExts = ['jpg', 'jpeg', 'png', 'webp', 'mp4', 'mov', 'webm'];
+    if (!in_array($ext, $validExts, true)) {
+        return null;
+    }
+    $saveExt = in_array($ext, ['jpg', 'jpeg', 'png'], true) ? 'jpg' : $ext;
+    $relMedia = 'public/uploads/ejercicios/' . uniqid($prefijo) . '.' . $saveExt;
+    $rawBytes = (string)@file_get_contents($fileInfo['tmp_name']);
+    if ($rawBytes !== '' && guardarMediaPermanente($rawBytes, $relMedia, 800, 80, false)) {
+        return $relMedia;
+    }
+    return null;
+}
+
+function entProcesarPasosConfiguracion(?string $rawPasosJson): ?string {
+    if (!$rawPasosJson) return null;
+    $decoded = json_decode($rawPasosJson, true);
+    if (!is_array($decoded)) return null;
+
+    $limpios = [];
+    foreach ($decoded as $idx => $step) {
+        $texto = trim((string)($step['texto'] ?? ''));
+        $media = isset($step['media']) ? trim((string)$step['media']) : null;
+        if (!empty($step['eliminar_media'])) {
+            if ($media) eliminarMediaPermanente($media);
+            $media = null;
+        }
+
+        // Revisar si viene archivo nuevo para este paso
+        $fileKey = 'cfg_step_file_' . $idx;
+        if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
+            $nuevoMedia = entProcesarMediaCatalogo($_FILES[$fileKey], 'cfg_p' . ($idx + 1) . '_');
+            if ($nuevoMedia) {
+                if ($media) eliminarMediaPermanente($media);
+                $media = $nuevoMedia;
+            }
+        }
+
+        if ($texto !== '' || $media !== null) {
+            $tipoMedia = null;
+            if ($media) {
+                $ext = strtolower(pathinfo($media, PATHINFO_EXTENSION));
+                $tipoMedia = in_array($ext, ['mp4', 'mov', 'webm'], true) ? 'video' : 'image';
+            }
+            $limpios[] = [
+                'paso'       => count($limpios) + 1,
+                'texto'      => $texto,
+                'media'      => $media,
+                'tipo_media' => $tipoMedia
+            ];
+        }
+    }
+    return !empty($limpios) ? json_encode($limpios, JSON_UNESCAPED_UNICODE) : null;
+}
+
 function entApiCatalogoAgregar(): void {
     csrfCheck();
     $db = getDB();
@@ -2675,33 +2737,40 @@ function entApiCatalogoAgregar(): void {
     $nombre = trim($_POST['nombre'] ?? '');
     $grupo = trim($_POST['grupo_muscular'] ?? 'Otro');
     $desc = trim($_POST['descripcion'] ?? '');
+    $indicaciones = trim($_POST['indicaciones'] ?? $desc);
     $videoUrl = trim($_POST['video_url'] ?? '');
+    $tipoImp = in_array($_POST['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
+               ? $_POST['tipo_implemento'] : 'barra';
+    $unidadCarga = in_array($_POST['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true)
+               ? $_POST['unidad_carga'] : 'kg';
     
     if (!$nombre) jsonOut(false, 'El nombre del ejercicio es obligatorio.');
     
-    // Subida de media
-    $mediaPath = null;
-    if (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
-        $ext = strtolower(pathinfo($_FILES['media']['name'], PATHINFO_EXTENSION));
-        $validExts = ['jpg', 'jpeg', 'png', 'webp', 'mp4'];
-        if (in_array($ext, $validExts)) {
-            $saveExt = in_array($ext, ['jpg', 'jpeg', 'png']) ? 'jpg' : $ext;
-            $relMedia = 'public/uploads/ejercicios/' . uniqid('ej_') . '.' . $saveExt;
-            $rawBytes = (string)@file_get_contents($_FILES['media']['tmp_name']);
-            if ($rawBytes !== '' && guardarMediaPermanente($rawBytes, $relMedia, 700, 78, false)) {
-                $mediaPath = $relMedia;
-            }
-        }
+    // Subida Portada
+    $mediaPortadaPath = null;
+    if (isset($_FILES['media_portada']) && $_FILES['media_portada']['error'] === UPLOAD_ERR_OK) {
+        $mediaPortadaPath = entProcesarMediaCatalogo($_FILES['media_portada'], 'portada_');
+    } elseif (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
+        $mediaPortadaPath = entProcesarMediaCatalogo($_FILES['media'], 'portada_');
     }
-    
+
+    // Subida Demostración
+    $mediaDemoPath = null;
+    if (isset($_FILES['media_demo']) && $_FILES['media_demo']['error'] === UPLOAD_ERR_OK) {
+        $mediaDemoPath = entProcesarMediaCatalogo($_FILES['media_demo'], 'demo_');
+    }
+
+    // Pasos de Configuración de Máquina (con fotos/videos por paso)
+    $cfgMaquinaJson = entProcesarPasosConfiguracion($_POST['configuracion_maquina'] ?? null);
+
     $catId = resolverCategoriaId($db, $grupo);
 
     $stmt = $db->prepare(
-        "INSERT INTO catalogo_ejercicios (nombre, grupo_muscular, categoria_id, descripcion, imagen_path, video_url, nota_default)
-         VALUES (?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO catalogo_ejercicios (nombre, grupo_muscular, categoria_id, descripcion, indicaciones, configuracion_maquina, imagen_path, imagen_demo_path, video_url, tipo_implemento, unidad_carga, nota_default)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     
-    if ($stmt->execute([$nombre, $grupo, $catId, $desc, $mediaPath, $videoUrl, ''])) {
+    if ($stmt->execute([$nombre, $grupo, $catId, $desc, $indicaciones, $cfgMaquinaJson, $mediaPortadaPath, $mediaDemoPath, $videoUrl, $tipoImp, $unidadCarga, ''])) {
         jsonOut(true, 'Ejercicio agregado al catálogo correctamente.');
     } else {
         jsonOut(false, 'Error al guardar el ejercicio.');
@@ -2717,38 +2786,70 @@ function entApiCatalogoEditar(): void {
     $nombre = trim($_POST['nombre'] ?? '');
     $grupo = trim($_POST['grupo_muscular'] ?? 'Otro');
     $desc = trim($_POST['descripcion'] ?? '');
+    $indicaciones = trim($_POST['indicaciones'] ?? $desc);
     $videoUrl = trim($_POST['video_url'] ?? '');
+    $tipoImp = in_array($_POST['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
+               ? $_POST['tipo_implemento'] : 'barra';
+    $unidadCarga = in_array($_POST['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true)
+               ? $_POST['unidad_carga'] : 'kg';
     
     if (!$id || !$nombre) jsonOut(false, 'Faltan datos obligatorios.');
     
     // Check if exists
-    $chk = $db->prepare("SELECT id, imagen_path FROM catalogo_ejercicios WHERE id = ?");
+    $chk = $db->prepare("SELECT id, imagen_path, imagen_demo_path, configuracion_maquina FROM catalogo_ejercicios WHERE id = ?");
     $chk->execute([$id]);
     $ej = $chk->fetch();
     if (!$ej) jsonOut(false, 'El ejercicio no existe.');
     
-    $mediaPath = $ej['imagen_path'];
-    if (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
-        $ext = strtolower(pathinfo($_FILES['media']['name'], PATHINFO_EXTENSION));
-        $validExts = ['jpg', 'jpeg', 'png', 'webp', 'mp4'];
-        if (in_array($ext, $validExts)) {
-            $saveExt = in_array($ext, ['jpg', 'jpeg', 'png']) ? 'jpg' : $ext;
-            $relMedia = 'public/uploads/ejercicios/' . uniqid('ej_') . '.' . $saveExt;
-            $rawBytes = (string)@file_get_contents($_FILES['media']['tmp_name']);
-            if ($rawBytes !== '' && guardarMediaPermanente($rawBytes, $relMedia, 700, 78, false)) {
-                if ($mediaPath) eliminarMediaPermanente((string)$mediaPath);
-                $mediaPath = $relMedia;
-            }
+    $mediaPortadaPath = $ej['imagen_path'];
+    $mediaDemoPath = $ej['imagen_demo_path'];
+
+    // Eliminación de Portada
+    if (!empty($_POST['eliminar_portada'])) {
+        if ($mediaPortadaPath) eliminarMediaPermanente((string)$mediaPortadaPath);
+        $mediaPortadaPath = null;
+    }
+    // Subida nueva Portada
+    if (isset($_FILES['media_portada']) && $_FILES['media_portada']['error'] === UPLOAD_ERR_OK) {
+        $nuevaPortada = entProcesarMediaCatalogo($_FILES['media_portada'], 'portada_');
+        if ($nuevaPortada) {
+            if ($mediaPortadaPath) eliminarMediaPermanente((string)$mediaPortadaPath);
+            $mediaPortadaPath = $nuevaPortada;
+        }
+    } elseif (isset($_FILES['media']) && $_FILES['media']['error'] === UPLOAD_ERR_OK) {
+        $nuevaPortada = entProcesarMediaCatalogo($_FILES['media'], 'portada_');
+        if ($nuevaPortada) {
+            if ($mediaPortadaPath) eliminarMediaPermanente((string)$mediaPortadaPath);
+            $mediaPortadaPath = $nuevaPortada;
         }
     }
+
+    // Eliminación de Demo
+    if (!empty($_POST['eliminar_demo'])) {
+        if ($mediaDemoPath) eliminarMediaPermanente((string)$mediaDemoPath);
+        $mediaDemoPath = null;
+    }
+    // Subida nueva Demo
+    if (isset($_FILES['media_demo']) && $_FILES['media_demo']['error'] === UPLOAD_ERR_OK) {
+        $nuevaDemo = entProcesarMediaCatalogo($_FILES['media_demo'], 'demo_');
+        if ($nuevaDemo) {
+            if ($mediaDemoPath) eliminarMediaPermanente((string)$mediaDemoPath);
+            $mediaDemoPath = $nuevaDemo;
+        }
+    }
+
+    // Pasos de Configuración de Máquina (con fotos/videos por paso)
+    $cfgMaquinaJson = entProcesarPasosConfiguracion($_POST['configuracion_maquina'] ?? null);
     
     $catId = resolverCategoriaId($db, $grupo);
 
     $stmt = $db->prepare(
-        "UPDATE catalogo_ejercicios SET nombre = ?, grupo_muscular = ?, categoria_id = ?, descripcion = ?, imagen_path = ?, video_url = ?
+        "UPDATE catalogo_ejercicios 
+         SET nombre = ?, grupo_muscular = ?, categoria_id = ?, descripcion = ?, indicaciones = ?, configuracion_maquina = ?,
+             imagen_path = ?, imagen_demo_path = ?, video_url = ?, tipo_implemento = ?, unidad_carga = ?
          WHERE id = ?"
     );
-    if ($stmt->execute([$nombre, $grupo, $catId, $desc, $mediaPath, $videoUrl, $id])) {
+    if ($stmt->execute([$nombre, $grupo, $catId, $desc, $indicaciones, $cfgMaquinaJson, $mediaPortadaPath, $mediaDemoPath, $videoUrl, $tipoImp, $unidadCarga, $id])) {
         jsonOut(true, 'Ejercicio actualizado.');
     } else {
         jsonOut(false, 'Error al actualizar el ejercicio.');
@@ -3586,3 +3687,176 @@ function entApiGuardarTemaSistema(): void {
 }
 
 
+
+/*─────────────────────────────────────────────────────────────
+  API: REGISTRAR / DESMARCAR SERIE DEL ATLETA DESDE ASISTENCIAS
+─────────────────────────────────────────────────────────────*/
+function entApiGuardarSerieAtleta(): void {
+    csrfCheck();
+    header('Content-Type: application/json; charset=utf-8');
+    try {
+        $db          = getDB();
+        $entId       = (int)($_SESSION['user_id'] ?? 0);
+        $clienteId   = (int)($_POST['cliente_id'] ?? 0);
+        $ejercicioId = (int)($_POST['ejercicio_id'] ?? 0);
+        $numSerie    = (int)($_POST['numero_serie']  ?? 0);
+        $rawReps     = trim((string)($_POST['reps'] ?? ''));
+        $rawPeso     = trim((string)($_POST['peso'] ?? ''));
+        $rawUnidad   = strtolower(trim((string)($_POST['unidad_carga'] ?? '')));
+        $rawTipoImp  = strtolower(trim((string)($_POST['tipo_implemento'] ?? '')));
+        $tipoSerie   = strtolower(trim((string)($_POST['tipo_serie'] ?? 'normal')));
+        if (!in_array($tipoSerie, ['normal', 'calentamiento', 'fallo', 'drop'], true)) {
+            $tipoSerie = 'normal';
+        }
+
+        // Validar que el cliente pertenece al entrenador
+        $stVerif = $db->prepare("SELECT id FROM clientes WHERE id = ? AND (? IS NOT NULL)");
+        $stVerif->execute([$clienteId, $entId]);
+        if (!$stVerif->fetch()) {
+            http_response_code(403);
+            jsonOut(false, 'Atleta no encontrado o sin permisos.');
+        }
+
+        $fechaEntrenamiento = trim((string)($_POST['fecha'] ?? date('Y-m-d')));
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaEntrenamiento)) {
+            $fechaEntrenamiento = date('Y-m-d');
+        }
+
+        if ($ejercicioId < 1 || $numSerie < 1 || $numSerie > 12) {
+            http_response_code(422);
+            jsonOut(false, 'El número de serie no puede superar el límite de 12.');
+        }
+
+        $accion = strtolower(trim((string)($_POST['accion'] ?? 'guardar')));
+        if ($accion === 'desmarcar') {
+            $db->beginTransaction();
+            $db->prepare("DELETE FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ? AND numero_serie = ?")
+               ->execute([$ejercicioId, $clienteId, $fechaEntrenamiento, $numSerie]);
+
+            $stCheck = $db->prepare("SELECT COUNT(*) FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ? AND completado = 1");
+            $stCheck->execute([$ejercicioId, $clienteId, $fechaEntrenamiento]);
+            $quedan = (int)$stCheck->fetchColumn();
+
+            if ($quedan === 0) {
+                $db->prepare("DELETE FROM sesiones WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ?")
+                   ->execute([$ejercicioId, $clienteId, $fechaEntrenamiento]);
+            } else {
+                $db->prepare("UPDATE sesiones SET reps_realizadas = (SELECT MAX(reps_realizadas) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=?), peso_usado = (SELECT MAX(peso_usado) FROM sesion_series WHERE ejercicio_id=? AND cliente_id=? AND fecha=?) WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ?")
+                   ->execute([$ejercicioId, $clienteId, $fechaEntrenamiento, $ejercicioId, $clienteId, $fechaEntrenamiento, $ejercicioId, $clienteId, $fechaEntrenamiento]);
+            }
+
+            $db->commit();
+            jsonOut(true, 'Serie desmarcada correctamente.', ['desmarcado' => true]);
+            return;
+        }
+
+        // Obtener configuración del ejercicio
+        $stEjInfo = $db->prepare("SELECT nombre, rutina_id, tipo_implemento, unidad_carga FROM ejercicios WHERE id = ?");
+        $stEjInfo->execute([$ejercicioId]);
+        $ejInfo = $stEjInfo->fetch();
+        if (!$ejInfo) {
+            http_response_code(404);
+            jsonOut(false, 'Ejercicio no encontrado.');
+        }
+
+        $tipoImplemento = in_array($rawTipoImp, ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
+            ? $rawTipoImp
+            : ($ejInfo['tipo_implemento'] ?? 'barra');
+
+        $unidadCarga = in_array($rawUnidad, ['kg', 'placas', 'ninguna'], true)
+            ? $rawUnidad
+            : ($ejInfo['unidad_carga'] ?? 'kg');
+
+        if ($tipoImplemento === 'sin_peso') {
+            $unidadCarga = 'ninguna';
+        }
+
+        $reps = 10;
+        if ($rawReps !== '') {
+            $reps = max(1, min(100, (int)$rawReps));
+        }
+
+        $pesoUsado   = 0.00;
+        $pesoPorLado = null;
+        $kgReal      = 0.00;
+
+        if ($tipoImplemento !== 'sin_peso' && $unidadCarga !== 'ninguna' && $rawPeso !== '') {
+            $valNumeric = round((float)str_replace(',', '.', $rawPeso), 2);
+            if ($tipoImplemento === 'mancuerna') {
+                $pesoUsado   = min(200, $valNumeric);
+                $pesoPorLado = $pesoUsado;
+                $kgReal      = round($pesoUsado * 2, 2);
+                $unidadCarga = 'kg';
+            } elseif ($tipoImplemento === 'polea_maquina') {
+                $pesoUsado   = ($unidadCarga === 'placas') ? min(30, $valNumeric) : min(500, $valNumeric);
+                $kgReal      = $pesoUsado;
+            } else {
+                $pesoUsado   = min(500, $valNumeric);
+                $kgReal      = $pesoUsado;
+                $unidadCarga = 'kg';
+            }
+        }
+
+        $db->beginTransaction();
+
+        // 1. Guardar o actualizar en sesion_series
+        $stUpsert = $db->prepare("
+            INSERT INTO sesion_series
+                (cliente_id, ejercicio_id, rutina_id, ejercicio_nombre, numero_serie, reps_realizadas, peso_usado, completado, fecha, tipo_serie, tipo_implemento, unidad_carga, peso_por_lado, kg_real)
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                reps_realizadas = VALUES(reps_realizadas),
+                peso_usado      = VALUES(peso_usado),
+                completado      = 1,
+                tipo_serie      = VALUES(tipo_serie),
+                tipo_implemento = VALUES(tipo_implemento),
+                unidad_carga    = VALUES(unidad_carga),
+                peso_por_lado   = VALUES(peso_por_lado),
+                kg_real         = VALUES(kg_real)
+        ");
+        $stUpsert->execute([
+            $clienteId, $ejercicioId, (int)$ejInfo['rutina_id'], $ejInfo['nombre'],
+            $numSerie, $reps, $pesoUsado, $fechaEntrenamiento,
+            $tipoSerie, $tipoImplemento, $unidadCarga, $pesoPorLado, $kgReal
+        ]);
+
+        // 2. Sincronizar en sesiones
+        $stSesion = $db->prepare("
+            INSERT INTO sesiones (ejercicio_id, cliente_id, reps_realizadas, peso_usado, completado, fecha)
+            VALUES (?, ?, ?, ?, 1, ?)
+            ON DUPLICATE KEY UPDATE
+                reps_realizadas = VALUES(reps_realizadas),
+                peso_usado      = VALUES(peso_usado),
+                completado      = 1
+        ");
+        $stSesion->execute([$ejercicioId, $clienteId, $reps, $pesoUsado, $fechaEntrenamiento]);
+
+        // 3. Garantizar que existe sesión activa en sesiones_asistencia si es de hoy
+        if ($fechaEntrenamiento === date('Y-m-d')) {
+            $stAsisChk = $db->prepare("SELECT id, estado FROM sesiones_asistencia WHERE cliente_id = ? AND rutina_id = ? AND DATE(inicio_en) = ? LIMIT 1");
+            $stAsisChk->execute([$clienteId, (int)$ejInfo['rutina_id'], $fechaEntrenamiento]);
+            $asisRow = $stAsisChk->fetch(PDO::FETCH_ASSOC);
+            if (!$asisRow) {
+                $db->prepare("INSERT INTO sesiones_asistencia (rutina_id, cliente_id, entrenador_id, inicio_en, estado) VALUES (?, ?, ?, NOW(), 'iniciada')")
+                   ->execute([(int)$ejInfo['rutina_id'], $clienteId, $entId]);
+            }
+        }
+
+        $db->commit();
+        jsonOut(true, 'Serie registrada correctamente.', [
+            'completado'   => true,
+            'ejercicio_id' => $ejercicioId,
+            'numero_serie' => $numSerie,
+            'reps'          => $reps,
+            'peso'          => $pesoUsado
+        ]);
+    } catch (\Throwable $e) {
+        if (isset($db) && $db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log('[entApiGuardarSerieAtleta] Error: ' . $e->getMessage());
+        http_response_code(500);
+        jsonOut(false, 'Error al guardar serie: ' . $e->getMessage());
+    }
+}

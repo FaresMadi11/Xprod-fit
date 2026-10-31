@@ -459,6 +459,140 @@ require __DIR__ . '/../layout/header.php';
 }
 .drill-dropzone:hover { background: rgba(139,92,246,0.05); border-color: var(--accent); }
 
+/* Doble carga de imagen (Portada & Demostración) Bento UI */
+.drill-media-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.drill-media-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(139, 92, 246, 0.35);
+  border-radius: 14px;
+  padding: 14px 10px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.drill-media-card:hover {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.06);
+}
+.drill-media-card .dm-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.drill-media-card .dm-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.drill-media-preview-wrap {
+  position: relative;
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.drill-media-img {
+  width: 100%;
+  height: 95px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.drill-btn-del-img {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  z-index: 5;
+}
+.drill-btn-del-img:hover {
+  background: #dc2626;
+  transform: scale(1.08);
+}
+
+/* Tabs en formulario (Indicaciones vs Configuración) */
+.drill-form-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: rgba(255,255,255,0.03);
+  padding: 4px;
+  border-radius: 14px;
+  margin: 18px 0 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.drill-tab-btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.drill-tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(139,92,246,0.35);
+}
+.paso-cfg-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.paso-cfg-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.paso-cfg-media-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 6px 10px;
+  margin-top: 4px;
+}
+
 .paso-item { display: flex; gap: 10px; align-items: flex-start; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px;}
 .paso-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
 .paso-input { flex: 1; background: transparent; border: none; color: var(--text); outline: none; resize: none; font-family: inherit; font-size: 0.9rem; line-height: 1.4; }
@@ -569,14 +703,19 @@ require __DIR__ . '/../layout/header.php';
 
       <!-- VISTA 3: Formulario CRUD -->
       <div id="drillView3" class="drill-view" style="display: none;">
-        <h4 id="nivel3Title" style="color:#fff; margin-bottom:20px; font-size:1.1rem;">Agregar Ejercicio</h4>
+        <h4 id="nivel3Title" style="color:#fff; margin-bottom:16px; font-size:1.1rem;">Agregar Ejercicio</h4>
         <form id="formEjercicio" onsubmit="guardarEjercicio(event)" enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
           <input type="hidden" id="ej_id" name="id" value="">
-          
+          <input type="hidden" id="eliminar_portada_input" name="eliminar_portada" value="0">
+          <input type="hidden" id="eliminar_demo_input" name="eliminar_demo" value="0">
+          <input type="hidden" id="ej_indicaciones_input" name="indicaciones" value="">
+          <input type="hidden" id="ej_cfg_maquina_input" name="configuracion_maquina" value="">
+          <textarea id="ej_desc_legacy" name="descripcion" style="display:none;"></textarea>
+
           <div class="sys-input-group">
             <label for="ej_nombre">Nombre del ejercicio <span style="color:var(--accent)">*</span></label>
-            <input type="text" id="ej_nombre" name="nombre" class="sys-input" required placeholder="Ej: Press de banca">
+            <input type="text" id="ej_nombre" name="nombre" class="sys-input" required placeholder="Ej: Press de banca con mancuernas">
           </div>
 
           <div class="sys-input-group">
@@ -612,33 +751,111 @@ require __DIR__ . '/../layout/header.php';
             </div>
           </div>
 
+          <!-- 4.1 Carga Doble de Imágenes (Portada y Demostración) Lado a Lado -->
           <div class="sys-input-group">
-            <label>Carga Multimedia (Imagen o Video)</label>
-            <div class="drill-dropzone" onclick="document.getElementById('ej_imagen').click()">
-              <i class="ti ti-cloud-upload" style="font-size:2.5rem; color:var(--accent-light);"></i>
-              <p style="margin:12px 0 4px; font-weight:700; color:var(--text); font-size:1.05rem;">Haz clic o arrastra un archivo</p>
-              <p style="margin:0; font-size:0.8rem; color:var(--muted);">Soporta JPG, PNG, WEBP o MP4</p>
-              <div id="mediaFileName" style="margin-top:12px; font-size:0.85rem; color:var(--accent); font-weight:600; display:none; background:rgba(139,92,246,0.1); padding:6px 12px; border-radius:8px;"></div>
+            <label>Imágenes del Ejercicio (Portada y Demostración)</label>
+            <div class="drill-media-grid">
+              <!-- Cuadro 1: Portada -->
+              <div class="drill-media-card" id="cardPortada">
+                <div class="dm-title"><i class="ti ti-photo" style="color:var(--accent);"></i> Portada</div>
+                <div class="dm-sub">Imagen principal</div>
+                <div id="dropzonePortada" onclick="document.getElementById('ej_imagen_portada').click()" style="margin-top:6px; cursor:pointer;">
+                  <i class="ti ti-cloud-upload" style="font-size:1.8rem; color:var(--accent-light);"></i>
+                  <div style="font-size:0.75rem; color:var(--text); font-weight:600; margin-top:4px;">Subir Portada</div>
+                </div>
+                <input type="file" id="ej_imagen_portada" name="media_portada" accept="image/*" style="display:none" onchange="handlePortadaSelect(this)">
+                <div class="drill-media-preview-wrap" id="previewWrapPortada" style="display:none;">
+                  <img src="" id="imgPreviewPortada" class="drill-media-img" alt="Portada">
+                  <button type="button" class="drill-btn-del-img" onclick="eliminarPortada(event)" title="Eliminar imagen de portada">
+                    <i class="ti ti-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Cuadro 2: Demostración -->
+              <div class="drill-media-card" id="cardDemo">
+                <div class="dm-title"><i class="ti ti-player-play" style="color:#38bdf8;"></i> Demostración</div>
+                <div class="dm-sub">Foto o ejecución</div>
+                <div id="dropzoneDemo" onclick="document.getElementById('ej_imagen_demo').click()" style="margin-top:6px; cursor:pointer;">
+                  <i class="ti ti-cloud-upload" style="font-size:1.8rem; color:#38bdf8;"></i>
+                  <div style="font-size:0.75rem; color:var(--text); font-weight:600; margin-top:4px;">Subir Demostración</div>
+                </div>
+                <input type="file" id="ej_imagen_demo" name="media_demo" accept="image/*,video/mp4" style="display:none" onchange="handleDemoSelect(this)">
+                <div class="drill-media-preview-wrap" id="previewWrapDemo" style="display:none;">
+                  <img src="" id="imgPreviewDemo" class="drill-media-img" alt="Demostración">
+                  <button type="button" class="drill-btn-del-img" onclick="eliminarDemo(event)" title="Eliminar demostración">
+                    <i class="ti ti-trash"></i>
+                  </button>
+                </div>
+              </div>
             </div>
-            <input type="file" id="ej_imagen" name="media" accept="image/*,video/mp4" style="display:none" onchange="handleMediaSelect(this)">
           </div>
 
-          <div class="sys-input-group">
-            <label for="ej_video_url">URL de YouTube (Opcional)</label>
-            <input type="url" id="ej_video_url" name="video_url" class="sys-input" placeholder="https://youtube.com/watch?v=...">
-          </div>
-
-          <div class="sys-input-group" style="margin-top: 10px;">
-            <label>Indicaciones Biomecánicas (Pasos)</label>
-            <div id="pasosContainer" style="display:flex; flex-direction:column;"></div>
-            <button type="button" onclick="agregarPaso()" style="margin-top:12px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.2); color:var(--text); padding:12px; border-radius:12px; font-size:0.9rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; width:100%; transition:all 0.2s;">
-              <i class="ti ti-plus"></i> Añadir siguiente paso
+          <!-- Dos Pestañas en la Edición (Indicaciones vs Configuración) con Swipe -->
+          <div class="drill-form-tabs" role="tablist">
+            <button type="button" class="drill-tab-btn active" id="tabFormIndicaciones" onclick="setDrillFormTab('indicaciones')" role="tab">
+              <i class="ti ti-list-check"></i> Indicaciones
+            </button>
+            <button type="button" class="drill-tab-btn" id="tabFormConfig" onclick="setDrillFormTab('configuracion')" role="tab">
+              <i class="ti ti-settings"></i> Configuración
             </button>
           </div>
 
-          <textarea id="ej_desc_legacy" name="descripcion" style="display:none;"></textarea>
+          <!-- PANEL 1: INDICACIONES BIOMECÁNICAS (Pasos de Ejecución) -->
+          <div id="panelFormIndicaciones" class="drill-form-panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label style="font-size:0.88rem; font-weight:700; color:#fff; margin:0;">
+                <i class="ti ti-activity" style="color:var(--accent);"></i> Pasos de Ejecución Biomecánica
+              </label>
+              <span style="font-size:0.75rem; color:var(--muted);">¿Cómo realizar el ejercicio?</span>
+            </div>
+            <div id="pasosContainer" style="display:flex; flex-direction:column;"></div>
+            <button type="button" onclick="agregarPaso()" style="margin-top:10px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.2); color:var(--text); padding:11px; border-radius:12px; font-size:0.88rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; width:100%; transition:all 0.2s;">
+              <i class="ti ti-plus"></i> Añadir paso de ejecución
+            </button>
+          </div>
 
-          <div style="margin-top:32px; padding-bottom: 24px; display:flex; flex-direction:column; gap:12px;">
+          <!-- PANEL 2: CONFIGURACIÓN (Ajuste de Máquina / Implemento con Fotos/Videos) -->
+          <div id="panelFormConfig" class="drill-form-panel" style="display:none;">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+              <div class="sys-input-group" style="margin-bottom:0;">
+                <label for="ej_implemento" style="font-size:0.8rem;">Implemento / Equipo</label>
+                <select id="ej_implemento" name="tipo_implemento" class="sys-input" style="padding:10px;">
+                  <option value="barra">Barra / Libre</option>
+                  <option value="mancuerna">Mancuernas (×2)</option>
+                  <option value="polea_maquina">Polea / Máquina</option>
+                  <option value="sin_peso">Sin peso / Corporal</option>
+                </select>
+              </div>
+              <div class="sys-input-group" style="margin-bottom:0;">
+                <label for="ej_unidad" style="font-size:0.8rem;">Unidad de Carga</label>
+                <select id="ej_unidad" name="unidad_carga" class="sys-input" style="padding:10px;">
+                  <option value="kg">Kilos (KG)</option>
+                  <option value="placas">Placas</option>
+                  <option value="ninguna">Ninguna</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="sys-input-group" style="margin-bottom:14px;">
+              <label for="ej_video_url" style="font-size:0.8rem;">Video Demostrativo de YouTube (Opcional)</label>
+              <input type="url" id="ej_video_url" name="video_url" class="sys-input" placeholder="https://youtube.com/watch?v=...">
+            </div>
+
+            <!-- Pasos para Configurar una Máquina con foto/video -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; margin-top:16px;">
+              <label style="font-size:0.88rem; font-weight:700; color:#fff; margin:0;">
+                <i class="ti ti-tool" style="color:#38bdf8;"></i> Pasos para Configurar la Máquina
+              </label>
+              <span style="font-size:0.75rem; color:var(--muted);">Ajustes de asiento, polea, etc.</span>
+            </div>
+            <div id="configPasosContainer" style="display:flex; flex-direction:column;"></div>
+            <button type="button" onclick="agregarPasoConfig()" style="margin-top:10px; background:rgba(56,189,248,0.06); border:1px dashed rgba(56,189,248,0.3); color:#38bdf8; padding:11px; border-radius:12px; font-size:0.88rem; font-weight:600; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; width:100%; transition:all 0.2s;">
+              <i class="ti ti-plus"></i> Añadir paso de ajuste de máquina
+            </button>
+          </div>
+
+          <div style="margin-top:28px; padding-bottom: 24px; display:flex; flex-direction:column; gap:12px;">
             <button type="submit" class="btn-drill" id="btnGuardarEj">
               <i class="ti ti-device-floppy"></i> Guardar Ejercicio
             </button>
@@ -1563,24 +1780,265 @@ window.buscarGlobalCMS = function() {
   }
 };
 
-/* ─── Formulario CRUD (Nivel 3) ─── */
-window.abrirFormulario = function(modo) {
-  const form = document.getElementById('formEjercicio');
-  if (form) form.reset();
-  const ejId = document.getElementById('ej_id');
-  if (ejId) ejId.value = '';
-  const mLabel = document.getElementById('mediaFileName');
-  if (mLabel) mLabel.style.display = 'none';
-  const pCont = document.getElementById('pasosContainer');
-  if (pCont) pCont.innerHTML = '';
-  const delWrap = document.getElementById('ejDeleteWrap');
-  if (delWrap) delWrap.style.display = 'none';
-  window.agregarPaso(); // 1 paso por defecto
+/* ─── Formulario CRUD (Nivel 3) & Doble Multimedia + 2 Pestañas ─── */
+window.currentFormTab = "indicaciones";
 
-  const select = document.getElementById('ej_grupo');
+window.setDrillFormTab = function(tab) {
+  window.currentFormTab = tab;
+  const btnInd = document.getElementById("tabFormIndicaciones");
+  const btnCfg = document.getElementById("tabFormConfig");
+  const panInd = document.getElementById("panelFormIndicaciones");
+  const panCfg = document.getElementById("panelFormConfig");
+
+  if (tab === "configuracion") {
+    if (btnCfg) btnCfg.classList.add("active");
+    if (btnInd) btnInd.classList.remove("active");
+    if (panCfg) panCfg.style.display = "block";
+    if (panInd) panInd.style.display = "none";
+  } else {
+    if (btnInd) btnInd.classList.add("active");
+    if (btnCfg) btnCfg.classList.remove("active");
+    if (panInd) panInd.style.display = "block";
+    if (panCfg) panCfg.style.display = "none";
+  }
+};
+
+// ── Manejadores de Portada y Demostración ──
+window.handlePortadaSelect = function(input) {
+  const file = input.files[0];
+  const dropzone = document.getElementById("dropzonePortada");
+  const wrap = document.getElementById("previewWrapPortada");
+  const img = document.getElementById("imgPreviewPortada");
+  const delInput = document.getElementById("eliminar_portada_input");
+  if (delInput) delInput.value = "0";
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (img) img.src = e.target.result;
+      if (wrap) wrap.style.display = "block";
+      if (dropzone) dropzone.style.display = "none";
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+window.eliminarPortada = function(e) {
+  if (e) e.stopPropagation();
+  const input = document.getElementById("ej_imagen_portada");
+  if (input) input.value = "";
+  const dropzone = document.getElementById("dropzonePortada");
+  const wrap = document.getElementById("previewWrapPortada");
+  const img = document.getElementById("imgPreviewPortada");
+  const delInput = document.getElementById("eliminar_portada_input");
+  if (delInput) delInput.value = "1";
+  if (img) img.src = "";
+  if (wrap) wrap.style.display = "none";
+  if (dropzone) dropzone.style.display = "block";
+};
+
+window.handleDemoSelect = function(input) {
+  const file = input.files[0];
+  const dropzone = document.getElementById("dropzoneDemo");
+  const wrap = document.getElementById("previewWrapDemo");
+  const img = document.getElementById("imgPreviewDemo");
+  const delInput = document.getElementById("eliminar_demo_input");
+  if (delInput) delInput.value = "0";
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (img) img.src = e.target.result;
+      if (wrap) wrap.style.display = "block";
+      if (dropzone) dropzone.style.display = "none";
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+window.eliminarDemo = function(e) {
+  if (e) e.stopPropagation();
+  const input = document.getElementById("ej_imagen_demo");
+  if (input) input.value = "";
+  const dropzone = document.getElementById("dropzoneDemo");
+  const wrap = document.getElementById("previewWrapDemo");
+  const img = document.getElementById("imgPreviewDemo");
+  const delInput = document.getElementById("eliminar_demo_input");
+  if (delInput) delInput.value = "1";
+  if (img) img.src = "";
+  if (wrap) wrap.style.display = "none";
+  if (dropzone) dropzone.style.display = "block";
+};
+
+// ── Pasos de Ejecución (Pestaña Indicaciones) ──
+window.agregarPaso = function(texto = "") {
+  const cont = document.getElementById("pasosContainer");
+  if (!cont) return;
+  const count = cont.children.length + 1;
+  const div = document.createElement("div");
+  div.className = "paso-item";
+  div.innerHTML = `
+      <div class="paso-num">${count}</div>
+      <textarea class="paso-input" rows="2" placeholder="Describe cómo ejecutar este paso...">${texto}</textarea>
+      <button type="button" class="paso-del" onclick="this.parentElement.remove(); window.reindexarPasos();" title="Eliminar paso"><i class="ti ti-trash"></i></button>
+  `;
+  cont.appendChild(div);
+  window.reindexarPasos();
+};
+
+window.reindexarPasos = function() {
+  const cont = document.getElementById("pasosContainer");
+  if (!cont) return;
+  Array.from(cont.children).forEach((item, index) => {
+      const num = item.querySelector(".paso-num");
+      if (num) num.textContent = index + 1;
+  });
+};
+
+// ── Pasos de Configuración de Máquina (con foto o video por paso) ──
+window.cfgStepsFiles = [];
+
+window.agregarPasoConfig = function(texto = "", mediaUrl = null, tipoMedia = null) {
+  const cont = document.getElementById("configPasosContainer");
+  if (!cont) return;
+  const index = cont.children.length;
+  const numPaso = index + 1;
+
+  const div = document.createElement("div");
+  div.className = "paso-cfg-item";
+  div.dataset.index = index;
+
+  const appBase = window.APP || "";
+  let mediaPreviewHtml = "";
+  if (mediaUrl) {
+    const fullMedia = mediaUrl.startsWith("http") ? mediaUrl : `${appBase}/${mediaUrl}`;
+    const isVideo = tipoMedia === "video" || mediaUrl.toLowerCase().endsWith(".mp4");
+    const mediaEl = isVideo
+      ? `<video src="${fullMedia}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;" muted></video>`
+      : `<img src="${fullMedia}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;">`;
+
+    mediaPreviewHtml = `
+      <div class="paso-cfg-media-preview" id="cfgMediaPreview_${index}">
+        ${mediaEl}
+        <span style="font-size:0.75rem;color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          <i class="ti ${isVideo ? 'ti-video' : 'ti-photo'}"></i> Archivo adjunto
+        </span>
+        <button type="button" onclick="eliminarCfgStepMedia(${index})" style="background:none;border:none;color:#f87171;cursor:pointer;padding:4px;" title="Quitar archivo">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+    `;
+  }
+
+  div.innerHTML = `
+    <div class="paso-cfg-top">
+      <div class="paso-num" style="background:#0ea5e9;">${numPaso}</div>
+      <span style="font-size:0.8rem;font-weight:700;color:#94a3b8;flex:1;">Ajuste de máquina</span>
+      <button type="button" class="paso-del" onclick="this.closest('.paso-cfg-item').remove(); window.reindexarPasosConfig();" title="Eliminar paso">
+        <i class="ti ti-trash"></i>
+      </button>
+    </div>
+    <textarea class="paso-cfg-input paso-input" rows="2" placeholder="Ej: Ajustar la altura del asiento a nivel 4 y colocar la clavija en el respaldo...">${texto}</textarea>
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px;">
+      <button type="button" onclick="document.getElementById('cfg_file_${index}').click()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:#cbd5e1;padding:6px 10px;border-radius:8px;font-size:0.78rem;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <i class="ti ti-camera-plus" style="color:#38bdf8;"></i> Adjuntar Foto o Video
+      </button>
+      <input type="file" id="cfg_file_${index}" name="cfg_step_file_${index}" accept="image/*,video/mp4" style="display:none;" onchange="handleCfgStepMediaSelect(this, ${index})">
+      <input type="hidden" id="cfg_existing_media_${index}" value="${mediaUrl || ''}">
+      <input type="hidden" id="cfg_del_media_${index}" value="0">
+    </div>
+
+    <div id="cfgMediaContainer_${index}">
+      ${mediaPreviewHtml}
+    </div>
+  `;
+
+  cont.appendChild(div);
+  window.reindexarPasosConfig();
+};
+
+window.reindexarPasosConfig = function() {
+  const cont = document.getElementById("configPasosContainer");
+  if (!cont) return;
+  Array.from(cont.children).forEach((item, index) => {
+    item.dataset.index = index;
+    const num = item.querySelector(".paso-num");
+    if (num) num.textContent = index + 1;
+    const fileInp = item.querySelector('input[type="file"]');
+    if (fileInp) {
+      fileInp.id = `cfg_file_${index}`;
+      fileInp.name = `cfg_step_file_${index}`;
+    }
+  });
+};
+
+window.handleCfgStepMediaSelect = function(input, index) {
+  const file = input.files[0];
+  const container = document.getElementById(`cfgMediaContainer_${index}`);
+  const delInput = document.getElementById(`cfg_del_media_${index}`);
+  if (delInput) delInput.value = "0";
+  if (!container || !file) return;
+
+  const isVideo = file.type.startsWith("video/") || file.name.endsWith(".mp4");
+  const url = URL.createObjectURL(file);
+  const mediaEl = isVideo
+    ? `<video src="${url}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;" muted></video>`
+    : `<img src="${url}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;">`;
+
+  container.innerHTML = `
+    <div class="paso-cfg-media-preview" id="cfgMediaPreview_${index}">
+      ${mediaEl}
+      <span style="font-size:0.75rem;color:#cbd5e1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        <i class="ti ${isVideo ? 'ti-video' : 'ti-photo'}"></i> ${file.name}
+      </span>
+      <button type="button" onclick="eliminarCfgStepMedia(${index})" style="background:none;border:none;color:#f87171;cursor:pointer;padding:4px;" title="Quitar archivo">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+  `;
+};
+
+window.eliminarCfgStepMedia = function(index) {
+  const container = document.getElementById(`cfgMediaContainer_${index}`);
+  const fileInp = document.getElementById(`cfg_file_${index}`);
+  const existingInp = document.getElementById(`cfg_existing_media_${index}`);
+  const delInput = document.getElementById(`cfg_del_media_${index}`);
+
+  if (fileInp) fileInp.value = "";
+  if (existingInp) existingInp.value = "";
+  if (delInput) delInput.value = "1";
+  if (container) container.innerHTML = "";
+};
+
+window.abrirFormulario = function(modo) {
+  const form = document.getElementById("formEjercicio");
+  if (form) form.reset();
+  const ejId = document.getElementById("ej_id");
+  if (ejId) ejId.value = "";
+
+  // Reset Portada & Demo previews
+  window.eliminarPortada();
+  window.eliminarDemo();
+  document.getElementById("eliminar_portada_input").value = "0";
+  document.getElementById("eliminar_demo_input").value = "0";
+
+  // Reset Pasos de Ejecución
+  const pCont = document.getElementById("pasosContainer");
+  if (pCont) pCont.innerHTML = "";
+  window.agregarPaso();
+
+  // Reset Pasos de Configuración de Máquina
+  const cfgCont = document.getElementById("configPasosContainer");
+  if (cfgCont) cfgCont.innerHTML = "";
+
+  const delWrap = document.getElementById("ejDeleteWrap");
+  if (delWrap) delWrap.style.display = "none";
+
+  const select = document.getElementById("ej_grupo");
   if (select) {
       select.value = "";
-      if (modo === 'NUEVO_EN_CAT' && window.activeCategoria) {
+      if (modo === "NUEVO_EN_CAT" && window.activeCategoria) {
           const activeCanon = window.getCanonicalMuscleGroup(window.activeCategoria);
           for (let i = 0; i < select.options.length; i++) {
               if (window.getCanonicalMuscleGroup(select.options[i].value) === activeCanon) {
@@ -1594,8 +2052,9 @@ window.abrirFormulario = function(modo) {
       }
   }
 
-  const title3 = document.getElementById('nivel3Title');
-  if (title3) title3.textContent = 'Nuevo Ejercicio';
+  window.setDrillFormTab("indicaciones");
+  const title3 = document.getElementById("nivel3Title");
+  if (title3) title3.textContent = "Nuevo Ejercicio";
   window.irNivel(3);
 };
 
@@ -1611,29 +2070,54 @@ window.findEjById = function(id) {
 window.editarEjercicio = function(id, nivelOrigen) {
   const ej = window.findEjById(id);
   if (!ej) {
-      console.warn('Ejercicio no encontrado con ID:', id);
+      console.warn("Ejercicio no encontrado con ID:", id);
       return;
   }
   
-  const form = document.getElementById('formEjercicio');
+  const form = document.getElementById("formEjercicio");
   if (form) form.reset();
-  const ejId = document.getElementById('ej_id');
+  const ejId = document.getElementById("ej_id");
   if (ejId) ejId.value = ej.id;
-  const ejNom = document.getElementById('ej_nombre');
-  if (ejNom) ejNom.value = ej.nombre || '';
-  
-  // Media info preview
-  const mediaLabel = document.getElementById('mediaFileName');
-  if (mediaLabel) {
-      if (ej.imagen_path) {
-          mediaLabel.style.display = 'inline-block';
-          mediaLabel.innerHTML = `<i class="ti ti-photo"></i> Actual: ${ej.imagen_path.split('/').pop()}`;
-      } else {
-          mediaLabel.style.display = 'none';
-      }
+  const ejNom = document.getElementById("ej_nombre");
+  if (ejNom) ejNom.value = ej.nombre || "";
+
+  // 1. Cargar Portada
+  const dropzonePortada = document.getElementById("dropzonePortada");
+  const wrapPortada = document.getElementById("previewWrapPortada");
+  const imgPortada = document.getElementById("imgPreviewPortada");
+  const delPortada = document.getElementById("eliminar_portada_input");
+  if (delPortada) delPortada.value = "0";
+
+  const appBase = window.APP || "";
+  if (ej.imagen_path) {
+    if (imgPortada) imgPortada.src = `${appBase}/${ej.imagen_path}`;
+    if (wrapPortada) wrapPortada.style.display = "block";
+    if (dropzonePortada) dropzonePortada.style.display = "none";
+  } else {
+    if (imgPortada) imgPortada.src = "";
+    if (wrapPortada) wrapPortada.style.display = "none";
+    if (dropzonePortada) dropzonePortada.style.display = "block";
+  }
+
+  // 2. Cargar Demostración
+  const dropzoneDemo = document.getElementById("dropzoneDemo");
+  const wrapDemo = document.getElementById("previewWrapDemo");
+  const imgDemo = document.getElementById("imgPreviewDemo");
+  const delDemo = document.getElementById("eliminar_demo_input");
+  if (delDemo) delDemo.value = "0";
+
+  if (ej.imagen_demo_path) {
+    if (imgDemo) imgDemo.src = `${appBase}/${ej.imagen_demo_path}`;
+    if (wrapDemo) wrapDemo.style.display = "block";
+    if (dropzoneDemo) dropzoneDemo.style.display = "none";
+  } else {
+    if (imgDemo) imgDemo.src = "";
+    if (wrapDemo) wrapDemo.style.display = "none";
+    if (dropzoneDemo) dropzoneDemo.style.display = "block";
   }
   
-  const select = document.getElementById('ej_grupo');
+  // 3. Grupo Muscular
+  const select = document.getElementById("ej_grupo");
   if (select) {
       select.value = "";
       const grp = ej.categoria_nombre || ej.grupo_muscular;
@@ -1647,101 +2131,112 @@ window.editarEjercicio = function(id, nivelOrigen) {
          }
       }
   }
+
+  // 4. Implemento y Unidad
+  const selImp = document.getElementById("ej_implemento");
+  if (selImp) selImp.value = ej.tipo_implemento || "barra";
+  const selUni = document.getElementById("ej_unidad");
+  if (selUni) selUni.value = ej.unidad_carga || "kg";
   
-  const ejVid = document.getElementById('ej_video_url');
-  if (ejVid) ejVid.value = ej.video_url || '';
+  // 5. Video URL
+  const ejVid = document.getElementById("ej_video_url");
+  if (ejVid) ejVid.value = ej.video_url || "";
   
-  // Parsear pasos
-  const pCont = document.getElementById('pasosContainer');
+  // 6. Parsear Pasos de Ejecución (Pestaña Indicaciones)
+  const pCont = document.getElementById("pasosContainer");
   if (pCont) {
-      pCont.innerHTML = '';
-      if (ej.descripcion) {
-          const lineas = ej.descripcion.split('\n');
+      pCont.innerHTML = "";
+      const textoIndicaciones = ej.indicaciones || ej.descripcion || "";
+      if (textoIndicaciones) {
+          const lineas = textoIndicaciones.split("\n");
           lineas.forEach(l => {
-              const trim = l.replace(/^(Paso \d+:|-)\s*/i, '').trim();
+              const trim = l.replace(/^(Paso \d+:|-)\s*/i, "").trim();
               if (trim) window.agregarPaso(trim);
           });
       }
       if (pCont.children.length === 0) window.agregarPaso();
   }
 
-  const title3 = document.getElementById('nivel3Title');
+  // 7. Parsear Pasos de Configuración de Máquina (Pestaña Configuración)
+  const cfgCont = document.getElementById("configPasosContainer");
+  if (cfgCont) {
+    cfgCont.innerHTML = "";
+    let pasosCfg = [];
+    if (ej.configuracion_maquina) {
+      try {
+        pasosCfg = (typeof ej.configuracion_maquina === "string")
+          ? JSON.parse(ej.configuracion_maquina)
+          : ej.configuracion_maquina;
+      } catch (err) {
+        console.warn("Error parsing configuracion_maquina:", err);
+      }
+    }
+    if (Array.isArray(pasosCfg) && pasosCfg.length > 0) {
+      pasosCfg.forEach(p => {
+        window.agregarPasoConfig(p.texto || "", p.media || null, p.tipo_media || null);
+      });
+    }
+  }
+
+  const title3 = document.getElementById("nivel3Title");
   if (title3) title3.textContent = `Editar: ${ej.nombre}`;
   
-  const delWrap = document.getElementById('ejDeleteWrap');
+  const delWrap = document.getElementById("ejDeleteWrap");
   if (delWrap) {
-      delWrap.style.display = 'block';
+      delWrap.style.display = "block";
       delWrap.dataset.ejId = ej.id;
       delWrap.dataset.ejNombre = ej.nombre;
   }
 
+  window.setDrillFormTab("indicaciones");
   window.activeNivelAnt = nivelOrigen;
   window.irNivel(3);
 };
 
-// Media select handle
-window.handleMediaSelect = function(input) {
-  const file = input.files[0];
-  const label = document.getElementById('mediaFileName');
-  if (label) {
-      if (file) {
-          label.style.display = 'inline-block';
-          label.textContent = file.name;
-      } else {
-          label.style.display = 'none';
-      }
-  }
-};
-
-// Pasos Dinamicos
-window.agregarPaso = function(texto = '') {
-  const cont = document.getElementById('pasosContainer');
-  if (!cont) return;
-  const count = cont.children.length + 1;
-  const div = document.createElement('div');
-  div.className = 'paso-item';
-  div.innerHTML = `
-      <div class="paso-num">${count}</div>
-      <textarea class="paso-input" rows="2" placeholder="Describe este paso...">${texto}</textarea>
-      <button type="button" class="paso-del" onclick="this.parentElement.remove(); window.reindexarPasos();" title="Eliminar paso"><i class="ti ti-trash"></i></button>
-  `;
-  cont.appendChild(div);
-  window.reindexarPasos();
-};
-
-window.reindexarPasos = function() {
-  const cont = document.getElementById('pasosContainer');
-  if (!cont) return;
-  Array.from(cont.children).forEach((item, index) => {
-      const num = item.querySelector('.paso-num');
-      if (num) num.textContent = index + 1;
-  });
-};
-
 window.consolidarPasos = function() {
-  const inputs = document.querySelectorAll('#pasosContainer .paso-input');
+  // 1. Indicaciones biomecánicas
+  const inputs = document.querySelectorAll("#pasosContainer .paso-input");
   let lineas = [];
   inputs.forEach((inp, idx) => {
       const val = inp.value.trim();
       if (val) lineas.push(`Paso ${idx+1}: ${val}`);
   });
-  const legacy = document.getElementById('ej_desc_legacy');
-  if (legacy) legacy.value = lineas.join('\n');
+  const legacy = document.getElementById("ej_desc_legacy");
+  if (legacy) legacy.value = lineas.join("\n");
+  const indInput = document.getElementById("ej_indicaciones_input");
+  if (indInput) indInput.value = lineas.join("\n");
+
+  // 2. Pasos de Configuración de Máquina
+  const cfgItems = document.querySelectorAll("#configPasosContainer .paso-cfg-item");
+  const pasosCfg = [];
+  cfgItems.forEach((item, idx) => {
+    const txt = (item.querySelector(".paso-cfg-input")?.value || "").trim();
+    const existingMedia = item.querySelector(`input[id^="cfg_existing_media_"]`)?.value || null;
+    const delMedia = item.querySelector(`input[id^="cfg_del_media_"]`)?.value === "1";
+    pasosCfg.push({
+      paso: idx + 1,
+      texto: txt,
+      media: delMedia ? null : existingMedia,
+      eliminar_media: delMedia ? 1 : 0
+    });
+  });
+  const cfgInput = document.getElementById("ej_cfg_maquina_input");
+  if (cfgInput) cfgInput.value = JSON.stringify(pasosCfg);
 };
 
 window.guardarEjercicio = async function(e) {
   e.preventDefault();
   window.consolidarPasos();
-  const form = document.getElementById('formEjercicio');
+  const form = document.getElementById("formEjercicio");
   const fd   = new FormData(form);
-  const token = fd.get('csrf_token') || window.CSRF || '';
-  if (!fd.get('csrf_token')) {
-      fd.append('csrf_token', token);
+  const token = fd.get("csrf_token") || window.CSRF || "";
+  if (!fd.get("csrf_token")) {
+      fd.append("csrf_token", token);
   }
-  const id   = fd.get('id');
-  const appBase = window.APP || '';
-  const url  = id ? (appBase + '/entrenador/api-catalogo-editar') : (appBase + '/entrenador/api-catalogo-agregar');
-  const btn  = document.getElementById('btnGuardarEj');
+  const id   = fd.get("id");
+  const appBase = window.APP || "";
+  const url  = id ? (appBase + "/entrenador/api-catalogo-editar") : (appBase + "/entrenador/api-catalogo-agregar");
+  const btn  = document.getElementById("btnGuardarEj");
   
   if (btn) {
       btn.disabled = true;

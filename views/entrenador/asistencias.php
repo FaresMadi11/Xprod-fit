@@ -932,6 +932,507 @@
   .xp-footer { display: none !important; }
   .cd-panel.is-active { padding-bottom: 80px; }
 }
+
+/* ════ ESTILOS PARA RUTINAS PLEGADAS, THUMBNAILS Y MODAL BENTO UI ════ */
+.cdd-ejercicio-card.is-collapsed .cdd-series-table {
+  display: none !important;
+}
+.cdd-ej-header {
+  cursor: pointer;
+  user-select: none;
+}
+.cdd-ej-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cdd-ej-summary-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #a78bfa;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 99px;
+  padding: 3px 9px;
+}
+.cdd-ej-chevron {
+  font-size: 1.15rem;
+  color: #94a3b8;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cdd-ejercicio-card:not(.is-collapsed) .cdd-ej-chevron {
+  transform: rotate(180deg);
+  color: #fff;
+}
+.cdd-ej-thumb-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(139, 92, 246, 0.35);
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.cdd-ej-thumb-btn:hover {
+  transform: scale(1.05);
+  border-color: #b388ff;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+}
+.cdd-ej-thumb-btn:active {
+  transform: scale(0.96);
+}
+.cdd-ej-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cdd-ej-thumb-placeholder {
+  color: #a78bfa;
+  font-size: 1.3rem;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(139, 92, 246, 0.08);
+}
+.cdd-ej-thumb-zoom-icon {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  padding: 1px 3px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Controles de series interactivos para entrenador */
+.cdd-live-input-wrap {
+  display: flex;
+  justify-content: center;
+}
+.cdd-live-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-align: center;
+  width: 60px;
+  height: 32px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.cdd-live-input:focus {
+  border-color: #8a2be2;
+  background: rgba(138, 43, 226, 0.12);
+}
+.cdd-live-cell-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.cdd-btn-serie-check {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 1.05rem;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+}
+.cdd-btn-serie-check:hover {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+.cdd-btn-serie-check.is-checked {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.45);
+}
+.cdd-st-row.is-serie-completed {
+  background: rgba(16, 185, 129, 0.04);
+}
+.cdd-st-row.is-serie-completed .cdd-box-num {
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #10b981;
+}
+
+/* Columnas ajustadas para incluir check interactivo */
+.cdd-st-head, .cdd-st-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 1fr 44px 34px;
+  gap: 8px;
+  align-items: center;
+}
+.cdd-series-table.no-rir .cdd-st-head,
+.cdd-series-table.no-rir .cdd-st-row {
+  grid-template-columns: 36px 1fr 1fr 34px;
+}
+
+/* ════ MODAL BENTO UI DETALLE DE EJERCICIO ════ */
+.cdd-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 5, 10, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10050;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+.cdd-modal-backdrop.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+.cdd-modal-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -46%) scale(0.96);
+  width: min(92vw, 560px);
+  height: min(88vh, 740px);
+  background: #0d0f18;
+  border: 1px solid rgba(138, 43, 226, 0.35);
+  border-radius: 22px;
+  z-index: 10051;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), 0 0 24px rgba(138, 43, 226, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cdd-modal-container.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+.cdd-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(18, 20, 32, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+.cdd-modal-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cdd-modal-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #b388ff;
+}
+.cdd-modal-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cdd-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+.cdd-modal-close:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+.cdd-modal-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── MITAD SUPERIOR: Carrusel de Medios (48%) ── */
+.cdd-modal-media-section {
+  height: 48%;
+  background: #06070b;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cdd-carousel-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+.cdd-carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.32s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
+}
+.cdd-carousel-slide {
+  min-width: 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+}
+.cdd-carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.cdd-carousel-slide video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+.cdd-carousel-slide iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.cdd-slide-label {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.5px;
+  z-index: 4;
+}
+.cdd-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 5;
+  font-size: 1.1rem;
+  transition: background 0.18s, transform 0.18s;
+}
+.cdd-carousel-arrow:hover {
+  background: rgba(138, 43, 226, 0.65);
+  transform: translateY(-50%) scale(1.08);
+}
+.cdd-carousel-arrow.prev { left: 10px; }
+.cdd-carousel-arrow.next { right: 10px; }
+.cdd-carousel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+.cdd-carousel-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: all 0.22s ease;
+}
+.cdd-carousel-dot.active {
+  width: 20px;
+  background: #b388ff;
+  box-shadow: 0 0 8px rgba(179, 136, 255, 0.6);
+}
+
+/* ── MITAD INFERIOR: Pestañas Indicaciones & Configuración (52%) ── */
+.cdd-modal-info-section {
+  height: 52%;
+  display: flex;
+  flex-direction: column;
+  background: #111422;
+  min-height: 0;
+  position: relative;
+}
+.cdd-modal-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+.cdd-modal-tab-btn {
+  flex: 1;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+  font-family: inherit;
+}
+.cdd-modal-tab-btn:hover {
+  color: #fff;
+}
+.cdd-modal-tab-btn.is-active {
+  color: #ffffff;
+  border-bottom-color: #8a2be2;
+  background: rgba(138, 43, 226, 0.08);
+}
+.cdd-modal-tab-panes {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.cdd-tab-pane {
+  display: none;
+}
+.cdd-tab-pane.is-active {
+  display: block;
+  animation: cddFadeIn 0.22s ease;
+}
+@keyframes cddFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tarjetas de pasos */
+.cdd-step-card {
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.cdd-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(138, 43, 226, 0.2);
+  border: 1px solid rgba(138, 43, 226, 0.4);
+  color: #c4b5fd;
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.cdd-step-body {
+  flex: 1;
+  min-width: 0;
+}
+.cdd-step-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+.cdd-step-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.45;
+}
+.cdd-step-media-thumb {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+}
+.cdd-step-media-video {
+  width: 100%;
+  max-height: 180px;
+  border-radius: 10px;
+  margin-top: 10px;
+  background: #000;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: block;
+}
+.cdd-modal-empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.cdd-modal-empty i {
+  font-size: 2.2rem;
+  color: #475569;
+}
 </style>
 
 <div class="cd-page">
@@ -983,7 +1484,7 @@
             role="tab" aria-selected="true" aria-controls="panelPendientes"
             onclick="setTab('pendientes')">
       <i class="ti ti-barbell" aria-hidden="true"></i>
-      <span class="cd-tab-text">Pendientes</span>
+      <span class="cd-tab-text">Rutinas</span>
       <?php if($cntPend > 0): ?>
         <span class="cd-badge cd-badge-blue" aria-label="<?= $cntPend ?> pendientes"><?= $cntPend ?></span>
       <?php endif; ?>
@@ -1611,6 +2112,469 @@ function getImplementoBadge(equip) {
 }
 
 /* Renderiza el contenido del cajón de rutina (Bento UI categorizado) */
+function toggleEjercicioCard(cardEl) {
+  if (!cardEl) return;
+  cardEl.classList.toggle('is-collapsed');
+}
+
+/* Guardar o actualizar serie realizada por el atleta desde la vista del entrenador */
+async function guardarSerieEntrenador(clienteId, ejercicioId, numSerie, tipoImp, unidadCarga, tipoSerie, rowEl) {
+  if (!rowEl) return;
+  const pesoInput = rowEl.querySelector('.cdd-live-peso');
+  const repsInput = rowEl.querySelector('.cdd-live-reps');
+  const checkBtn  = rowEl.querySelector('.cdd-btn-serie-check');
+
+  const peso = (tipoImp === 'sin_peso') ? 0 : (pesoInput && pesoInput.value !== '' ? parseFloat(pesoInput.value) : null);
+  const reps = (repsInput && repsInput.value !== '') ? parseInt(repsInput.value, 10) : 10;
+  const isCompletado = checkBtn ? checkBtn.classList.contains('is-checked') : false;
+
+  try {
+    const res = await fetch('<?= APP_URL ?>/entrenador/api-guardar-serie-atleta', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': window.CSRF || ''
+      },
+      body: JSON.stringify({
+        cliente_id: clienteId,
+        ejercicio_id: ejercicioId,
+        numero_serie: numSerie,
+        peso: peso,
+        reps: reps,
+        tipo_implemento: tipoImp,
+        unidad_carga: unidadCarga,
+        tipo_serie: tipoSerie,
+        completado: isCompletado ? 1 : 0,
+        fecha: fechaGlobal
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      throw new Error(data.msg || 'No se pudo guardar la serie.');
+    }
+  } catch (err) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message,
+        background: '#141724',
+        color: '#fff',
+        timer: 3000
+      });
+    }
+  }
+}
+
+async function toggleSerieCheckEntrenador(clienteId, ejercicioId, numSerie, tipoImp, unidadCarga, tipoSerie, btn) {
+  const rowEl = btn.closest('.cdd-st-row');
+  if (!rowEl) return;
+  const wasChecked = btn.classList.contains('is-checked');
+  const newChecked = !wasChecked;
+
+  // Optimistic UI toggle
+  btn.classList.toggle('is-checked', newChecked);
+  rowEl.classList.toggle('is-serie-completed', newChecked);
+
+  const pesoInput = rowEl.querySelector('.cdd-live-peso');
+  const repsInput = rowEl.querySelector('.cdd-live-reps');
+
+  const peso = (tipoImp === 'sin_peso') ? 0 : (pesoInput && pesoInput.value !== '' ? parseFloat(pesoInput.value) : null);
+  const reps = (repsInput && repsInput.value !== '') ? parseInt(repsInput.value, 10) : 10;
+
+  try {
+    const res = await fetch('<?= APP_URL ?>/entrenador/api-guardar-serie-atleta', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': window.CSRF || ''
+      },
+      body: JSON.stringify({
+        cliente_id: clienteId,
+        ejercicio_id: ejercicioId,
+        numero_serie: numSerie,
+        peso: peso,
+        reps: reps,
+        tipo_implemento: tipoImp,
+        unidad_carga: unidadCarga,
+        tipo_serie: tipoSerie,
+        completado: newChecked ? 1 : 0,
+        fecha: fechaGlobal
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      throw new Error(data.msg || 'Error al guardar estado de la serie');
+    }
+
+    // Actualizar cache local
+    const cacheKey = `${clienteId}_${fechaGlobal}`;
+    if (rutinaAtletaCache.has(cacheKey)) {
+      const cacheData = rutinaAtletaCache.get(cacheKey);
+      if (cacheData && Array.isArray(cacheData.ejercicios)) {
+        const targetEj = cacheData.ejercicios.find(e => parseInt(e.id || 0) === ejercicioId);
+        if (targetEj && Array.isArray(targetEj.series_detalle)) {
+          const targetSerie = targetEj.series_detalle.find(s => parseInt(s.numero || 1) === numSerie);
+          if (targetSerie) {
+            targetSerie.completado = newChecked;
+            targetSerie.peso = peso;
+            targetSerie.reps = reps;
+          }
+        }
+      }
+    }
+
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: newChecked ? 'success' : 'info',
+        title: newChecked ? `Serie ${numSerie} completada` : `Serie ${numSerie} desmarcada`,
+        showConfirmButton: false,
+        timer: 1600,
+        background: '#141724',
+        color: '#fff'
+      });
+    }
+  } catch (err) {
+    // Revert optimistic
+    btn.classList.toggle('is-checked', wasChecked);
+    rowEl.classList.toggle('is-serie-completed', wasChecked);
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message,
+        background: '#141724',
+        color: '#fff'
+      });
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL BENTO UI DETALLE DE EJERCICIO (CARRUSEL + INDICACIONES + CONFIG)
+   ═══════════════════════════════════════════════════════════════ */
+let currentCarouselIndex = 0;
+let carouselSlides = [];
+
+function abrirModalEjercicioAsistencias(ej) {
+  if (!ej) return;
+  const modal = document.getElementById('modalEjercicioAsistencias');
+  const backdrop = document.getElementById('modalBackdropEjercicioAsistencias');
+  if (!modal || !backdrop) return;
+
+  // Título y Badge
+  const titEl = document.getElementById('modalEjTitulo');
+  const badgeEl = document.getElementById('modalEjBadge');
+  if (titEl) titEl.textContent = ej.nombre || 'Detalle del Ejercicio';
+  if (badgeEl) badgeEl.textContent = (ej.grupo_muscular || 'Ejercicio').toUpperCase();
+
+  // Construir Diapositivas de Medios (Portada, Demostración, Video)
+  const track = document.getElementById('modalCarouselTrack');
+  const dotsContainer = document.getElementById('modalCarouselDots');
+  const prevBtn = document.getElementById('btnCarouselPrev');
+  const nextBtn = document.getElementById('btnCarouselNext');
+
+  carouselSlides = [];
+  if (track) track.innerHTML = '';
+  if (dotsContainer) dotsContainer.innerHTML = '';
+
+  const appBase = '<?= APP_URL ?>';
+
+  // 1. Portada
+  if (ej.imagen_path) {
+    const src = ej.imagen_path.startsWith('http') ? ej.imagen_path : `${appBase}/${ej.imagen_path}`;
+    carouselSlides.push({
+      tipo: 'imagen',
+      etiqueta: 'Portada',
+      src: src
+    });
+  }
+
+  // 2. Demostración
+  if (ej.imagen_demo_path) {
+    const src = ej.imagen_demo_path.startsWith('http') ? ej.imagen_demo_path : `${appBase}/${ej.imagen_demo_path}`;
+    carouselSlides.push({
+      tipo: 'imagen',
+      etiqueta: 'Demostración',
+      src: src
+    });
+  }
+
+  // 3. Video
+  if (ej.video_url) {
+    carouselSlides.push({
+      tipo: 'video',
+      etiqueta: 'Video Demostrativo',
+      src: ej.video_url
+    });
+  }
+
+  // Si no hay ningún medio, mostrar portada genérica
+  if (carouselSlides.length === 0) {
+    carouselSlides.push({
+      tipo: 'placeholder',
+      etiqueta: 'Sin medios',
+      src: null
+    });
+  }
+
+  carouselSlides.forEach((slide, idx) => {
+    const slideDiv = document.createElement('div');
+    slideDiv.className = 'cdd-carousel-slide';
+    
+    let mediaHtml = '';
+    if (slide.tipo === 'imagen') {
+      mediaHtml = `<img src="${slide.src}" alt="${esc(ej.nombre)} - ${slide.etiqueta}" loading="lazy">`;
+    } else if (slide.tipo === 'video') {
+      const vUrl = slide.src;
+      if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
+        let ytId = '';
+        const m1 = vUrl.match(/v=([^&]+)/);
+        const m2 = vUrl.match(/youtu\.be\/([^?]+)/);
+        if (m1) ytId = m1[1];
+        else if (m2) ytId = m2[1];
+        mediaHtml = `<iframe src="https://www.youtube.com/embed/${ytId}?rel=0" allowfullscreen allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"></iframe>`;
+      } else {
+        const fullV = vUrl.startsWith('http') ? vUrl : `${appBase}/${vUrl}`;
+        mediaHtml = `<video controls playsinline preload="metadata"><source src="${fullV}"></video>`;
+      }
+    } else {
+      mediaHtml = `
+        <div class="cdd-modal-empty">
+          <i class="ti ti-photo-off"></i>
+          <span>No hay imágenes ni videos registrados para este ejercicio.</span>
+        </div>`;
+    }
+
+    slideDiv.innerHTML = `
+      <span class="cdd-slide-label">${slide.etiqueta}</span>
+      ${mediaHtml}
+    `;
+    track.appendChild(slideDiv);
+
+    // Dot
+    const dot = document.createElement('div');
+    dot.className = `cdd-carousel-dot ${idx === 0 ? 'active' : ''}`;
+    dot.onclick = () => irASlide(idx);
+    dotsContainer.appendChild(dot);
+  });
+
+  currentCarouselIndex = 0;
+  actualizarTrackCarrusel();
+
+  if (prevBtn && nextBtn) {
+    const showArrows = carouselSlides.length > 1;
+    prevBtn.style.display = showArrows ? 'grid' : 'none';
+    nextBtn.style.display = showArrows ? 'grid' : 'none';
+  }
+
+  // ── Renderizar Pestaña 1: Indicaciones ──
+  const contInd = document.getElementById('modalContentIndicaciones');
+  let indHtml = '';
+  let indicacionesArr = [];
+  try {
+    if (typeof ej.indicaciones === 'string' && ej.indicaciones.trim().startsWith('[')) {
+      indicacionesArr = JSON.parse(ej.indicaciones);
+    } else if (Array.isArray(ej.indicaciones)) {
+      indicacionesArr = ej.indicaciones;
+    } else if (ej.indicaciones) {
+      indicacionesArr = [{ titulo: 'Indicación biomecánica', descripcion: String(ej.indicaciones) }];
+    }
+  } catch (e) {
+    if (ej.indicaciones) indicacionesArr = [{ titulo: 'Indicación', descripcion: String(ej.indicaciones) }];
+  }
+
+  if (indicacionesArr.length === 0) {
+    indHtml = `
+      <div class="cdd-modal-empty">
+        <i class="ti ti-notes-off"></i>
+        <span>No se han definido indicaciones biomecánicas para este ejercicio.</span>
+      </div>`;
+  } else {
+    indicacionesArr.forEach((p, i) => {
+      indHtml += `
+        <div class="cdd-step-card">
+          <div class="cdd-step-num">${i + 1}</div>
+          <div class="cdd-step-body">
+            <div class="cdd-step-title">${esc(p.titulo || `Paso ${i + 1}`)}</div>
+            <div class="cdd-step-desc">${esc(p.descripcion || p.texto || '')}</div>
+          </div>
+        </div>`;
+    });
+  }
+  if (contInd) contInd.innerHTML = indHtml;
+
+  // ── Renderizar Pestaña 2: Configuración de Máquina ──
+  const contCfg = document.getElementById('modalContentConfiguracion');
+  let cfgHtml = '';
+  let cfgPasos = [];
+  try {
+    if (typeof ej.configuracion_maquina === 'string' && ej.configuracion_maquina.trim().startsWith('[')) {
+      cfgPasos = JSON.parse(ej.configuracion_maquina);
+    } else if (Array.isArray(ej.configuracion_maquina)) {
+      cfgPasos = ej.configuracion_maquina;
+    }
+  } catch (e) {
+    cfgPasos = [];
+  }
+
+  if (cfgPasos.length === 0) {
+    cfgHtml = `
+      <div class="cdd-modal-empty">
+        <i class="ti ti-settings-off"></i>
+        <span>No se han configurado ajustes de máquina o implemento para este ejercicio.</span>
+      </div>`;
+  } else {
+    cfgPasos.forEach((p, i) => {
+      let mediaStepHtml = '';
+      if (p.media_path) {
+        const fullMedia = p.media_path.startsWith('http') ? p.media_path : `${appBase}/${p.media_path}`;
+        const isVid = p.media_tipo === 'video' || /\.(mp4|webm|mov)$/i.test(p.media_path);
+        if (isVid) {
+          mediaStepHtml = `<video controls playsinline preload="metadata" class="cdd-step-media-video"><source src="${fullMedia}"></video>`;
+        } else {
+          mediaStepHtml = `<img src="${fullMedia}" alt="Ajuste paso ${i+1}" class="cdd-step-media-thumb" loading="lazy">`;
+        }
+      }
+
+      cfgHtml += `
+        <div class="cdd-step-card">
+          <div class="cdd-step-num">${i + 1}</div>
+          <div class="cdd-step-body">
+            <div class="cdd-step-title">${esc(p.titulo || `Ajuste ${i + 1}`)}</div>
+            <div class="cdd-step-desc">${esc(p.descripcion || '')}</div>
+            ${mediaStepHtml}
+          </div>
+        </div>`;
+    });
+  }
+  if (contCfg) contCfg.innerHTML = cfgHtml;
+
+  // Abrir en pestaña "indicaciones" por defecto
+  setModalTab('indicaciones');
+
+  // Inicializar Swipe táctil
+  initModalTouchGestures();
+
+  // Abrir Modal
+  backdrop.classList.add('is-open');
+  modal.classList.add('is-open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalEjercicioAsistencias() {
+  const modal = document.getElementById('modalEjercicioAsistencias');
+  const backdrop = document.getElementById('modalBackdropEjercicioAsistencias');
+  if (modal) modal.classList.remove('is-open');
+  if (backdrop) backdrop.classList.remove('is-open');
+  document.body.style.overflow = '';
+}
+
+function setModalTab(tab) {
+  const btnInd = document.getElementById('tabBtnIndicaciones');
+  const btnCfg = document.getElementById('tabBtnConfiguracion');
+  const paneInd = document.getElementById('paneIndicaciones');
+  const paneCfg = document.getElementById('paneConfiguracion');
+
+  const isInd = (tab === 'indicaciones');
+
+  if (btnInd) {
+    btnInd.classList.toggle('is-active', isInd);
+    btnInd.setAttribute('aria-selected', isInd ? 'true' : 'false');
+  }
+  if (btnCfg) {
+    btnCfg.classList.toggle('is-active', !isInd);
+    btnCfg.setAttribute('aria-selected', !isInd ? 'true' : 'false');
+  }
+  if (paneInd) paneInd.classList.toggle('is-active', isInd);
+  if (paneCfg) paneCfg.classList.toggle('is-active', !isInd);
+}
+
+function moverCarrusel(delta) {
+  if (carouselSlides.length <= 1) return;
+  currentCarouselIndex = (currentCarouselIndex + delta + carouselSlides.length) % carouselSlides.length;
+  actualizarTrackCarrusel();
+}
+
+function irASlide(idx) {
+  if (idx < 0 || idx >= carouselSlides.length) return;
+  currentCarouselIndex = idx;
+  actualizarTrackCarrusel();
+}
+
+function actualizarTrackCarrusel() {
+  const track = document.getElementById('modalCarouselTrack');
+  const dots = document.querySelectorAll('#modalCarouselDots .cdd-carousel-dot');
+  if (track) {
+    track.style.transform = `translateX(-${currentCarouselIndex * 100}%)`;
+  }
+  dots.forEach((d, i) => d.classList.toggle('active', i === currentCarouselIndex));
+}
+
+// Soporte para gestos Swipe táctiles en Carrusel y Pestañas
+let modalGesturesInit = false;
+function initModalTouchGestures() {
+  if (modalGesturesInit) return;
+  modalGesturesInit = true;
+
+  // Swipe en Carrusel (Mitad Superior)
+  const carouselWrapper = document.getElementById('modalCarouselWrapper');
+  if (carouselWrapper) {
+    let startX = 0;
+    let startY = 0;
+    carouselWrapper.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    carouselWrapper.addEventListener('touchend', (e) => {
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+      const diffX = endX - startX;
+      const diffY = endY - startY;
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          moverCarrusel(1); // Swipe izquierda -> siguiente
+        } else {
+          moverCarrusel(-1); // Swipe derecha -> anterior
+        }
+      }
+    }, { passive: true });
+  }
+
+  // Swipe en Pestañas (Mitad Inferior)
+  const tabPanes = document.getElementById('modalTabPanes');
+  if (tabPanes) {
+    let startX = 0;
+    let startY = 0;
+    tabPanes.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    tabPanes.addEventListener('touchend', (e) => {
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+      const diffX = endX - startX;
+      const diffY = endY - startY;
+      if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          // Swipe izquierda -> cambiar a Configuración
+          setModalTab('configuracion');
+        } else {
+          // Swipe derecha -> cambiar a Indicaciones
+          setModalTab('indicaciones');
+        }
+      }
+    }, { passive: true });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDERIZADOR DE RUTINA DRAWER CON PLEGADO, THUMBNAIL Y SERIES EN VIVO
+   ═══════════════════════════════════════════════════════════════ */
 function renderRutinaDrawer(drawer, data, modoTab) {
   if (!data || !data.ok) {
     drawer.innerHTML = `
@@ -1705,6 +2669,7 @@ function renderRutinaDrawer(drawer, data, modoTab) {
         const safeNombre = esc(ej.nombre).replace(/'/g, "\\'");
         const safeReps = esc(reps).replace(/'/g, "\\'");
         const safeImp = esc(implementoVal).replace(/'/g, "\\'");
+        const ejJsonEsc = JSON.stringify(ej).replace(/"/g, '&quot;');
 
         const isSinPeso = (implementoVal === 'sin_peso') || 
                           String(ej.equipamiento || '').toLowerCase().includes('peso corporal') || 
@@ -1764,6 +2729,7 @@ function renderRutinaDrawer(drawer, data, modoTab) {
             </div>
           `;
         } else {
+          // Vista Interactiva de Rutinas: el entrenador puede marcar y editar series para el atleta
           const seriesList = Array.isArray(ej.series_detalle) && ej.series_detalle.length > 0
             ? ej.series_detalle
             : Array.from({ length: Math.max(1, seriesCount) }, (_, i) => ({
@@ -1771,7 +2737,8 @@ function renderRutinaDrawer(drawer, data, modoTab) {
                 tipo: 'normal',
                 reps: reps,
                 peso: null,
-                rir: rir
+                rir: rir,
+                completado: false
               }));
 
           const plannedRows = seriesList.map(s => {
@@ -1790,52 +2757,84 @@ function renderRutinaDrawer(drawer, data, modoTab) {
               badgeText = 'D';
             }
 
-            let pesoText = '—';
-            let pesoIsBodyweight = false;
-            if (isSinPeso) {
-              pesoText = '<i class="ti ti-user-check"></i> Corporal';
-              pesoIsBodyweight = true;
-            } else if (s.peso != null && parseFloat(s.peso) > 0) {
-              const pVal = parseFloat(s.peso);
-              if (implementoVal === 'mancuerna') {
-                pesoText = `${pVal} kg <small style="color:#64748b">c/u</small>`;
-              } else if (ej.unidad_carga === 'placas') {
-                pesoText = `${pVal} placas`;
-              } else {
-                pesoText = `${pVal} kg`;
-              }
-            } else {
-              if (implementoVal === 'barra') {
-                pesoText = 'Barra libre';
-              } else if (implementoVal === 'mancuerna') {
-                pesoText = 'Mancuernas';
-              } else if (implementoVal === 'polea_maquina') {
-                pesoText = ej.unidad_carga === 'placas' ? 'Placas' : 'Máquina';
-              } else {
-                pesoText = 'Barra libre';
-              }
+            const isDone = Boolean(s.completado);
+
+            // Peso asignado o editado
+            let pesoVal = '';
+            if (s.peso != null && parseFloat(s.peso) > 0) {
+              pesoVal = parseFloat(s.peso);
+            } else if (ej.peso_objetivo != null && parseFloat(ej.peso_objetivo) > 0) {
+              pesoVal = parseFloat(ej.peso_objetivo);
             }
 
-            const repsNum = esc(s.reps != null ? s.reps : reps);
+            let pesoControl = '';
+            if (isSinPeso) {
+              pesoControl = '<span class="cdd-live-cell-tag"><i class="ti ti-user-check"></i> Corporal</span>';
+            } else {
+              const unitPh = (ej.unidad_carga === 'placas') ? 'Placas' : 'Kg';
+              pesoControl = `
+                <div class="cdd-live-input-wrap">
+                  <input type="number" step="${ej.unidad_carga === 'placas' ? '1' : '0.5'}" min="0" max="500"
+                         class="cdd-live-input cdd-live-peso" value="${pesoVal}" placeholder="${unitPh}"
+                         onchange="guardarSerieEntrenador(${cid}, ${ejId}, ${sNum}, '${safeImp}', '${ej.unidad_carga || 'kg'}', '${sTipo}', this.closest('.cdd-st-row'))"
+                         aria-label="Carga serie ${sNum}">
+                </div>`;
+            }
+
+            // Reps asignadas o editadas
+            let repsVal = '';
+            if (s.reps != null && s.reps !== '') {
+              repsVal = s.reps;
+            } else if (reps !== '—') {
+              repsVal = reps;
+            }
+
+            const repsControl = `
+              <div class="cdd-live-input-wrap">
+                <input type="number" step="1" min="1" max="100"
+                       class="cdd-live-input cdd-live-reps" value="${repsVal}" placeholder="Reps"
+                       onchange="guardarSerieEntrenador(${cid}, ${ejId}, ${sNum}, '${safeImp}', '${ej.unidad_carga || 'kg'}', '${sTipo}', this.closest('.cdd-st-row'))"
+                       aria-label="Reps serie ${sNum}">
+              </div>`;
+
+            // RIR (si no fue desmarcado)
             const rirVal = s.rir != null ? s.rir : rir;
+            const rirHtml = (ej.rir_desmarcado || ej.rir === null)
+              ? ''
+              : `<div class="cdd-cell-rir"><span class="cdd-data-rir" title="Reps en reserva">@${esc(rirVal)}</span></div>`;
+
+            // Botón interactivo de serie completada
+            const checkBtn = `
+              <div class="cdd-cell-check">
+                <button type="button" class="cdd-btn-serie-check ${isDone ? 'is-checked' : ''}"
+                        onclick="toggleSerieCheckEntrenador(${cid}, ${ejId}, ${sNum}, '${safeImp}', '${ej.unidad_carga || 'kg'}', '${sTipo}', this)"
+                        title="${isDone ? 'Serie completada (clic para desmarcar)' : 'Marcar serie como completada'}">
+                  <i class="ti ti-check"></i>
+                </button>
+              </div>`;
 
             return `
-              <div class="cdd-st-row">
+              <div class="cdd-st-row ${isDone ? 'is-serie-completed' : ''}" data-num-serie="${sNum}" data-ej-id="${ejId}">
                 <div class="cdd-box-num ${badgeClass}" title="Serie ${sNum} (${sTipo})">${badgeText}</div>
-                <div class="cdd-cell-peso ${pesoIsBodyweight ? 'is-bodyweight' : ''}" title="Carga asignada">${pesoText}</div>
-                <div class="cdd-cell-reps">${repsNum}<small>reps</small></div>
-                <div class="cdd-cell-rir"><span class="cdd-data-rir" title="Reps en reserva">@${esc(rirVal)}</span></div>
+                <div class="cdd-cell-peso">${pesoControl}</div>
+                <div class="cdd-cell-reps">${repsControl}</div>
+                ${rirHtml}
+                ${checkBtn}
               </div>
             `;
           }).join('');
 
+          const isRirHidden = Boolean(ej.rir_desmarcado || ej.rir === null);
+          const rirTh = isRirHidden ? '' : '<span class="cdd-st-th col-center">RIR</span>';
+
           seriesTableHtml = `
-            <div class="cdd-series-table">
+            <div class="cdd-series-table ${isRirHidden ? 'no-rir' : ''}">
               <div class="cdd-st-head">
                 <span class="cdd-st-th col-center">Serie</span>
                 <span class="cdd-st-th">Carga</span>
                 <span class="cdd-st-th col-center">Reps</span>
-                <span class="cdd-st-th col-right">RIR</span>
+                ${rirTh}
+                <span class="cdd-st-th col-right">✓</span>
               </div>
               <div class="cdd-st-body">
                 ${plannedRows}
@@ -1852,11 +2851,22 @@ function renderRutinaDrawer(drawer, data, modoTab) {
             <i class="ti ti-dots-vertical"></i>
           </button>` : '';
 
+        // Thumbnail button para abrir Modal Bento UI
+        const thumbBtn = `
+          <button type="button" class="cdd-ej-thumb-btn"
+                  onclick="event.stopPropagation(); abrirModalEjercicioAsistencias(${ejJsonEsc})"
+                  title="Ver indicaciones y configuración de máquina" aria-label="Ver detalles de ${esc(ej.nombre)}">
+            ${ej.imagen_path
+              ? `<img src="<?= APP_URL ?>/${esc(ej.imagen_path)}" alt="${esc(ej.nombre)}" class="cdd-ej-thumb-img" loading="lazy">`
+              : `<div class="cdd-ej-thumb-placeholder"><i class="ti ti-barbell"></i></div>`}
+            <span class="cdd-ej-thumb-zoom-icon"><i class="ti ti-zoom-in"></i></span>
+          </button>`;
+
         ejHtml += `
-          <div class="cdd-ejercicio-card" id="cdd-ej-${ejId}">
-            <div class="cdd-ej-header">
+          <div class="cdd-ejercicio-card is-collapsed" id="cdd-ej-${ejId}">
+            <div class="cdd-ej-header" onclick="toggleEjercicioCard(this.closest('.cdd-ejercicio-card'))">
               <div class="cdd-ej-left">
-                <div class="cdd-ej-num">${globalIdx++}</div>
+                ${thumbBtn}
                 <div class="cdd-ej-info">
                   <div class="cdd-ej-name-row">
                     <span class="cdd-ej-nombre">${esc(ej.nombre)}</span>
@@ -1864,7 +2874,11 @@ function renderRutinaDrawer(drawer, data, modoTab) {
                   </div>
                 </div>
               </div>
-              ${dotsBtn}
+              <div class="cdd-ej-right">
+                <span class="cdd-ej-summary-pill">${seriesCount} series &middot; ${esc(reps)} reps</span>
+                ${dotsBtn}
+                <i class="ti ti-chevron-down cdd-ej-chevron"></i>
+              </div>
             </div>
             ${seriesTableHtml}
           </div>
@@ -2582,6 +3596,62 @@ function eliminarEjercicioDeCache(clienteId, ejId) {
     <div>
       <div style="font-weight:700">Eliminar de la Rutina</div>
       <div style="font-size:.75rem;color:#f87171;margin-top:1px">Quitar ejercicio de la sesión</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════ MODAL BENTO UI: Detalle Ejercicio (Media Carrusel + Indicaciones & Configuración) ════ -->
+<div class="cdd-modal-backdrop" id="modalBackdropEjercicioAsistencias" onclick="cerrarModalEjercicioAsistencias()"></div>
+<div class="cdd-modal-container" id="modalEjercicioAsistencias" role="dialog" aria-modal="true" aria-labelledby="modalEjTitulo">
+  <div class="cdd-modal-header">
+    <div class="cdd-modal-title-wrap">
+      <span class="cdd-modal-badge" id="modalEjBadge">EJERCICIO</span>
+      <h3 class="cdd-modal-title" id="modalEjTitulo">Detalle del Ejercicio</h3>
+    </div>
+    <button type="button" class="cdd-modal-close" onclick="cerrarModalEjercicioAsistencias()" aria-label="Cerrar">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+  
+  <div class="cdd-modal-body">
+    <!-- MITAD SUPERIOR (48%): Carrusel de Medios con Touch Swipe -->
+    <div class="cdd-modal-media-section" id="modalMediaSection">
+      <div class="cdd-carousel-wrapper" id="modalCarouselWrapper">
+        <div class="cdd-carousel-track" id="modalCarouselTrack"></div>
+        <button type="button" class="cdd-carousel-arrow prev" id="btnCarouselPrev" onclick="moverCarrusel(-1)" aria-label="Anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <button type="button" class="cdd-carousel-arrow next" id="btnCarouselNext" onclick="moverCarrusel(1)" aria-label="Siguiente">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+        <div class="cdd-carousel-dots" id="modalCarouselDots"></div>
+      </div>
+    </div>
+
+    <!-- MITAD INFERIOR (52%): Pestañas Indicaciones & Configuración con Touch Swipe -->
+    <div class="cdd-modal-info-section" id="modalInfoSection">
+      <div class="cdd-modal-tabs" role="tablist">
+        <button type="button" class="cdd-modal-tab-btn is-active" id="tabBtnIndicaciones" onclick="setModalTab('indicaciones')" role="tab" aria-selected="true">
+          <i class="ti ti-notes"></i>
+          <span>Indicaciones</span>
+        </button>
+        <button type="button" class="cdd-modal-tab-btn" id="tabBtnConfiguracion" onclick="setModalTab('configuracion')" role="tab" aria-selected="false">
+          <i class="ti ti-settings-2"></i>
+          <span>Configuración</span>
+        </button>
+      </div>
+      
+      <div class="cdd-modal-tab-panes" id="modalTabPanes">
+        <!-- PANE 1: Indicaciones -->
+        <div class="cdd-tab-pane is-active" id="paneIndicaciones" role="tabpanel">
+          <div class="cdd-pane-content" id="modalContentIndicaciones"></div>
+        </div>
+        <!-- PANE 2: Configuración de Máquina -->
+        <div class="cdd-tab-pane" id="paneConfiguracion" role="tabpanel">
+          <div class="cdd-pane-content" id="modalContentConfiguracion"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

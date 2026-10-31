@@ -1639,7 +1639,10 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
               Barra
             <?php endif; ?>
           </th>
+          <?php $isRirDisabled = ($ej['rir'] === null || $ej['rir'] === '' || !empty($ej['rir_desmarcado'])); ?>
+          <?php if (!$isRirDisabled): ?>
           <th style="text-align:center;">RIR</th>
+          <?php endif; ?>
           <th style="text-align:right">✓</th>
         </tr>
       </thead>
@@ -1663,9 +1666,25 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
           $cfgReps    = ($serieCfg && isset($serieCfg['reps_objetivo']) && is_numeric($serieCfg['reps_objetivo'])) ? (int)$serieCfg['reps_objetivo'] : null;
           $cfgRir     = ($serieCfg && isset($serieCfg['rir']) && is_numeric($serieCfg['rir'])) ? (int)$serieCfg['rir'] : null;
 
-          // Valores iniciales calculados respetando registro guardado o configuración de plantilla
-          $valReps    = ($savedReps !== '' && $savedReps !== null) ? $savedReps : ($cfgReps !== null ? $cfgReps : $ej['repeticiones']);
-          $valPeso    = ($savedPeso !== '' && $savedPeso !== null) ? $savedPeso : ($cfgKg !== null ? $cfgKg : '');
+          // Valores iniciales calculados respetando registro guardado o configuración de plantilla del entrenador
+          $defaultReps = '';
+          if ($cfgReps !== null && is_numeric($cfgReps) && (int)$cfgReps > 0) {
+              $defaultReps = (int)$cfgReps;
+          } elseif (!empty($ej['repeticiones'])) {
+              if (preg_match('/(\d+)/', (string)$ej['repeticiones'], $m)) {
+                  $defaultReps = (int)$m[1];
+              }
+          }
+          $valReps = ($savedReps !== '' && $savedReps !== null) ? $savedReps : $defaultReps;
+
+          $defaultPeso = '';
+          if ($cfgKg !== null && is_numeric($cfgKg) && (float)$cfgKg > 0) {
+              $defaultPeso = (float)$cfgKg;
+          } elseif (isset($ej['peso_objetivo']) && is_numeric($ej['peso_objetivo']) && (float)$ej['peso_objetivo'] > 0) {
+              $defaultPeso = (float)$ej['peso_objetivo'];
+          }
+          $valPeso = ($savedPeso !== '' && $savedPeso !== null) ? $savedPeso : $defaultPeso;
+
           $displayRir = ($cfgRir !== null) ? $cfgRir : (($ej['rir'] !== null && $ej['rir'] !== '') ? $ej['rir'] : null);
 
           // Lógica condicional de tipos de serie para paridad visual estricta
@@ -1760,11 +1779,13 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
               <?php endif; ?>
             <?php endif; ?>
           </td>
+          <?php if (!$isRirDisabled): ?>
           <td style="text-align:center">
             <span style="font-size:0.75rem;color:#c4b5fd;font-weight:700;background:rgba(138,43,226,0.12);padding:2px 6px;border-radius:6px;border:1px solid rgba(138,43,226,0.25);" title="Reps en reserva objetivo">
               <?= ($displayRir !== null) ? ('@' . e($displayRir)) : '—' ?>
             </span>
           </td>
+          <?php endif; ?>
           <td style="text-align:right">
             <?php if ($diaActivo !== $diaHoyNum): ?>
               <button class="wd-btn-serie" disabled title="Solo puedes guardar hoy">
@@ -2864,7 +2885,10 @@ function confirmarAgregarEjercicio(catEj) {
       <table class="wd-series-table">
         <thead>
           <tr>
-            <th>Serie</th><th>Reps</th><th style="text-align:center">${imp === 'mancuerna' ? 'Mancuerna' : (imp === 'sin_peso' ? 'Corporal' : 'Barra')}</th><th style="text-align:center;">RIR</th><th style="text-align:right">✓</th>
+            <th>Serie</th><th>Reps</th><th style="text-align:center">${imp === 'mancuerna' ? 'Mancuerna' : (imp === 'sin_peso' ? 'Corporal' : 'Barra')}</th><?php $isRirDisabled = ($ej['rir'] === null || $ej['rir'] === '' || !empty($ej['rir_desmarcado'])); ?>
+          <?php if (!$isRirDisabled): ?>
+          <th style="text-align:center;">RIR</th>
+          <?php endif; ?><th style="text-align:right">✓</th>
           </tr>
         </thead>
         <tbody>
