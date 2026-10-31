@@ -969,35 +969,21 @@ $grupoIconos = [
 .crdi-rutina-card {
   background: transparent !important;
   border: none !important;
-  padding: 4px 0 10px 0 !important;
+  padding: 0 0 10px 0 !important;
   margin-bottom: 6px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex-wrap: nowrap;
-  gap: 12px;
-}
-.crdi-rutina-info {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  min-width: 0;
-}
-.crdi-rutina-name {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  width: 100%;
 }
 .crdi-rutina-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: nowrap;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 .crdi-btn-action {
   display: inline-flex;
@@ -1053,7 +1039,7 @@ $grupoIconos = [
   color: #fff;
 }
 
-/* ── Tarjetas de Edición Estilo Crear Rutina (Image 1) ── */
+/* ── Tarjetas de Edición Estilo Crear Rutina ── */
 .ex-block {
   background: #121216;
   border: 1px solid rgba(255,255,255,0.07);
@@ -1301,67 +1287,266 @@ $grupoIconos = [
   color: #fff;
 }
 
-/* ── Toggle Switch Cardio Superior ── */
-.crdi-cardio-switch-bar {
+/* ── Barra y Switch de Cardio (Bento UI - Identico a Crear Rutina) ── */
+.cr-cardio-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  user-select: none;
+}
+.cr-cardio-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.cr-cardio-toggle.active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+}
+.cr-cardio-switch {
+  width: 26px;
+  height: 15px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.22s ease;
+  display: inline-block;
+  pointer-events: none;
+}
+.cr-cardio-toggle.active .cr-cardio-switch {
+  background: #ef4444;
+}
+.cr-cardio-knob {
+  width: 11px;
+  height: 11px;
+  background: #ffffff;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.cr-cardio-toggle.active .cr-cardio-knob {
+  transform: translateX(11px);
+}
+
+/* ── Panel Compacto de Cardio Bento UI (Identico a Crear Rutina) ── */
+.cr-cardio-panel {
+  background: rgba(18, 18, 26, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(239, 68, 68, 0.28);
+  border-radius: 16px;
+  padding: 13px 15px;
+  margin: 0 0 14px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: crSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes crSlideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cr-cardio-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 14px;
-  background: rgba(56, 189, 248, 0.05);
-  border: 1px solid rgba(56, 189, 248, 0.2);
-  border-radius: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-.crdi-cardio-toggle {
-  display: inline-flex;
+.cr-cardio-title {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
+  gap: 10px;
 }
-.crdi-switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 22px;
+.cr-cardio-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
 }
-.crdi-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+.cr-cardio-heading {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
 }
-.crdi-slider {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  background-color: rgba(255,255,255,0.15);
-  transition: .3s;
-  border-radius: 22px;
+.cr-cardio-sub {
+  font-size: 0.73rem;
+  color: #fca5a5;
+  font-weight: 600;
 }
-.crdi-slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .3s;
+.cr-cardio-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #94a3b8;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
-.crdi-switch input:checked + .crdi-slider {
-  background-color: #38bdf8;
+.cr-cardio-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
 }
-.crdi-switch input:checked + .crdi-slider:before {
-  transform: translateX(18px);
+.cr-time-section {
+  margin-bottom: 10px;
+}
+.cr-cardio-field-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+  display: block;
+}
+.cr-time-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cr-time-pill {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.cr-time-pill:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.cr-time-pill.active {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+.cr-time-custom-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 2px 8px;
+  width: 76px;
+}
+.cr-time-custom-input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  width: 36px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+}
+.cr-time-custom-suffix {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.cr-cardio-steps-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+.cr-cardio-steps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.cr-cardio-add-step-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  font-size: 0.73rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.cr-cardio-add-step-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fff;
+}
+.cr-cardio-step-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.cr-cardio-step-num {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #ef4444;
+  min-width: 14px;
+}
+.cr-cardio-step-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 0.78rem;
+  outline: none;
+  font-family: inherit;
+}
+.cr-cardio-step-del {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+.cr-cardio-step-del:hover {
+  color: #ef4444;
 }
 
 /* ── Tarjeta de Cardio Normal (Modo Lectura) ── */
 .crdi-cardio-card {
-  background: rgba(56, 189, 248, 0.07);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.28);
   border-radius: 14px;
   padding: 12px 16px;
   margin-bottom: 12px;
@@ -1380,10 +1565,10 @@ $grupoIconos = [
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(239, 68, 68, 0.15);
   display: grid;
   place-items: center;
-  color: #38bdf8;
+  color: #ef4444;
   font-size: 1.15rem;
   flex-shrink: 0;
 }
@@ -1393,12 +1578,13 @@ $grupoIconos = [
   color: #fff;
 }
 .crdi-cardio-title span {
-  color: #38bdf8;
+  color: #fca5a5;
 }
 .crdi-cardio-ind {
   font-size: 0.76rem;
-  color: #94a3b8;
+  color: #cbd5e1;
   margin-top: 2px;
+  line-height: 1.35;
 }
 
 /* ── Tarjetas de Ejercicios Limpias (Modo Lectura) ── */
@@ -1449,8 +1635,7 @@ $grupoIconos = [
 }
 .crdi-ej-titles {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  align-items: center;
   min-width: 0;
 }
 .crdi-ej-nombre {
@@ -1459,27 +1644,6 @@ $grupoIconos = [
   color: #fff;
   line-height: 1.3;
   word-break: break-word;
-}
-.crdi-ej-pills {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.crdi-pill {
-  font-size: 0.73rem;
-  font-weight: 600;
-  color: #c084fc;
-  background: rgba(168, 85, 247, 0.12);
-  border: 1px solid rgba(168, 85, 247, 0.25);
-  border-radius: 6px;
-  padding: 2px 8px;
-  white-space: nowrap;
-}
-.crdi-pill.pill-rir {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.25);
 }
 .crdi-ej-head-right {
   display: flex;
@@ -4079,16 +4243,10 @@ if (document.readyState === 'complete') {
 
     let html = '';
 
-    // 1. Cabecera LIMPIA (Sin cuadro morado, botones lado a lado)
+    // 1. Cabecera LIMPIA (SOLO BOTONES, sin tag 'Entrenamiento' por encima)
     html += `
       <div class="crdi-rutina-card">
-        <div class="crdi-rutina-info">
-          <div class="crdi-rutina-name">
-            <i class="ti ti-flame" style="color:#d8b4fe;"></i>
-            <span>${esc(rutinaInlineState.nombre)}</span>
-          </div>
-        </div>
-        <div class="crdi-rutina-actions">
+        <div class="crdi-rutina-actions" style="margin-left:auto;">
           ${!modoEdicionActivo ? `
             <button type="button" class="crdi-btn-action crdi-btn-guardar" onclick="guardarRutinaAtletaComoPlantilla(${rutinaInlineState.rutina_id}, '${esc(rutinaInlineState.nombre)}')" title="Guardar como plantilla reusable">
               <i class="ti ti-device-floppy"></i> Guardar rutina
@@ -4108,28 +4266,63 @@ if (document.readyState === 'complete') {
       </div>
     `;
 
-    // NOTA: El aviso de modo edición ha sido eliminado completamente según requerimiento.
-
     if (modoEdicionActivo) {
       // ══════════════════════════════════════════════════════════
-      // MODO EDICIÓN: VISTA EXACTA AL MÓDULO DE CREAR RUTINA (Image 1)
+      // MODO EDICIÓN: VISTA EXACTA AL MÓDULO DE CREAR RUTINA
       // ══════════════════════════════════════════════════════════
 
-      // Barra superior de Cardio con Switch
+      // Barra superior con suiche de Cardio (Identico a crear_rutina)
       html += `
-        <div class="crdi-cardio-switch-bar">
-          <label class="crdi-cardio-toggle">
-            <i class="ti ti-run" style="font-size:1.15rem;color:#38bdf8;"></i>
-            <span style="font-size:0.88rem;font-weight:700;color:#fff;">Cardio</span>
-            <label class="crdi-switch">
-              <input type="checkbox" id="toggleCardioInline" ${rutinaInlineState.cardio_activo == 1 ? 'checked' : ''} onchange="toggleCardioSwitchInline(this.checked)">
-              <span class="crdi-slider"></span>
-            </label>
-          </label>
-          <div style="${rutinaInlineState.cardio_activo == 1 ? 'display:flex;' : 'display:none;'} align-items:center; gap:8px; flex:1; max-width:340px;">
-            <input type="number" min="1" max="180" class="set-input" style="width:70px;padding:6px;font-size:0.8rem;" value="${rutinaInlineState.cardio_tiempo || 20}" placeholder="min" oninput="rutinaInlineState.cardio_tiempo = parseInt(this.value)||20">
-            <span style="color:#94a3b8;font-size:0.75rem;">min</span>
-            <input type="text" class="set-input" style="flex:1;padding:6px 10px;font-size:0.8rem;text-align:left;" value="${esc(rutinaInlineState.cardio_indicaciones || '')}" placeholder="Indicaciones (ej. caminadora)" oninput="rutinaInlineState.cardio_indicaciones = this.value">
+        <div style="display:flex;align-items:center;justify-content:flex-start;margin-bottom:12px;">
+          <button type="button" id="btnToggleCardioInline" class="cr-cardio-toggle ${rutinaInlineState.cardio_activo == 1 ? 'active' : ''}" onclick="toggleCardioPanelInline()" title="Activar / Desactivar Cardio">
+            <i class="ti ti-run"></i>
+            <span>Cardio</span>
+            <span class="cr-cardio-switch"><span class="cr-cardio-knob"></span></span>
+          </button>
+        </div>
+
+        <!-- Panel Compacto de Cardio Bento UI (Identico a Crear Rutina) -->
+        <div id="cardioCompactPanelInline" class="cr-cardio-panel" style="${rutinaInlineState.cardio_activo == 1 ? 'display:block;' : 'display:none;'}">
+          <div class="cr-cardio-header">
+            <div class="cr-cardio-title">
+              <div class="cr-cardio-icon-wrap">
+                <i class="ti ti-flame"></i>
+              </div>
+              <div>
+                <div class="cr-cardio-heading">Trote / Cardio</div>
+                <div class="cr-cardio-sub" id="cardioTiempoSummaryInline">${rutinaInlineState.cardio_tiempo || 15} min asignados</div>
+              </div>
+            </div>
+            <button type="button" class="cr-cardio-close-btn" onclick="toggleCardioPanelInline(false)" title="Cerrar panel de cardio">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+
+          <!-- Selector Rápido de Tiempo -->
+          <div class="cr-time-section">
+            <label class="cr-cardio-field-lbl">Tiempo de trote / cardio</label>
+            <div class="cr-time-pills">
+              <button type="button" class="cr-time-pill ${(rutinaInlineState.cardio_tiempo == 10) ? 'active' : ''}" data-mins="10" onclick="setCardioMinutosInline(10)">10m</button>
+              <button type="button" class="cr-time-pill ${(rutinaInlineState.cardio_tiempo == 15 || (!rutinaInlineState.cardio_tiempo && rutinaInlineState.cardio_activo)) ? 'active' : ''}" data-mins="15" onclick="setCardioMinutosInline(15)">15m</button>
+              <button type="button" class="cr-time-pill ${(rutinaInlineState.cardio_tiempo == 20) ? 'active' : ''}" data-mins="20" onclick="setCardioMinutosInline(20)">20m</button>
+              <button type="button" class="cr-time-pill ${(rutinaInlineState.cardio_tiempo == 30) ? 'active' : ''}" data-mins="30" onclick="setCardioMinutosInline(30)">30m</button>
+              <button type="button" class="cr-time-pill ${(rutinaInlineState.cardio_tiempo == 45) ? 'active' : ''}" data-mins="45" onclick="setCardioMinutosInline(45)">45m</button>
+              <div class="cr-time-custom-wrap">
+                <input type="number" id="cardioTiempoInputInline" class="cr-time-custom-input" min="1" max="180" placeholder="Otro" value="${[10,15,20,30,45].includes(parseInt(rutinaInlineState.cardio_tiempo)) ? '' : (rutinaInlineState.cardio_tiempo || '')}" oninput="onCustomCardioMinInline(this)">
+                <span class="cr-time-custom-suffix">min</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Indicaciones Paso a Paso -->
+          <div class="cr-cardio-steps-section">
+            <div class="cr-cardio-steps-header">
+              <label class="cr-cardio-field-lbl" style="margin-bottom:0;">Indicaciones del entrenador</label>
+              <button type="button" class="cr-cardio-add-step-btn" onclick="agregarPasoCardioInline()">
+                <i class="ti ti-plus"></i> Paso
+              </button>
+            </div>
+            <div id="cardioPasosContainerInline" class="cr-cardio-steps-list"></div>
           </div>
         </div>
       `;
@@ -4162,11 +4355,15 @@ if (document.readyState === 'complete') {
           `;
         });
 
+        const thumbContent = ej.imagen_path
+          ? `<img src="${getExerciseThumbUrl(ej.imagen_path)}" alt="${esc(ej.nombre)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">`
+          : '<i class="ti ti-dumbbell"></i>';
+
         html += `
           <div class="ex-block ${!hasRir ? 'rir-disabled' : ''}" data-idx="${idx}">
             <div class="ex-block-head">
               <div class="ex-thumb" style="position:relative;overflow:hidden;">
-                ${ej.imagen_path ? `<img src="${getExerciseThumbUrl(ej.imagen_path)}" alt="${esc(ej.nombre)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" loading="lazy">` : `<i class="ti ti-dumbbell"></i>`}
+                ${thumbContent}
               </div>
               <div class="ex-name">${esc(ej.nombre)}</div>
               <button type="button" class="ex-btn-dots" onclick="abrirMenuOpcionesEjercicio(${idx}, event)" title="Opciones de ${esc(ej.nombre)}">
@@ -4231,7 +4428,7 @@ if (document.readyState === 'complete') {
 
     } else {
       // ══════════════════════════════════════════════════════════
-      // MODO LECTURA: VISTA LIMPIA Y ORDENADA
+      // MODO LECTURA: VISTA LIMPIA Y ORDENADA SIN TAGS EN PLEGADO
       // ══════════════════════════════════════════════════════════
 
       // Cardio si existe
@@ -4239,17 +4436,17 @@ if (document.readyState === 'complete') {
         html += `
           <div class="crdi-cardio-card">
             <div class="crdi-cardio-left">
-              <div class="crdi-cardio-icon"><i class="ti ti-run"></i></div>
+              <div class="crdi-cardio-icon"><i class="ti ti-flame"></i></div>
               <div class="crdi-cardio-details">
-                <div class="crdi-cardio-title">Cardio &middot; <span>${rutinaInlineState.cardio_tiempo || 20} min</span></div>
-                ${rutinaInlineState.cardio_indicaciones ? `<div class="crdi-cardio-ind">${esc(rutinaInlineState.cardio_indicaciones)}</div>` : ''}
+                <div class="crdi-cardio-title">Trote / Cardio &middot; <span>${rutinaInlineState.cardio_tiempo || 15} min</span></div>
+                ${rutinaInlineState.cardio_indicaciones ? `<div class="crdi-cardio-ind" style="white-space:pre-line;">${esc(rutinaInlineState.cardio_indicaciones)}</div>` : ''}
               </div>
             </div>
           </div>
         `;
       }
 
-      // Lista de ejercicios modo lectura
+      // Lista de ejercicios modo lectura (SIN TAGS cuando están plegados)
       html += '<div class="crdi-ejercicios-list">';
       rutinaInlineState.ejercicios.forEach((ej, idx) => {
         const hasRir = ej.rir !== null && ej.rir !== undefined;
@@ -4280,11 +4477,6 @@ if (document.readyState === 'complete') {
                 <span class="crdi-ej-num">${idx + 1}</span>
                 <div class="crdi-ej-titles">
                   <span class="crdi-ej-nombre">${esc(ej.nombre)}</span>
-                  <div class="crdi-ej-pills">
-                    <span class="crdi-pill">${ej.series} series &times; ${esc(ej.repeticiones)} reps</span>
-                    ${pesoStr !== '—' ? `<span class="crdi-pill">${pesoStr}</span>` : ''}
-                    ${hasRir ? `<span class="crdi-pill pill-rir">RIR ${ej.rir}</span>` : ''}
-                  </div>
                 </div>
               </div>
               <div class="crdi-ej-head-right">
@@ -4309,6 +4501,11 @@ if (document.readyState === 'complete') {
     }
 
     contentEl.innerHTML = html;
+
+    // Si estamos en modo edición, poblar los pasos de cardio
+    if (modoEdicionActivo) {
+      cargarPasosCardioInline(rutinaInlineState.cardio_indicaciones || 'Trote a ritmo constante y controlado');
+    }
   }
 
   // Activar y cancelar modo edición
@@ -4403,13 +4600,118 @@ if (document.readyState === 'complete') {
     renderizarRutinaInline();
   }
 
-  function toggleCardioSwitchInline(activo) {
+  // ── Funciones de Cardio (Identicas a Crear Rutina) ──
+  function toggleCardioPanelInline(forceState) {
     if (!rutinaInlineState) return;
-    rutinaInlineState.cardio_activo = activo ? 1 : 0;
-    if (activo && (!rutinaInlineState.cardio_tiempo || rutinaInlineState.cardio_tiempo < 1)) {
-      rutinaInlineState.cardio_tiempo = 20;
+    if (forceState !== undefined) {
+      rutinaInlineState.cardio_activo = forceState ? 1 : 0;
+    } else {
+      rutinaInlineState.cardio_activo = (rutinaInlineState.cardio_activo == 1) ? 0 : 1;
     }
-    renderizarRutinaInline();
+    const btn = document.getElementById('btnToggleCardioInline');
+    const panel = document.getElementById('cardioCompactPanelInline');
+    if (btn) btn.classList.toggle('active', rutinaInlineState.cardio_activo == 1);
+    if (panel) panel.style.display = (rutinaInlineState.cardio_activo == 1) ? 'block' : 'none';
+    if (rutinaInlineState.cardio_activo == 1 && (!rutinaInlineState.cardio_tiempo || rutinaInlineState.cardio_tiempo < 1)) {
+      rutinaInlineState.cardio_tiempo = 15;
+    }
+    actualizarCardioSummaryInline();
+  }
+
+  function setCardioMinutosInline(mins) {
+    if (!rutinaInlineState) return;
+    const m = parseInt(mins, 10) || 15;
+    rutinaInlineState.cardio_tiempo = m;
+    const pills = document.querySelectorAll('#cardioCompactPanelInline .cr-time-pill');
+    let matched = false;
+    pills.forEach(p => {
+      const isThis = parseInt(p.dataset.mins, 10) === m;
+      p.classList.toggle('active', isThis);
+      if (isThis) matched = true;
+    });
+    const customInput = document.getElementById('cardioTiempoInputInline');
+    if (customInput) customInput.value = matched ? '' : m;
+    actualizarCardioSummaryInline();
+  }
+
+  function onCustomCardioMinInline(input) {
+    if (!rutinaInlineState) return;
+    const v = parseInt(input.value, 10);
+    if (!isNaN(v) && v > 0) {
+      rutinaInlineState.cardio_tiempo = Math.min(180, v);
+      document.querySelectorAll('#cardioCompactPanelInline .cr-time-pill').forEach(p => p.classList.remove('active'));
+      actualizarCardioSummaryInline();
+    }
+  }
+
+  function actualizarCardioSummaryInline() {
+    if (!rutinaInlineState) return;
+    const summaryEl = document.getElementById('cardioTiempoSummaryInline');
+    if (summaryEl) {
+      summaryEl.textContent = `${rutinaInlineState.cardio_tiempo || 15} min asignados`;
+    }
+  }
+
+  function agregarPasoCardioInline(texto = '') {
+    const container = document.getElementById('cardioPasosContainerInline');
+    if (!container) return;
+    const count = container.querySelectorAll('.cr-cardio-step-item').length + 1;
+    const item = document.createElement('div');
+    item.className = 'cr-cardio-step-item';
+    item.innerHTML = `
+      <span class="cr-cardio-step-num">${count}.</span>
+      <input type="text" class="cr-cardio-step-input" placeholder="Ej: 5 min trote suave a ritmo constante..." value="${esc(texto)}">
+      <button type="button" class="cr-cardio-step-del" onclick="eliminarPasoCardioInline(this)" title="Quitar paso">
+        <i class="ti ti-x"></i>
+      </button>
+    `;
+    container.appendChild(item);
+    const input = item.querySelector('input');
+    if (input && !texto) input.focus();
+  }
+
+  function eliminarPasoCardioInline(btn) {
+    const item = btn.closest('.cr-cardio-step-item');
+    if (!item) return;
+    item.remove();
+    actualizarNumerosPasosCardioInline();
+  }
+
+  function actualizarNumerosPasosCardioInline() {
+    const container = document.getElementById('cardioPasosContainerInline');
+    if (!container) return;
+    container.querySelectorAll('.cr-cardio-step-item').forEach((it, i) => {
+      const num = it.querySelector('.cr-cardio-step-num');
+      if (num) num.textContent = `${i + 1}.`;
+    });
+  }
+
+  function consolidarPasosCardioInline() {
+    const container = document.getElementById('cardioPasosContainerInline');
+    if (!container) return '';
+    const lines = [];
+    container.querySelectorAll('.cr-cardio-step-input').forEach(inp => {
+      const val = inp.value.trim();
+      if (val) lines.push(val);
+    });
+    return lines.join('\n');
+  }
+
+  function cargarPasosCardioInline(indicacionesStr) {
+    const container = document.getElementById('cardioPasosContainerInline');
+    if (!container) return;
+    container.innerHTML = '';
+    const raw = (indicacionesStr || '').trim();
+    if (!raw) {
+      agregarPasoCardioInline('Trote a ritmo constante y controlado');
+      return;
+    }
+    const lines = raw.split(/\r?\n/).map(l => l.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
+    if (lines.length === 0) {
+      agregarPasoCardioInline(raw);
+    } else {
+      lines.forEach(l => agregarPasoCardioInline(l));
+    }
   }
 
   // Opciones de los 3 puntos en modo edición
@@ -4502,6 +4804,10 @@ if (document.readyState === 'complete') {
 
     if (formValues) {
       ej.nombre = formValues;
+      const matched = catalogo.find(c => c.nombre.toLowerCase().trim() === formValues.toLowerCase().trim());
+      if (matched && matched.imagen_path) {
+        ej.imagen_path = matched.imagen_path;
+      }
       renderizarRutinaInline();
       if (typeof Xp !== 'undefined' && Xp.toast) {
         Xp.toast('success', `Ejercicio cambiado a "${formValues}"`);
@@ -4591,9 +4897,13 @@ if (document.readyState === 'complete') {
         });
       }
 
+      const matched = catalogo.find(c => c.nombre.toLowerCase().trim() === formValues.nombre.toLowerCase().trim());
+      const imgPath = matched?.imagen_path || null;
+
       rutinaInlineState.ejercicios.push({
         id: 0,
         nombre: formValues.nombre,
+        imagen_path: imgPath,
         series: formValues.series,
         repeticiones: formValues.reps,
         rir: 2,
@@ -4673,8 +4983,8 @@ if (document.readyState === 'complete') {
         rutina_id: rutinaInlineState.rutina_id,
         cliente_id: CLIENTE_ID_STATS,
         cardio_activo: rutinaInlineState.cardio_activo,
-        cardio_tiempo: rutinaInlineState.cardio_tiempo,
-        cardio_indicaciones: rutinaInlineState.cardio_indicaciones,
+        cardio_tiempo: rutinaInlineState.cardio_activo == 1 ? (rutinaInlineState.cardio_tiempo || 15) : null,
+        cardio_indicaciones: rutinaInlineState.cardio_activo == 1 ? consolidarPasosCardioInline() : null,
         ejercicios: rutinaInlineState.ejercicios.map((e, index) => ({
           id: e.id || 0,
           nombre: e.nombre,
@@ -4724,7 +5034,7 @@ if (document.readyState === 'complete') {
       });
     }
   }
-  document.addEventListener('click', function(e) {
+    document.addEventListener('click', function(e) {
     const celda = e.target.closest('.cal-cell[data-fecha]');
     if (celda) {
       e.preventDefault();
@@ -4783,7 +5093,11 @@ if (document.readyState === 'complete') {
   window.toggleRestEdicion = toggleRestEdicion;
   window.actualizarSerieValor = actualizarSerieValor;
   window.agregarSerieEdicion = agregarSerieEdicion;
-  window.toggleCardioSwitchInline = toggleCardioSwitchInline;
+  window.toggleCardioPanelInline = toggleCardioPanelInline;
+  window.setCardioMinutosInline = setCardioMinutosInline;
+  window.onCustomCardioMinInline = onCustomCardioMinInline;
+  window.agregarPasoCardioInline = agregarPasoCardioInline;
+  window.eliminarPasoCardioInline = eliminarPasoCardioInline;
   window.abrirMenuOpcionesEjercicio = abrirMenuOpcionesEjercicio;
   window.abrirModalReemplazarEjercicio = abrirModalReemplazarEjercicio;
   window.eliminarEjercicioEdicion = eliminarEjercicioEdicion;

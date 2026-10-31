@@ -71,13 +71,14 @@ function getDB(): PDO {
             }
 
             // Reintento automático ante cold-start o socket persistente cerrado por inactividad
+            // Se usa @ para silenciar warnings de E_WARNING por sockets cerrados por el host remoto durante el handshake TLS
             $maxAttempts = 2;
             for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
                 try {
                     if ($attempt > 1) {
                         $pdoOptions[PDO::ATTR_PERSISTENT] = false;
                     }
-                    $pdo = new PDO($dsn, DB_USER, DB_PASS, $pdoOptions);
+                    $pdo = @new PDO($dsn, DB_USER, DB_PASS, $pdoOptions);
                     break;
                 } catch (\PDOException $connectErr) {
                     if ($attempt === $maxAttempts) {
@@ -99,7 +100,7 @@ function getDB(): PDO {
                         PDO::ATTR_EMULATE_PREPARES   => false,
                         PDO::ATTR_PERSISTENT         => false,
                     ];
-                    $pdo = new PDO($localDsn, 'root', '', $localOptions);
+                    $pdo = @new PDO($localDsn, 'root', '', $localOptions);
                     error_log('[Xprod Fit] Conectado exitosamente a MySQL local (fallback de desarrollo).');
                     return $pdo;
                 } catch (\Throwable $localErr) {
