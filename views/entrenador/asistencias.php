@@ -1980,15 +1980,16 @@ async function cargarDatosPorFecha(fecha, silent = false) {
   }
 }
 
-/* Polling automático en tiempo real cada 6 segundos */
+/* Polling silencioso en tiempo real (seguro contra colisiones de UI y edición activa) */
 function iniciarPolling() {
   if (isPollingActive) return;
   isPollingActive = true;
   setInterval(() => {
-    if (!document.hidden && document.visibilityState === 'visible') {
-      cargarDatosPorFecha(fechaGlobal, true);
-    }
-  }, 6000);
+    // Evitar sondeo si la pestaña no es visible, o si el usuario está interactuando con un cajón/modal/input
+    if (document.hidden || document.visibilityState !== 'visible') return;
+    if (document.querySelector('.cd-item-wrapper.is-open, .swal2-container, .drill-modal.open, input:focus, textarea:focus')) return;
+    cargarDatosPorFecha(fechaGlobal, true);
+  }, 35000);
 }
 
 /* Paleta de colores para avatares */

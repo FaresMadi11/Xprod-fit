@@ -810,6 +810,18 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
 /**
  * Genera la respuesta completa estructurada para el detalle de un día específico.
  */
+function obtenerInfoCardioRutina(PDO $db, ?int $rutinaId): array {
+    if (!$rutinaId) return ['cardio_activo' => 0, 'cardio_tiempo' => null, 'cardio_indicaciones' => ''];
+    $st = $db->prepare("SELECT cardio_activo, cardio_tiempo, cardio_indicaciones FROM rutinas WHERE id = ?");
+    $st->execute([$rutinaId]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    return [
+        'cardio_activo'       => (int)($row['cardio_activo'] ?? 0),
+        'cardio_tiempo'       => $row['cardio_tiempo'] !== null ? (int)$row['cardio_tiempo'] : null,
+        'cardio_indicaciones' => (string)($row['cardio_indicaciones'] ?? '')
+    ];
+}
+
 function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role = 'cliente'): array {
     // 1. Validación estricta de fecha
     $dt   = DateTimeImmutable::createFromFormat('!Y-m-d', $fecha);
@@ -896,12 +908,17 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
                 }
             }
 
+            $rId = !empty($rutinasIds) ? (int)reset($rutinasIds) : null;
+            $cardioInfo = obtenerInfoCardioRutina($db, $rId);
             return array_merge($base, [
                 'accion'  => $accion,
                 'estado'  => $estado,
                 'rutina'  => [
-                    'id'     => !empty($rutinasIds) ? (int)reset($rutinasIds) : null,
-                    'nombre' => implode(' · ', array_column($hist['rutinas'], 'nombre'))
+                    'id'                  => $rId,
+                    'nombre'              => implode(' · ', array_column($hist['rutinas'], 'nombre')),
+                    'cardio_activo'       => $cardioInfo['cardio_activo'],
+                    'cardio_tiempo'       => $cardioInfo['cardio_tiempo'],
+                    'cardio_indicaciones' => $cardioInfo['cardio_indicaciones'],
                 ],
                 'resumen' => [
                     'ejercicios'          => count($hist['ejercicios']),
@@ -929,9 +946,16 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
                 $planificadas = array_sum(array_column($ejs, 'series_total'));
                 $isInc = ($asistRow['estado'] === 'incompleta' || $asistRow['estado'] === 'iniciada');
                 if ($isInc || $asistRow['estado'] === 'completada') {
+                    $cardioInfo = obtenerInfoCardioRutina($db, (int)$asistRow['rutina_id']);
                     return array_merge($base, [
                         'estado'     => $isInc ? 'incompleta' : 'completado',
-                        'rutina'     => ['id' => (int)$asistRow['rutina_id'], 'nombre' => $asistRow['descripcion'] ?: 'Rutina'],
+                        'rutina'     => [
+                            'id'                  => (int)$asistRow['rutina_id'], 
+                            'nombre'              => $asistRow['descripcion'] ?: 'Rutina',
+                            'cardio_activo'       => $cardioInfo['cardio_activo'],
+                            'cardio_tiempo'       => $cardioInfo['cardio_tiempo'],
+                            'cardio_indicaciones' => $cardioInfo['cardio_indicaciones'],
+                        ],
                         'resumen'    => ['ejercicios' => count($ejs), 'series' => 0, 'series_planificadas' => $planificadas, 'volumen_kg' => 0],
                         'ejercicios' => $ejs,
                         'notas'      => $asistRow['notas'] ?: $notasSesion,
@@ -965,9 +989,16 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
     }
 
     $ejs = obtenerEjerciciosProgramados($db, $prog['id'], $clienteId, $fecha);
+    $cardioInfo = obtenerInfoCardioRutina($db, (int)$prog['id']);
     return array_merge($base, [
         'estado'  => $modo === 'hoy' ? 'pendiente' : 'programado',
-        'rutina'  => ['id' => $prog['id'], 'nombre' => $prog['nombre']],
+        'rutina'  => [
+            'id'                  => $prog['id'], 
+            'nombre'              => $prog['nombre'],
+            'cardio_activo'       => $cardioInfo['cardio_activo'],
+            'cardio_tiempo'       => $cardioInfo['cardio_tiempo'],
+            'cardio_indicaciones' => $cardioInfo['cardio_indicaciones'],
+        ],
         'resumen' => ['ejercicios' => count($ejs), 'series' => array_sum(array_column($ejs, 'series_total'))],
         'ejercicios' => $ejs,
         'accion'  => ($modo === 'hoy' && $role === 'cliente')

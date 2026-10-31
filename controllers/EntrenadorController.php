@@ -67,6 +67,7 @@ match($action) {
     'api-eliminar-plantilla-catalogo'=> entApiEliminarPlantillaCatalogo(),
     'api-guardar-tema-sistema'       => entApiGuardarTemaSistema(),
     'api-eliminar-rutina'            => entApiEliminarRutina(),
+    'api-actualizar-rutina-completa' => entApiActualizarRutinaCompleta(),
     default             => entDashboard(),
 };
 
@@ -2987,6 +2988,7 @@ function entApiProgresoEjercicios(): void {
             'grupo' => $grupo,
             'ejercicios' => $ejercicios
         ], JSON_UNESCAPED_UNICODE);
+
     } catch (\Throwable $e) {
         error_log('[entApiProgresoEjercicios] Error: ' . $e->getMessage());
         http_response_code(500);
@@ -3916,6 +3918,7 @@ function entApiEliminarRutina(): void {
             'ok'  => true,
             'msg' => 'Rutina eliminada correctamente.'
         ], JSON_UNESCAPED_UNICODE);
+
     } catch (\Throwable $e) {
         if ($db->inTransaction()) {
             $db->rollBack();
@@ -3929,3 +3932,148 @@ function entApiEliminarRutina(): void {
     }
     exit;
 }
+
+/*─────────────────────────────────────────────────────────────
+  ACTUALIZAR RUTINA COMPLETA (MODO EDICIÓN DEL ENTRENADOR)
+─────────────────────────────────────────────────────────────*/
+function entApiActualizarRutinaCompleta(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json; charset=utf-8');
+
+    $db    = getDB();
+    $entId = (int)($_SESSION['user_id'] ?? 0);
+    $payload = getJsonPayload();
+    if (empty($payload)) {
+        $payload = $_POST;
+    }
+
+    $rutinaId  = (int)($payload['rutina_id'] ?? 0);
+    $clienteId = (int)($payload['cliente_id'] ?? 0);
+
+    if (!$rutinaId) {
+        jsonOut(false, 'Identificador de rutina requerido.', [], 400);
+    }
+
+    // Verificación defensiva de pertenencia y permisos del entrenador
+    $chk = $db->prepare("
+        SELECT r.id, r.cliente_id 
+        FROM rutinas r
+        JOIN clientes c ON c.id = r.cliente_id
+        WHERE r.id = ? AND (? IS NOT NULL)
+    ");
+    $chk->execute([$rutinaId, $entId]);
+    $rutinaRow = $chk->fetch(PDO::FETCH_ASSOC);
+
+    if (!$rutinaRow) {
+        jsonOut(false, 'Rutina no encontrada o sin permisos de edición.', [], 403);
+    }
+
+    // Datos de cardio
+    $cardioActivo = !empty($payload['cardio_activo']) ? 1 : 0;
+    $cardioTiempo = $cardioActivo && !empty($payload['cardio_tiempo']) ? max(1, min(300, (int)$payload['cardio_tiempo'])) : null;
+    $cardioIndicaciones = $cardioActivo ? trim((string)($payload['cardio_indicaciones'] ?? '')) : '';
+
+    $ejercicios = $payload['ejercicios'] ?? [];
+    if (!is_array($ejercicios)) {
+        $ejercicios = [];
+    }
+
+    try {
+        $db->beginTransaction();
+
+        // 1. Actualizar configuración de cardio en la rutina
+        $stRutina = $db->prepare("
+            UPDATE rutinas 
+            SET cardio_activo = ?, cardio_tiempo = ?, cardio_indicaciones = ?
+            WHERE id = ?
+        ");
+        $stRutina->execute([$cardioActivo, $cardioTiempo, $cardioIndicaciones, $rutinaId]);
+
+        // 2. Procesar ejercicios de la rutina
+        $idsMantener = [];
+        foreach ($ejercicios as $ej) {
+            $eid = (int)($ej['id'] ?? 0);
+            if ($eid > 0) {
+                $idsMantener[] = $eid;
+            }
+        }
+
+        // Eliminar los ejercicios que fueron quitados de la rutina
+        if (!empty($idsMantener)) {
+            $inClause = implode(',', array_fill(0, count($idsMantener), '?'));
+            $stDel = $db->prepare("DELETE FROM ejercicios WHERE rutina_id = ? AND id NOT IN ($inClause)");
+            $params = array_merge([$rutinaId], $idsMantener);
+            $stDel->execute($params);
+        } else if (!empty($ejercicios)) {
+            $stDelAll = $db->prepare("DELETE FROM ejercicios WHERE rutina_id = ?");
+            $stDelAll->execute([$rutinaId]);
+        }
+
+        // Preparar consultas para actualizar o insertar
+        $stUp = $db->prepare("
+            UPDATE ejercicios 
+            SET nombre = ?, series = ?, repeticiones = ?, rir = ?, orden = ?,
+                tipo_implemento = ?, unidad_carga = ?, descripcion = ?
+            WHERE id = ? AND rutina_id = ?
+        ");
+
+        $stIns = $db->prepare("
+            INSERT INTO ejercicios 
+            (rutina_id, nombre, series, repeticiones, rir, orden, tipo_implemento, unidad_carga, descripcion, grupo_muscular, equipamiento, imagen_path, imagen_demo_path)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $orden = 1;
+        foreach ($ejercicios as $ej) {
+            $eid    = (int)($ej['id'] ?? 0);
+            $nombre = trim((string)($ej['nombre'] ?? ''));
+            if ($nombre === '') continue;
+
+            $series = max(1, min(30, (int)($ej['series'] ?? 3)));
+            $reps   = trim((string)($ej['repeticiones'] ?? '10'));
+            if ($reps === '') $reps = '10';
+            
+            $rirVal = isset($ej['rir']) && $ej['rir'] !== '' && $ej['rir'] !== null ? max(0, min(5, (int)$ej['rir'])) : null;
+            $imp    = trim((string)($ej['tipo_implemento'] ?? 'barra'));
+            if (!in_array($imp, ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)) {
+                $imp = 'barra';
+            }
+            $unidad = trim((string)($ej['unidad_carga'] ?? 'kg'));
+            if (!in_array($unidad, ['kg', 'lbs', 'placas'], true)) {
+                $unidad = 'kg';
+            }
+
+            $pesoVal = isset($ej['peso']) && $ej['peso'] !== '' && $ej['peso'] !== null ? (float)$ej['peso'] : null;
+            $desc = !empty($ej['descripcion']) ? trim((string)$ej['descripcion']) : ($pesoVal !== null ? "{$pesoVal} kg" : '');
+
+            if ($eid > 0) {
+                $stUp->execute([$nombre, $series, $reps, $rirVal, $orden, $imp, $unidad, $desc, $eid, $rutinaId]);
+            } else {
+                $stCat = $db->prepare("SELECT grupo_muscular, equipamiento, imagen_path, imagen_demo_path FROM catalogo_ejercicios WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) LIMIT 1");
+                $stCat->execute([$nombre]);
+                $cat = $stCat->fetch(PDO::FETCH_ASSOC);
+
+                $grupo = $cat['grupo_muscular'] ?? inferirGrupoMuscularProgreso($nombre);
+                $equip = $cat['equipamiento'] ?? inferirEquipamientoProgreso($nombre, $imp);
+                $imgPath = $cat['imagen_path'] ?? null;
+                $imgDemoPath = $cat['imagen_demo_path'] ?? null;
+
+                $stIns->execute([
+                    $rutinaId, $nombre, $series, $reps, $rirVal, $orden,
+                    $imp, $unidad, $desc, $grupo, $equip, $imgPath, $imgDemoPath
+                ]);
+            }
+            $orden++;
+        }
+
+        $db->commit();
+        jsonOut(true, 'Rutina actualizada correctamente.');
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log('[entApiActualizarRutinaCompleta] Error: ' . $e->getMessage());
+        jsonOut(false, 'Error al actualizar la rutina: ' . $e->getMessage(), [], 500);
+    }
+    }
