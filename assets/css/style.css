@@ -6663,14 +6663,23 @@ html[data-theme="light"] .xp-skeleton-base {
   left: 0;
   right: 0;
   bottom: calc(70px + env(safe-area-inset-bottom, 20px));
-  background: #0b0a10;
+  background: var(--bg, #09090b);
   z-index: 99998;
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 14px 16px;
   pointer-events: none;
   animation: xpFadeInSk 0.12s ease-out forwards;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+@media (min-width: 768px) {
+  .xp-page-skeleton-overlay {
+    left: 260px;
+    bottom: 0;
+    padding: 32px 40px;
+  }
 }
 @keyframes xpFadeInSk {
   from { opacity: 0; transform: translateY(4px); }
@@ -6678,7 +6687,7 @@ html[data-theme="light"] .xp-skeleton-base {
 }
 
 .xp-sk-container {
-  max-width: 600px;
+  max-width: 680px;
   width: 100%;
   margin: 0 auto;
   display: flex;

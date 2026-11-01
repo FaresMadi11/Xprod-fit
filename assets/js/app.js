@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
               document.body.dataset.navigatingTo = link.href;
               document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
               link.classList.add('active');
-              mostrarSkeletonTransicion();
+              mostrarSkeletonTransicion(link.href);
               window.location.href = link.href;
             }
           }, 40);
@@ -63,18 +63,469 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.dataset.navigatingTo = link.href;
         document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
         link.classList.add('active');
-        mostrarSkeletonTransicion();
+        mostrarSkeletonTransicion(link.href);
       }
     });
   });
 
-  function mostrarSkeletonTransicion() {
-    if (document.getElementById('xpPageSkeletonOverlay')) return;
-    const overlay = document.createElement('div');
-    overlay.id = 'xpPageSkeletonOverlay';
-    overlay.className = 'xp-page-skeleton-overlay';
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.innerHTML = `
+  // Delegación de skeleton para enlaces internos principales (tarjetas de atletas, tarjetas bento)
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+    if (!link) return;
+    if (link.closest('.xp-nav-links')) return; // Ya gestionado con micro-touch
+    if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (link.target && link.target !== '_self') return;
+    if (link.hasAttribute('download')) return;
+
+    const href = link.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('tel:') || href.startsWith('mailto:')) return;
+    if (link.dataset.bsToggle || link.dataset.noSkeleton || link.getAttribute('onclick')) return;
+
+    const fullHref = link.href;
+    const curClean = window.location.href.split('#')[0];
+    const targetClean = fullHref.split('#')[0];
+    if (targetClean === curClean) return;
+
+    if (fullHref.startsWith(window.location.origin) || (window.APP && fullHref.startsWith(window.APP))) {
+      mostrarSkeletonTransicion(fullHref);
+    }
+  });
+
+  let xpSkTimer = null;
+  function scheduleSkeletonRemoval() {
+    if (xpSkTimer) clearTimeout(xpSkTimer);
+    xpSkTimer = setTimeout(() => {
+      const ov = document.getElementById('xpPageSkeletonOverlay');
+      if (ov) ov.remove();
+      document.body.removeAttribute('data-navigating-to');
+    }, 2800);
+  }
+
+  function obtenerModuloDestino(url) {
+    if (!url) return 'default';
+    const u = url.toLowerCase();
+    if (u.includes('perfil-cliente') || u.includes('perfil_cliente')) return 'entrenador_perfil_cliente';
+    if (u.includes('asistencia')) return 'entrenador_asistencias';
+    if (u.includes('cliente/rutina') || u.includes('rutina-dia') || u.includes('rutina_dia')) return 'cliente_rutina';
+    if (u.includes('cliente/estadistica') || u.includes('estadisticas') || u.includes('stats')) return 'cliente_estadisticas';
+    if (u.includes('cliente/perfil') || (u.includes('/perfil') && !u.includes('perfil-cliente'))) return 'cliente_perfil';
+    if (u.includes('cliente/dashboard')) return 'cliente_dashboard';
+    if (u.includes('entrenador/configuracion') || u.includes('configuracion')) return 'entrenador_configuracion';
+    if (u.includes('entrenador/clientes') || u.includes('atletas')) return 'entrenador_clientes';
+    if (u.includes('entrenador/dashboard') || (u.includes('entrenador') && !u.includes('perfil'))) return 'entrenador_dashboard';
+    if (u.includes('cliente')) return 'cliente_dashboard';
+    return 'default';
+  }
+
+  function generarHtmlSkeletonModulo(url) {
+    const mod = obtenerModuloDestino(url);
+
+    // 1. ASISTENCIAS (Control Diario)
+    if (mod === 'entrenador_asistencias') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:42px; height:42px; border-radius:12px; flex-shrink:0;"></div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:115px; height:16px;"></div>
+                <div class="xp-sk-element" style="width:130px; height:11px; opacity:0.5;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="xp-sk-element xp-sk-pill" style="width:58px; height:24px; opacity:0.4;"></div>
+              <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px;"></div>
+              <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px;"></div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; background:rgba(0,0,0,0.3); padding:4px; border-radius:14px; margin-top:14px;">
+            <div class="xp-sk-element" style="height:38px; border-radius:10px; opacity:0.85;"></div>
+            <div class="xp-sk-element" style="height:38px; border-radius:10px; opacity:0.25;"></div>
+            <div class="xp-sk-element" style="height:38px; border-radius:10px; opacity:0.25;"></div>
+          </div>
+          <div style="display:flex; gap:8px; overflow:hidden; margin-top:14px;">
+            <div class="xp-sk-element" style="width:50px; height:64px; border-radius:14px; flex-shrink:0; opacity:0.7;"></div>
+            <div class="xp-sk-element" style="width:48px; height:64px; border-radius:14px; flex-shrink:0; opacity:0.9;"></div>
+            <div class="xp-sk-element" style="width:48px; height:64px; border-radius:14px; flex-shrink:0; opacity:0.5;"></div>
+            <div class="xp-sk-element" style="width:48px; height:64px; border-radius:14px; flex-shrink:0; opacity:0.5;"></div>
+            <div class="xp-sk-element" style="width:48px; height:64px; border-radius:14px; flex-shrink:0; opacity:0.5;"></div>
+            <div class="xp-sk-element" style="width:48px; height:64px; border-radius:14px; flex-shrink:0; opacity:0.5;"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:52%; height:15px;"></div>
+                <div class="xp-sk-element" style="width:68%; height:11px; opacity:0.5;"></div>
+              </div>
+              <div class="xp-sk-element xp-sk-pill" style="width:65px; height:22px; opacity:0.4;"></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:45%; height:15px;"></div>
+                <div class="xp-sk-element" style="width:58%; height:11px; opacity:0.5;"></div>
+              </div>
+              <div class="xp-sk-element xp-sk-pill" style="width:65px; height:22px; opacity:0.4;"></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:58%; height:15px;"></div>
+                <div class="xp-sk-element" style="width:40%; height:11px; opacity:0.5;"></div>
+              </div>
+              <div class="xp-sk-element xp-sk-pill" style="width:65px; height:22px; opacity:0.4;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. ATLETAS (Mis Atletas / Directorio)
+    if (mod === 'entrenador_clientes') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:42px; height:42px; border-radius:12px; flex-shrink:0;"></div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <div class="xp-sk-element" style="width:95px; height:16px;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:26px; height:18px; opacity:0.5;"></div>
+                </div>
+                <div class="xp-sk-element" style="width:145px; height:11px; opacity:0.5;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="xp-sk-element xp-sk-pill" style="width:58px; height:24px; opacity:0.4;"></div>
+              <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px;"></div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+            <div class="xp-sk-element" style="flex:1; height:42px; border-radius:14px; opacity:0.6;"></div>
+            <div class="xp-sk-element xp-sk-pill" style="width:85px; height:42px; border-radius:12px; opacity:0.8;"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:44px; height:44px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:50%; height:15px;"></div>
+                <div style="display:flex; gap:6px;">
+                  <div class="xp-sk-element xp-sk-pill" style="width:55px; height:16px; opacity:0.4;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:70px; height:16px; opacity:0.3;"></div>
+                </div>
+              </div>
+              <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:44px; height:44px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:40%; height:15px;"></div>
+                <div style="display:flex; gap:6px;">
+                  <div class="xp-sk-element xp-sk-pill" style="width:55px; height:16px; opacity:0.4;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:65px; height:16px; opacity:0.3;"></div>
+                </div>
+              </div>
+              <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:44px; height:44px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:62%; height:15px;"></div>
+                <div style="display:flex; gap:6px;">
+                  <div class="xp-sk-element xp-sk-pill" style="width:55px; height:16px; opacity:0.4;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:60px; height:16px; opacity:0.3;"></div>
+                </div>
+              </div>
+              <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. DASHBOARD ENTRENADOR
+    if (mod === 'entrenador_dashboard') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:110px; height:11px; opacity:0.5;"></div>
+                <div class="xp-sk-element" style="width:140px; height:16px;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="xp-sk-element xp-sk-pill" style="width:58px; height:24px; opacity:0.4;"></div>
+              <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px;"></div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+            <div style="padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; flex-direction:column; gap:10px;">
+              <div class="xp-sk-element" style="width:36px; height:36px; border-radius:10px;"></div>
+              <div class="xp-sk-element" style="width:75%; height:12px; opacity:0.6;"></div>
+              <div class="xp-sk-element" style="width:40%; height:24px;"></div>
+            </div>
+            <div style="padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; flex-direction:column; gap:10px;">
+              <div class="xp-sk-element" style="width:36px; height:36px; border-radius:10px;"></div>
+              <div class="xp-sk-element" style="width:80%; height:12px; opacity:0.6;"></div>
+              <div class="xp-sk-element" style="width:35%; height:24px;"></div>
+            </div>
+            <div style="padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; flex-direction:column; gap:10px;">
+              <div class="xp-sk-element" style="width:36px; height:36px; border-radius:10px;"></div>
+              <div class="xp-sk-element" style="width:85%; height:12px; opacity:0.6;"></div>
+              <div class="xp-sk-element" style="width:30%; height:24px;"></div>
+            </div>
+            <div style="padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; flex-direction:column; gap:10px;">
+              <div class="xp-sk-element" style="width:36px; height:36px; border-radius:10px;"></div>
+              <div class="xp-sk-element" style="width:65%; height:12px; opacity:0.6;"></div>
+              <div class="xp-sk-element" style="width:45%; height:24px;"></div>
+            </div>
+          </div>
+          <div class="xp-sk-element" style="height:90px; border-radius:18px; margin-top:14px; opacity:0.65;"></div>
+        </div>
+      `;
+    }
+
+    // 4. CONFIGURACIÓN ENTRENADOR
+    if (mod === 'entrenador_configuracion') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:42px; height:42px; border-radius:12px; flex-shrink:0;"></div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:110px; height:16px;"></div>
+                <div class="xp-sk-element" style="width:150px; height:11px; opacity:0.5;"></div>
+              </div>
+            </div>
+            <div class="xp-sk-element xp-sk-pill" style="width:58px; height:24px; opacity:0.4;"></div>
+          </div>
+          <div class="xp-sk-element" style="height:76px; border-radius:18px; margin-top:14px; opacity:0.75;"></div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <div class="xp-sk-element" style="height:62px; border-radius:16px; opacity:0.6;"></div>
+            <div class="xp-sk-element" style="height:62px; border-radius:16px; opacity:0.6;"></div>
+            <div class="xp-sk-element" style="height:62px; border-radius:16px; opacity:0.6;"></div>
+            <div class="xp-sk-element" style="height:62px; border-radius:16px; opacity:0.6;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 5. PERFIL CLIENTE (visto por Entrenador)
+    if (mod === 'entrenador_perfil_cliente') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; align-items:center; gap:14px; padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div class="xp-sk-element xp-sk-avatar" style="width:52px; height:52px; flex-shrink:0;"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+              <div class="xp-sk-element" style="width:55%; height:18px;"></div>
+              <div style="display:flex; gap:6px;">
+                <div class="xp-sk-element xp-sk-pill" style="width:65px; height:18px; opacity:0.5;"></div>
+                <div class="xp-sk-element xp-sk-pill" style="width:75px; height:18px; opacity:0.4;"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:12px;">
+            <div class="xp-sk-element" style="height:36px; border-radius:10px; opacity:0.85;"></div>
+            <div class="xp-sk-element" style="height:36px; border-radius:10px; opacity:0.3;"></div>
+            <div class="xp-sk-element" style="height:36px; border-radius:10px; opacity:0.3;"></div>
+            <div class="xp-sk-element" style="height:36px; border-radius:10px; opacity:0.3;"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <div class="xp-sk-element" style="height:76px; border-radius:16px; opacity:0.7;"></div>
+            <div class="xp-sk-element" style="height:76px; border-radius:16px; opacity:0.7;"></div>
+            <div class="xp-sk-element" style="height:76px; border-radius:16px; opacity:0.7;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 6. RUTINA DEL ATLETA
+    if (mod === 'cliente_rutina') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:42px; height:42px; border-radius:12px; flex-shrink:0;"></div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:130px; height:16px;"></div>
+                <div class="xp-sk-element" style="width:90px; height:11px; opacity:0.5;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="xp-sk-element xp-sk-pill" style="width:58px; height:24px; opacity:0.4;"></div>
+              <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px;"></div>
+            </div>
+          </div>
+          <div style="display:flex; gap:6px; overflow:hidden; margin-top:12px;">
+            <div class="xp-sk-element" style="flex:1; height:38px; border-radius:12px; opacity:0.3;"></div>
+            <div class="xp-sk-element" style="flex:1; height:38px; border-radius:12px; opacity:0.3;"></div>
+            <div class="xp-sk-element" style="flex:1; height:38px; border-radius:12px; opacity:0.3;"></div>
+            <div class="xp-sk-element" style="flex:1; height:38px; border-radius:12px; opacity:0.3;"></div>
+            <div class="xp-sk-element" style="flex:1; height:38px; border-radius:12px; opacity:0.85;"></div>
+            <div class="xp-sk-element" style="flex:1; height:38px; border-radius:12px; opacity:0.3;"></div>
+            <div class="xp-sk-element" style="flex:1; height:38px; border-radius:12px; opacity:0.3;"></div>
+          </div>
+          <div style="padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px; margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="xp-sk-element" style="width:16px; height:16px; border-radius:4px;"></div>
+                <div class="xp-sk-element" style="width:110px; height:16px;"></div>
+              </div>
+              <div class="xp-sk-element xp-sk-pill" style="width:60px; height:20px; opacity:0.4;"></div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <div class="xp-sk-element" style="flex:1; height:36px; border-radius:10px; opacity:0.7;"></div>
+              <div class="xp-sk-element" style="flex:1; height:36px; border-radius:10px; opacity:0.5;"></div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+            <div style="padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:28px; height:28px; border-radius:8px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:60%; height:15px;"></div>
+                <div style="display:flex; gap:6px;">
+                  <div class="xp-sk-element xp-sk-pill" style="width:85px; height:18px; opacity:0.5;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:45px; height:18px; opacity:0.4;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:40px; height:18px; opacity:0.4;"></div>
+                </div>
+              </div>
+              <div class="xp-sk-element" style="width:16px; height:16px; border-radius:4px; opacity:0.3;"></div>
+            </div>
+            <div style="padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:28px; height:28px; border-radius:8px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:50%; height:15px;"></div>
+                <div style="display:flex; gap:6px;">
+                  <div class="xp-sk-element xp-sk-pill" style="width:85px; height:18px; opacity:0.5;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:45px; height:18px; opacity:0.4;"></div>
+                </div>
+              </div>
+              <div class="xp-sk-element" style="width:16px; height:16px; border-radius:4px; opacity:0.3;"></div>
+            </div>
+            <div style="padding:14px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:28px; height:28px; border-radius:8px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:65%; height:15px;"></div>
+                <div style="display:flex; gap:6px;">
+                  <div class="xp-sk-element xp-sk-pill" style="width:85px; height:18px; opacity:0.5;"></div>
+                  <div class="xp-sk-element xp-sk-pill" style="width:45px; height:18px; opacity:0.4;"></div>
+                </div>
+              </div>
+              <div class="xp-sk-element" style="width:16px; height:16px; border-radius:4px; opacity:0.3;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 7. DASHBOARD DEL ATLETA
+    if (mod === 'cliente_dashboard') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:95px; height:11px; opacity:0.5;"></div>
+                <div class="xp-sk-element" style="width:130px; height:16px;"></div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="xp-sk-element xp-sk-pill" style="width:50px; height:24px; opacity:0.5;"></div>
+              <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px;"></div>
+            </div>
+          </div>
+          <div style="padding:20px; background:rgba(255,255,255,0.03); border:1px solid rgba(138,43,226,0.25); border-radius:22px; margin-top:14px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="xp-sk-element xp-sk-pill" style="width:95px; height:22px; opacity:0.6;"></div>
+              <div class="xp-sk-element" style="width:45px; height:14px; opacity:0.4;"></div>
+            </div>
+            <div class="xp-sk-element" style="width:70%; height:22px;"></div>
+            <div class="xp-sk-element" style="width:45%; height:13px; opacity:0.5;"></div>
+            <div class="xp-sk-element" style="width:100%; height:44px; border-radius:14px; margin-top:6px; opacity:0.8;"></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px;">
+            <div style="padding:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; flex-direction:column; gap:8px;">
+              <div class="xp-sk-element" style="width:32px; height:32px; border-radius:8px;"></div>
+              <div class="xp-sk-element" style="width:70%; height:11px; opacity:0.5;"></div>
+              <div class="xp-sk-element" style="width:50%; height:20px;"></div>
+            </div>
+            <div style="padding:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:18px; display:flex; flex-direction:column; gap:8px;">
+              <div class="xp-sk-element" style="width:32px; height:32px; border-radius:8px;"></div>
+              <div class="xp-sk-element" style="width:65%; height:11px; opacity:0.5;"></div>
+              <div class="xp-sk-element" style="width:45%; height:20px;"></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 8. ESTADÍSTICAS DEL ATLETA
+    if (mod === 'cliente_estadisticas') {
+      return `
+        <div class="xp-sk-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:18px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div class="xp-sk-element" style="width:42px; height:42px; border-radius:12px; flex-shrink:0;"></div>
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:120px; height:16px;"></div>
+                <div class="xp-sk-element" style="width:140px; height:11px; opacity:0.5;"></div>
+              </div>
+            </div>
+            <div class="xp-sk-element xp-sk-pill" style="width:58px; height:24px; opacity:0.4;"></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:14px;">
+            <div style="padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; display:flex; flex-direction:column; gap:6px; align-items:center;">
+              <div class="xp-sk-element" style="width:60%; height:10px; opacity:0.5;"></div>
+              <div class="xp-sk-element" style="width:75%; height:18px;"></div>
+            </div>
+            <div style="padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; display:flex; flex-direction:column; gap:6px; align-items:center;">
+              <div class="xp-sk-element" style="width:55%; height:10px; opacity:0.5;"></div>
+              <div class="xp-sk-element" style="width:70%; height:18px;"></div>
+            </div>
+            <div style="padding:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:16px; display:flex; flex-direction:column; gap:6px; align-items:center;">
+              <div class="xp-sk-element" style="width:65%; height:10px; opacity:0.5;"></div>
+              <div class="xp-sk-element" style="width:60%; height:18px;"></div>
+            </div>
+          </div>
+          <div style="padding:18px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:20px; margin-top:14px; display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; justify-content:space-between;">
+              <div class="xp-sk-element" style="width:130px; height:16px;"></div>
+              <div class="xp-sk-element xp-sk-pill" style="width:70px; height:20px; opacity:0.4;"></div>
+            </div>
+            <div class="xp-sk-element" style="width:100%; height:140px; border-radius:14px; opacity:0.6;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 9. PERFIL DEL ATLETA
+    if (mod === 'cliente_perfil') {
+      return `
+        <div class="xp-sk-container">
+          <div style="padding:24px 20px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:22px; display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center;">
+            <div class="xp-sk-element xp-sk-avatar" style="width:72px; height:72px;"></div>
+            <div class="xp-sk-element" style="width:140px; height:18px;"></div>
+            <div class="xp-sk-element xp-sk-pill" style="width:80px; height:20px; opacity:0.4;"></div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:14px;">
+            <div class="xp-sk-element" style="height:60px; border-radius:14px; opacity:0.6;"></div>
+            <div class="xp-sk-element" style="height:60px; border-radius:14px; opacity:0.6;"></div>
+            <div class="xp-sk-element" style="height:60px; border-radius:14px; opacity:0.6;"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">
+            <div class="xp-sk-element" style="height:54px; border-radius:14px; opacity:0.5;"></div>
+            <div class="xp-sk-element" style="height:54px; border-radius:14px; opacity:0.5;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Default Fallback
+    return `
       <div class="xp-sk-container">
         <div class="xp-sk-header-row">
           <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px;"></div>
@@ -84,9 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div class="xp-sk-element xp-sk-pill" style="width:64px; height:26px; opacity:0.4;"></div>
         </div>
-
         <div class="xp-sk-element" style="height:85px; border-radius:16px; margin:10px 0 12px; opacity:0.75;"></div>
-
         <div style="display:flex; flex-direction:column; gap:10px;">
           <div class="xp-sk-card-row">
             <div class="xp-sk-element" style="width:38px; height:38px; border-radius:10px; flex-shrink:0;"></div>
@@ -96,27 +545,28 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
           </div>
-          <div class="xp-sk-card-row">
-            <div class="xp-sk-element" style="width:38px; height:38px; border-radius:10px; flex-shrink:0;"></div>
-            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
-              <div class="xp-sk-element" style="width:48%; height:15px;"></div>
-              <div class="xp-sk-element" style="width:28%; height:11px; opacity:0.5;"></div>
-            </div>
-            <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
-          </div>
-          <div class="xp-sk-card-row">
-            <div class="xp-sk-element" style="width:38px; height:38px; border-radius:10px; flex-shrink:0;"></div>
-            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
-              <div class="xp-sk-element" style="width:62%; height:15px;"></div>
-              <div class="xp-sk-element" style="width:36%; height:11px; opacity:0.5;"></div>
-            </div>
-            <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
-          </div>
         </div>
       </div>
     `;
-    document.body.appendChild(overlay);
   }
+
+  function mostrarSkeletonTransicion(targetUrl) {
+    if (document.getElementById('xpPageSkeletonOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'xpPageSkeletonOverlay';
+    overlay.className = 'xp-page-skeleton-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = generarHtmlSkeletonModulo(targetUrl || window.location.href);
+    document.body.appendChild(overlay);
+    scheduleSkeletonRemoval();
+  }
+
+  window.xpMostrarSkeleton = mostrarSkeletonTransicion;
+  window.xpHideSkeleton = function() {
+    const ov = document.getElementById('xpPageSkeletonOverlay');
+    if (ov) ov.remove();
+    document.body.removeAttribute('data-navigating-to');
+  };
 
   window.addEventListener('pageshow', () => {
     const ov = document.getElementById('xpPageSkeletonOverlay');
