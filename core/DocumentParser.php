@@ -632,8 +632,8 @@ class DocumentParser {
                 $rowText = implode(' ', $grid[$r]);
                 $weekMonday = self::parsearFechaSemana($rowText, $grid[$r]);
                 if ($weekMonday !== null) {
-                    // Peso corporal (indexado por fecha para evitar colisiones de clave única)
-                    if (preg_match('/peso\s*(?:corporal)?\s*[:=]?\s*([\d\.]+)\s*(?:kg|kilos?)?/i', $rowText, $mp)) {
+                    // Peso corporal (indexado por fecha para evitar colisiones de clave única, soporta "62+", "62.5 kg", etc.)
+                    if (preg_match('/peso\s*(?:corporal)?\s*[:=]?\s*([\d\.]+)\s*\+?\s*(?:kg|kilos?)?/i', $rowText, $mp)) {
                         $allMedidas[$weekMonday] = [
                             'fecha' => $weekMonday,
                             'peso_kg' => (float)$mp[1]

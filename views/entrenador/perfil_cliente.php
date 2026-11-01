@@ -72,6 +72,8 @@ $calAno = isset($_GET['ano']) ? (int)$_GET['ano'] : $anoActual;
 if ($calMes < 1 || $calMes > 12) { $calMes = $mesActual; }
 if ($calAno < 2000 || $calAno > 2100) { $calAno = $anoActual; }
 
+$tabInicial = (isset($_GET['mes']) || isset($_GET['ano']) || isset($_GET['date']) || (isset($_GET['tab']) && $_GET['tab'] === 'rutinas')) ? 'rutinas' : ((isset($_GET['tab']) && $_GET['tab'] === 'pagos') ? 'pagos' : 'stats');
+
 $mesPrevMes = $calMes - 1; $mesPrevAno = $calAno;
 if ($mesPrevMes < 1) { $mesPrevMes = 12; $mesPrevAno--; }
 $mesSigMes = $calMes + 1; $mesSigAno = $calAno;
@@ -593,22 +595,293 @@ $grupoIconos = [
   box-shadow: 0 0 10px rgba(138,43,226,.3);
 }
 
-/* Selector de ejercicios */
-.pm-ex-list {
-  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; min-height: 36px;
+/* ── SELECTOR BENTO DE EJERCICIOS CON BUSCADOR ── */
+.pm-ex-select-wrap {
+  margin-bottom: 12px;
 }
-.pm-ex-btn {
-  padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04); color: #cbd5e1;
-  font-size: .75rem; font-weight: 700; cursor: pointer;
-  transition: all .2s; white-space: nowrap;
+.pm-ex-select-label {
+  font-size: .65rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  margin-bottom: 6px;
 }
-.pm-ex-btn:hover { border-color: rgba(255,255,255,.2); color: #fff; }
-.pm-ex-btn.active {
-  background: rgba(138,43,226,.25); border-color: #8a2be2; color: #fff;
-  box-shadow: 0 0 8px rgba(138,43,226,.4);
+.pm-ex-select-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 10px 14px;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
 }
-.pm-ex-empty { font-size: .78rem; color: #64748b; padding: 6px 0; display: flex; align-items: center; gap: 6px; }
+.pm-ex-select-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+.pm-ex-select-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.pm-ex-select-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(138, 43, 226, 0.18);
+  border: 1px solid rgba(138, 43, 226, 0.35);
+  color: #c4a3ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.pm-ex-select-texts {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pm-ex-select-name {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+.pm-ex-select-meta {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pm-ex-select-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.pm-ex-select-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #b388ff;
+  background: rgba(138, 43, 226, 0.15);
+  border: 1px solid rgba(138, 43, 226, 0.3);
+  padding: 3px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.pm-ex-select-arrow {
+  color: #64748b;
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+/* Modal Bottom-Sheet Picker */
+.pm-picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.pm-picker-overlay.open {
+  display: flex;
+  opacity: 1;
+}
+.pm-picker-sheet {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 18px 24px 18px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.85);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pm-picker-overlay.open .pm-picker-sheet {
+  transform: translateY(0);
+}
+.pm-picker-handle {
+  width: 38px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin: 0 auto 12px auto;
+  flex-shrink: 0;
+}
+.pm-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.pm-picker-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+}
+.pm-picker-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.pm-picker-close {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  color: #94a3b8;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pm-picker-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.pm-picker-search {
+  position: relative;
+  margin-bottom: 12px;
+}
+.pm-picker-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-size: 1rem;
+  pointer-events: none;
+}
+.pm-picker-search input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 36px 10px 38px;
+  color: #fff;
+  font-size: 0.85rem;
+  outline: none;
+  transition: all 0.2s;
+}
+.pm-picker-search input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(138, 43, 226, 0.6);
+  box-shadow: 0 0 12px rgba(138, 43, 226, 0.25);
+}
+.pm-picker-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+}
+.pm-picker-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 55vh;
+}
+.pm-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+.pm-picker-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(2px);
+}
+.pm-picker-item.active {
+  background: rgba(138, 43, 226, 0.16);
+  border-color: rgba(138, 43, 226, 0.5);
+}
+.pm-picker-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pm-picker-item-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.25;
+}
+.pm-picker-item.active .pm-picker-item-name {
+  color: #c4a3ff;
+}
+.pm-picker-item-sub {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+.pm-picker-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.pm-picker-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.pm-picker-item.active .pm-picker-badge {
+  color: #c4a3ff;
+  background: rgba(138, 43, 226, 0.25);
+}
+.pm-picker-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.82rem;
+}
 
 /* Resumen del ejercicio (2 columnas de récord) */
 .pm-summary-card {
@@ -2294,21 +2567,21 @@ $grupoIconos = [
     <!-- Tabs (radio-inputs switcher) -->
     <div class="xpf-tabs" style="position:relative; z-index:1; margin-bottom: 0;">
       <label class="radio">
-        <input type="radio" name="xpf-tab-group" value="stats" checked />
+        <input type="radio" name="xpf-tab-group" value="stats" <?= $tabInicial === 'stats' ? 'checked' : '' ?> />
         <span class="name"><i class="ti ti-chart-bar"></i> Stats</span>
       </label>
       <label class="radio">
-        <input type="radio" name="xpf-tab-group" value="rutinas" />
+        <input type="radio" name="xpf-tab-group" value="rutinas" <?= $tabInicial === 'rutinas' ? 'checked' : '' ?> />
         <span class="name"><i class="ti ti-list-check"></i> Rutinas</span>
       </label>
       <label class="radio">
-        <input type="radio" name="xpf-tab-group" value="pagos" />
+        <input type="radio" name="xpf-tab-group" value="pagos" <?= $tabInicial === 'pagos' ? 'checked' : '' ?> />
         <span class="name"><i class="ti ti-credit-card"></i> Pagos</span>
       </label>
     </div>
 
     <!-- -- Tab: Stats -- -->
-    <div class="xpf-panel active" id="panel-stats">
+    <div class="xpf-panel <?= $tabInicial === 'stats' ? 'active' : '' ?>" id="panel-stats">
 
       <!-- = = = 1. BLOQUE: EVOLUCIÓN DE PESO CORPORAL = = = -->
       <div class="card-bento mb-3" style="padding:18px 20px;">
@@ -2417,11 +2690,49 @@ $grupoIconos = [
           <?php endforeach; ?>
         </div>
 
-        <!-- Selector de ejercicio individual -->
-        <div style="margin-bottom:8px;">
-          <div style="font-size:.65rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">Ejercicio</div>
-          <div class="pm-ex-list" id="pmExList">
-            <span class="pm-ex-empty"><i class="ti ti-dots"></i> Selecciona un grupo muscular</span>
+        <!-- Selector Bento de ejercicio individual con Modal y Buscador -->
+        <div class="pm-ex-select-wrap">
+          <div class="pm-ex-select-label">Ejercicio Seleccionado</div>
+          <button type="button" class="pm-ex-select-btn" id="pmExSelectBtn" onclick="abrirModalSelectorEjercicio()">
+            <div class="pm-ex-select-left">
+              <span class="pm-ex-select-icon"><i class="ti ti-barbell"></i></span>
+              <div class="pm-ex-select-texts">
+                <span class="pm-ex-select-name" id="pmExSelectName">Cargando ejercicios...</span>
+                <span class="pm-ex-select-meta" id="pmExSelectMeta">Toca para explorar o buscar</span>
+              </div>
+            </div>
+            <div class="pm-ex-select-right">
+              <span class="pm-ex-select-badge" id="pmExSelectBadge">0 series</span>
+              <i class="ti ti-chevron-down pm-ex-select-arrow"></i>
+            </div>
+          </button>
+        </div>
+
+        <!-- Modal Bottom-Sheet Picker de Ejercicios -->
+        <div class="pm-picker-overlay" id="pmPickerOverlay" onclick="cerrarModalSelectorEjercicio(event)">
+          <div class="pm-picker-sheet" id="pmPickerSheet">
+            <div class="pm-picker-handle"></div>
+            <div class="pm-picker-head">
+              <div>
+                <div class="pm-picker-title"><i class="ti ti-barbell" style="color:var(--text-purple, #b388ff);margin-right:6px;"></i> Seleccionar Ejercicio</div>
+                <div class="pm-picker-subtitle" id="pmPickerSubtitle">Grupo: Pecho</div>
+              </div>
+              <button type="button" class="pm-picker-close" onclick="cerrarModalSelectorEjercicio(null, true)">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+            
+            <div class="pm-picker-search">
+              <i class="ti ti-search pm-picker-search-icon"></i>
+              <input type="text" id="pmPickerSearchInput" placeholder="Buscar ejercicio..." oninput="filtrarEjerciciosPicker(this.value)" autocomplete="off">
+              <button type="button" class="pm-picker-search-clear" id="pmPickerClearBtn" onclick="limpiarBusquedaPicker()" style="display:none;">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+
+            <div class="pm-picker-list" id="pmPickerList">
+              <div class="pm-picker-empty"><i class="ti ti-loader ti-spin"></i> Cargando ejercicios...</div>
+            </div>
           </div>
         </div>
 
@@ -2465,7 +2776,7 @@ $grupoIconos = [
 
 
     <!-- -- Tab: Rutinas -- -->
-    <div class="xpf-panel" id="panel-rutinas">
+    <div class="xpf-panel <?= $tabInicial === 'rutinas' ? 'active' : '' ?>" id="panel-rutinas">
       <div class="cal-section-card">
         <!-- Header con título y botón de acción -->
         <div class="cal-card-header">
@@ -2587,7 +2898,7 @@ $grupoIconos = [
     </div><!-- /panel-rutinas -->
 
     <!-- -- Tab: Pagos (dinámico · Fetch) -- -->
-    <div class="xpf-panel" id="panel-pagos">
+    <div class="xpf-panel <?= $tabInicial === 'pagos' ? 'active' : '' ?>" id="panel-pagos">
 
       <!-- 1) Cabecera de suscripción -->
       <section class="xpay-sub glass-surface" aria-labelledby="xpaySubLabel">
@@ -3072,6 +3383,13 @@ document.querySelectorAll('.xpf-tabs input[name="xpf-tab-group"]').forEach(radio
       document.querySelectorAll('.xpf-panel').forEach(p => p.classList.remove('active'));
       const panel = document.getElementById('panel-' + targetTab);
       if (panel) panel.classList.add('active');
+    }
+    if (targetTab === 'rutinas') {
+      try {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } catch (e) {
+        window.scrollTo(0, 0);
+      }
     }
   }
 })();
@@ -3578,9 +3896,56 @@ try {
 } catch (_) {}
 
 // ── Seleccionar Grupo Muscular (0ms desde Snapshot + Sync en Segundo Plano) ──
+let currentGrupoEjercicios = [];
+
+function renderPickerList(ejercicios, activeName) {
+  const pickerList = document.getElementById('pmPickerList');
+  if (!pickerList) return;
+  if (!ejercicios || ejercicios.length === 0) {
+    pickerList.innerHTML = '<div class="pm-picker-empty"><i class="ti ti-search-off" style="font-size:1.8rem;display:block;margin-bottom:8px;opacity:0.35;"></i>No se encontraron ejercicios con ese nombre.</div>';
+    return;
+  }
+
+  let html = '';
+  ejercicios.forEach(ej => {
+    const isAct = (activeName === ej.nombre);
+    const safeName = (ej.nombre || '').replace(/'/g, "\\'");
+    const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
+    const seriesCount = ej.total_series_registradas || 0;
+    const fechaFmt = ej.ultima_fecha ? ('Última sesión: ' + ej.ultima_fecha.split('-').reverse().join('/')) : 'Sin fecha reciente';
+
+    html += `
+      <div class="pm-picker-item${isAct ? ' active' : ''}" data-ej="${safeAttr}" onclick="seleccionarEjercicioDesdePicker('${safeName}', ${ej.id || 0})">
+        <div class="pm-picker-item-left">
+          <div class="pm-picker-item-name">${ej.nombre}</div>
+          <div class="pm-picker-item-sub">${fechaFmt}</div>
+        </div>
+        <div class="pm-picker-item-right">
+          <span class="pm-picker-badge">${seriesCount} series</span>
+          ${isAct ? '<i class="ti ti-check" style="color:#b388ff;font-size:1.15rem;"></i>' : ''}
+        </div>
+      </div>
+    `;
+  });
+  pickerList.innerHTML = html;
+}
+
 function renderBotonesGrupoEnt(grupo, data, list, autoSelect = true) {
+  const subTitle = document.getElementById('pmPickerSubtitle');
+  const triggerName = document.getElementById('pmExSelectName');
+  const triggerMeta = document.getElementById('pmExSelectMeta');
+  const triggerBadge = document.getElementById('pmExSelectBadge');
+  const selectBtn = document.getElementById('pmExSelectBtn');
+
   if (!data || !data.ok || !data.ejercicios || data.ejercicios.length === 0) {
-    if (list) list.innerHTML = '<span class="pm-ex-empty"><i class="ti ti-chart-off"></i> Sin entrenamientos completados en este grupo</span>';
+    currentGrupoEjercicios = [];
+    if (triggerName) triggerName.textContent = 'Sin ejercicios';
+    if (triggerMeta) triggerMeta.textContent = 'No hay entrenamientos en ' + ucFirst(grupo);
+    if (triggerBadge) triggerBadge.textContent = '0 series';
+    if (subTitle) subTitle.textContent = 'Grupo: ' + ucFirst(grupo) + ' (0 ejercicios)';
+    if (selectBtn) selectBtn.style.opacity = '0.6';
+    renderPickerList([], '');
+
     const emptyMsg = document.getElementById('chartEmptyMsg');
     if (emptyMsg) emptyMsg.textContent = 'El atleta aún no tiene series completadas registradas en ' + ucFirst(grupo) + '.';
     const titleText = document.getElementById('chartTitleText');
@@ -3588,21 +3953,74 @@ function renderBotonesGrupoEnt(grupo, data, list, autoSelect = true) {
     return false;
   }
 
-  let html = '';
-  data.ejercicios.forEach(ej => {
-    const safeName = (ej.nombre || '').replace(/'/g, "\\'");
-    const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
-    const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
-    const isAct = currentEjercicio === ej.nombre ? ' active' : '';
-    html += `<button type="button" class="pm-ex-btn${isAct}" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
-      data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
-  });
-  if (list) list.innerHTML = html;
+  currentGrupoEjercicios = data.ejercicios;
+  if (selectBtn) selectBtn.style.opacity = '1';
+  if (subTitle) subTitle.textContent = 'Grupo: ' + ucFirst(grupo) + ' (' + data.ejercicios.length + ' ejercicios disponibles)';
+
+  const activeEj = autoSelect ? data.ejercicios[0] : (data.ejercicios.find(e => e.nombre === currentEjercicio) || data.ejercicios[0]);
+  renderPickerList(data.ejercicios, activeEj.nombre);
 
   if (autoSelect && data.ejercicios.length > 0) {
-    seleccionarEjercicio(data.ejercicios[0].nombre, data.ejercicios[0].id || 0);
+    seleccionarEjercicio(activeEj.nombre, activeEj.id || 0);
   }
   return true;
+}
+
+function abrirModalSelectorEjercicio() {
+  if (!currentGrupoEjercicios || currentGrupoEjercicios.length === 0) {
+    Xp.toast('info', 'No hay ejercicios registrados en este grupo muscular');
+    return;
+  }
+  const overlay = document.getElementById('pmPickerOverlay');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  const input = document.getElementById('pmPickerSearchInput');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 80);
+  }
+  const clearBtn = document.getElementById('pmPickerClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderPickerList(currentGrupoEjercicios, currentEjercicio);
+}
+
+function cerrarModalSelectorEjercicio(e, force = false) {
+  if (force || (e && e.target && e.target.id === 'pmPickerOverlay')) {
+    const overlay = document.getElementById('pmPickerOverlay');
+    if (overlay) overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+function seleccionarEjercicioDesdePicker(nombre, id) {
+  seleccionarEjercicio(nombre, id);
+  cerrarModalSelectorEjercicio(null, true);
+}
+
+function filtrarEjerciciosPicker(query) {
+  const clearBtn = document.getElementById('pmPickerClearBtn');
+  if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
+  const q = (query || '').trim().toLowerCase();
+  if (!q) {
+    renderPickerList(currentGrupoEjercicios, currentEjercicio);
+    return;
+  }
+  const filtrados = (currentGrupoEjercicios || []).filter(ej => 
+    (ej.nombre || '').toLowerCase().includes(q)
+  );
+  renderPickerList(filtrados, currentEjercicio);
+}
+
+function limpiarBusquedaPicker() {
+  const input = document.getElementById('pmPickerSearchInput');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  const clearBtn = document.getElementById('pmPickerClearBtn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  renderPickerList(currentGrupoEjercicios, currentEjercicio);
 }
 
 async function seleccionarGrupo(grupo, tren) {
@@ -3697,7 +4115,17 @@ async function seleccionarEjercicio(nombre, id) {
   currentEjercicio   = nombre;
   currentEjercicioId = id || null;
 
-  document.querySelectorAll('.pm-ex-btn').forEach(b => {
+  // Actualizar el selector Bento principal
+  const triggerName = document.getElementById('pmExSelectName');
+  if (triggerName) triggerName.textContent = nombre;
+  const triggerBadge = document.getElementById('pmExSelectBadge');
+  const foundEj = (currentGrupoEjercicios || []).find(e => e.nombre === nombre);
+  if (triggerBadge) triggerBadge.textContent = (foundEj ? foundEj.total_series_registradas : 0) + ' series';
+  const triggerMeta = document.getElementById('pmExSelectMeta');
+  if (triggerMeta) triggerMeta.textContent = 'Toca para cambiar (' + (currentGrupoEjercicios ? currentGrupoEjercicios.length : 0) + ' en ' + ucFirst(currentGrupo) + ')';
+
+  // Actualizar clase activa en items del picker si está abierto
+  document.querySelectorAll('.pm-picker-item').forEach(b => {
     b.classList.toggle('active', b.dataset.ej === nombre);
   });
 
@@ -3968,13 +4396,23 @@ function renderSummary() {
   const statReps = document.getElementById('pmStatReps');
   const statRepsSub = document.getElementById('pmStatRepsSub');
 
+  const formatUnitHelper = (u, p) => {
+    const ul = (u || 'kg').toLowerCase();
+    if (ul === 'lbs' || ul === 'lb') return 'lbs';
+    if (ul === 'placas' || ul === 'placa') return p == 1 ? 'placa' : 'placas';
+    if (ul === 'ninguna') return '';
+    return 'kg';
+  };
+
   if (rMax && statMax && statMaxSub) {
-    statMax.textContent = rMax.peso > 0 ? `${parseFloat(rMax.peso).toFixed(1)} kg` : 'Corporal';
+    const uMax = formatUnitHelper(rMax.unidad, rMax.peso);
+    statMax.textContent = rMax.peso > 0 ? `${parseFloat(rMax.peso).toFixed(1)} ${uMax}`.trim() : (rMax.unidad === 'ninguna' ? 'Sin peso' : 'Corporal');
     statMaxSub.textContent = `${rMax.reps} reps · ${rMax.fecha_fmt}`;
   }
   if (rReps && statReps && statRepsSub) {
+    const uReps = formatUnitHelper(rReps.unidad, rReps.peso);
     statReps.textContent = `${rReps.reps} reps`;
-    statRepsSub.textContent = (rReps.peso > 0 ? `${parseFloat(rReps.peso).toFixed(1)} kg` : 'Corporal') + ` · ${rReps.fecha_fmt}`;
+    statRepsSub.textContent = (rReps.peso > 0 ? `${parseFloat(rReps.peso).toFixed(1)} ${uReps}`.trim() : (rReps.unidad === 'ninguna' ? 'Sin peso' : 'Corporal')) + ` · ${rReps.fecha_fmt}`;
   }
 }
 
@@ -4004,7 +4442,14 @@ function renderPodioTop3() {
     const isActive = (i === currentVersionIndex);
 
     if (ses) {
-      const peso = (parseFloat(ses.peso_max) || 0) > 0 ? (parseFloat(ses.peso_max).toFixed(1) + ' kg') : 'Corporal';
+      const uSes = (ses.unidad_carga || 'kg').toLowerCase();
+      let uSesStr = 'kg';
+      if (uSes === 'lbs' || uSes === 'lb') uSesStr = 'lbs';
+      else if (uSes === 'placas' || uSes === 'placa') uSesStr = (parseFloat(ses.peso_max) == 1 ? 'placa' : 'placas');
+      else if (uSes === 'ninguna') uSesStr = '';
+
+      const pMaxNum = parseFloat(ses.peso_max) || 0;
+      const peso = pMaxNum > 0 ? `${pMaxNum.toFixed(1)} ${uSesStr}`.trim() : (uSes === 'ninguna' ? 'Sin peso' : 'Corporal');
       const reps = (parseInt(ses.reps_en_max) || 0) + ' reps';
 
       html += `
@@ -4631,29 +5076,30 @@ if (document.readyState === 'complete') {
     let isoDowUltimo = dowUltimo === 0 ? 7 : dowUltimo;
     let diasHastaDomingo = 7 - isoDowUltimo;
 
-    let fechaIter = new Date(currentCalAno, currentCalMes - 1, 1 - diasDesdeLunes);
-    const fechaFin = new Date(currentCalAno, currentCalMes - 1, ultimoDiaNum + diasHastaDomingo);
+    const totalDays = diasDesdeLunes + ultimoDiaNum + diasHastaDomingo;
+    const totalWeeks = Math.ceil(totalDays / 7);
+    const startCalDate = new Date(currentCalAno, currentCalMes - 1, 1 - diasDesdeLunes, 12, 0, 0);
 
     let semanasHtml = '';
-    let sIdx = 1;
-
-    while (fechaIter <= fechaFin) {
+    for (let w = 0; w < totalWeeks; w++) {
       let weekCellsHtml = '';
       for (let c = 0; c < 7; c++) {
-        const y = fechaIter.getFullYear();
-        const m = String(fechaIter.getMonth() + 1).padStart(2, '0');
-        const d = String(fechaIter.getDate()).padStart(2, '0');
+        const offset = w * 7 + c;
+        const curDate = new Date(startCalDate.getTime() + offset * 86400000);
+        const y = curDate.getFullYear();
+        const m = String(curDate.getMonth() + 1).padStart(2, '0');
+        const d = String(curDate.getDate()).padStart(2, '0');
         const fechaStr = `${y}-${m}-${d}`;
-        const diaNum = fechaIter.getDate();
+        const diaNum = curDate.getDate();
 
-        const esMes = (fechaIter.getMonth() + 1) === currentCalMes;
+        const esMes = (curDate.getMonth() + 1) === currentCalMes;
         const esHoy = (fechaStr === FECHA_HOY);
         const esFuturo = (fechaStr > FECHA_HOY);
 
         const incompleto = !esFuturo && fechasIncompletas.includes(fechaStr);
         const entreno = !esFuturo && fechasEntrenadas.includes(fechaStr);
 
-        let dowCurrent = fechaIter.getDay();
+        let dowCurrent = curDate.getDay();
         let isoDowCurrent = dowCurrent === 0 ? 7 : dowCurrent;
         const programado = diasProgramados.includes(isoDowCurrent);
 
@@ -4688,19 +5134,16 @@ if (document.readyState === 'complete') {
             ${dotHtml}
           </div>
         `;
-
-        fechaIter.setDate(fechaIter.getDate() + 1);
       }
 
       semanasHtml += `
         <div class="cal-week">
-          <div class="cal-week-label">Sem ${sIdx}</div>
+          <div class="cal-week-label">Sem ${w + 1}</div>
           <div class="cal-week-cells">
             ${weekCellsHtml}
           </div>
         </div>
       `;
-      sIdx++;
     }
 
     container.innerHTML = semanasHtml;
@@ -5308,9 +5751,13 @@ if (document.readyState === 'complete') {
       // Lista de ejercicios modo lectura (SIN TAGS cuando están plegados)
       html += '<div class="crdi-ejercicios-list">';
       rutinaInlineState.ejercicios.forEach((ej, idx) => {
-        const hasRir = ej.rir !== null && ej.rir !== undefined && ej.rir !== '' && !isNaN(parseInt(ej.rir, 10));
         let setsList = Array.isArray(ej.series_detalle) ? [...ej.series_detalle] : [];
         const uEj = (ej.unidad_carga || 'kg').toLowerCase();
+
+        const hasRir = Boolean(
+          (ej.rir !== null && ej.rir !== undefined && ej.rir !== '' && !isNaN(parseInt(ej.rir, 10))) ||
+          (setsList.some(s => s && s.rir !== null && s.rir !== undefined && s.rir !== '' && !isNaN(parseInt(s.rir, 10))))
+        );
 
         // Garantizar que la tabla siempre tenga series estructuradas
         if (setsList.length === 0) {
@@ -5341,7 +5788,7 @@ if (document.readyState === 'complete') {
             } else {
               pVal = `${pNum} kg`;
             }
-          } else if (u === 'ninguna') {
+          } else if (u === 'ninguna' || ej.tipo_implemento === 'sin_peso') {
             pVal = 'Sin peso';
           } else {
             pVal = '—';
@@ -5349,11 +5796,17 @@ if (document.readyState === 'complete') {
 
           const rVal = s.reps ? `${s.reps} reps` : `${esc(ej.repeticiones || '10')} reps`;
 
-          const sRirParsed = (s.rir !== null && s.rir !== undefined && !isNaN(parseInt(s.rir, 10))) 
-            ? parseInt(s.rir, 10) 
-            : ((ej.rir !== null && ej.rir !== undefined && !isNaN(parseInt(ej.rir, 10))) ? parseInt(ej.rir, 10) : null);
+          let sRirParsed = null;
+          if (s && s.rir !== null && s.rir !== undefined && s.rir !== '' && !isNaN(parseInt(s.rir, 10))) {
+            sRirParsed = parseInt(s.rir, 10);
+          } else if (ej && ej.rir !== null && ej.rir !== undefined && ej.rir !== '' && !isNaN(parseInt(ej.rir, 10))) {
+            sRirParsed = parseInt(ej.rir, 10);
+          }
+          if (sRirParsed !== null) {
+            sRirParsed = Math.max(0, Math.min(5, sRirParsed));
+          }
 
-          const rirCol = (hasRir && sRirParsed !== null && !isNaN(sRirParsed)) 
+          const rirCol = (hasRir && sRirParsed !== null) 
             ? `<span class="crdi-st-val rir">RIR ${sRirParsed}</span>` 
             : (hasRir ? '<span class="crdi-st-val rir" style="opacity:0.35;">—</span>' : '');
 

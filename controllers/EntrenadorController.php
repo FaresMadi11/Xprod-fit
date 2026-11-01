@@ -4074,6 +4074,10 @@ function entApiActualizarRutinaCompleta(): void {
                 $imgPath = $cat['imagen_path'] ?? null;
                 $imgDemoPath = $cat['imagen_demo_path'] ?? null;
 
+                if (!$cat) {
+                    asegurarEjercicioEnCatalogo($db, $nombre, $grupo, $imp, $unidad, $equip);
+                }
+
                 $stIns->execute([
                     $rutinaId, $nombre, $series, $reps, $rirVal, $orden,
                     $imp, $unidad, $desc, $grupo, $equip, $imgPath, $imgDemoPath
@@ -4421,6 +4425,9 @@ function entApiImportarHistorialGuardar(): void {
                         ]);
                         $newEjId = (int)$db->lastInsertId();
                         $mapEjCreados[$newRutId][$ejNom] = $newEjId;
+
+                        // Auto-registro defensivo en el catálogo maestro para prevenir ejercicios huérfanos
+                        asegurarEjercicioEnCatalogo($db, $ejNom, $ejGrp, $ejImp, $ejUni, $ejEqp);
                     }
                 }
             }
@@ -4559,7 +4566,8 @@ function entApiImportarHistorialGuardar(): void {
         // Deduplicación defensiva en memoria para evitar colisiones de clave única intra-batch en TiDB/MySQL
         $seriesUnicas = [];
         foreach ($seriesBatch as $sRow) {
-            $ukKey = ($sRow[1] ?? '0') . '|' . $sRow[0] . '|' . $sRow[6] . '|' . $sRow[7];
+            $ejIdent = !empty($sRow[1]) ? (string)$sRow[1] : mb_strtolower(trim((string)$sRow[4]));
+            $ukKey = $sRow[0] . '|' . $sRow[6] . '|' . $ejIdent . '|' . $sRow[7];
             $seriesUnicas[$ukKey] = $sRow;
         }
         $seriesBatch = array_values($seriesUnicas);

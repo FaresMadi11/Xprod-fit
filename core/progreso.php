@@ -160,6 +160,8 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
         $pFloat = (float)($s['peso_usado'] ?? 0);
         $reps   = (int)($s['reps_realizadas'] ?? 0);
 
+        $uSerie = trim((string)($s['unidad_carga'] ?? 'kg')) ?: 'kg';
+
         if (!isset($porSesion[$f])) {
             $porSesion[$f] = [
                 'fecha'            => $f,
@@ -167,6 +169,7 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
                 'fecha_completa'   => $s['fecha_completa'],
                 'peso_max'         => $pFloat,
                 'reps_en_max'      => $reps,
+                'unidad_carga'     => $uSerie,
                 'series_count'     => 1,
                 'series'           => [$s]
             ];
@@ -176,8 +179,10 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
             if ($pFloat > $porSesion[$f]['peso_max']) {
                 $porSesion[$f]['peso_max']    = $pFloat;
                 $porSesion[$f]['reps_en_max'] = $reps;
+                $porSesion[$f]['unidad_carga'] = $uSerie;
             } elseif ($pFloat === $porSesion[$f]['peso_max'] && $reps > $porSesion[$f]['reps_en_max']) {
                 $porSesion[$f]['reps_en_max'] = $reps;
+                $porSesion[$f]['unidad_carga'] = $uSerie;
             }
         }
 
@@ -186,6 +191,7 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
             $recordMaxPeso = [
                 'peso'      => $pFloat,
                 'reps'      => $reps,
+                'unidad'    => $uSerie,
                 'fecha'     => $s['fecha'],
                 'fecha_fmt' => $s['fecha_formateada']
             ];
@@ -196,6 +202,7 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
             $recordMayorReps = [
                 'peso'      => $pFloat,
                 'reps'      => $reps,
+                'unidad'    => $uSerie,
                 'fecha'     => $s['fecha'],
                 'fecha_fmt' => $s['fecha_formateada']
             ];
@@ -208,12 +215,22 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
         if (($s['tipo_serie'] ?? '') === 'calentamiento') continue;
         $p = (float)($s['peso_usado'] ?? 0);
         $r = (int)($s['reps_realizadas'] ?? 0);
+        $u = trim((string)($s['unidad_carga'] ?? 'kg')) ?: 'kg';
         $k = (string)$p;
+
+        $uLabel = match(strtolower($u)) {
+            'lbs', 'lb' => 'lbs',
+            'placas', 'placa' => ($p == 1 ? 'placa' : 'placas'),
+            'ninguna' => '',
+            default => 'kg'
+        };
+        $pesoLabel = $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . ($uLabel ? ' ' . $uLabel : '')) : ($u === 'ninguna' ? 'Sin peso' : 'Corporal');
 
         if (!isset($barrasPorPeso[$k])) {
             $barrasPorPeso[$k] = [
                 'peso'           => $p,
-                'peso_label'     => $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                'unidad'         => $u,
+                'peso_label'     => $pesoLabel,
                 'reps_max'       => $r,
                 'sesiones_count' => 1,
                 'fecha_label'    => $s['fecha_formateada'],
@@ -224,6 +241,8 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
                 $barrasPorPeso[$k]['reps_max']    = $r;
                 $barrasPorPeso[$k]['fecha_label'] = $s['fecha_formateada'];
                 $barrasPorPeso[$k]['fecha_iso']   = $s['fecha'];
+                $barrasPorPeso[$k]['peso_label']  = $pesoLabel;
+                $barrasPorPeso[$k]['unidad']      = $u;
             }
             $barrasPorPeso[$k]['sesiones_count']++;
         }
@@ -247,19 +266,25 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
     // Estructurar barras por cada una de las 3 versiones de sesión
     foreach ($top3Sesiones as &$ses) {
         $pMax = (float)$ses['peso_max'];
+        $uSes = trim((string)($ses['unidad_carga'] ?? 'kg')) ?: 'kg';
         $umbral = $pMax > 0 ? ($pMax * 0.75) : 0;
         $barrasSes = [];
         foreach ($ses['series'] as $s) {
             $p = (float)($s['peso_usado'] ?? 0);
             $r = (int)($s['reps_realizadas'] ?? 0);
+            $uS = trim((string)($s['unidad_carga'] ?? $uSes)) ?: $uSes;
             if (($s['tipo_serie'] ?? '') === 'calentamiento') continue;
             if ($pMax > 0 && $p < $umbral) continue;
 
             $k = (string)$p;
+            $unitSuffix = ($uS === 'lbs') ? ' lbs' : (($uS === 'placas') ? ($p == 1 ? ' placa' : ' placas') : (($uS === 'ninguna') ? '' : ' kg'));
+            $pLbl = $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . $unitSuffix) : ($uS === 'ninguna' ? 'Sin peso' : 'Corporal');
+
             if (!isset($barrasSes[$k])) {
                 $barrasSes[$k] = [
                     'peso'        => $p,
-                    'peso_label'  => $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                    'unidad'      => $uS,
+                    'peso_label'  => $pLbl,
                     'reps_max'    => $r,
                     'fecha_label' => $s['fecha_formateada'] ?? $ses['fecha_formateada'],
                     'fecha_iso'   => $s['fecha'] ?? $ses['fecha']
@@ -273,9 +298,12 @@ function obtenerProgresoHistorial(PDO $db, int $clienteId, string $nombreEj, int
             }
         }
         if (empty($barrasSes)) {
+            $unitSuffixMax = ($uSes === 'lbs') ? ' lbs' : (($uSes === 'placas') ? ($pMax == 1 ? ' placa' : ' placas') : (($uSes === 'ninguna') ? '' : ' kg'));
+            $pLblMax = $pMax > 0 ? (rtrim(rtrim(number_format($pMax, 1, '.', ''), '0'), '.') . $unitSuffixMax) : ($uSes === 'ninguna' ? 'Sin peso' : 'Corporal');
             $barrasSes[] = [
                 'peso'        => $pMax,
-                'peso_label'  => $pMax > 0 ? (rtrim(rtrim(number_format($pMax, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                'unidad'      => $uSes,
+                'peso_label'  => $pLblMax,
                 'reps_max'    => $ses['reps_en_max'],
                 'fecha_label' => $ses['fecha_formateada'],
                 'fecha_iso'   => $ses['fecha']
@@ -579,6 +607,92 @@ function inferirEquipamientoProgreso(string $nombre, ?string $equipActual = null
     if (str_contains($n, 'vuelos') || str_contains($n, 'aperturas') || str_contains($n, 'pajaros')) return 'Mancuernas';
     if (str_contains($n, 'prensa') || str_contains($n, 'hack') || str_contains($n, 'extension de rodilla') || str_contains($n, 'femoral') || str_contains($n, 'abductor')) return 'Máquina';
     return 'Barra';
+}
+
+/**
+ * Auto-registro limpio y seguro de ejercicios en catalogo_ejercicios.
+ */
+function asegurarEjercicioEnCatalogo(PDO $db, string $nombre, ?string $grupo = null, ?string $imp = null, ?string $uni = null, ?string $equip = null): int {
+    $cleanNom = trim($nombre);
+    if ($cleanNom === '') return 0;
+
+    $cleanNom = preg_replace('/^paerturas\b/iu', 'Aperturas', $cleanNom);
+    $cleanNom = preg_replace('/\s*\(m\s*=\s*con\s*mancuernas\)/iu', ' con Mancuernas', $cleanNom);
+    $cleanNom = preg_replace('/\s+/', ' ', $cleanNom);
+    $cleanNom = mb_convert_case($cleanNom, MB_CASE_TITLE, 'UTF-8');
+
+    $stCheck = $db->prepare("SELECT id FROM catalogo_ejercicios WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) LIMIT 1");
+    $stCheck->execute([$cleanNom]);
+    $exId = $stCheck->fetchColumn();
+    if ($exId) {
+        return (int)$exId;
+    }
+
+    if (!$grupo || $grupo === '' || $grupo === 'General' || $grupo === 'Sin grupo') {
+        $n = mb_strtolower($cleanNom, 'UTF-8');
+        if (str_contains($n, 'gluteo') || str_contains($n, 'glúteo') || str_contains($n, 'hip thrust') || str_contains($n, 'hip trust') || str_contains($n, 'patada de gluteo')) {
+            $grupo = 'glúteos';
+        } elseif (str_contains($n, 'femoral') || str_contains($n, 'isquio') || str_contains($n, 'deadlift') || str_contains($n, 'sldl') || str_contains($n, 'peso muerto') || str_contains($n, 'rumano') || str_contains($n, 'romanian')) {
+            $grupo = 'femoral';
+        } elseif (str_contains($n, 'sentadilla') || str_contains($n, 'squat') || str_contains($n, 'prensa') || str_contains($n, 'hack') || str_contains($n, 'cuadriceps') || str_contains($n, 'cuádriceps') || str_contains($n, 'zancada') || str_contains($n, 'búlgara') || str_contains($n, 'bulgara') || str_contains($n, 'tijera')) {
+            $grupo = 'cuádriceps';
+        } elseif (str_contains($n, 'gemelo') || str_contains($n, 'pantorrilla') || str_contains($n, 'talon') || str_contains($n, 'talón')) {
+            $grupo = 'gemelos';
+        } elseif (str_contains($n, 'abductor') || str_contains($n, 'abduccion') || str_contains($n, 'abducción') || str_contains($n, 'aductor') || str_contains($n, 'aduccion') || str_contains($n, 'cadera')) {
+            $grupo = 'abductores';
+        } elseif (str_contains($n, 'abdomen') || str_contains($n, 'oblicuo') || str_contains($n, 'crunch') || str_contains($n, 'plancha') || str_contains($n, 'core')) {
+            $grupo = 'abdomen';
+        } elseif (str_contains($n, 'espalda') || str_contains($n, 'remo') || str_contains($n, 'jalon') || str_contains($n, 'jalón') || str_contains($n, 'dominada') || str_contains($n, 'pulldown') || str_contains($n, 'dorsal')) {
+            $grupo = 'espalda';
+        } elseif (str_contains($n, 'pecho') || str_contains($n, 'banca') || str_contains($n, 'peck deck') || str_contains($n, 'apertura') || str_contains($n, 'paertura') || str_contains($n, 'cruce')) {
+            $grupo = 'pecho';
+        } elseif (str_contains($n, 'hombro') || str_contains($n, 'militar') || str_contains($n, 'lateral') || str_contains($n, 'posterior') || str_contains($n, 'pájaro') || str_contains($n, 'pajaro') || str_contains($n, 'press francés mancuernas')) {
+            $grupo = 'hombros';
+        } elseif (str_contains($n, 'triceps') || str_contains($n, 'tríceps') || str_contains($n, 'francés') || str_contains($n, 'frances') || str_contains($n, 'fondos') || str_contains($n, 'copa')) {
+            $grupo = 'tríceps';
+        } elseif (str_contains($n, 'biceps') || str_contains($n, 'bíceps') || str_contains($n, 'curl') || str_contains($n, 'predicador') || str_contains($n, 'bayesian')) {
+            $grupo = 'bíceps';
+        } elseif (str_contains($n, 'antebrazo') || str_contains($n, 'muñeca') || str_contains($n, 'wrist')) {
+            $grupo = 'antebrazos';
+        } else {
+            $grupo = 'pecho';
+        }
+    }
+
+    if (!$imp || !in_array($imp, ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)) {
+        $n = mb_strtolower($cleanNom, 'UTF-8');
+        if (str_contains($n, 'mancuerna') || str_contains($n, 'db')) $imp = 'mancuerna';
+        elseif (str_contains($n, 'barra') || str_contains($n, 'libre') || str_contains($n, 'peso muerto') || str_contains($n, 'press banca')) $imp = 'barra';
+        elseif (str_contains($n, 'corporal') || str_contains($n, 'calistenia') || str_contains($n, 'plancha') || str_contains($n, 'dominada')) $imp = 'sin_peso';
+        else $imp = 'polea_maquina';
+    }
+
+    if (!$uni || !in_array($uni, ['kg', 'lbs', 'placas', 'ninguna'], true)) {
+        $uni = ($imp === 'sin_peso') ? 'ninguna' : 'kg';
+    }
+
+    if (!$equip || $equip === '') {
+        $equip = inferirEquipamientoProgreso($cleanNom, $imp);
+    }
+
+    static $catMapCache = null;
+    if ($catMapCache === null) {
+        $stCats = $db->query("SELECT id, grupo, nombre FROM categorias_musculares");
+        $catMapCache = [];
+        while ($cr = $stCats->fetch(PDO::FETCH_ASSOC)) {
+            $catMapCache[mb_strtolower($cr['nombre'], 'UTF-8')] = (int)$cr['id'];
+            $catMapCache[mb_strtolower($cr['grupo'], 'UTF-8')] = (int)$cr['id'];
+        }
+    }
+    $catId = $catMapCache[mb_strtolower($grupo, 'UTF-8')] ?? 9;
+
+    $stIns = $db->prepare(
+        "INSERT INTO catalogo_ejercicios 
+         (nombre, grupo_muscular, categoria_id, tipo_implemento, unidad_carga, equipamiento, nota_default, es_publico)
+         VALUES (?, ?, ?, ?, ?, ?, '', 1)"
+    );
+    $stIns->execute([$cleanNom, $grupo, $catId, $imp, $uni, $equip]);
+    return (int)$db->lastInsertId();
 }
 
 /**
@@ -1398,6 +1512,8 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
             $pFloat = (float)($s['peso_usado'] ?? 0);
             $reps   = (int)($s['reps_realizadas'] ?? 0);
 
+            $uSerie = trim((string)($s['unidad_carga'] ?? 'kg')) ?: 'kg';
+
             if (!isset($porSesion[$f])) {
                 $porSesion[$f] = [
                     'fecha'            => $f,
@@ -1405,15 +1521,20 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
                     'fecha_completa'   => $s['fecha_completa'],
                     'peso_max'         => $pFloat,
                     'reps_en_max'      => $reps,
+                    'unidad_carga'     => $uSerie,
                     'series_count'     => 1,
                     'series'           => [$s],
                 ];
             } else {
                 $porSesion[$f]['series_count']++;
                 $porSesion[$f]['series'][] = $s;
-                if ($pFloat > $porSesion[$f]['peso_max'] || ($pFloat === $porSesion[$f]['peso_max'] && $reps > $porSesion[$f]['reps_en_max'])) {
+                if ($pFloat > $porSesion[$f]['peso_max']) {
                     $porSesion[$f]['peso_max']    = $pFloat;
                     $porSesion[$f]['reps_en_max'] = $reps;
+                    $porSesion[$f]['unidad_carga'] = $uSerie;
+                } elseif ($pFloat === $porSesion[$f]['peso_max'] && $reps > $porSesion[$f]['reps_en_max']) {
+                    $porSesion[$f]['reps_en_max'] = $reps;
+                    $porSesion[$f]['unidad_carga'] = $uSerie;
                 }
             }
 
@@ -1421,6 +1542,7 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
                 $recordMaxPeso = [
                     'peso'      => $pFloat,
                     'reps'      => $reps,
+                    'unidad'    => $uSerie,
                     'fecha'     => $s['fecha'],
                     'fecha_fmt' => $s['fecha_formateada'],
                 ];
@@ -1430,6 +1552,7 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
                 $recordMayorReps = [
                     'peso'      => $pFloat,
                     'reps'      => $reps,
+                    'unidad'    => $uSerie,
                     'fecha'     => $s['fecha'],
                     'fecha_fmt' => $s['fecha_formateada'],
                 ];
@@ -1437,10 +1560,19 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
 
             if (($s['tipo_serie'] ?? '') !== 'calentamiento') {
                 $k = (string)$pFloat;
+                $uLabel = match(strtolower($uSerie)) {
+                    'lbs', 'lb' => 'lbs',
+                    'placas', 'placa' => ($pFloat == 1 ? 'placa' : 'placas'),
+                    'ninguna' => '',
+                    default => 'kg'
+                };
+                $pesoLabel = $pFloat > 0 ? (rtrim(rtrim(number_format($pFloat, 1, '.', ''), '0'), '.') . ($uLabel ? ' ' . $uLabel : '')) : ($uSerie === 'ninguna' ? 'Sin peso' : 'Corporal');
+
                 if (!isset($barrasPorPeso[$k])) {
                     $barrasPorPeso[$k] = [
                         'peso'           => $pFloat,
-                        'peso_label'     => $pFloat > 0 ? (rtrim(rtrim(number_format($pFloat, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                        'unidad'         => $uSerie,
+                        'peso_label'     => $pesoLabel,
                         'reps_max'       => $reps,
                         'sesiones_count' => 1,
                         'fecha_label'    => $s['fecha_formateada'],
@@ -1451,6 +1583,8 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
                         $barrasPorPeso[$k]['reps_max']    = $reps;
                         $barrasPorPeso[$k]['fecha_label'] = $s['fecha_formateada'];
                         $barrasPorPeso[$k]['fecha_iso']   = $s['fecha'];
+                        $barrasPorPeso[$k]['peso_label']  = $pesoLabel;
+                        $barrasPorPeso[$k]['unidad']      = $uSerie;
                     }
                     $barrasPorPeso[$k]['sesiones_count']++;
                 }
@@ -1470,18 +1604,24 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
 
         foreach ($top3Sesiones as &$ses) {
             $pMax      = (float)$ses['peso_max'];
+            $uSes      = trim((string)($ses['unidad_carga'] ?? 'kg')) ?: 'kg';
             $umbral    = $pMax > 0 ? ($pMax * 0.75) : 0;
             $barrasSes = [];
             foreach ($ses['series'] as $s) {
                 $p = (float)($s['peso_usado'] ?? 0);
                 $r = (int)($s['reps_realizadas'] ?? 0);
+                $uS = trim((string)($s['unidad_carga'] ?? $uSes)) ?: $uSes;
                 if (($s['tipo_serie'] ?? '') === 'calentamiento') continue;
                 if ($pMax > 0 && $p < $umbral) continue;
                 $k = (string)$p;
+                $unitSuffix = ($uS === 'lbs') ? ' lbs' : (($uS === 'placas') ? ($p == 1 ? ' placa' : ' placas') : (($uS === 'ninguna') ? '' : ' kg'));
+                $pLbl = $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . $unitSuffix) : ($uS === 'ninguna' ? 'Sin peso' : 'Corporal');
+
                 if (!isset($barrasSes[$k])) {
                     $barrasSes[$k] = [
                         'peso'        => $p,
-                        'peso_label'  => $p > 0 ? (rtrim(rtrim(number_format($p, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                        'unidad'      => $uS,
+                        'peso_label'  => $pLbl,
                         'reps_max'    => $r,
                         'fecha_label' => $s['fecha_formateada'] ?? $ses['fecha_formateada'],
                         'fecha_iso'   => $s['fecha'] ?? $ses['fecha'],
@@ -1493,9 +1633,12 @@ function construirSnapshotEstadisticasOffline(PDO $db, int $clienteId, string $r
                 }
             }
             if (empty($barrasSes)) {
+                $unitSuffixMax = ($uSes === 'lbs') ? ' lbs' : (($uSes === 'placas') ? ($pMax == 1 ? ' placa' : ' placas') : (($uSes === 'ninguna') ? '' : ' kg'));
+                $pLblMax = $pMax > 0 ? (rtrim(rtrim(number_format($pMax, 1, '.', ''), '0'), '.') . $unitSuffixMax) : ($uSes === 'ninguna' ? 'Sin peso' : 'Corporal');
                 $barrasSes[] = [
                     'peso'        => $pMax,
-                    'peso_label'  => $pMax > 0 ? (rtrim(rtrim(number_format($pMax, 1, '.', ''), '0'), '.') . ' kg') : 'Corporal',
+                    'unidad'      => $uSes,
+                    'peso_label'  => $pLblMax,
                     'reps_max'    => $ses['reps_en_max'],
                     'fecha_label' => $ses['fecha_formateada'],
                     'fecha_iso'   => $ses['fecha'],
