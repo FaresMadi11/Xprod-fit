@@ -6625,3 +6625,49 @@ button, a, input, select, textarea, .btn-xp, .wd-check-btn, .wd-day-tab {
     animation-play-state: paused !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   SISTEMA DE SKELETON LOADERS CON BARRIDO SHIMMER (BENTO UI)
+   ══════════════════════════════════════════════════════════════════════ */
+@keyframes xpShimmerSweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.xp-sk-element,
+.xp-skeleton-base {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  ) !important;
+  background-size: 250% 100% !important;
+  animation: xpShimmerSweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  border-radius: 8px;
+  pointer-events: none;
+  user-select: none;
+}
+
+html[data-theme="light"] .xp-sk-element,
+html[data-theme="light"] .xp-skeleton-base {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.05) 25%,
+    rgba(0, 0, 0, 0.12) 50%,
+    rgba(0, 0, 0, 0.05) 75%
+  ) !important;
+  background-size: 250% 100% !important;
+}
+
+.xp-sk-avatar {
+  border-radius: 50% !important;
+}
+
+.xp-sk-pill {
+  border-radius: 999px !important;
+}

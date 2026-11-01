@@ -4084,6 +4084,71 @@ if (document.readyState === 'complete') {
     return `${APP_URL_STATS}/${clean}`;
   }
 
+  function generarSkeletonRutinaInline() {
+    return `
+      <div class="crdi-skeleton-wrap" style="animation:fadeIn 0.2s ease;">
+        <div class="crdi-rutina-card" style="margin-bottom:12px;">
+          <div class="crdi-rutina-actions" style="margin-left:auto; gap:8px;">
+            <div class="xp-sk-element" style="width:116px; height:36px; border-radius:10px;"></div>
+            <div class="xp-sk-element" style="width:96px; height:36px; border-radius:10px;"></div>
+          </div>
+        </div>
+
+        <div class="crdi-cardio-card" style="opacity:0.65; pointer-events:none; border-style:dashed;">
+          <div class="crdi-cardio-left" style="width:100%;">
+            <div class="xp-sk-element" style="width:36px; height:36px; border-radius:10px; flex-shrink:0;"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+              <div class="xp-sk-element" style="width:38%; height:14px;"></div>
+              <div class="xp-sk-element" style="width:65%; height:11px; opacity:0.6;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="crdi-ejercicios-list">
+          <div class="crdi-ej-card" style="pointer-events:none;">
+            <div class="crdi-ej-header" style="cursor:default;">
+              <div class="crdi-ej-head-left">
+                <div class="xp-sk-element" style="width:28px; height:28px; border-radius:8px; flex-shrink:0;"></div>
+                <div class="crdi-ej-titles" style="flex:1;">
+                  <div class="xp-sk-element" style="width:55%; height:16px;"></div>
+                </div>
+              </div>
+              <div class="crdi-ej-head-right">
+                <div class="xp-sk-element" style="width:16px; height:16px; border-radius:4px; opacity:0.4;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="crdi-ej-card" style="pointer-events:none;">
+            <div class="crdi-ej-header" style="cursor:default;">
+              <div class="crdi-ej-head-left">
+                <div class="xp-sk-element" style="width:28px; height:28px; border-radius:8px; flex-shrink:0;"></div>
+                <div class="crdi-ej-titles" style="flex:1;">
+                  <div class="xp-sk-element" style="width:42%; height:16px;"></div>
+                </div>
+              </div>
+              <div class="crdi-ej-head-right">
+                <div class="xp-sk-element" style="width:16px; height:16px; border-radius:4px; opacity:0.4;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="crdi-ej-card" style="pointer-events:none;">
+            <div class="crdi-ej-header" style="cursor:default;">
+              <div class="crdi-ej-head-left">
+                <div class="xp-sk-element" style="width:28px; height:28px; border-radius:8px; flex-shrink:0;"></div>
+                <div class="crdi-ej-titles" style="flex:1;">
+                  <div class="xp-sk-element" style="width:62%; height:16px;"></div>
+                </div>
+              </div>
+              <div class="crdi-ej-head-right">
+                <div class="xp-sk-element" style="width:16px; height:16px; border-radius:4px; opacity:0.4;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   async function cargarDetalleDiaInline(fecha) {
     fechaGlobalInline = fecha;
     const container = document.getElementById('calRutinaDiaInline');
@@ -4094,12 +4159,7 @@ if (document.readyState === 'complete') {
     if (!container || !contentEl) return;
 
     titleEl.textContent = formatoFechaLarga(fecha);
-    contentEl.innerHTML = `
-      <div class="crdi-empty-box" style="padding:20px;">
-        <div class="dia-modal-spinner" aria-hidden="true"></div>
-        <p style="font-size:0.85rem;margin-top:8px;">Cargando rutina del día...</p>
-      </div>
-    `;
+    contentEl.innerHTML = generarSkeletonRutinaInline();
 
     document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
     const celda = document.querySelector(`.cal-cell[data-fecha="${fecha}"]`);

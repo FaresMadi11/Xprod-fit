@@ -1909,6 +1909,76 @@ function elegirFechaCalendario(fecha) {
   cargarDatosPorFecha(fecha, false);
 }
 
+function generarSkeletonAsistenciasPanel() {
+  return `
+    <div class="xp-skeleton-panel" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+      <div class="cd-item-wrapper" style="pointer-events:none;">
+        <div class="cd-card glass-surface" style="cursor:default;">
+          <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+          <div class="cd-card-info" style="display:flex; flex-direction:column; gap:7px; flex:1; min-width:0;">
+            <div class="xp-sk-element" style="width:145px; height:15px;"></div>
+            <div class="xp-sk-element" style="width:85px; height:11px; opacity:0.5;"></div>
+          </div>
+          <div class="cd-action act-arrow" style="opacity:0.3;">
+            <i class="ti ti-chevron-right cd-chevron"></i>
+          </div>
+        </div>
+      </div>
+      <div class="cd-item-wrapper" style="pointer-events:none;">
+        <div class="cd-card glass-surface" style="cursor:default;">
+          <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+          <div class="cd-card-info" style="display:flex; flex-direction:column; gap:7px; flex:1; min-width:0;">
+            <div class="xp-sk-element" style="width:120px; height:15px;"></div>
+            <div class="xp-sk-element" style="width:100px; height:11px; opacity:0.5;"></div>
+          </div>
+          <div class="cd-action act-arrow" style="opacity:0.3;">
+            <i class="ti ti-chevron-right cd-chevron"></i>
+          </div>
+        </div>
+      </div>
+      <div class="cd-item-wrapper" style="pointer-events:none;">
+        <div class="cd-card glass-surface" style="cursor:default;">
+          <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px; flex-shrink:0;"></div>
+          <div class="cd-card-info" style="display:flex; flex-direction:column; gap:7px; flex:1; min-width:0;">
+            <div class="xp-sk-element" style="width:160px; height:15px;"></div>
+            <div class="xp-sk-element" style="width:75px; height:11px; opacity:0.5;"></div>
+          </div>
+          <div class="cd-action act-arrow" style="opacity:0.3;">
+            <i class="ti ti-chevron-right cd-chevron"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function generarSkeletonRutinaDrawer() {
+  return `
+    <div class="cdd-skeleton-wrap" style="padding:14px; display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+        <div class="xp-sk-element" style="width:110px; height:13px; opacity:0.6;"></div>
+        <div class="xp-sk-element" style="width:65px; height:13px; opacity:0.4;"></div>
+      </div>
+      <div class="cdd-ej-item" style="pointer-events:none; display:flex; align-items:center; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px;">
+        <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px; flex-shrink:0;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div class="xp-sk-element" style="width:50%; height:14px;"></div>
+          <div class="xp-sk-element" style="width:30%; height:11px; opacity:0.5;"></div>
+        </div>
+        <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+      </div>
+      <div class="cdd-ej-item" style="pointer-events:none; display:flex; align-items:center; gap:12px; padding:10px 14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:12px;">
+        <div class="xp-sk-element" style="width:34px; height:34px; border-radius:10px; flex-shrink:0;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div class="xp-sk-element" style="width:40%; height:14px;"></div>
+          <div class="xp-sk-element" style="width:25%; height:11px; opacity:0.5;"></div>
+        </div>
+        <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+      </div>
+    </div>
+  `;
+}
+
 /**
  * Carga los datos por AJAX y actualiza los 3 paneles y contadores.
  * Soporta modo silencioso (sin skeleton) para tiempo real continuo.
@@ -1924,15 +1994,7 @@ async function cargarDatosPorFecha(fecha, silent = false) {
     prevAlertasJson = '';
     paneles.forEach(id => {
       const glass = document.querySelector(`#${id} .cd-glass`);
-      if (glass) glass.innerHTML = `
-        <div class="cd-empty" style="opacity:.5">
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true"
-               style="animation:spin .9s linear infinite">
-            <circle cx="18" cy="18" r="14" stroke="rgba(255,255,255,.15)" stroke-width="3"/>
-            <path d="M18 4a14 14 0 0 1 14 14" stroke="white" stroke-width="3" stroke-linecap="round"/>
-          </svg>
-          <p style="margin:0">Cargando...</p>
-        </div>`;
+      if (glass) glass.innerHTML = generarSkeletonAsistenciasPanel();
     });
   }
 
@@ -2045,11 +2107,7 @@ async function toggleRutinaAtleta(cardEl, clienteId, modoTab) {
     return;
   }
 
-  drawer.innerHTML = `
-    <div class="cdd-loading">
-      <i class="ti ti-loader-2 cdd-spin"></i>
-      <span>Cargando rutina...</span>
-    </div>`;
+  drawer.innerHTML = generarSkeletonRutinaDrawer();
 
   try {
     const res = await fetch(`<?= APP_URL ?>/entrenador/api-dia-detalle?cliente_id=${clienteId}&fecha=${encodeURIComponent(fechaGlobal)}`, {
