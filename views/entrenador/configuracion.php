@@ -60,11 +60,11 @@ require __DIR__ . '/../layout/header.php';
 
 <!-- ── BENTO CARD: APARIENCIA Y PALETA DE COLORES ── -->
 <div class="form-container" style="width: 100%; margin-bottom: 25px;">
-  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-    <h3 style="margin: 0; font-size: 1.1rem; color: #fff; display: flex; align-items: center; gap: 8px;">
-      <i class="ti ti-palette" style="color:var(--accent-primary, #8a2be2); font-size: 1.35rem;"></i> Apariencia y Paleta de Colores
+  <div style="margin-bottom:12px;">
+    <h3 style="margin: 0; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px; font-weight: 800;">
+      <i class="ti ti-palette" style="color:var(--accent-primary, #8a2be2); font-size: 1.25rem;"></i> Apariencia y Paleta de Colores
     </h3>
-    <span style="font-size:0.75rem; color:var(--muted); font-weight:600;">Personaliza el estilo visual de la web y PWA</span>
+    <div style="font-size:0.74rem; color:var(--muted); font-weight:500; margin-top:3px;">Personaliza el estilo visual de la web y PWA</div>
   </div>
 
   <div class="xp-theme-grid">
@@ -2397,6 +2397,13 @@ function actualizarUISelectorTema(tema) {
       card.classList.toggle('is-active', (normTema === slug));
     }
   });
+
+  setTimeout(() => {
+    const activeCard = document.querySelector('.xp-theme-card.is-active');
+    if (activeCard && activeCard.scrollIntoView) {
+      activeCard.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, 100);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
