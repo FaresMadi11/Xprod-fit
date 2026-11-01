@@ -68,6 +68,8 @@ match($action) {
     'api-guardar-tema-sistema'       => entApiGuardarTemaSistema(),
     'api-eliminar-rutina'            => entApiEliminarRutina(),
     'api-actualizar-rutina-completa' => entApiActualizarRutinaCompleta(),
+    'api-importar-historial-analizar'=> entApiImportarHistorialAnalizar(),
+    'api-importar-historial-guardar' => entApiImportarHistorialGuardar(),
     default             => entDashboard(),
 };
 
@@ -483,9 +485,9 @@ function entPerfilCliente(): void {
     $stSes->execute([$clienteId]);
     $sesActiva = $stSes->fetch() ?: null;
 
-    // Historial de peso completo para gráfica Aurora
+    // Historial de peso completo para gráfica Aurora (sin límite artificial para abarcar todo el progreso)
     $stPeso = $db->prepare(
-        "SELECT fecha, peso_kg FROM peso_historial WHERE cliente_id = ? ORDER BY fecha ASC LIMIT 30"
+        "SELECT fecha, peso_kg FROM peso_historial WHERE cliente_id = ? ORDER BY fecha ASC"
     );
     $stPeso->execute([$clienteId]);
     $pesoRows = $stPeso->fetchAll();
@@ -929,7 +931,7 @@ function entGuardarPlantillaRutina(): void {
 
             $tipoImplemento = in_array($ex['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
                         ? $ex['tipo_implemento'] : 'barra';
-            $unidadCarga    = in_array($ex['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true)
+            $unidadCarga    = in_array($ex['unidad_carga'] ?? '', ['kg', 'lbs', 'placas', 'ninguna'], true)
                         ? $ex['unidad_carga'] : 'kg';
 
             // Auto-detección: si el entrenador deja el peso en 0, vacío o marca 'Sin peso', guardarlo como sin_peso
@@ -996,7 +998,7 @@ function entGuardarPlantillaRutina(): void {
 
             $tipoImplemento = in_array($ex['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
                         ? $ex['tipo_implemento'] : 'barra';
-            $unidadCarga    = in_array($ex['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true)
+            $unidadCarga    = in_array($ex['unidad_carga'] ?? '', ['kg', 'lbs', 'placas', 'ninguna'], true)
                         ? $ex['unidad_carga'] : 'kg';
             if ($tipoImplemento === 'sin_peso') {
                 $unidadCarga = 'ninguna';
@@ -2743,7 +2745,7 @@ function entApiCatalogoAgregar(): void {
     $videoUrl = trim($_POST['video_url'] ?? '');
     $tipoImp = in_array($_POST['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
                ? $_POST['tipo_implemento'] : 'barra';
-    $unidadCarga = in_array($_POST['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true)
+    $unidadCarga = in_array($_POST['unidad_carga'] ?? '', ['kg', 'lbs', 'placas', 'ninguna'], true)
                ? $_POST['unidad_carga'] : 'kg';
     
     if (!$nombre) jsonOut(false, 'El nombre del ejercicio es obligatorio.');
@@ -2792,7 +2794,7 @@ function entApiCatalogoEditar(): void {
     $videoUrl = trim($_POST['video_url'] ?? '');
     $tipoImp = in_array($_POST['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
                ? $_POST['tipo_implemento'] : 'barra';
-    $unidadCarga = in_array($_POST['unidad_carga'] ?? '', ['kg', 'placas', 'ninguna'], true)
+    $unidadCarga = in_array($_POST['unidad_carga'] ?? '', ['kg', 'lbs', 'placas', 'ninguna'], true)
                ? $_POST['unidad_carga'] : 'kg';
     
     if (!$id || !$nombre) jsonOut(false, 'Faltan datos obligatorios.');
@@ -3766,7 +3768,7 @@ function entApiGuardarSerieAtleta(): void {
             ? $rawTipoImp
             : ($ejInfo['tipo_implemento'] ?? 'barra');
 
-        $unidadCarga = in_array($rawUnidad, ['kg', 'placas', 'ninguna'], true)
+        $unidadCarga = in_array($rawUnidad, ['kg', 'lbs', 'placas', 'ninguna'], true)
             ? $rawUnidad
             : ($ejInfo['unidad_carga'] ?? 'kg');
 
@@ -3786,17 +3788,30 @@ function entApiGuardarSerieAtleta(): void {
         if ($tipoImplemento !== 'sin_peso' && $unidadCarga !== 'ninguna' && $rawPeso !== '') {
             $valNumeric = round((float)str_replace(',', '.', $rawPeso), 2);
             if ($tipoImplemento === 'mancuerna') {
-                $pesoUsado   = min(200, $valNumeric);
+                $maxM = ($unidadCarga === 'lbs') ? 450 : 200;
+                $pesoUsado   = min($maxM, $valNumeric);
                 $pesoPorLado = $pesoUsado;
-                $kgReal      = round($pesoUsado * 2, 2);
-                $unidadCarga = 'kg';
+                if ($unidadCarga === 'lbs') {
+                    $kgReal = round(($pesoUsado * 2) / 2.20462, 2);
+                } else {
+                    $kgReal = round($pesoUsado * 2, 2);
+                }
             } elseif ($tipoImplemento === 'polea_maquina') {
-                $pesoUsado   = ($unidadCarga === 'placas') ? min(30, $valNumeric) : min(500, $valNumeric);
-                $kgReal      = $pesoUsado;
+                $maxP = ($unidadCarga === 'placas') ? 40 : (($unidadCarga === 'lbs') ? 1000 : 500);
+                $pesoUsado   = min($maxP, $valNumeric);
+                if ($unidadCarga === 'lbs') {
+                    $kgReal = round($pesoUsado / 2.20462, 2);
+                } else {
+                    $kgReal = $pesoUsado;
+                }
             } else {
-                $pesoUsado   = min(500, $valNumeric);
-                $kgReal      = $pesoUsado;
-                $unidadCarga = 'kg';
+                $maxB = ($unidadCarga === 'lbs') ? 1100 : 500;
+                $pesoUsado   = min($maxB, $valNumeric);
+                if ($unidadCarga === 'lbs') {
+                    $kgReal = round($pesoUsado / 2.20462, 2);
+                } else {
+                    $kgReal = $pesoUsado;
+                }
             }
         }
 
@@ -4040,12 +4055,12 @@ function entApiActualizarRutinaCompleta(): void {
                 $imp = 'barra';
             }
             $unidad = trim((string)($ej['unidad_carga'] ?? 'kg'));
-            if (!in_array($unidad, ['kg', 'lbs', 'placas'], true)) {
-                $unidad = 'kg';
+            if (!in_array($unidad, ['kg', 'lbs', 'placas', 'ninguna'], true)) {
+                $unidad = ($imp === 'sin_peso') ? 'ninguna' : 'kg';
             }
 
             $pesoVal = isset($ej['peso']) && $ej['peso'] !== '' && $ej['peso'] !== null ? (float)$ej['peso'] : null;
-            $desc = !empty($ej['descripcion']) ? trim((string)$ej['descripcion']) : ($pesoVal !== null ? "{$pesoVal} kg" : '');
+            $desc = !empty($ej['descripcion']) ? trim((string)$ej['descripcion']) : ($pesoVal !== null ? ($unidad === 'placas' ? "{$pesoVal} placas" : ($unidad === 'lbs' ? "{$pesoVal} lbs" : ($unidad === 'ninguna' ? 'Sin peso' : "{$pesoVal} kg"))) : '');
 
             if ($eid > 0) {
                 $stUp->execute([$nombre, $series, $reps, $rirVal, $orden, $imp, $unidad, $desc, $eid, $rutinaId]);
@@ -4077,3 +4092,559 @@ function entApiActualizarRutinaCompleta(): void {
         jsonOut(false, 'Error al actualizar la rutina: ' . $e->getMessage(), [], 500);
     }
     }
+
+/*─────────────────────────────────────────────────────────────
+  API: ANALIZAR DOCUMENTO CON GEMINI AI (VISTA ENTRENADOR)
+  POST /entrenador/api-importar-historial-analizar
+─────────────────────────────────────────────────────────────*/
+function entApiImportarHistorialAnalizar(): void {
+    // Evitar que el servidor corte la petición en documentos grandes
+    @set_time_limit(180);
+    @ini_set('max_execution_time', '180');
+    @ini_set('memory_limit', '256M');
+    ob_start();
+
+    header('Content-Type: application/json; charset=utf-8');
+    csrfCheck();
+
+    $entId = (int)($_SESSION['user_id'] ?? 0);
+    $clienteId = (int)($_POST['cliente_id'] ?? 0);
+
+    if ($clienteId <= 0) {
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, 'Debes seleccionar un atleta válido para asociar el historial.', [], 400);
+    }
+
+    $db = getDB();
+
+    // 1. Validar atleta
+    $stAtl = $db->prepare("
+        SELECT c.id, c.peso_kg, u.nombre, u.email
+        FROM clientes c
+        JOIN usuarios u ON c.usuario_id = u.id
+        WHERE c.id = ? AND (? IS NOT NULL)
+        LIMIT 1
+    ");
+    $stAtl->execute([$clienteId, $entId]);
+    $atleta = $stAtl->fetch(PDO::FETCH_ASSOC);
+
+    if (!$atleta) {
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, 'Atleta no encontrado o sin permisos suficientes.', [], 403);
+    }
+
+    // Liberar cerrojo de sesión para evitar que peticiones concurrentes se bloqueen durante la consulta a IA
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
+    // 2. Validar archivo subido
+    if (empty($_FILES['archivo']) || $_FILES['archivo']['error'] !== UPLOAD_ERR_OK) {
+        $errCode = $_FILES['archivo']['error'] ?? -1;
+        $msgErr = match($errCode) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'El archivo supera el tamaño máximo permitido.',
+            UPLOAD_ERR_NO_FILE => 'No se subió ningún archivo.',
+            default => 'Error al transferir el archivo al servidor (código ' . $errCode . ').'
+        };
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, $msgErr, [], 400);
+    }
+
+    $file = $_FILES['archivo'];
+    $maxBytes = 20 * 1024 * 1024; // 20MB
+    if ($file['size'] > $maxBytes) {
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, 'El archivo excede el límite máximo de 20 MB.', [], 400);
+    }
+
+    $origName = $file['name'];
+    $ext = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+    $allowedExts = ['xlsx', 'xls', 'docx', 'pdf', 'csv', 'txt'];
+    if (!in_array($ext, $allowedExts, true)) {
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, "Extensión no permitida (.{$ext}). Formatos aceptados: Excel (.xlsx, .csv), Word (.docx) o PDF (.pdf).", [], 400);
+    }
+
+    try {
+        // 3. Extraer contenido del documento
+        $parsedDoc = DocumentParser::parse($file['tmp_name'], $origName);
+
+        // 4. Catálogo vigente para cruce con IA
+        $stCat = $db->query("
+            SELECT id, nombre, grupo_muscular, equipamiento, tipo_implemento
+            FROM catalogo_ejercicios
+            ORDER BY nombre ASC
+        ");
+        $catalogoEjercicios = $stCat->fetchAll(PDO::FETCH_ASSOC);
+
+        // 5. Análisis híbrido: Extracción nativa ultrarrápida si es un Excel tabular (Macrociclo/Semanas)
+        // o análisis con Gemini AI si es PDF, Word o formato libre sin estructura predefinida
+        $resultadoIA = null;
+        if (in_array($ext, ['xlsx', 'xls'], true)) {
+            $resultadoIA = DocumentParser::extraerCronologiaTabular($file['tmp_name'], $catalogoEjercicios);
+        }
+
+        if (empty($resultadoIA) || empty($resultadoIA['sesiones'])) {
+            $resultadoIA = GeminiService::analizarHistorialAtleta(
+                $parsedDoc,
+                $catalogoEjercicios,
+                $atleta['nombre'],
+                date('Y-m-d')
+            );
+        }
+
+        // 6. Catálogo simplificado para el frontend
+        $catalogoList = array_map(function($c) {
+            return [
+                'id' => (int)$c['id'],
+                'nombre' => $c['nombre'],
+                'grupo' => $c['grupo_muscular'] ?? '',
+                'equipamiento' => $c['equipamiento'] ?? '',
+                'implemento' => $c['tipo_implemento'] ?? 'barra'
+            ];
+        }, $catalogoEjercicios);
+
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(true, 'Archivo analizado exitosamente con Gemini AI.', [
+            'cronologia' => $resultadoIA,
+            'catalogo'   => $catalogoList,
+            'atleta'     => [
+                'id'     => (int)$atleta['id'],
+                'nombre' => $atleta['nombre']
+            ],
+            'archivo'    => [
+                'nombre'  => $origName,
+                'formato' => $ext,
+                'tamano'  => $file['size']
+            ]
+        ]);
+    } catch (\Throwable $e) {
+        while (ob_get_level() > 0) ob_end_clean();
+        error_log('[entApiImportarHistorialAnalizar] ' . $e->getMessage());
+        jsonOut(false, 'Error procesando documento con IA: ' . $e->getMessage(), [], 500);
+    }
+}
+
+/*─────────────────────────────────────────────────────────────
+  API: PERSISTIR CRONOLOGÍA IMPORTADA CON TRANSACCIÓN ACID
+  POST /entrenador/api-importar-historial-guardar
+─────────────────────────────────────────────────────────────*/
+function entApiImportarHistorialGuardar(): void {
+    @set_time_limit(180);
+    @ini_set('max_execution_time', '180');
+    ob_start();
+
+    header('Content-Type: application/json; charset=utf-8');
+    csrfCheck();
+
+    $entId = (int)($_SESSION['user_id'] ?? 0);
+    $payload = getJsonPayload();
+    if (empty($payload)) {
+        $payload = $_POST;
+    }
+
+    $clienteId = (int)($payload['cliente_id'] ?? 0);
+    if ($clienteId <= 0) {
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, 'Cliente inválido o no especificado.', [], 400);
+    }
+
+    $db = getDB();
+
+    // Validar atleta
+    $stAtl = $db->prepare("SELECT id FROM clientes WHERE id = ? AND (? IS NOT NULL) LIMIT 1");
+    $stAtl->execute([$clienteId, $entId]);
+    if (!$stAtl->fetch()) {
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, 'Atleta no encontrado o sin permisos suficientes.', [], 403);
+    }
+
+    // Liberar cerrojo de sesión para evitar congelar otras pestañas del navegador durante el guardado
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
+    $sesiones = $payload['sesiones'] ?? [];
+    $medidas  = $payload['medidas_corporales'] ?? [];
+
+    if (empty($sesiones) && empty($medidas)) {
+        while (ob_get_level() > 0) ob_end_clean();
+        jsonOut(false, 'No se proporcionaron sesiones ni medidas para registrar en el historial.', [], 400);
+    }
+
+    $db->beginTransaction();
+    try {
+        $totalSesiones = 0;
+        $totalSeries = 0;
+        $totalPesos = 0;
+
+        // 1. Obtener o crear rutina histórica contenedora para satisfacer la FK estricta de sesiones_asistencia
+        $stRut = $db->prepare("SELECT id FROM rutinas WHERE cliente_id = ? AND titulo = 'Historial Importado' LIMIT 1");
+        $stRut->execute([$clienteId]);
+        $rutinaContenedorId = (int)$stRut->fetchColumn();
+
+        if (!$rutinaContenedorId) {
+            $stInsRut = $db->prepare("
+                INSERT INTO rutinas (cliente_id, entrenador_id, titulo, descripcion, estado, dias_semana)
+                VALUES (?, ?, 'Historial Importado', 'Contenedor de sesiones y cronología importada con IA', 'archivada', '[]')
+            ");
+            $stInsRut->execute([$clienteId, $entId]);
+            $rutinaContenedorId = (int)$db->lastInsertId();
+        }
+
+        // Construir mapa de los pesos más recientes registrados para cada ejercicio a lo largo del historial
+        // para pre-poblar sugerencias precisas en las rutinas activas si la última semana vino en blanco
+        $ultimosPesosPorEjercicio = [];
+        foreach ($sesiones as $sHist) {
+            foreach ($sHist['ejercicios'] ?? [] as $ejHist) {
+                $pRaw = trim((string)($ejHist['descripcion_peso'] ?? ''));
+                $firstPeso = (float)($ejHist['series'][0]['peso'] ?? 0);
+                if ($pRaw !== '' && $firstPeso > 0) {
+                    $nomKey = mb_strtolower(trim($ejHist['nombre_oficial'] ?? $ejHist['nombre_detectado']));
+                    $ultimosPesosPorEjercicio[$nomKey] = [
+                        'descripcion_peso' => $pRaw,
+                        'series'           => $ejHist['series'] ?? [],
+                        'unidad_carga'     => $ejHist['unidad_carga'] ?? 'kg',
+                        'equipamiento'     => $ejHist['equipamiento'] ?? null,
+                        'tipo_implemento'  => $ejHist['tipo_implemento'] ?? 'barra',
+                    ];
+                }
+            }
+        }
+
+        // 2. CREACIÓN / ACTUALIZACIÓN DE LAS RUTINAS ACTUALES (EN_PROGRESO)
+        // Identificar el microciclo / última semana de entrenamiento para establecerla como rutina activa del atleta
+        $fechasValidas = [];
+        foreach ($sesiones as $s) {
+            $f = trim((string)($s['fecha'] ?? ''));
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $f)) {
+                $fechasValidas[] = $f;
+            }
+        }
+
+        $mapRutinasCreadas = [];
+        $mapRutinasPorNombre = [];
+        $mapEjCreados = [];
+
+        if (!empty($fechasValidas)) {
+            $maxFecha = max($fechasValidas);
+            $lunesUltimaSemana = date('Y-m-d', strtotime('monday this week', strtotime($maxFecha)));
+            $limiteReciente = date('Y-m-d', strtotime('-6 days', strtotime($maxFecha)));
+            $criterioCorte = min($lunesUltimaSemana, $limiteReciente);
+
+            // Filtrar las sesiones que componen el programa vigente más reciente
+            $sesionesProgramaActual = [];
+            foreach ($sesiones as $s) {
+                $f = trim((string)($s['fecha'] ?? ''));
+                if ($f >= $criterioCorte && !empty($s['ejercicios'])) {
+                    $sesionesProgramaActual[] = $s;
+                }
+            }
+
+            // Si por alguna razón la última semana tiene pocas sesiones, tomar las últimas hasta 5 sesiones distintas
+            if (count($sesionesProgramaActual) < 2 && count($sesiones) > 0) {
+                $sesionesProgramaActual = array_slice($sesiones, -min(5, count($sesiones)));
+            }
+
+            if (!empty($sesionesProgramaActual)) {
+                // Archivar rutinas activas anteriores para evitar colisiones
+                $stArch = $db->prepare("UPDATE rutinas SET estado = 'archivada' WHERE cliente_id = ? AND estado = 'en_progreso'");
+                $stArch->execute([$clienteId]);
+
+                $stInsActiva = $db->prepare("
+                    INSERT INTO rutinas (cliente_id, entrenador_id, titulo, descripcion, dias_semana, estado)
+                    VALUES (?, ?, ?, ?, ?, 'en_progreso')
+                ");
+
+                $stInsEj = $db->prepare("
+                    INSERT INTO ejercicios (rutina_id, nombre, series, repeticiones, orden, rir, tipo_implemento, unidad_carga, descripcion, grupo_muscular, nota_biomecanica)
+                    VALUES (?, ?, ?, ?, ?, 2, ?, ?, ?, ?, ?)
+                ");
+
+                $diasProcesados = [];
+                foreach ($sesionesProgramaActual as $sProg) {
+                    $fProg = trim((string)($sProg['fecha'] ?? ''));
+                    $rNom = trim((string)($sProg['rutina_nombre'] ?? 'Rutina'));
+                    $dow = (string)date('N', strtotime($fProg)); // 1=Lunes, ..., 7=Domingo
+
+                    // Evitar duplicar rutinas para el mismo día de la semana en la misma importación
+                    if (isset($diasProcesados[$dow])) {
+                        continue;
+                    }
+                    $diasProcesados[$dow] = true;
+
+                    $descRut = "Rutina activa importada ({$rNom})";
+                    $stInsActiva->execute([$clienteId, $entId, $rNom, $descRut, $dow]);
+                    $newRutId = (int)$db->lastInsertId();
+
+                    $mapRutinasCreadas[$fProg] = $newRutId;
+                    $mapRutinasPorNombre[$rNom] = $newRutId;
+
+                    $ejListProg = $sProg['ejercicios'] ?? [];
+                    foreach ($ejListProg as $oIdx => $ejP) {
+                        $ejNom = trim((string)($ejP['nombre_oficial'] ?? $ejP['nombre_detectado'] ?? 'Ejercicio'));
+                        $ejNomKey = mb_strtolower($ejNom);
+
+                        // Si en la última semana este ejercicio estaba en blanco (planificado para días siguientes),
+                        // heredar los pesos y unidad de la última semana entrenada
+                        $prevData = $ultimosPesosPorEjercicio[$ejNomKey] ?? null;
+
+                        $ejImp = in_array($ejP['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
+                            ? $ejP['tipo_implemento'] 
+                            : ($prevData['tipo_implemento'] ?? 'barra');
+                        $ejUni = in_array($ejP['unidad_carga'] ?? $ejP['unidad'] ?? '', ['kg', 'lbs', 'placas', 'ninguna'], true)
+                            ? ($ejP['unidad_carga'] ?? $ejP['unidad']) 
+                            : ($prevData['unidad_carga'] ?? 'kg');
+                        $ejGrp = trim((string)($ejP['grupo_muscular'] ?? ''));
+                        $ejEqp = trim((string)($ejP['equipamiento'] ?? '')) ?: ($prevData['equipamiento'] ?? null);
+                        $ejDesc = trim((string)($ejP['descripcion_peso'] ?? '')) ?: ($prevData['descripcion_peso'] ?? null);
+
+                        $seriesListToUse = (!empty($ejP['series']) && (float)($ejP['series'][0]['peso'] ?? 0) > 0)
+                            ? $ejP['series'] 
+                            : (!empty($prevData['series']) ? $prevData['series'] : ($ejP['series'] ?? []));
+
+                        $numSeriesCalc = max(1, count($seriesListToUse));
+                        $repsArr = array_column($seriesListToUse, 'reps');
+                        $repsStr = !empty($repsArr) ? (string)end($repsArr) : '10';
+
+                        $stInsEj->execute([
+                            $newRutId,
+                            $ejNom,
+                            $numSeriesCalc,
+                            $repsStr,
+                            $oIdx + 1,
+                            $ejImp,
+                            $ejUni,
+                            $ejDesc !== '' ? $ejDesc : null,
+                            $ejGrp !== '' ? $ejGrp : null,
+                            $ejEqp !== '' ? $ejEqp : null
+                        ]);
+                        $newEjId = (int)$db->lastInsertId();
+                        $mapEjCreados[$newRutId][$ejNom] = $newEjId;
+                    }
+                }
+            }
+        }
+
+        // 3. Consulta rápida de asistencias existentes para evitar N+1 selects en bucle
+        $stFechasExistentes = $db->prepare("
+            SELECT DISTINCT DATE(inicio_en) AS f_ini
+            FROM sesiones_asistencia
+            WHERE cliente_id = ?
+        ");
+        $stFechasExistentes->execute([$clienteId]);
+        $fechasAsistenciaSet = array_flip($stFechasExistentes->fetchAll(PDO::FETCH_COLUMN));
+
+        $asistenciasBatch = [];
+        $seriesBatch = [];
+
+        // 4. Procesar sesiones cronológicas
+        foreach ($sesiones as $s) {
+            $fecha = trim((string)($s['fecha'] ?? ''));
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+                continue;
+            }
+
+            // Omitir sesiones que no tienen ningún dato real registrado (planificadas en blanco)
+            if (!empty($s['es_planificada_futura'])) {
+                continue;
+            }
+
+            $rutinaNombre = trim((string)($s['rutina_nombre'] ?? 'Rutina Importada'));
+            $rutinaAsocId = $mapRutinasCreadas[$fecha] ?? $mapRutinasPorNombre[$rutinaNombre] ?? $rutinaContenedorId;
+
+            $diaInicio    = $fecha . ' 09:00:00';
+            $diaFin       = $fecha . ' 10:15:00';
+            $notasAsis    = 'Cronología importada: ' . mb_substr($rutinaNombre, 0, 70);
+
+            if (!isset($fechasAsistenciaSet[$fecha])) {
+                $asistenciasBatch[] = [
+                    $rutinaAsocId, $clienteId, $entId, $diaInicio, $diaFin, 'completada', $notasAsis, 1
+                ];
+                $fechasAsistenciaSet[$fecha] = true;
+            }
+            $totalSesiones++;
+
+            // Procesar ejercicios de esta sesión
+            $ejercicios = $s['ejercicios'] ?? [];
+            foreach ($ejercicios as $ej) {
+                // Si el ejercicio específico no tuvo datos reales, no insertar series vacías falsas
+                if (isset($ej['tiene_datos']) && !$ej['tiene_datos']) {
+                    continue;
+                }
+
+                $nombreEj = trim((string)($ej['nombre_oficial'] ?? $ej['nombre_detectado'] ?? 'Ejercicio'));
+                if ($nombreEj === '') {
+                    $nombreEj = 'Ejercicio';
+                }
+
+                $ejercicioAsocId = $mapEjCreados[$rutinaAsocId][$nombreEj] ?? null;
+
+                $equipamiento = trim((string)($ej['equipamiento'] ?? ''));
+                $tipoImplemento = in_array($ej['tipo_implemento'] ?? '', ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
+                    ? $ej['tipo_implemento'] : 'barra';
+                $unidadCargaGlobal = in_array($ej['unidad_carga'] ?? $ej['unidad'] ?? '', ['kg', 'lbs', 'placas', 'ninguna'], true)
+                    ? ($ej['unidad_carga'] ?? $ej['unidad']) : 'kg';
+
+                $series = $ej['series'] ?? [];
+                foreach ($series as $idx => $sr) {
+                    $numSerie  = max(1, (int)($sr['numero_serie'] ?? ($idx + 1)));
+                    $reps      = max(1, min(255, (int)($sr['reps'] ?? 10)));
+                    $peso      = max(0.0, min(999.0, (float)($sr['peso'] ?? 0.0)));
+                    $tipoSerie = in_array($sr['tipo_serie'] ?? '', ['normal', 'calentamiento', 'fallo', 'drop'], true)
+                        ? $sr['tipo_serie'] : 'normal';
+
+                    $unidadCarga = in_array($sr['unidad'] ?? '', ['kg', 'lbs', 'placas', 'ninguna'], true)
+                        ? $sr['unidad'] : $unidadCargaGlobal;
+
+                    $kgReal = isset($sr['kg_real']) ? (float)$sr['kg_real'] : $peso;
+                    if ($kgReal <= 0.0 && $peso > 0.0) {
+                        if ($unidadCarga === 'lbs') {
+                            $kgReal = round($peso / 2.20462, 2);
+                        } else {
+                            $kgReal = $peso;
+                        }
+                    }
+
+                    $pesoPorLado = isset($sr['peso_por_lado']) && $sr['peso_por_lado'] !== null
+                        ? (float)$sr['peso_por_lado'] : null;
+
+                    $seriesBatch[] = [
+                        $clienteId,
+                        $ejercicioAsocId,
+                        $rutinaAsocId,
+                        $rutinaNombre,
+                        $nombreEj,
+                        $equipamiento !== '' ? $equipamiento : null,
+                        $fecha,
+                        $numSerie,
+                        $reps,
+                        $peso,
+                        $tipoSerie,
+                        $tipoImplemento,
+                        $unidadCarga,
+                        $kgReal,
+                        $pesoPorLado
+                    ];
+                }
+            }
+        }
+
+        // 5. Inserción por lotes de asistencias (Batch Insert)
+        if (!empty($asistenciasBatch)) {
+            foreach (array_chunk($asistenciasBatch, 200) as $chunk) {
+                $ph = [];
+                $vals = [];
+                foreach ($chunk as $row) {
+                    $ph[] = '(?, ?, ?, ?, ?, ?, ?, ?)';
+                    foreach ($row as $v) $vals[] = $v;
+                }
+                $sql = "INSERT INTO sesiones_asistencia 
+                    (rutina_id, cliente_id, entrenador_id, inicio_en, fin_en, estado, notas, verificada)
+                    VALUES " . implode(', ', $ph);
+                $db->prepare($sql)->execute($vals);
+            }
+        }
+
+        // 6. Limpieza previa idempotente: evita duplicados si se re-importa el mismo archivo
+        if (!empty($fechasValidas)) {
+            foreach (array_chunk(array_unique($fechasValidas), 200) as $fChunk) {
+                $phDates = implode(',', array_fill(0, count($fChunk), '?'));
+                $params = array_merge([$clienteId], $fChunk);
+                $db->prepare("DELETE FROM sesion_series WHERE cliente_id = ? AND fecha IN ($phDates)")
+                   ->execute($params);
+            }
+        }
+
+        // Deduplicación defensiva en memoria para evitar colisiones de clave única intra-batch en TiDB/MySQL
+        $seriesUnicas = [];
+        foreach ($seriesBatch as $sRow) {
+            $ukKey = ($sRow[1] ?? '0') . '|' . $sRow[0] . '|' . $sRow[6] . '|' . $sRow[7];
+            $seriesUnicas[$ukKey] = $sRow;
+        }
+        $seriesBatch = array_values($seriesUnicas);
+
+        // 7. Inserción por lotes ultrarrápida de series (Batch Insert en bloques de 250 con ON DUPLICATE KEY UPDATE)
+        $totalSeries = count($seriesBatch);
+        if (!empty($seriesBatch)) {
+            foreach (array_chunk($seriesBatch, 250) as $chunk) {
+                $ph = [];
+                $vals = [];
+                foreach ($chunk as $row) {
+                    $ph[] = '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)';
+                    foreach ($row as $v) $vals[] = $v;
+                }
+                $sql = "INSERT INTO sesion_series
+                    (cliente_id, ejercicio_id, rutina_id, rutina_nombre, ejercicio_nombre, equipamiento,
+                     fecha, numero_serie, reps_realizadas, peso_usado, completado, tipo_serie, tipo_implemento, unidad_carga, kg_real, peso_por_lado)
+                    VALUES " . implode(', ', $ph) . "
+                    ON DUPLICATE KEY UPDATE 
+                        reps_realizadas = VALUES(reps_realizadas),
+                        peso_usado      = VALUES(peso_usado),
+                        unidad_carga    = VALUES(unidad_carga),
+                        tipo_implemento = VALUES(tipo_implemento),
+                        kg_real         = VALUES(kg_real),
+                        peso_por_lado   = VALUES(peso_por_lado),
+                        completado      = 1";
+                $db->prepare($sql)->execute($vals);
+            }
+        }
+
+        // 8. Inserción por lotes de pesos corporales (deduplicados y con ON DUPLICATE KEY UPDATE para key uniq_cliente_fecha)
+        $pesosPorFecha = [];
+        foreach ($medidas as $m) {
+            $fMed = trim((string)($m['fecha'] ?? ''));
+            $pMed = (float)($m['peso_kg'] ?? 0);
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $fMed) && $pMed >= 20.0 && $pMed <= 350.0) {
+                $pesosPorFecha[$fMed] = $pMed;
+            }
+        }
+        $pesosBatch = [];
+        foreach ($pesosPorFecha as $fMed => $pMed) {
+            $pesosBatch[] = [$clienteId, $pMed, $fMed, 'manual'];
+        }
+        $totalPesos = count($pesosBatch);
+        if (!empty($pesosBatch)) {
+            foreach (array_chunk($pesosBatch, 200) as $chunk) {
+                $ph = [];
+                $vals = [];
+                foreach ($chunk as $row) {
+                    $ph[] = '(?, ?, ?, ?)';
+                    foreach ($row as $v) $vals[] = $v;
+                }
+                $sql = "INSERT INTO peso_historial (cliente_id, peso_kg, fecha, tipo) 
+                        VALUES " . implode(', ', $ph) . "
+                        ON DUPLICATE KEY UPDATE peso_kg = VALUES(peso_kg), tipo = 'manual'";
+                $db->prepare($sql)->execute($vals);
+            }
+
+            // Mantener sincronizado el peso actual en la tabla clientes con la fecha más reciente
+            ksort($pesosPorFecha);
+            $ultimoPesoRegistrado = end($pesosPorFecha);
+            if ($ultimoPesoRegistrado > 0) {
+                $db->prepare("UPDATE clientes SET peso_kg = ? WHERE id = ?")->execute([$ultimoPesoRegistrado, $clienteId]);
+            }
+        }
+
+        $db->commit();
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        jsonOut(true, "Cronología consolidada con éxito. Se registraron {$totalSesiones} sesiones ({$totalSeries} series) en el historial y calendario.", [
+            'total_sesiones' => $totalSesiones,
+            'total_series'   => $totalSeries,
+            'total_pesos'    => $totalPesos
+        ]);
+    } catch (\Throwable $e) {
+        if ($db->inTransaction()) {
+            $db->rollBack();
+        }
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        error_log('[entApiImportarHistorialGuardar] Error: ' . $e->getMessage());
+        jsonOut(false, 'Error al guardar la cronología: ' . $e->getMessage(), [], 500);
+    }
+}

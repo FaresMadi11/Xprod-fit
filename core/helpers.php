@@ -23,6 +23,9 @@ function getJsonPayload(): array {
 
 /** Respuesta JSON estándar y termina (compatible con ok/msg y success/message) */
 function jsonOut(bool $ok, string $msg, array $extra = [], int $status = 200): never {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     if (!headers_sent()) {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
@@ -38,6 +41,9 @@ function jsonOut(bool $ok, string $msg, array $extra = [], int $status = 200): n
 
 /** Respuesta JSON directa con payload arbitrario */
 function jsonResponse(array $data, int $status = 200): never {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     if (!headers_sent()) {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');

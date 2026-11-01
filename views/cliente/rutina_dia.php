@@ -1639,6 +1639,8 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
       <div class="wd-unit-pill-group" role="group" aria-label="Unidad de carga">
         <button type="button" class="wd-unit-pill <?= $uni === 'kg' ? 'active' : '' ?>"
                 onclick="cambiarUnidadAtleta(<?= $ej['id'] ?>, 'kg')">KG</button>
+        <button type="button" class="wd-unit-pill <?= $uni === 'lbs' ? 'active' : '' ?>"
+                onclick="cambiarUnidadAtleta(<?= $ej['id'] ?>, 'lbs')">LBS</button>
         <button type="button" class="wd-unit-pill <?= $uni === 'placas' ? 'active' : '' ?>"
                 onclick="cambiarUnidadAtleta(<?= $ej['id'] ?>, 'placas')">Placas</button>
       </div>
@@ -1653,15 +1655,19 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
           <th>Reps</th>
           <th style="text-align:center" id="colHeaderCarga<?= $ej['id'] ?>">
             <?php if ($imp === 'mancuerna'): ?>
-              Mancuerna
+              <?= $uni === 'lbs' ? 'Mancuerna (lbs)' : 'Mancuerna (kg)' ?>
             <?php elseif ($imp === 'sin_peso'): ?>
               Corporal
             <?php elseif ($imp === 'polea_maquina' && $uni === 'placas'): ?>
               Placas
+            <?php elseif ($imp === 'polea_maquina' && $uni === 'lbs'): ?>
+              Polea (lbs)
             <?php elseif ($imp === 'polea_maquina'): ?>
-              Polea
+              Polea (kg)
+            <?php elseif ($uni === 'lbs'): ?>
+              Barra (lbs)
             <?php else: ?>
-              Barra
+              Barra (kg)
             <?php endif; ?>
           </th>
           <?php $isRirDisabled = ($ej['rir'] === null || $ej['rir'] === '' || !empty($ej['rir_desmarcado'])); ?>
@@ -1766,41 +1772,46 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
                 <span class="wd-prev-ref">Corporal</span>
               <?php endif; ?>
             <?php elseif ($imp === 'mancuerna'): ?>
-              <input type="number" min="0" max="200" step="0.5"
+              <?php $maxM = ($uni === 'lbs') ? 450 : 200; ?>
+              <input type="number" min="0" max="<?= $maxM ?>" step="0.5"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
                      value="<?= $valPeso !== '' && $valPeso !== null ? e($valPeso) : '' ?>"
-                     placeholder="Kg c/u"
-                     oninput="if(parseFloat(this.value)>200) this.value=200; if(parseFloat(this.value)<0) this.value=0; actualizarMancuernaAtleta(<?= $ej['id'] ?>, <?= $s ?>, this)"
+                     placeholder="<?= $uni === 'lbs' ? 'Lbs c/u' : 'Kg c/u' ?>"
+                     oninput="if(parseFloat(this.value)><?= $maxM ?>) this.value=<?= $maxM ?>; if(parseFloat(this.value)<0) this.value=0; actualizarMancuernaAtleta(<?= $ej['id'] ?>, <?= $s ?>, this)"
                      <?= $inputDisabledAttr ?>>
               <span class="wd-mancuerna-x2-hint" id="hintManc_<?= $ej['id'] ?>_<?= $s ?>">
-                <?= ($valPeso > 0) ? "({$valPeso} kg c/u = " . ($valPeso * 2) . " kg tot)" : '' ?>
+                <?= ($valPeso > 0) ? "({$valPeso} " . ($uni === 'lbs' ? 'lbs' : 'kg') . " c/u = " . ($valPeso * 2) . " " . ($uni === 'lbs' ? 'lbs' : 'kg') . " tot)" : '' ?>
               </span>
               <?php if ($prevPeso !== null): ?>
-                <span class="wd-prev-ref" title="Sesión anterior: <?= $prevPeso ?> kg por mancuerna">Ant: <?= $prevPeso ?>k c/u</span>
+                <?php $pUnitLbl = ($prevUnit === 'lbs') ? 'lbs' : (($prevUnit === 'placas') ? 'p' : 'kg'); ?>
+                <span class="wd-prev-ref" title="Sesión anterior: <?= $prevPeso ?> <?= $pUnitLbl ?> por mancuerna">Ant: <?= $prevPeso ?><?= $pUnitLbl ?> c/u</span>
               <?php endif; ?>
             <?php elseif ($imp === 'polea_maquina'): ?>
-              <?php $maxPol = ($uni === 'placas') ? 30 : 500; ?>
+              <?php $maxPol = ($uni === 'placas') ? 40 : (($uni === 'lbs') ? 1000 : 500); ?>
               <input type="number" min="0" max="<?= $maxPol ?>" step="<?= $uni === 'placas' ? '1' : '0.5' ?>"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
                      value="<?= $valPeso !== '' && $valPeso !== null ? e($valPeso) : '' ?>"
-                     placeholder="<?= $uni === 'placas' ? 'N° Placas' : 'Kg' ?>"
+                     placeholder="<?= $uni === 'placas' ? 'N° Placas' : ($uni === 'lbs' ? 'Lbs' : 'Kg') ?>"
                      oninput="if(parseFloat(this.value)><?= $maxPol ?>) this.value=<?= $maxPol ?>; if(parseFloat(this.value)<0) this.value=0;"
                      <?= $inputDisabledAttr ?>>
               <?php if ($prevPeso !== null): ?>
-                <span class="wd-prev-ref" title="Sesión anterior">Ant: <?= $prevPeso ?><?= $prevUnit === 'placas' ? 'p' : 'kg' ?></span>
+                <?php $pUnitLbl = ($prevUnit === 'lbs') ? 'lbs' : (($prevUnit === 'placas') ? 'p' : 'kg'); ?>
+                <span class="wd-prev-ref" title="Sesión anterior">Ant: <?= $prevPeso ?><?= $pUnitLbl ?></span>
               <?php endif; ?>
             <?php else: ?>
-              <input type="number" min="0" max="500" step="0.5"
+              <?php $maxBar = ($uni === 'lbs') ? 1100 : 500; ?>
+              <input type="number" min="0" max="<?= $maxBar ?>" step="0.5"
                      class="wd-input-kg <?= $inputLockedClass ?>"
                      id="peso_<?= $ej['id'] ?>_<?= $s ?>"
                      value="<?= $valPeso !== '' && $valPeso !== null ? e($valPeso) : '' ?>"
-                     placeholder="Kg"
-                     oninput="if(parseFloat(this.value)>500) this.value=500; if(parseFloat(this.value)<0) this.value=0;"
+                     placeholder="<?= $uni === 'lbs' ? 'Lbs' : 'Kg' ?>"
+                     oninput="if(parseFloat(this.value)><?= $maxBar ?>) this.value=<?= $maxBar ?>; if(parseFloat(this.value)<0) this.value=0;"
                      <?= $inputDisabledAttr ?>>
               <?php if ($prevPeso !== null): ?>
-                <span class="wd-prev-ref" title="Sesión anterior">Ant: <?= $prevPeso ?>kg</span>
+                <?php $pUnitLbl = ($prevUnit === 'lbs') ? 'lbs' : 'kg'; ?>
+                <span class="wd-prev-ref" title="Sesión anterior">Ant: <?= $prevPeso ?><?= $pUnitLbl ?></span>
               <?php endif; ?>
             <?php endif; ?>
           </td>
@@ -2407,7 +2418,7 @@ function toggleAcordeon(ejId) {
   }
 }
 
-/* ── Selector Interactivo de Unidad (KG / Placas) para Atleta ── */
+/* ── Selector Interactivo de Unidad (KG / LBS / Placas) para Atleta ── */
 function cambiarUnidadAtleta(ejId, nuevaUnidad) {
   const card = document.getElementById('exCard' + ejId);
   if (!card) return;
@@ -2421,13 +2432,18 @@ function cambiarUnidadAtleta(ejId, nuevaUnidad) {
   // Actualizar encabezado de columna
   const colHeader = document.getElementById('colHeaderCarga' + ejId);
   if (colHeader) {
-    colHeader.textContent = (nuevaUnidad === 'placas') ? 'Placas' : 'Polea';
+    if (nuevaUnidad === 'placas') colHeader.textContent = 'Placas';
+    else if (nuevaUnidad === 'lbs') colHeader.textContent = 'Polea (lbs)';
+    else colHeader.textContent = 'Polea (kg)';
   }
 
   // Actualizar inputs
+  const maxW = (nuevaUnidad === 'placas') ? 40 : ((nuevaUnidad === 'lbs') ? 1000 : 500);
+  const ph = (nuevaUnidad === 'placas') ? 'N° Placas' : ((nuevaUnidad === 'lbs') ? 'Lbs' : 'Kg');
   card.querySelectorAll('.wd-input-kg').forEach(input => {
-    input.placeholder = (nuevaUnidad === 'placas') ? 'N° Placas' : 'Kg';
+    input.placeholder = ph;
     input.step = (nuevaUnidad === 'placas') ? '1' : '0.5';
+    input.max = maxW;
   });
 }
 
@@ -2435,9 +2451,11 @@ function cambiarUnidadAtleta(ejId, nuevaUnidad) {
 function actualizarMancuernaAtleta(ejId, numSerie, input) {
   const hint = document.getElementById(`hintManc_${ejId}_${numSerie}`);
   if (!hint) return;
+  const card = document.getElementById('exCard' + ejId);
+  const unit = (card && card.dataset.unidad) ? card.dataset.unidad.toLowerCase() : 'kg';
   const val = parseFloat(input.value);
   if (val > 0) {
-    hint.textContent = `(${val} kg c/u = ${val * 2} kg tot)`;
+    hint.textContent = `(${val} ${unit} c/u = ${val * 2} ${unit} tot)`;
   } else {
     hint.textContent = '';
   }

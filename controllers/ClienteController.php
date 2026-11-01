@@ -639,7 +639,7 @@ function cliGuardarSerie(): void {
             ? $rawTipoImp
             : ($ejInfo['tipo_implemento'] ?? 'barra');
 
-        $unidadCarga = in_array($rawUnidad, ['kg', 'placas', 'ninguna'], true)
+        $unidadCarga = in_array($rawUnidad, ['kg', 'lbs', 'placas', 'ninguna'], true)
             ? $rawUnidad
             : ($ejInfo['unidad_carga'] ?? 'kg');
 
@@ -677,36 +677,58 @@ function cliGuardarSerie(): void {
                 $valNumeric = round((float)$rawPeso, 2);
 
                 if ($tipoImplemento === 'mancuerna') {
-                    if ($valNumeric > 200) {
+                    $maxAllowed = ($unidadCarga === 'lbs') ? 450 : 200;
+                    $unitTxt = ($unidadCarga === 'lbs') ? 'lbs' : 'kg';
+                    if ($valNumeric > $maxAllowed) {
                         http_response_code(422);
-                        jsonOut(false, 'El peso en mancuernas no puede superar los 200 kg por lado.');
+                        jsonOut(false, "El peso en mancuernas no puede superar los {$maxAllowed} {$unitTxt} por lado.");
                     }
-                    // Carga ingresada = peso de cada mancuerna (por mano / por lado).
-                    // kg_real para volumen total = peso * 2
+                    // Carga ingresada = peso de cada mancuerna (por mano / por lado)
                     $pesoUsado   = $valNumeric;
                     $pesoPorLado = $valNumeric;
-                    $kgReal      = round($valNumeric * 2, 2);
-                    $unidadCarga = 'kg';
+                    if ($unidadCarga === 'lbs') {
+                        $kgReal = round(($valNumeric * 2) / 2.20462, 2);
+                    } else {
+                        $kgReal = round($valNumeric * 2, 2);
+                    }
                 } elseif ($tipoImplemento === 'polea_maquina') {
-                    if ($unidadCarga === 'placas' && $valNumeric > 30) {
-                        http_response_code(422);
-                        jsonOut(false, 'El límite máximo es de 30 placas en máquinas de polea.');
-                    } elseif ($valNumeric > 500) {
-                        http_response_code(422);
-                        jsonOut(false, 'El peso en polea no puede superar los 500 kg.');
+                    if ($unidadCarga === 'placas') {
+                        if ($valNumeric > 40) {
+                            http_response_code(422);
+                            jsonOut(false, 'El límite máximo es de 40 placas en máquinas de polea.');
+                        }
+                        $kgReal = $valNumeric;
+                    } elseif ($unidadCarga === 'lbs') {
+                        if ($valNumeric > 1000) {
+                            http_response_code(422);
+                            jsonOut(false, 'El peso en polea no puede superar las 1000 lbs.');
+                        }
+                        $kgReal = round($valNumeric / 2.20462, 2);
+                    } else {
+                        if ($valNumeric > 500) {
+                            http_response_code(422);
+                            jsonOut(false, 'El peso en polea no puede superar los 500 kg.');
+                        }
+                        $kgReal = $valNumeric;
                     }
                     $pesoUsado   = $valNumeric;
                     $pesoPorLado = null;
-                    $kgReal      = $valNumeric;
                 } else {
-                    if ($valNumeric > 500) {
-                        http_response_code(422);
-                        jsonOut(false, 'El peso en barra no puede superar los 500 kg.');
+                    if ($unidadCarga === 'lbs') {
+                        if ($valNumeric > 1100) {
+                            http_response_code(422);
+                            jsonOut(false, 'El peso en barra no puede superar las 1100 lbs.');
+                        }
+                        $kgReal = round($valNumeric / 2.20462, 2);
+                    } else {
+                        if ($valNumeric > 500) {
+                            http_response_code(422);
+                            jsonOut(false, 'El peso en barra no puede superar los 500 kg.');
+                        }
+                        $kgReal = $valNumeric;
                     }
                     $pesoUsado   = $valNumeric;
                     $pesoPorLado = null;
-                    $kgReal      = $valNumeric;
-                    $unidadCarga = 'kg';
                 }
             }
         }
@@ -1544,7 +1566,7 @@ function cliPerfil(): void {
 
     // Historial de peso para mini grÃ¡fica
     $stPeso = $db->prepare(
-        "SELECT fecha, peso_kg FROM peso_historial WHERE cliente_id = ? ORDER BY fecha ASC LIMIT 20"
+        "SELECT fecha, peso_kg FROM peso_historial WHERE cliente_id = ? ORDER BY fecha ASC"
     );
     $stPeso->execute([$clienteId]);
     $pesoHistorial = $stPeso->fetchAll();

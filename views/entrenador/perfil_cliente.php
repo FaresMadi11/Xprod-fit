@@ -120,9 +120,9 @@ $rutinasCompletadas = max(count(array_filter($rutinas, fn($r) => $r['estado'] ==
 $pesoHistorial = $pesoTodos ?? [];
 $pesoActual = !empty($pesoHistorial) ? (float)end($pesoHistorial)['peso_kg'] : (float)($cliente['peso_kg'] ?? 0);
 $pesoInicio = !empty($pesoHistorial) ? (float)reset($pesoHistorial)['peso_kg'] : (float)($cliente['peso_kg'] ?? 0);
-$delta = round($pesoActual - $pesoInicio, 2);
+$delta = round($pesoActual - $pesoInicio, 1);
 $deltaClass = $delta < 0 ? 'neg' : ($delta > 0 ? 'pos' : 'neu');
-$deltaStr = ($delta > 0 ? '+' : '') . $delta . ' kg';
+$deltaStr = ($delta > 0 ? '+' : '') . number_format($delta, 1, '.', '') . ' <span class="pw-stat-unit">kg</span>';
 
 // Grupos musculares para progreso
 $trenoSuperior = ['pecho', 'hombros', 'biceps', 'triceps', 'espalda', 'abdomen', 'antebrazos'];
@@ -396,19 +396,168 @@ $grupoIconos = [
   display: grid !important;
   grid-template-columns: repeat(3, 1fr) !important;
   gap: 8px !important;
-  margin-bottom: 14px !important;
+  margin-bottom: 12px !important;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
   padding: 10px 12px;
 }
 .pw-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.pw-stat-val { font-size: 1.15rem; font-weight: 900; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pw-stat-val {
+  font-size: clamp(0.95rem, 3.6vw, 1.15rem);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.pw-stat-unit { font-size: 0.68em; font-weight: 600; color: #94a3af; }
 .pw-stat-lbl { font-size: .65rem; color: #9ca3af; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
 .pw-stat-delta { font-size: .82rem; font-weight: 800; }
 .pw-stat-delta.neg { color: #4ade80; }
 .pw-stat-delta.pos { color: #f87171; }
 .pw-stat-delta.neu { color: #6b7280; }
+
+/* ── TRADING CHART PESO CORPORAL ── */
+.tc-wrap {
+  position: relative;
+  background: rgba(11, 15, 25, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 12px 12px 8px 12px;
+  overflow: hidden;
+}
+.tc-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.tc-hud {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  min-height: 24px;
+}
+.tc-hud-badge {
+  background: rgba(251, 146, 60, 0.14);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  color: #fb923c;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.tc-hud-badge small { font-size: 0.7em; font-weight: 600; opacity: 0.85; }
+.tc-hud-date { color: #cbd5e1; font-weight: 600; }
+.tc-hud-diff { font-weight: 700; font-size: 0.72rem; }
+.tc-hud-diff.pos { color: #f87171; }
+.tc-hud-diff.neg { color: #4ade80; }
+.tc-hud-diff.neu { color: #94a3b8; }
+
+.tc-ranges {
+  display: inline-flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tc-range-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+.tc-range-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.06); }
+.tc-range-btn.active {
+  background: rgba(251, 146, 60, 0.22);
+  color: #fb923c;
+  box-shadow: 0 0 8px rgba(251, 146, 60, 0.25);
+}
+
+.tc-body {
+  position: relative;
+  display: flex;
+  height: 180px;
+  width: 100%;
+  user-select: none;
+}
+.tc-viewport {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  cursor: grab;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(251, 146, 60, 0.25) transparent;
+}
+.tc-viewport:active { cursor: grabbing; }
+.tc-viewport::-webkit-scrollbar { height: 3px; }
+.tc-viewport::-webkit-scrollbar-thumb { background: rgba(251, 146, 60, 0.3); border-radius: 3px; }
+
+.tc-track {
+  position: relative;
+  height: 100%;
+  min-width: 100%;
+}
+.tc-canvas {
+  display: block;
+  height: 100%;
+}
+
+.tc-y-axis {
+  position: relative;
+  width: 44px;
+  height: 100%;
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 4px 26px 6px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(11,15,25,0) 0%, rgba(11,15,25,0.7) 30%, rgba(11,15,25,0.95) 100%);
+  z-index: 2;
+}
+.tc-y-tick {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tc-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: #64748b;
+  margin-top: 6px;
+  transition: opacity 0.4s ease;
+}
 
 /* Tabs Tren Superior / Inferior */
 .st-tren-tabs {
@@ -1152,6 +1301,42 @@ $grupoIconos = [
   border-color: rgba(56,189,248,0.4);
   color: #38bdf8;
 }
+.ex-unit-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+.unit-toggle-text {
+  font-size: 0.65rem;
+  color: var(--muted, #94a3b8);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-right: 2px;
+}
+.unit-pill-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted, #94a3b8);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.unit-pill-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.unit-pill-btn.active {
+  background: rgba(56,189,248,0.22);
+  color: #38bdf8;
+}
 .ex-rest-row {
   display: flex;
   align-items: center;
@@ -1591,13 +1776,13 @@ $grupoIconos = [
 .crdi-ejercicios-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 .crdi-ej-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
-  margin-bottom: 8px;
+  border-radius: 16px;
+  margin-bottom: 12px;
   overflow: hidden;
   transition: all 0.2s ease;
 }
@@ -1609,7 +1794,7 @@ $grupoIconos = [
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 13px 18px;
   cursor: pointer;
   user-select: none;
   gap: 10px;
@@ -1668,11 +1853,30 @@ $grupoIconos = [
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
-  padding: 0 16px;
+  padding: 0 18px;
 }
 .crdi-ej-card:not(.is-collapsed) .crdi-ej-body {
-  max-height: 600px;
-  padding: 0 16px 14px;
+  max-height: 480px;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 18px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(138, 43, 226, 0.45) rgba(255, 255, 255, 0.02);
+}
+.crdi-ej-card:not(.is-collapsed) .crdi-ej-body::-webkit-scrollbar {
+  width: 6px;
+}
+.crdi-ej-card:not(.is-collapsed) .crdi-ej-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+.crdi-ej-card:not(.is-collapsed) .crdi-ej-body::-webkit-scrollbar-thumb {
+  background: rgba(138, 43, 226, 0.4);
+  border-radius: 4px;
+}
+.crdi-ej-card:not(.is-collapsed) .crdi-ej-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(138, 43, 226, 0.7);
 }
 
 /* Tabla de series dentro del acordeón (Modo Lectura) */
@@ -2118,11 +2322,11 @@ $grupoIconos = [
         <div class="pw-chart-wrap">
           <div class="pw-chart-meta">
             <div class="pw-stat">
-              <div class="pw-stat-val"><?= number_format($pesoActual, 2, '.', '') ?> kg</div>
+              <div class="pw-stat-val"><?= number_format($pesoActual, 1, '.', '') ?> <span class="pw-stat-unit">kg</span></div>
               <div class="pw-stat-lbl">Actual</div>
             </div>
             <div class="pw-stat">
-              <div class="pw-stat-val"><?= number_format($pesoInicio, 2, '.', '') ?> kg</div>
+              <div class="pw-stat-val"><?= number_format($pesoInicio, 1, '.', '') ?> <span class="pw-stat-unit">kg</span></div>
               <div class="pw-stat-lbl">Inicio</div>
             </div>
             <div class="pw-stat">
@@ -2130,8 +2334,36 @@ $grupoIconos = [
               <div class="pw-stat-lbl">Variación</div>
             </div>
           </div>
-          <div style="position:relative;height:180px;width:100%;">
-            <canvas id="canvasPesoCorporal"></canvas>
+
+          <!-- Gráfica Interactiva Trading Viewport -->
+          <div class="tc-wrap">
+            <div class="tc-topbar">
+              <div class="tc-hud" id="tcHudPeso">
+                <span class="tc-hud-badge"><?= number_format($pesoActual, 1, '.', '') ?> <small>kg</small></span>
+                <span class="tc-hud-date"><?= !empty($pesoUltimo['fecha']) ? date('d/m/Y', strtotime($pesoUltimo['fecha'])) : '' ?></span>
+                <span class="tc-hud-diff <?= $deltaClass ?>"><?= ($delta > 0 ? '+' : '') . number_format($delta, 1, '.', '') ?> kg</span>
+              </div>
+              <div class="tc-ranges">
+                <button type="button" class="tc-range-btn" data-range="1m">1M</button>
+                <button type="button" class="tc-range-btn" data-range="3m">3M</button>
+                <button type="button" class="tc-range-btn" data-range="6m">6M</button>
+                <button type="button" class="tc-range-btn" data-range="1y">1A</button>
+                <button type="button" class="tc-range-btn active" data-range="all">Todo</button>
+              </div>
+            </div>
+
+            <div class="tc-body">
+              <div class="tc-viewport" id="tcViewportPeso">
+                <div class="tc-track" id="tcTrackPeso">
+                  <canvas class="tc-canvas" id="tcCanvasPeso"></canvas>
+                </div>
+              </div>
+              <div class="tc-y-axis" id="tcYAxisPeso"></div>
+            </div>
+
+            <div class="tc-hint" id="tcHintPeso">
+              <i class="ti ti-arrows-left-right"></i> Desliza horizontalmente para ver el historial
+            </div>
           </div>
         </div>
         <?php else: ?>
@@ -2249,19 +2481,19 @@ $grupoIconos = [
           </a>
         </div>
 
-        <!-- Navegación de mes -->
+        <!-- Navegación de mes (Cambio dinámico 0ms sin recarga de página) -->
         <div class="cal-nav">
-          <a class="cal-nav-btn" href="?id=<?= $cliente['id'] ?>&mes=<?= $mesPrevMes ?>&ano=<?= $mesPrevAno ?>#panel-rutinas" aria-label="Mes anterior">
+          <button type="button" class="cal-nav-btn" id="calNavPrev" onclick="cambiarMesCalendario(event, -1)" aria-label="Mes anterior" style="cursor:pointer;">
             <i class="ti ti-chevron-left"></i>
-          </a>
+          </button>
           <div class="cal-nav-title">
-            <span class="cal-mes"><?= $mesesES[$calMes] ?></span>
-            <span class="cal-ano"><?= $calAno ?></span>
+            <span class="cal-mes" id="calMesTexto"><?= $mesesES[$calMes] ?></span>
+            <span class="cal-ano" id="calAnoTexto"><?= $calAno ?></span>
           </div>
-          <a class="cal-nav-btn <?= ($calMes === $mesActual && $calAno === $anoActual) ? 'disabled' : '' ?>"
-             href="?id=<?= $cliente['id'] ?>&mes=<?= $mesSigMes ?>&ano=<?= $mesSigAno ?>#panel-rutinas" aria-label="Mes siguiente">
+          <button type="button" class="cal-nav-btn <?= ($calMes === $mesActual && $calAno === $anoActual) ? 'disabled' : '' ?>"
+             id="calNavNext" onclick="cambiarMesCalendario(event, 1)" aria-label="Mes siguiente" style="cursor:pointer;">
             <i class="ti ti-chevron-right"></i>
-          </a>
+          </button>
         </div>
 
         <!-- Cabecera de días (L, M, X, J, V, S, D) -->
@@ -2275,7 +2507,8 @@ $grupoIconos = [
             </div>
           </div>
 
-          <!-- Semanas -->
+          <!-- Semanas (Contenedor reactivo dinámico) -->
+          <div id="calWeeksContainer">
           <?php foreach ($semanas as $sIdx => $semana): ?>
           <div class="cal-week">
             <div class="cal-week-label">Sem <?= $sIdx + 1 ?></div>
@@ -2315,6 +2548,7 @@ $grupoIconos = [
             </div>
           </div>
           <?php endforeach; ?>
+          </div>
         </div>
 
         <!-- Leyenda visual sutil -->
@@ -2815,7 +3049,10 @@ document.querySelectorAll('.xpf-tabs input[name="xpf-tab-group"]').forEach(radio
     if (panel) panel.classList.add('active');
     if (radio.value === 'stats') {
       if (mainChart) mainChart.resize();
-      if (chartPeso) chartPeso.resize();
+      if (window.tradingChartPeso) {
+        window.tradingChartPeso.render();
+        setTimeout(() => window.tradingChartPeso.scrollToEnd(), 50);
+      }
     }
   });
 });
@@ -2856,70 +3093,448 @@ function terminarSesionPerfil(sesId) {
   });
 }
 
-// ── Gráfica Peso Corporal ─────────────────────────────────
-let chartPeso = null;
-function initGraficaPeso() {
-  const canvas = document.getElementById('canvasPesoCorporal');
-  if (!canvas) return;
-  const pesoLabels = <?= json_encode(array_column($pesoTodos, 'fecha')) ?>;
-  const pesoValues = <?= json_encode(array_map('floatval', array_column($pesoTodos, 'peso_kg'))) ?>;
-  if (!pesoLabels || pesoLabels.length === 0) return;
+// ── Gráfica Interactiva de Peso Corporal (Trading Style) ─────
+window.tradingChartPeso = null;
 
-  const ctx = canvas.getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 170);
-  grad.addColorStop(0, 'rgba(251,146,60,0.35)');
-  grad.addColorStop(1, 'rgba(251,146,60,0.01)');
+class TradingWeightChart {
+  constructor(options) {
+    this.viewport = document.getElementById(options.viewportId);
+    this.track = document.getElementById(options.trackId);
+    this.canvas = document.getElementById(options.canvasId);
+    this.yAxisEl = document.getElementById(options.yAxisId);
+    this.hudEl = document.getElementById(options.hudId);
+    this.hintEl = document.getElementById(options.hintId);
+    this.rawPoints = options.data || [];
+    this.currentRange = 'all';
+    this.filteredPoints = [];
+    this.activeIndex = -1;
+    this.isDragging = false;
+    this.startX = 0;
+    this.startScrollLeft = 0;
+    this.pointCoords = [];
+    this.minY = 0;
+    this.maxY = 0;
+    this.yTicks = [];
 
-  chartPeso = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: pesoLabels,
-      datasets: [{
-        label: 'Peso (kg)',
-        data: pesoValues,
-        borderColor: '#fb923c',
-        backgroundColor: grad,
-        pointBackgroundColor: '#fb923c',
-        pointBorderColor: '#0b0f19',
-        pointBorderWidth: 2,
-        pointRadius: pesoValues.length === 1 ? 6 : 4,
-        pointHoverRadius: 7,
-        fill: true,
-        tension: 0.35,
-        borderWidth: 2.5,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0b0f19',
-          borderColor: 'rgba(251,146,60,0.4)',
-          borderWidth: 1,
-          padding: 10,
-          titleColor: '#94a3b8',
-          bodyColor: '#fb923c',
-          cornerRadius: 8,
-          callbacks: { label: c => ` ${c.parsed.y} kg` }
+    this.initEvents();
+    this.setRange('all');
+  }
+
+  initEvents() {
+    // Filtros de rango (1M, 3M, 6M, 1A, Todo)
+    document.querySelectorAll('.tc-range-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tc-range-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.setRange(btn.dataset.range);
+      });
+    });
+
+    // Paneo con arrastre de mouse para escritorio
+    this.viewport.addEventListener('mousedown', (e) => {
+      this.isDragging = true;
+      this.startX = e.pageX - this.viewport.offsetLeft;
+      this.startScrollLeft = this.viewport.scrollLeft;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isDragging) return;
+      e.preventDefault();
+      const x = e.pageX - this.viewport.offsetLeft;
+      const walk = (x - this.startX) * 1.4;
+      this.viewport.scrollLeft = this.startScrollLeft - walk;
+      this.dismissHint();
+    });
+
+    window.addEventListener('mouseup', () => {
+      this.isDragging = false;
+    });
+
+    // Interacción interactiva Crosshair (hover y touch)
+    const handleMove = (clientX) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      if (x < 0 || x > rect.width) return;
+      
+      let closestIdx = -1;
+      let minDiff = Infinity;
+      this.pointCoords.forEach((pt, idx) => {
+        const diff = Math.abs(pt.x - x);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = idx;
         }
-      },
-      scales: {
-        x: {
-          ticks: { color: '#64748b', font: { size: 10 } },
-          grid: { color: 'rgba(255,255,255,.04)' }
-        },
-        y: {
-          ticks: {
-            color: '#64748b',
-            font: { size: 10 },
-            callback: v => v + ' kg'
-          },
-          grid: { color: 'rgba(255,255,255,.04)' }
-        }
+      });
+
+      if (closestIdx !== -1 && closestIdx !== this.activeIndex) {
+        this.activeIndex = closestIdx;
+        this.updateHUD(this.filteredPoints[closestIdx], closestIdx);
+        this.render();
+      }
+    };
+
+    this.canvas.addEventListener('mousemove', (e) => handleMove(e.clientX));
+    this.canvas.addEventListener('mouseleave', () => {
+      this.activeIndex = -1;
+      this.resetHUD();
+      this.render();
+    });
+
+    this.canvas.addEventListener('touchmove', (e) => {
+      if (e.touches && e.touches[0]) {
+        handleMove(e.touches[0].clientX);
+        this.dismissHint();
+      }
+    }, { passive: true });
+
+    this.canvas.addEventListener('touchend', () => {
+      setTimeout(() => {
+        this.activeIndex = -1;
+        this.resetHUD();
+        this.render();
+      }, 1500);
+    });
+
+    this.viewport.addEventListener('scroll', () => this.dismissHint(), { passive: true });
+    window.addEventListener('resize', () => this.render());
+  }
+
+  dismissHint() {
+    if (this.hintEl) {
+      this.hintEl.style.opacity = '0';
+      setTimeout(() => { if (this.hintEl) this.hintEl.style.display = 'none'; }, 400);
+    }
+  }
+
+  scrollToEnd() {
+    if (this.viewport) {
+      this.viewport.scrollLeft = this.viewport.scrollWidth;
+    }
+  }
+
+  setRange(range) {
+    this.currentRange = range;
+    if (!this.rawPoints.length) return;
+
+    if (range === 'all') {
+      this.filteredPoints = [...this.rawPoints];
+    } else {
+      const lastDate = new Date(this.rawPoints[this.rawPoints.length - 1].fecha);
+      let days = 30;
+      if (range === '3m') days = 90;
+      else if (range === '6m') days = 180;
+      else if (range === '1y') days = 365;
+
+      const cutoff = new Date(lastDate);
+      cutoff.setDate(cutoff.getDate() - days);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+      this.filteredPoints = this.rawPoints.filter(p => p.fecha >= cutoffStr);
+      if (this.filteredPoints.length < 2) {
+        this.filteredPoints = this.rawPoints.slice(-5);
       }
     }
+
+    this.resetHUD();
+    this.render();
+
+    setTimeout(() => this.scrollToEnd(), 50);
+  }
+
+  updateHUD(item, idx) {
+    if (!this.hudEl || !item) return;
+    const diffPrev = idx > 0 ? (item.peso - this.filteredPoints[idx - 1].peso) : 0;
+    const diffSign = diffPrev > 0 ? `+${diffPrev.toFixed(1)}` : diffPrev.toFixed(1);
+    const diffClass = diffPrev > 0 ? 'pos' : (diffPrev < 0 ? 'neg' : 'neu');
+
+    const dParts = item.fecha.split('-');
+    const dateFormatted = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
+
+    this.hudEl.innerHTML = `
+      <span class="tc-hud-badge">${item.peso.toFixed(1)} <small>kg</small></span>
+      <span class="tc-hud-date">${dateFormatted}</span>
+      ${idx > 0 ? `<span class="tc-hud-diff ${diffClass}">(${diffSign} kg)</span>` : ''}
+    `;
+  }
+
+  resetHUD() {
+    if (!this.filteredPoints.length) return;
+    const last = this.filteredPoints[this.filteredPoints.length - 1];
+    const first = this.filteredPoints[0];
+    const diffTotal = last.peso - first.peso;
+    const diffSign = diffTotal > 0 ? `+${diffTotal.toFixed(1)}` : diffTotal.toFixed(1);
+    const diffClass = diffTotal > 0 ? 'pos' : (diffTotal < 0 ? 'neg' : 'neu');
+
+    const dParts = last.fecha.split('-');
+    const dateFormatted = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
+
+    this.hudEl.innerHTML = `
+      <span class="tc-hud-badge">${last.peso.toFixed(1)} <small>kg</small></span>
+      <span class="tc-hud-date">${dateFormatted}</span>
+      <span class="tc-hud-diff ${diffClass}">${diffSign} kg</span>
+    `;
+  }
+
+  calculateScale() {
+    const weights = this.filteredPoints.map(p => p.peso);
+    let min = Math.min(...weights);
+    let max = Math.max(...weights);
+    if (min === max) { min -= 1; max += 1; }
+
+    const pad = Math.max((max - min) * 0.12, 0.8);
+    this.minY = Math.floor((min - pad) * 2) / 2;
+    this.maxY = Math.ceil((max + pad) * 2) / 2;
+
+    const diff = this.maxY - this.minY;
+    let step = 1;
+    if (diff > 12) step = 2;
+    if (diff <= 4) step = 0.5;
+
+    this.yTicks = [];
+    for (let v = this.maxY; v >= this.minY - 0.01; v -= step) {
+      this.yTicks.push(parseFloat(v.toFixed(1)));
+    }
+  }
+
+  renderYAxis() {
+    if (!this.yAxisEl) return;
+    let html = '';
+    this.yTicks.forEach(tick => {
+      html += `<div class="tc-y-tick">${tick.toFixed(1)}</div>`;
+    });
+    this.yAxisEl.innerHTML = html;
+  }
+
+  render() {
+    const n = this.filteredPoints.length;
+    if (!n) return;
+
+    this.calculateScale();
+
+    const chartH = 180;
+    const topPad = 12;
+    const bottomPad = 26;
+    const leftPad = 24;
+    const rightPad = 28;
+
+    this.renderYAxis();
+
+    const vpWidth = this.viewport.clientWidth || 320;
+    let spacing = 54;
+    let trackWidth = leftPad + (n - 1) * spacing + rightPad;
+
+    if (trackWidth < vpWidth) {
+      trackWidth = vpWidth;
+      spacing = (trackWidth - leftPad - rightPad) / Math.max(n - 1, 1);
+    }
+
+    this.track.style.width = trackWidth + 'px';
+
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = trackWidth * dpr;
+    this.canvas.height = chartH * dpr;
+    this.canvas.style.width = trackWidth + 'px';
+    this.canvas.style.height = chartH + 'px';
+
+    const ctx = this.canvas.getContext('2d');
+    if (ctx.resetTransform) ctx.resetTransform();
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, trackWidth, chartH);
+
+    const innerH = chartH - topPad - bottomPad;
+
+    this.pointCoords = this.filteredPoints.map((p, i) => {
+      const x = leftPad + i * spacing;
+      const ratio = (p.peso - this.minY) / (this.maxY - this.minY);
+      const y = topPad + (1 - ratio) * innerH;
+      return { x, y, peso: p.peso, fecha: p.fecha };
+    });
+
+    // 1. Grid horizontal alineado con Y-Ticks
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+    ctx.lineWidth = 1;
+    this.yTicks.forEach(val => {
+      const ratio = (val - this.minY) / (this.maxY - this.minY);
+      const y = topPad + (1 - ratio) * innerH;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(trackWidth, y);
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // 2. Fechas en eje X (debajo de cada circulito)
+    ctx.save();
+    ctx.textAlign = 'center';
+
+    this.pointCoords.forEach((pt, i) => {
+      const isHovered = (this.activeIndex === i);
+      const parts = pt.fecha.split('-');
+      const dFmt = `${parts[2]}/${parts[1]}`;
+      
+      if (isHovered) {
+        ctx.fillStyle = '#fb923c';
+        ctx.font = '800 10px -apple-system, sans-serif';
+      } else {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      }
+      ctx.fillText(dFmt, pt.x, chartH - 8);
+    });
+    ctx.restore();
+
+    if (n === 1) {
+      const pt = this.pointCoords[0];
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#fb923c';
+      ctx.fill();
+      return;
+    }
+
+    // 3. Relleno Degradado de Trading
+    const grad = ctx.createLinearGradient(0, topPad, 0, chartH - bottomPad);
+    grad.addColorStop(0, 'rgba(251, 146, 60, 0.32)');
+    grad.addColorStop(0.7, 'rgba(251, 146, 60, 0.06)');
+    grad.addColorStop(1, 'rgba(251, 146, 60, 0.00)');
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(this.pointCoords[0].x, chartH - bottomPad);
+    ctx.lineTo(this.pointCoords[0].x, this.pointCoords[0].y);
+
+    for (let i = 0; i < this.pointCoords.length - 1; i++) {
+      const p0 = this.pointCoords[i];
+      const p1 = this.pointCoords[i + 1];
+      const midX = (p0.x + p1.x) / 2;
+      ctx.bezierCurveTo(midX, p0.y, midX, p1.y, p1.x, p1.y);
+    }
+
+    ctx.lineTo(this.pointCoords[this.pointCoords.length - 1].x, chartH - bottomPad);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+
+    // 4. Trazo de Línea Neón
+    ctx.save();
+    ctx.shadowColor = 'rgba(251, 146, 60, 0.45)';
+    ctx.shadowBlur = 6;
+    ctx.strokeStyle = '#fb923c';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(this.pointCoords[0].x, this.pointCoords[0].y);
+    for (let i = 0; i < this.pointCoords.length - 1; i++) {
+      const p0 = this.pointCoords[i];
+      const p1 = this.pointCoords[i + 1];
+      const midX = (p0.x + p1.x) / 2;
+      ctx.bezierCurveTo(midX, p0.y, midX, p1.y, p1.x, p1.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // 5. Puntos de datos
+    ctx.save();
+    this.pointCoords.forEach((pt, i) => {
+      if (this.activeIndex === i) return;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#0b0f19';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#fb923c';
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // 6. Crosshair y Punto Activo
+    if (this.activeIndex >= 0 && this.pointCoords[this.activeIndex]) {
+      const activePt = this.pointCoords[this.activeIndex];
+
+      ctx.save();
+      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = 'rgba(251, 146, 60, 0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(activePt.x, topPad);
+      ctx.lineTo(activePt.x, chartH - bottomPad);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, activePt.y);
+      ctx.lineTo(trackWidth, activePt.y);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(activePt.x, activePt.y, 9, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(251, 146, 60, 0.22)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(activePt.x, activePt.y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fb923c';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(activePt.x, activePt.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      const badgeText = `${activePt.peso.toFixed(1)} kg`;
+      ctx.font = '800 11px -apple-system, sans-serif';
+      const tw = ctx.measureText(badgeText).width + 12;
+      const th = 20;
+      const bx = Math.max(tw/2 + 2, Math.min(activePt.x, trackWidth - tw/2 - 2));
+      const by = Math.max(activePt.y - 18, topPad + th/2);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = 'rgba(251, 146, 60, 0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      if (ctx.roundRect) {
+        ctx.roundRect(bx - tw/2, by - th/2, tw, th, 5);
+      } else {
+        ctx.rect(bx - tw/2, by - th/2, tw, th);
+      }
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(badgeText, bx, by);
+
+      ctx.restore();
+    }
+  }
+}
+
+function initGraficaPeso() {
+  const canvas = document.getElementById('tcCanvasPeso');
+  if (!canvas) return;
+  const pesoRaw = <?= json_encode(array_map(function($r) {
+    return [
+      'fecha' => $r['fecha'],
+      'peso'  => (float)$r['peso_kg']
+    ];
+  }, $pesoTodos), JSON_UNESCAPED_UNICODE) ?>;
+
+  if (!pesoRaw || pesoRaw.length === 0) return;
+
+  window.tradingChartPeso = new TradingWeightChart({
+    viewportId: 'tcViewportPeso',
+    trackId:    'tcTrackPeso',
+    canvasId:   'tcCanvasPeso',
+    yAxisId:    'tcYAxisPeso',
+    hudId:      'tcHudPeso',
+    hintId:     'tcHintPeso',
+    data:       pesoRaw
   });
 }
 
@@ -3952,6 +4567,145 @@ if (document.readyState === 'complete') {
     }
   }
 
+  let currentCalMes = <?= (int)$calMes ?>;
+  let currentCalAno = <?= (int)$calAno ?>;
+  const MES_ACTUAL = <?= (int)$mesActual ?>;
+  const ANO_ACTUAL = <?= (int)$anoActual ?>;
+  const MESES_ES_NOMBRES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+  function cambiarMesCalendario(e, delta) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+
+    let nuevoMes = currentCalMes + delta;
+    let nuevoAno = currentCalAno;
+    if (nuevoMes < 1) {
+      nuevoMes = 12;
+      nuevoAno--;
+    } else if (nuevoMes > 12) {
+      nuevoMes = 1;
+      nuevoAno++;
+    }
+
+    currentCalMes = nuevoMes;
+    currentCalAno = nuevoAno;
+
+    renderizarGridCalendario();
+
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('mes', currentCalMes);
+      url.searchParams.set('ano', currentCalAno);
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    } catch (_) {}
+  }
+
+  function renderizarGridCalendario() {
+    const container = document.getElementById('calWeeksContainer');
+    const txtMes = document.getElementById('calMesTexto');
+    const txtAno = document.getElementById('calAnoTexto');
+    const btnNext = document.getElementById('calNavNext');
+    if (!container) return;
+
+    if (txtMes) txtMes.textContent = MESES_ES_NOMBRES[currentCalMes];
+    if (txtAno) txtAno.textContent = currentCalAno;
+
+    if (btnNext) {
+      const esMesLimite = (currentCalAno > ANO_ACTUAL) || (currentCalAno === ANO_ACTUAL && currentCalMes >= MES_ACTUAL);
+      btnNext.classList.toggle('disabled', esMesLimite);
+    }
+
+    const snap = window.XP_STATS_SNAPSHOT_ENT || {};
+    const fechasEntrenadas = Array.isArray(snap.fechas_entrenadas) ? snap.fechas_entrenadas : [];
+    const fechasIncompletas = Array.isArray(snap.fechas_incompletas) ? snap.fechas_incompletas : [];
+    const diasProgramados = Array.isArray(snap.dias_programados) ? snap.dias_programados.map(Number) : (Array.isArray(DIAS_PROGRAMADOS) ? DIAS_PROGRAMADOS.map(Number) : []);
+
+    const primerDia = new Date(currentCalAno, currentCalMes - 1, 1);
+    const ultimoDiaNum = new Date(currentCalAno, currentCalMes, 0).getDate();
+    const ultimoDia = new Date(currentCalAno, currentCalMes - 1, ultimoDiaNum);
+
+    let dowPrimer = primerDia.getDay();
+    let isoDowPrimer = dowPrimer === 0 ? 7 : dowPrimer;
+    let diasDesdeLunes = isoDowPrimer - 1;
+
+    let dowUltimo = ultimoDia.getDay();
+    let isoDowUltimo = dowUltimo === 0 ? 7 : dowUltimo;
+    let diasHastaDomingo = 7 - isoDowUltimo;
+
+    let fechaIter = new Date(currentCalAno, currentCalMes - 1, 1 - diasDesdeLunes);
+    const fechaFin = new Date(currentCalAno, currentCalMes - 1, ultimoDiaNum + diasHastaDomingo);
+
+    let semanasHtml = '';
+    let sIdx = 1;
+
+    while (fechaIter <= fechaFin) {
+      let weekCellsHtml = '';
+      for (let c = 0; c < 7; c++) {
+        const y = fechaIter.getFullYear();
+        const m = String(fechaIter.getMonth() + 1).padStart(2, '0');
+        const d = String(fechaIter.getDate()).padStart(2, '0');
+        const fechaStr = `${y}-${m}-${d}`;
+        const diaNum = fechaIter.getDate();
+
+        const esMes = (fechaIter.getMonth() + 1) === currentCalMes;
+        const esHoy = (fechaStr === FECHA_HOY);
+        const esFuturo = (fechaStr > FECHA_HOY);
+
+        const incompleto = !esFuturo && fechasIncompletas.includes(fechaStr);
+        const entreno = !esFuturo && fechasEntrenadas.includes(fechaStr);
+
+        let dowCurrent = fechaIter.getDay();
+        let isoDowCurrent = dowCurrent === 0 ? 7 : dowCurrent;
+        const programado = diasProgramados.includes(isoDowCurrent);
+
+        let clases = 'cal-cell clickable';
+        if (!esMes) clases += ' fuera-mes';
+        if (esHoy) clases += ' hoy';
+        if (incompleto) {
+          clases += ' incompleto';
+        } else if (entreno) {
+          clases += ' entrenado';
+        } else if (esFuturo && programado) {
+          clases += ' planificado';
+        }
+        if (fechaStr === fechaGlobalInline) {
+          clases += ' selected';
+        }
+
+        let dotHtml = '';
+        if (incompleto) {
+          dotHtml = '<span class="cal-dot incompleto" aria-hidden="true" title="Rutina incompleta"></span>';
+        } else if (entreno) {
+          dotHtml = '<span class="cal-dot" aria-hidden="true" title="Entrenamiento completado"></span>';
+        } else if ((esHoy || esFuturo) && programado) {
+          dotHtml = '<span class="cal-dot-plan" aria-hidden="true" title="Rutina programada"></span>';
+        }
+
+        weekCellsHtml += `
+          <div class="${clases}"
+               data-fecha="${fechaStr}"
+               role="button" tabindex="0">
+            <span class="cal-day-num">${diaNum}</span>
+            ${dotHtml}
+          </div>
+        `;
+
+        fechaIter.setDate(fechaIter.getDate() + 1);
+      }
+
+      semanasHtml += `
+        <div class="cal-week">
+          <div class="cal-week-label">Sem ${sIdx}</div>
+          <div class="cal-week-cells">
+            ${weekCellsHtml}
+          </div>
+        </div>
+      `;
+      sIdx++;
+    }
+
+    container.innerHTML = semanasHtml;
+  }
+
   let fechaGlobalInline = FECHA_HOY;
   let rutinaIdActual = null;
   const DIAS_PROGRAMADOS = <?= json_encode($diasProgramadosOrdenados) ?>;
@@ -4237,17 +4991,31 @@ if (document.readyState === 'complete') {
           cardio_tiempo: data.rutina.cardio_tiempo ? parseInt(data.rutina.cardio_tiempo) : 20,
           cardio_indicaciones: data.rutina.cardio_indicaciones || '',
           ejercicios: data.ejercicios.map((e, idx) => {
-            const rawSets = e.series_detalle || [];
+            const safeRir = (val) => {
+              if (val === null || val === undefined || val === '') return null;
+              const n = parseInt(val, 10);
+              return isNaN(n) ? null : n;
+            };
+            const rirFallback = e.rir_desmarcado ? null : safeRir(e.rir);
+
+            const rawSets = (Array.isArray(e.series_detalle) && e.series_detalle.length > 0)
+              ? e.series_detalle
+              : (Array.isArray(e.series) ? e.series : []);
             let sets = [];
             if (rawSets.length > 0) {
-              sets = rawSets.map(s => ({
-                numero: s.numero || 1,
-                peso: (s.peso !== null && s.peso !== undefined && s.peso !== '') ? parseFloat(s.peso) : null,
-                reps: s.reps || e.repeticiones || '10',
-                rir: (s.rir !== null && s.rir !== undefined && s.rir !== '') ? parseInt(s.rir) : (e.rir !== null ? parseInt(e.rir) : 2)
-              }));
+              sets = rawSets.map(s => {
+                const sRirParsed = safeRir(s.rir);
+                const sPesoParsed = (s.peso !== null && s.peso !== undefined && s.peso !== '' && !isNaN(parseFloat(s.peso))) ? parseFloat(s.peso) : null;
+                return {
+                  numero: s.numero || 1,
+                  peso: sPesoParsed,
+                  reps: s.reps || e.repeticiones || '10',
+                  rir: sRirParsed !== null ? sRirParsed : rirFallback,
+                  unidad: s.unidad || e.unidad_carga || 'kg'
+                };
+              });
             } else {
-              const numS = parseInt(e.series_total || e.series || 3);
+              const numS = Math.max(1, parseInt(e.series_total || (typeof e.series === 'number' ? e.series : null) || 3, 10));
               let pesoDef = null;
               if (e.descripcion) {
                 const m = e.descripcion.match(/(\d+(?:\.\d+)?)/);
@@ -4258,7 +5026,8 @@ if (document.readyState === 'complete') {
                   numero: s,
                   peso: pesoDef,
                   reps: e.repeticiones || '10',
-                  rir: e.rir !== null ? parseInt(e.rir) : 2
+                  rir: rirFallback,
+                  unidad: e.unidad_carga || 'kg'
                 });
               }
             }
@@ -4268,7 +5037,7 @@ if (document.readyState === 'complete') {
               imagen_path: e.imagen_path || null,
               series: sets.length,
               repeticiones: e.repeticiones || '10',
-              rir: (e.rir_desmarcado || e.rir === null) ? null : parseInt(e.rir),
+              rir: rirFallback,
               peso: sets[0]?.peso || null,
               tipo_implemento: e.tipo_implemento || 'barra',
               unidad_carga: e.unidad_carga || 'kg',
@@ -4410,21 +5179,24 @@ if (document.readyState === 'complete') {
         const hasRir = ej.rir !== null && ej.rir !== undefined;
         const sets = ej.series_detalle || [];
 
-        let labelColWeight = 'KG';
-        if (impl === 'mancuerna') labelColWeight = 'KG (c/u) ×2';
-        else if (impl === 'polea_maquina') labelColWeight = 'KG / PLACAS';
-        else if (impl === 'sin_peso') labelColWeight = 'SIN PESO';
+        const uEj = (ej.unidad_carga || 'kg').toLowerCase();
+        let labelColWeight = 'PESO (KG)';
+        if (impl === 'sin_peso' || uEj === 'ninguna') labelColWeight = 'SIN PESO';
+        else if (uEj === 'placas') labelColWeight = 'PLACAS';
+        else if (uEj === 'lbs') labelColWeight = (impl === 'mancuerna') ? 'LBS (c/u) ×2' : 'PESO (LBS)';
+        else if (impl === 'mancuerna') labelColWeight = 'KG (c/u) ×2';
 
         let setRowsHtml = '';
         sets.forEach((s, sIdx) => {
           const wVal = (s.peso !== null && s.peso !== undefined && s.peso !== '') ? s.peso : '';
           const rVal = (s.reps !== null && s.reps !== undefined) ? s.reps : '';
           const rirVal = (hasRir && s.rir !== null && s.rir !== undefined) ? s.rir : '';
+          const pPh = (impl === 'sin_peso' || uEj === 'ninguna') ? 'Sin peso' : (uEj === 'placas' ? 'Placas' : (uEj === 'lbs' ? 'Lbs' : 'Kg'));
 
           setRowsHtml += `
             <div class="set-row" data-serie-idx="${sIdx}">
               <div class="set-badge" title="Serie ${sIdx + 1}">${sIdx + 1}</div>
-              <input type="number" step="0.5" class="set-input set-input-weight" value="${wVal}" placeholder="${impl === 'sin_peso' ? 'Sin peso' : '—'}" oninput="actualizarSerieValor(${idx}, ${sIdx}, 'peso', this.value)" ${impl === 'sin_peso' ? 'disabled' : ''}>
+              <input type="number" step="${uEj === 'placas' ? '1' : '0.5'}" class="set-input set-input-weight" value="${wVal}" placeholder="${pPh}" oninput="actualizarSerieValor(${idx}, ${sIdx}, 'peso', this.value)" ${impl === 'sin_peso' ? 'disabled' : ''}>
               <input type="text" class="set-input set-input-reps" value="${esc(rVal)}" placeholder="—" oninput="actualizarSerieValor(${idx}, ${sIdx}, 'reps', this.value)">
               <input type="number" min="0" max="5" class="set-input set-input-rir" value="${rirVal}" placeholder="RIR" oninput="actualizarSerieValor(${idx}, ${sIdx}, 'rir', this.value)" ${!hasRir ? 'disabled style="opacity:0.2;"' : ''}>
             </div>
@@ -4461,6 +5233,17 @@ if (document.readyState === 'complete') {
                 <button type="button" class="impl-chip ${impl === 'sin_peso' ? 'active' : ''}" data-impl="sin_peso" onclick="cambiarImplementoEdicion(${idx}, 'sin_peso')">
                   <i class="ti ti-user-check"></i> Sin peso
                 </button>
+              </div>
+
+              <div class="ex-unit-toggle" style="${impl !== 'sin_peso' ? 'display:flex;' : 'display:none;'}">
+                <span class="unit-toggle-text">Unidad:</span>
+                <button type="button" class="unit-pill-btn ${uEj === 'kg' ? 'active' : ''}" data-unit="kg"
+                        onclick="cambiarUnidadEdicion(${idx}, 'kg')">KG</button>
+                <button type="button" class="unit-pill-btn ${uEj === 'lbs' ? 'active' : ''}" data-unit="lbs"
+                        onclick="cambiarUnidadEdicion(${idx}, 'lbs')">LBS</button>
+                <button type="button" class="unit-pill-btn ${uEj === 'placas' ? 'active' : ''}" data-unit="placas"
+                        style="${impl === 'polea_maquina' ? '' : 'display:none;'}"
+                        onclick="cambiarUnidadEdicion(${idx}, 'placas')">Placas</button>
               </div>
             </div>
 
@@ -4525,26 +5308,64 @@ if (document.readyState === 'complete') {
       // Lista de ejercicios modo lectura (SIN TAGS cuando están plegados)
       html += '<div class="crdi-ejercicios-list">';
       rutinaInlineState.ejercicios.forEach((ej, idx) => {
-        const hasRir = ej.rir !== null && ej.rir !== undefined;
-        const pesoStr = (ej.peso !== null && ej.peso !== undefined && ej.peso !== '') ? `${ej.peso} kg` : '—';
-        const setsList = ej.series_detalle || [];
+        const hasRir = ej.rir !== null && ej.rir !== undefined && ej.rir !== '' && !isNaN(parseInt(ej.rir, 10));
+        let setsList = Array.isArray(ej.series_detalle) ? [...ej.series_detalle] : [];
+        const uEj = (ej.unidad_carga || 'kg').toLowerCase();
+
+        // Garantizar que la tabla siempre tenga series estructuradas
+        if (setsList.length === 0) {
+          const numSeriesFallback = Math.max(1, parseInt(ej.series || ej.series_total || 3, 10));
+          for (let s = 1; s <= numSeriesFallback; s++) {
+            setsList.push({
+              numero: s,
+              peso: ej.peso || null,
+              reps: ej.repeticiones || '10',
+              rir: ej.rir,
+              unidad: ej.unidad_carga || 'kg'
+            });
+          }
+        }
 
         let seriesRows = '';
-        if (setsList.length > 0) {
-          setsList.forEach(s => {
-            const pVal = (s.peso !== null && s.peso !== '' && s.peso !== undefined) ? `${s.peso} kg` : pesoStr;
-            const rVal = s.reps ? `${s.reps} reps` : `${esc(ej.repeticiones)} reps`;
-            const rirCol = hasRir ? `<span class="crdi-st-val rir">${s.rir !== null && s.rir !== undefined ? `RIR ${s.rir}` : `RIR ${ej.rir}`}</span>` : '';
-            seriesRows += `
-              <div class="crdi-st-row ${!hasRir ? 'no-rir' : ''}">
-                <span class="crdi-st-badge-serie">S${s.numero || 1}</span>
-                <span class="crdi-st-val">${pVal}</span>
-                <span class="crdi-st-val">${rVal}</span>
-                ${rirCol}
-              </div>
-            `;
-          });
-        }
+        setsList.forEach(s => {
+          const u = (s.unidad || uEj).toLowerCase();
+          let pVal = '—';
+          const pNum = (s.peso !== null && s.peso !== '' && s.peso !== undefined && !isNaN(parseFloat(s.peso))) ? parseFloat(s.peso) : null;
+          if (pNum !== null && pNum > 0) {
+            if (u === 'placas') {
+              pVal = `${pNum} ${pNum === 1 ? 'placa' : 'placas'}`;
+            } else if (u === 'lbs' || u === 'lb') {
+              pVal = `${pNum} lbs`;
+            } else if (u === 'ninguna') {
+              pVal = 'Sin peso';
+            } else {
+              pVal = `${pNum} kg`;
+            }
+          } else if (u === 'ninguna') {
+            pVal = 'Sin peso';
+          } else {
+            pVal = '—';
+          }
+
+          const rVal = s.reps ? `${s.reps} reps` : `${esc(ej.repeticiones || '10')} reps`;
+
+          const sRirParsed = (s.rir !== null && s.rir !== undefined && !isNaN(parseInt(s.rir, 10))) 
+            ? parseInt(s.rir, 10) 
+            : ((ej.rir !== null && ej.rir !== undefined && !isNaN(parseInt(ej.rir, 10))) ? parseInt(ej.rir, 10) : null);
+
+          const rirCol = (hasRir && sRirParsed !== null && !isNaN(sRirParsed)) 
+            ? `<span class="crdi-st-val rir">RIR ${sRirParsed}</span>` 
+            : (hasRir ? '<span class="crdi-st-val rir" style="opacity:0.35;">—</span>' : '');
+
+          seriesRows += `
+            <div class="crdi-st-row ${!hasRir ? 'no-rir' : ''}">
+              <span class="crdi-st-badge-serie">S${s.numero || 1}</span>
+              <span class="crdi-st-val">${pVal}</span>
+              <span class="crdi-st-val">${rVal}</span>
+              ${rirCol}
+            </div>
+          `;
+        });
 
         html += `
           <div class="crdi-ej-card is-collapsed" id="crdi-ej-${idx}">
@@ -4552,7 +5373,7 @@ if (document.readyState === 'complete') {
               <div class="crdi-ej-head-left">
                 <span class="crdi-ej-num">${idx + 1}</span>
                 <div class="crdi-ej-titles">
-                  <span class="crdi-ej-nombre">${esc(ej.nombre)}</span>
+                  <span class="crdi-ej-nombre">${esc(ej.nombre)}${ej.equipamiento ? ` <span style="font-size:0.75rem;opacity:0.75;font-weight:400;color:#c4a3ff;">(${esc(ej.equipamiento)})</span>` : ''}</span>
                 </div>
               </div>
               <div class="crdi-ej-head-right">
@@ -4563,11 +5384,11 @@ if (document.readyState === 'complete') {
               <div class="crdi-series-table">
                 <div class="crdi-st-head ${!hasRir ? 'no-rir' : ''}">
                   <span>SERIE</span>
-                  <span style="text-align:center;">PESO</span>
+                  <span style="text-align:center;">${uEj === 'placas' ? 'PLACAS' : (uEj === 'lbs' ? 'PESO (LBS)' : 'PESO')}</span>
                   <span style="text-align:center;">REPS</span>
                   ${hasRir ? '<span style="text-align:center;">RIR</span>' : ''}
                 </div>
-                ${seriesRows}
+                ${seriesRows || '<div style="padding:12px;text-align:center;color:var(--muted);font-size:0.78rem;">Sin series configuradas</div>'}
               </div>
             </div>
           </div>
@@ -4598,9 +5419,30 @@ if (document.readyState === 'complete') {
   // Funciones interactivas del modo edición estilo crear_rutina
   function cambiarImplementoEdicion(idx, nuevoImpl) {
     if (!rutinaInlineState || !rutinaInlineState.ejercicios[idx]) return;
-    rutinaInlineState.ejercicios[idx].tipo_implemento = nuevoImpl;
+    const ej = rutinaInlineState.ejercicios[idx];
+    ej.tipo_implemento = nuevoImpl;
     if (nuevoImpl === 'sin_peso') {
-      rutinaInlineState.ejercicios[idx].series_detalle.forEach(s => s.peso = null);
+      ej.unidad_carga = 'ninguna';
+      if (Array.isArray(ej.series_detalle)) {
+        ej.series_detalle.forEach(s => { s.peso = null; s.unidad = 'ninguna'; });
+      }
+    } else {
+      if (ej.unidad_carga === 'ninguna' || (ej.unidad_carga === 'placas' && nuevoImpl !== 'polea_maquina')) {
+        ej.unidad_carga = 'kg';
+        if (Array.isArray(ej.series_detalle)) {
+          ej.series_detalle.forEach(s => { s.unidad = 'kg'; });
+        }
+      }
+    }
+    renderizarRutinaInline();
+  }
+
+  function cambiarUnidadEdicion(idx, nuevaUnidad) {
+    if (!rutinaInlineState || !rutinaInlineState.ejercicios[idx]) return;
+    const ej = rutinaInlineState.ejercicios[idx];
+    ej.unidad_carga = nuevaUnidad;
+    if (Array.isArray(ej.series_detalle)) {
+      ej.series_detalle.forEach(s => { s.unidad = nuevaUnidad; });
     }
     renderizarRutinaInline();
   }
@@ -5157,6 +5999,8 @@ if (document.readyState === 'complete') {
     inicializarRutinaInline();
   }
 
+  window.cambiarMesCalendario = cambiarMesCalendario;
+  window.renderizarGridCalendario = renderizarGridCalendario;
   window.abrirModalDia  = abrirModalDia;
   window.cerrarModalDia = cerrarModalDia;
   window.cargarDetalleDiaInline = cargarDetalleDiaInline;
@@ -5165,6 +6009,7 @@ if (document.readyState === 'complete') {
   window.activarModoEdicionRutina = activarModoEdicionRutina;
   window.cancelarModoEdicionRutina = cancelarModoEdicionRutina;
   window.cambiarImplementoEdicion = cambiarImplementoEdicion;
+  window.cambiarUnidadEdicion = cambiarUnidadEdicion;
   window.toggleRirEdicion = toggleRirEdicion;
   window.toggleRestEdicion = toggleRestEdicion;
   window.actualizarSerieValor = actualizarSerieValor;

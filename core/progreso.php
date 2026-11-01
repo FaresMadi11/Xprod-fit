@@ -587,6 +587,7 @@ function inferirEquipamientoProgreso(string $nombre, ?string $equipActual = null
 function obtenerHistorialDia(PDO $db, int $clienteId, string $fecha): array {
     $st = $db->prepare(
         "SELECT ss.ejercicio_id, ss.numero_serie, ss.tipo_serie, ss.reps_realizadas, ss.peso_usado,
+                ss.unidad_carga, ss.tipo_implemento, ss.kg_real, ss.peso_por_lado,
                 COALESCE(ss.ejercicio_nombre, e.nombre) AS ejercicio_nombre,
                 COALESCE(
                     NULLIF(TRIM(e.grupo_muscular), ''),
@@ -626,28 +627,39 @@ function obtenerHistorialDia(PDO $db, int $clienteId, string $fecha): array {
                 'nombre'                => $nombre,
                 'grupo_muscular'        => inferirGrupoMuscularProgreso($nombre, $row['grupo_muscular']),
                 'equipamiento'          => $row['equipamiento'] ?: inferirEquipamientoProgreso($nombre),
+                'tipo_implemento'       => (string)($row['tipo_implemento'] ?: 'barra'),
+                'unidad_carga'          => (string)($row['unidad_carga'] ?: 'kg'),
                 'imagen_path'           => $row['imagen_path'] ?? null,
                 'imagen_demo_path'      => $row['imagen_demo_path'] ?? null,
                 'video_url'             => $row['video_url'] ?? null,
                 'indicaciones'          => $row['indicaciones'] ?? null,
                 'configuracion_maquina' => $row['configuracion_maquina'] ?? null,
                 'series'                => [],
+                'series_detalle'        => [],
             ];
         }
 
         $reps = $row['reps_realizadas'] !== null ? (int)$row['reps_realizadas'] : null;
         $peso = $row['peso_usado']      !== null ? (float)$row['peso_usado']    : null;
+        $unidad = (string)($row['unidad_carga'] ?: 'kg');
 
-        $ejercicios[$key]['series'][] = [
-            'numero' => (int)$row['numero_serie'],
-            'tipo'   => (string)$row['tipo_serie'],
-            'reps'   => $reps,
-            'peso'   => $peso,
+        $sItem = [
+            'numero'        => (int)$row['numero_serie'],
+            'tipo'          => (string)$row['tipo_serie'],
+            'reps'          => $reps,
+            'peso'          => $peso,
+            'unidad'        => $unidad,
+            'kg_real'       => $row['kg_real'] !== null ? (float)$row['kg_real'] : null,
+            'peso_por_lado' => $row['peso_por_lado'] !== null ? (float)$row['peso_por_lado'] : null,
         ];
+
+        $ejercicios[$key]['series'][] = $sItem;
+        $ejercicios[$key]['series_detalle'][] = $sItem;
         $totalSeries++;
 
-        if ($row['tipo_serie'] !== 'calentamiento' && $reps !== null && $peso !== null) {
-            $volumen += $reps * $peso;
+        if ($row['tipo_serie'] !== 'calentamiento' && $reps !== null) {
+            $kgVol = $row['kg_real'] !== null ? (float)$row['kg_real'] : ($peso ?? 0.0);
+            $volumen += $reps * $kgVol;
         }
 
         $rid = $row['rutina_id'] !== null ? (int)$row['rutina_id'] : 0;
@@ -729,6 +741,7 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
         }
 
         $seriesDetalle = [];
+        $uniBase = (string)($e['unidad_carga'] ?: 'kg');
         if (!empty($seriesPorOrden[$orden])) {
             foreach ($seriesPorOrden[$orden] as $ps) {
                 $seriesDetalle[] = [
@@ -737,6 +750,7 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
                     'reps'   => !empty($ps['reps_objetivo']) ? (string)$ps['reps_objetivo'] : $repsBase,
                     'peso'   => $ps['kg_objetivo'] !== null ? (float)$ps['kg_objetivo'] : $pesoExtra,
                     'rir'    => $ps['rir'] !== null ? (int)$ps['rir'] : $rirBase,
+                    'unidad' => $uniBase,
                 ];
             }
         }
@@ -749,6 +763,7 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
                     'reps'   => $repsBase,
                     'peso'   => $pesoExtra,
                     'rir'    => $rirBase,
+                    'unidad' => $uniBase,
                 ];
             }
         }
@@ -756,7 +771,7 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
         // Si tenemos clienteId y fecha, mapear si alguna serie ya fue completada hoy
         if ($clienteId !== null && $fecha !== null) {
             $stSeriesHoy = $db->prepare(
-                "SELECT numero_serie, reps_realizadas, peso_usado, completado, tipo_serie 
+                "SELECT numero_serie, reps_realizadas, peso_usado, completado, tipo_serie, unidad_carga
                  FROM sesion_series 
                  WHERE cliente_id = ? AND ejercicio_id = ? AND fecha = ? AND completado = 1"
             );
@@ -775,6 +790,9 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
                     }
                     if ($completadasHoy[$sNum]['peso_usado'] !== null) {
                         $sRow['peso'] = (float)$completadasHoy[$sNum]['peso_usado'];
+                    }
+                    if (!empty($completadasHoy[$sNum]['unidad_carga'])) {
+                        $sRow['unidad'] = $completadasHoy[$sNum]['unidad_carga'];
                     }
                 } else {
                     $sRow['completado'] = false;
@@ -1002,7 +1020,7 @@ function obtenerDetalleDia(PDO $db, int $clienteId, string $fecha, string $role 
         'resumen' => ['ejercicios' => count($ejs), 'series' => array_sum(array_column($ejs, 'series_total'))],
         'ejercicios' => $ejs,
         'accion'  => ($modo === 'hoy' && $role === 'cliente')
-            ? ['label' => 'Ir a entrenar hoy', 'url' => APP_URL . '/cliente/rutina-dia?rutina=' . $prog['id']]
+            ? ['label' => 'Ir a entrenar hoy', 'url' => (defined('APP_URL') ? APP_URL : '') . '/cliente/rutina-dia?rutina=' . $prog['id']]
             : null,
     ]);
 }

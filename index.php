@@ -70,6 +70,8 @@ require BASE_DIR . '/core/media_storage.php';
 require BASE_DIR . '/core/csrf.php';
 require BASE_DIR . '/core/rate_limiter.php';
 require BASE_DIR . '/core/security.php';
+require BASE_DIR . '/core/DocumentParser.php';
+require BASE_DIR . '/core/GeminiService.php';
 
 // Restaurar sesión persistente automáticamente si el usuario cerró la app de "Recientes"
 xpRestoreRememberSession();

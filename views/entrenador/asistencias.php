@@ -2753,11 +2753,19 @@ function renderRutinaDrawer(drawer, data, modoTab) {
 
             let pesoText = '—';
             let pesoIsBodyweight = false;
-            if (isSinPeso) {
+            const uSerie = (s.unidad || ej.unidad_carga || 'kg').toLowerCase();
+            if (isSinPeso || uSerie === 'ninguna') {
               pesoText = '<i class="ti ti-user-check"></i> Corporal';
               pesoIsBodyweight = true;
             } else if (s.peso != null && parseFloat(s.peso) > 0) {
-              pesoText = `${parseFloat(s.peso)} kg`;
+              const pNum = parseFloat(s.peso);
+              if (uSerie === 'placas') {
+                pesoText = `${pNum} ${pNum === 1 ? 'placa' : 'placas'}`;
+              } else if (uSerie === 'lbs' || uSerie === 'lb') {
+                pesoText = `${pNum} lbs`;
+              } else {
+                pesoText = `${pNum} kg`;
+              }
             }
 
             const repsText = s.reps != null ? s.reps : '—';
@@ -2828,12 +2836,14 @@ function renderRutinaDrawer(drawer, data, modoTab) {
             if (isSinPeso) {
               pesoControl = '<span class="cdd-live-cell-tag"><i class="ti ti-user-check"></i> Corporal</span>';
             } else {
-              const unitPh = (ej.unidad_carga === 'placas') ? 'Placas' : 'Kg';
+              const uCarga = (ej.unidad_carga || 'kg').toLowerCase();
+              const unitPh = (uCarga === 'placas') ? 'Placas' : (uCarga === 'lbs' ? 'Lbs' : 'Kg');
+              const maxW = (uCarga === 'placas') ? 40 : (uCarga === 'lbs' ? 999 : 500);
               pesoControl = `
                 <div class="cdd-live-input-wrap">
-                  <input type="number" step="${ej.unidad_carga === 'placas' ? '1' : '0.5'}" min="0" max="500"
+                  <input type="number" step="${uCarga === 'placas' ? '1' : '0.5'}" min="0" max="${maxW}"
                          class="cdd-live-input cdd-live-peso" value="${pesoVal}" placeholder="${unitPh}"
-                         onchange="guardarSerieEntrenador(${cid}, ${ejId}, ${sNum}, '${safeImp}', '${ej.unidad_carga || 'kg'}', '${sTipo}', this.closest('.cdd-st-row'))"
+                         onchange="guardarSerieEntrenador(${cid}, ${ejId}, ${sNum}, '${safeImp}', '${uCarga}', '${sTipo}', this.closest('.cdd-st-row'))"
                          aria-label="Carga serie ${sNum}">
                 </div>`;
             }

@@ -2510,11 +2510,14 @@ function addExercise(exOrName) {
         </button>
       </div>
 
-      <div class="ex-unit-toggle" id="unitToggle_${idx}" style="${impl==='polea_maquina'?'display:flex':'display:none'}">
+      <div class="ex-unit-toggle" id="unitToggle_${idx}" style="${impl!=='sin_peso'?'display:flex':'display:none'}">
         <span class="unit-toggle-text">Unidad:</span>
         <button type="button" class="unit-pill-btn ${unit==='kg'?'active':''}" data-unit="kg"
                 onclick="cambiarUnidad(${idx}, 'kg')">KG</button>
-        <button type="button" class="unit-pill-btn ${unit==='placas'?'active':''}" data-unit="placas"
+        <button type="button" class="unit-pill-btn ${unit==='lbs'?'active':''}" data-unit="lbs"
+                onclick="cambiarUnidad(${idx}, 'lbs')">LBS</button>
+        <button type="button" class="unit-pill-btn ${unit==='placas'?'active':''}" data-unit="placas" id="btnPlacas_${idx}"
+                style="${impl==='polea_maquina'?'':'display:none;'}"
                 onclick="cambiarUnidad(${idx}, 'placas')">Placas</button>
       </div>
     </div>
@@ -3008,29 +3011,32 @@ function cambiarImplemento(exIdx, nuevoImpl) {
 
   const unitToggle = document.getElementById('unitToggle_' + exIdx);
   const colWeight  = document.getElementById('colWeight_' + exIdx);
+  const btnPlacas  = document.getElementById('btnPlacas_' + exIdx);
 
-  if (nuevoImpl === 'polea_maquina') {
-    if (unitToggle) unitToggle.style.display = 'flex';
-    if (!block.dataset.unidad || block.dataset.unidad === 'ninguna') {
-      block.dataset.unidad = 'kg';
-    }
-  } else {
+  if (nuevoImpl === 'sin_peso') {
     if (unitToggle) unitToggle.style.display = 'none';
-    if (nuevoImpl === 'sin_peso') {
-      block.dataset.unidad = 'ninguna';
-    } else {
+    block.dataset.unidad = 'ninguna';
+  } else {
+    if (unitToggle) unitToggle.style.display = 'flex';
+    if (btnPlacas) btnPlacas.style.display = (nuevoImpl === 'polea_maquina') ? '' : 'none';
+    if (!block.dataset.unidad || block.dataset.unidad === 'ninguna' || (block.dataset.unidad === 'placas' && nuevoImpl !== 'polea_maquina')) {
       block.dataset.unidad = 'kg';
     }
   }
 
-  const unit = block.dataset.unidad;
+  const unit = block.dataset.unidad || 'kg';
+  if (unitToggle) {
+    unitToggle.querySelectorAll('.unit-pill-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.unit === unit);
+    });
+  }
 
   // Actualizar label de columna
   if (colWeight) {
-    if (nuevoImpl === 'mancuerna') colWeight.textContent = 'KG (c/u) ×2';
-    else if (nuevoImpl === 'polea_maquina' && unit === 'placas') colWeight.textContent = 'PLACAS';
-    else if (nuevoImpl === 'sin_peso') colWeight.textContent = 'SIN PESO';
-    else colWeight.textContent = 'KG';
+    if (nuevoImpl === 'sin_peso') colWeight.textContent = 'SIN PESO';
+    else if (unit === 'placas') colWeight.textContent = 'PLACAS';
+    else if (unit === 'lbs') colWeight.textContent = (nuevoImpl === 'mancuerna') ? 'LBS (c/u) ×2' : 'PESO (LBS)';
+    else colWeight.textContent = (nuevoImpl === 'mancuerna') ? 'KG (c/u) ×2' : 'PESO (KG)';
   }
 
   // Actualizar filas de series existentes
@@ -3073,22 +3079,27 @@ function cambiarUnidad(exIdx, nuevaUnidad) {
     });
   }
 
+  const impl = block.dataset.implemento || 'barra';
   // Actualizar encabezado
   const colWeight = document.getElementById('colWeight_' + exIdx);
   if (colWeight) {
-    colWeight.textContent = (nuevaUnidad === 'placas') ? 'PLACAS' : 'KG';
+    if (impl === 'sin_peso') colWeight.textContent = 'SIN PESO';
+    else if (nuevaUnidad === 'placas') colWeight.textContent = 'PLACAS';
+    else if (nuevaUnidad === 'lbs') colWeight.textContent = (impl === 'mancuerna') ? 'LBS (c/u) ×2' : 'PESO (LBS)';
+    else colWeight.textContent = (impl === 'mancuerna') ? 'KG (c/u) ×2' : 'PESO (KG)';
   }
 
   // Actualizar placeholders, steps y límites de las series
   block.querySelectorAll('.set-weight-cell').forEach(cell => {
     const input = cell.querySelector('.set-input-weight');
     if (input) {
-      const maxW = (nuevaUnidad === 'placas') ? 30 : 500;
-      input.placeholder = (nuevaUnidad === 'placas') ? 'Placas' : 'Kg';
+      const maxW = (nuevaUnidad === 'placas') ? 40 : (nuevaUnidad === 'lbs' ? 999 : 500);
+      input.placeholder = (nuevaUnidad === 'placas') ? 'Placas' : (nuevaUnidad === 'lbs' ? 'Lbs' : 'Kg');
       input.step = (nuevaUnidad === 'placas') ? '1' : '0.5';
       input.setAttribute('max', maxW);
       input.dataset.max = maxW;
       if (parseFloat(input.value) > maxW) input.value = maxW;
+      actualizarHintMancuerna(input);
     }
   });
 }
@@ -3098,9 +3109,10 @@ function actualizarHintMancuerna(input) {
   const hint  = input.nextElementSibling;
   if (!block || !hint) return;
   const isMancuerna = (block.dataset.implemento === 'mancuerna');
+  const unit = block.dataset.unidad || 'kg';
   const val = parseFloat(input.value);
   if (isMancuerna && val > 0) {
-    hint.textContent = `(${val} kg c/u = ${val * 2} kg tot)`;
+    hint.textContent = `(${val} ${unit} c/u = ${val * 2} ${unit} tot)`;
     hint.style.display = 'block';
   } else {
     hint.style.display = 'none';
