@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
               document.body.dataset.navigatingTo = link.href;
               document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
               link.classList.add('active');
+              mostrarSkeletonTransicion();
               window.location.href = link.href;
             }
           }, 40);
@@ -58,22 +59,69 @@ document.addEventListener('DOMContentLoaded', () => {
     link.addEventListener('click', (e) => {
       touchStartedHere = false;
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      if (link.href) {
+      if (link.href && link.href !== window.location.href) {
         document.body.dataset.navigatingTo = link.href;
         document.querySelectorAll('.xp-nav-links a').forEach(a => a.classList.remove('active'));
         link.classList.add('active');
-        if (link.href !== window.location.href) {
-          let bar = document.getElementById('xpTopNavProgress');
-          if (!bar) {
-            bar = document.createElement('div');
-            bar.id = 'xpTopNavProgress';
-            bar.className = 'xp-top-nav-progress';
-            document.body.appendChild(bar);
-          }
-          requestAnimationFrame(() => bar.classList.add('is-loading'));
-        }
+        mostrarSkeletonTransicion();
       }
     });
+  });
+
+  function mostrarSkeletonTransicion() {
+    if (document.getElementById('xpPageSkeletonOverlay')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'xpPageSkeletonOverlay';
+    overlay.className = 'xp-page-skeleton-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+    overlay.innerHTML = `
+      <div class="xp-sk-container">
+        <div class="xp-sk-header-row">
+          <div class="xp-sk-element xp-sk-avatar" style="width:42px; height:42px;"></div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+            <div class="xp-sk-element" style="width:130px; height:16px;"></div>
+            <div class="xp-sk-element" style="width:80px; height:11px; opacity:0.5;"></div>
+          </div>
+          <div class="xp-sk-element xp-sk-pill" style="width:64px; height:26px; opacity:0.4;"></div>
+        </div>
+
+        <div class="xp-sk-element" style="height:85px; border-radius:16px; margin:10px 0 12px; opacity:0.75;"></div>
+
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="xp-sk-card-row">
+            <div class="xp-sk-element" style="width:38px; height:38px; border-radius:10px; flex-shrink:0;"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+              <div class="xp-sk-element" style="width:55%; height:15px;"></div>
+              <div class="xp-sk-element" style="width:32%; height:11px; opacity:0.5;"></div>
+            </div>
+            <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+          </div>
+          <div class="xp-sk-card-row">
+            <div class="xp-sk-element" style="width:38px; height:38px; border-radius:10px; flex-shrink:0;"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+              <div class="xp-sk-element" style="width:48%; height:15px;"></div>
+              <div class="xp-sk-element" style="width:28%; height:11px; opacity:0.5;"></div>
+            </div>
+            <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+          </div>
+          <div class="xp-sk-card-row">
+            <div class="xp-sk-element" style="width:38px; height:38px; border-radius:10px; flex-shrink:0;"></div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+              <div class="xp-sk-element" style="width:62%; height:15px;"></div>
+              <div class="xp-sk-element" style="width:36%; height:11px; opacity:0.5;"></div>
+            </div>
+            <div class="xp-sk-element" style="width:14px; height:14px; border-radius:4px; opacity:0.3;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  window.addEventListener('pageshow', () => {
+    const ov = document.getElementById('xpPageSkeletonOverlay');
+    if (ov) ov.remove();
+    document.body.removeAttribute('data-navigating-to');
   });
 
   if (typeof anime === 'function') {

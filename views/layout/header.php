@@ -169,9 +169,28 @@ try {
     </button>
   </div>
   <div class="notif-dd-body" id="xpNotifListBody">
-    <div class="notif-empty" style="padding: 30px 20px;">
-      <i class="ti ti-loader-2" style="font-size:2rem; animation: spin 0.8s linear infinite; color:#a855f7; opacity:0.7;"></i>
-      <p style="margin-top:10px; font-size:0.85rem; color:#94a3b8;">Cargando notificaciones...</p>
+        <div class="xp-skeleton-wrap" style="padding:14px; display:flex; flex-direction:column; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+        <div class="xp-sk-element xp-sk-avatar" style="width:36px; height:36px; flex-shrink:0;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div class="xp-sk-element" style="width:68%; height:13px;"></div>
+          <div class="xp-sk-element" style="width:40%; height:10px; opacity:0.5;"></div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+        <div class="xp-sk-element xp-sk-avatar" style="width:36px; height:36px; flex-shrink:0;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div class="xp-sk-element" style="width:82%; height:13px;"></div>
+          <div class="xp-sk-element" style="width:32%; height:10px; opacity:0.5;"></div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+        <div class="xp-sk-element xp-sk-avatar" style="width:36px; height:36px; flex-shrink:0;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div class="xp-sk-element" style="width:52%; height:13px;"></div>
+          <div class="xp-sk-element" style="width:45%; height:10px; opacity:0.5;"></div>
+        </div>
+      </div>
     </div>
   </div>
   <a href="<?= APP_URL ?>/<?= $rolUser ?>/notificaciones" class="notif-view-all">

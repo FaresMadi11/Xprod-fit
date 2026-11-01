@@ -6534,25 +6534,9 @@ html[data-theme="light"] .dash-metas-section {
    Mantiene la estética Bento UI premium y animaciones sedosas liberando la GPU móvil.
    ══════════════════════════════════════════════════════════════════════ */
 
-/* Barra superior de progreso instantáneo al cambiar de módulo */
+/* Barra superior removida por solicitud del usuario */
 .xp-top-nav-progress {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2.5px;
-  background: linear-gradient(90deg, #8a2be2, #c084fc, #38bdf8);
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.75);
-  z-index: 10000001;
-  pointer-events: none;
-  transform: scaleX(0);
-  transform-origin: left center;
-  opacity: 0;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
-}
-.xp-top-nav-progress.is-loading {
-  opacity: 1;
-  transform: scaleX(0.78);
+  display: none !important;
 }
 
 /* Micro-animación táctil sedosa en la barra de módulos */
@@ -6671,3 +6655,72 @@ html[data-theme="light"] .xp-skeleton-base {
 .xp-sk-pill {
   border-radius: 999px !important;
 }
+
+/* Overlay de transición skeleton entre módulos */
+.xp-page-skeleton-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: calc(70px + env(safe-area-inset-bottom, 20px));
+  background: #0b0a10;
+  z-index: 99998;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  pointer-events: none;
+  animation: xpFadeInSk 0.12s ease-out forwards;
+  overflow: hidden;
+}
+@keyframes xpFadeInSk {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.xp-sk-container {
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.xp-sk-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 12px;
+}
+.xp-sk-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+}
+
+/* Modal loading skeleton automático */
+.dia-modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+.dia-modal-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.1);
+  border-top-color: #8a2be2;
+  animation: xpSpinSk 0.8s linear infinite;
+}
+@keyframes xpSpinSk {
+  to { transform: rotate(360deg); }
+}
+

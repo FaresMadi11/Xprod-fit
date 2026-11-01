@@ -21,7 +21,32 @@ $diaHoyNum = ($diaHoyNumRaw >= 1 && $diaHoyNumRaw <= 5) ? $diaHoyNumRaw : 5;
   transition: opacity 0.15s ease;
 }
 .xp-client-container.is-loading-ajax {
-  opacity: 0.6;
+  position: relative;
+  pointer-events: none;
+}
+.xp-client-container.is-loading-ajax .wd-routine-list,
+.xp-client-container.is-loading-ajax .wd-progress-card {
+  opacity: 0.35;
+  filter: blur(1.5px);
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.xp-client-container.is-loading-ajax::after {
+  content: "";
+  position: absolute;
+  top: 140px;
+  left: 16px;
+  right: 16px;
+  height: 280px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 250% 100%;
+  animation: xpShimmerSweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 16px;
+  z-index: 10;
   pointer-events: none;
 }
 /* ── Header adaptativo y compacto Bento UI (UI-UX-PRO-MAX) ── */

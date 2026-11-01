@@ -890,9 +890,17 @@ $grupoIconos = [
     </button>
   </div>
   <div class="dia-modal-body" id="diaModalBody" aria-live="polite">
-    <div class="dia-modal-loading">
-      <div class="dia-modal-spinner" aria-hidden="true"></div>
-      <span>Cargando detalle...</span>
+    <div class="xp-skeleton-modal" style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+        <div class="xp-sk-element xp-sk-avatar" style="width:38px; height:38px; flex-shrink:0;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div class="xp-sk-element" style="width:65%; height:16px;"></div>
+          <div class="xp-sk-element" style="width:35%; height:11px; opacity:0.5;"></div>
+        </div>
+      </div>
+      <div class="xp-sk-element" style="height:70px; border-radius:14px; opacity:0.8;"></div>
+      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
+      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
     </div>
   </div>
 </div>
@@ -1248,11 +1256,19 @@ $grupoIconos = [
       renderedLocal = true;
     } else {
       bodyEl.innerHTML = `
-        <div class="dia-modal-loading">
-          <div class="dia-modal-spinner" aria-hidden="true"></div>
-          <span>Consultando registros...</span>
+    <div class="xp-skeleton-modal" style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+        <div class="xp-sk-element xp-sk-avatar" style="width:38px; height:38px; flex-shrink:0;"></div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <div class="xp-sk-element" style="width:65%; height:16px;"></div>
+          <div class="xp-sk-element" style="width:35%; height:11px; opacity:0.5;"></div>
         </div>
-      `;
+      </div>
+      <div class="xp-sk-element" style="height:70px; border-radius:14px; opacity:0.8;"></div>
+      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
+      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
+    </div>
+    `;
     }
 
     // Si estamos sin internet y ya pintamos los datos locales, terminar aquí en 0ms
@@ -1970,7 +1986,13 @@ async function abrirHistorialPeso() {
   editMode = false;
   document.getElementById('btnEditarPesos').classList.remove('active');
   document.getElementById('btnGuardarPesos').classList.remove('show');
-  body.innerHTML = '<div class="dia-modal-loading"><div class="dia-modal-spinner"></div> Cargando...</div>';
+  body.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:10px; padding:12px 0;">
+      <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.7;"></div>
+      <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.6;"></div>
+      <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.5;"></div>
+    </div>
+  `;
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
 
