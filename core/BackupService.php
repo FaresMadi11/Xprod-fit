@@ -22,6 +22,19 @@ class BackupService {
             session_write_close();
         }
 
+        // Usar archivo temporal en disco para evitar incompatibilidad de gzopen('php://output') en Windows
+        $tmpPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'xp_bak_' . bin2hex(random_bytes(8)) . '.sql.gz';
+        $gz = gzopen($tmpPath, 'wb9');
+        if (!$gz) {
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => false, 'msg' => 'No se pudo inicializar la compresión GZIP.']);
+            exit;
+        }
+
+        self::ejecutarVolcado($db, $gz);
+        gzclose($gz);
+
         // Limpiar buffers de salida previos
         while (ob_get_level() > 0) {
             ob_end_clean();
@@ -30,19 +43,13 @@ class BackupService {
         // Headers HTTP para forzar la descarga del archivo comprimido
         header('Content-Type: application/x-gzip');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($tmpPath));
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');
         header('Expires: 0');
 
-        $gz = gzopen('php://output', 'wb9');
-        if (!$gz) {
-            http_response_code(500);
-            echo "Error: No se pudo abrir el flujo de compresión GZIP.";
-            exit;
-        }
-
-        self::ejecutarVolcado($db, $gz);
-        gzclose($gz);
+        readfile($tmpPath);
+        @unlink($tmpPath);
         exit;
     }
 

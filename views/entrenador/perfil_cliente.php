@@ -6834,55 +6834,6 @@ async function exportarExcelAtleta(clienteId, atletaNombre) {
   }
 }
 
-    if (!res.ok) {
-      let errMsg = 'Error (' + res.status + ') al exportar los datos.';
-      try {
-        const errJson = await res.json();
-        if (errJson.msg) errMsg = errJson.msg;
-      } catch (_) {}
-      throw new Error(errMsg);
-    }
-
-    const blob = await res.blob();
-    let filename = 'entrenamiento_' + atletaNombre.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
-    const disp = res.headers.get('Content-Disposition');
-    if (disp && disp.indexOf('filename=') !== -1) {
-      const match = disp.match(/filename="?([^";]+)"?/);
-      if (match && match[1]) filename = match[1].trim();
-    }
-
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(downloadUrl);
-    a.remove();
-
-    Swal.fire({
-      icon: 'success',
-      title: '¡Excel Descargado!',
-      text: 'El archivo ' + filename + ' se generó y descargó exitosamente.',
-      confirmButtonColor: '#10b981',
-      background: '#121217',
-      color: '#f8fafc',
-      customClass: { popup: 'xp-swal-bento' }
-    });
-  } catch (err) {
-    console.error('Error exportando Excel:', err);
-    Swal.fire({
-      icon: 'error',
-      title: 'No se pudo exportar',
-      text: err.message || 'Error inesperado al conectar con el servidor.',
-      confirmButtonColor: '#ef4444',
-      background: '#121217',
-      color: '#f8fafc',
-      customClass: { popup: 'xp-swal-bento' }
-    });
-  }
-}
-
 function escapeHtml(str) {
   if (!str) return '';
   const div = document.createElement('div');
