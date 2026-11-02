@@ -1184,6 +1184,114 @@ body.xp-modal-active, html.xp-modal-active {
   }
 }
 
+/* ── Bento UI: Tarjeta de Copia de Seguridad de Base de Datos ── */
+.xp-backup-card {
+  background: rgba(18, 18, 23, 0.82);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.xp-backup-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #10b981, #06b6d4, #8a2be2);
+}
+.xp-backup-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 1.45rem;
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+  flex-shrink: 0;
+}
+.xp-backup-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.xp-backup-metric {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px 14px;
+  transition: all 0.2s ease;
+}
+.xp-backup-metric:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.xp-backup-metric-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+.xp-backup-metric-data {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.xp-backup-metric-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+.xp-backup-metric-val {
+  font-size: 0.88rem;
+  color: #f1f5f9;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.xp-backup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 11px 22px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s ease;
+}
+.xp-backup-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+.xp-backup-btn:active {
+  transform: translateY(0);
+}
+.xp-backup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 </style>
 
 <!-- ── Catálogo de Ejercicios Drill-Down ── -->
@@ -1485,6 +1593,69 @@ body.xp-modal-active, html.xp-modal-active {
       </button>
     </div>
   </form>
+</div>
+
+<!-- ── Bento Card: Copia de Seguridad de la Base de Datos ── -->
+<div class="card-bento xp-backup-card" style="margin-top:24px;">
+  <div class="xp-ia-card-header" style="margin-bottom: 14px;">
+    <div class="xp-backup-icon-box">
+      <i class="ti ti-database-export"></i>
+    </div>
+    <div class="xp-ia-title-box">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+          Copia de Seguridad de la Base de Datos
+        </h3>
+        <span class="xp-ia-badge-pill" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
+          <i class="ti ti-shield-check"></i> SQL Comprimido (.sql.gz)
+        </span>
+      </div>
+      <p style="margin: 4px 0 0; font-size: 0.8rem; color: #94a3b8; font-weight: 500;">
+        Genera y descarga un volcado completo de la estructura y todos los datos del sistema con compresión en tiempo real.
+      </p>
+    </div>
+  </div>
+
+  <div class="xp-backup-metrics-grid">
+    <div class="xp-backup-metric">
+      <div class="xp-backup-metric-icon"><i class="ti ti-database"></i></div>
+      <div class="xp-backup-metric-data">
+        <span class="xp-backup-metric-label">Base de Datos</span>
+        <strong class="xp-backup-metric-val"><?= e($dbName ?? 'xprod_fit') ?></strong>
+      </div>
+    </div>
+    <div class="xp-backup-metric">
+      <div class="xp-backup-metric-icon"><i class="ti ti-table"></i></div>
+      <div class="xp-backup-metric-data">
+        <span class="xp-backup-metric-label">Tablas Registradas</span>
+        <strong class="xp-backup-metric-val"><?= (int)($totalTablas ?? 0) ?> tablas</strong>
+      </div>
+    </div>
+    <div class="xp-backup-metric">
+      <div class="xp-backup-metric-icon"><i class="ti ti-barbell"></i></div>
+      <div class="xp-backup-metric-data">
+        <span class="xp-backup-metric-label">Series y Registros</span>
+        <strong class="xp-backup-metric-val"><?= number_format((int)($totalSeries ?? 0)) ?> series</strong>
+      </div>
+    </div>
+    <div class="xp-backup-metric">
+      <div class="xp-backup-metric-icon"><i class="ti ti-file-zip"></i></div>
+      <div class="xp-backup-metric-data">
+        <span class="xp-backup-metric-label">Compresión</span>
+        <strong class="xp-backup-metric-val">GZIP Stream (.sql.gz)</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="xp-backup-actions" style="margin-top: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+    <div style="font-size: 0.78rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+      <i class="ti ti-info-circle" style="color: #60a5fa; font-size: 1rem;"></i>
+      <span>El archivo incluye sentencias completas listas para restaurar vía phpMyAdmin o consola MySQL.</span>
+    </div>
+    <button type="button" id="btnDescargarBackupDb" class="xp-backup-btn" onclick="descargarCopiaSeguridadDb()">
+      <i class="ti ti-download"></i> <span>Descargar Copia de Seguridad</span>
+    </button>
+  </div>
 </div>
 
 <!-- ── Gestion de Usuarios ── -->
@@ -3601,6 +3772,118 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+/* ── Descargar Copia de Seguridad de Base de Datos (.sql.gz) ── */
+async function descargarCopiaSeguridadDb() {
+  const btn = document.getElementById('btnDescargarBackupDb');
+
+  const confirmResult = await Swal.fire({
+    title: '¿Generar Copia de Seguridad?',
+    text: 'Se creará y descargará un archivo comprimido (.sql.gz) con la base de datos completa de Xprod Fit (atletas, rutinas, series y finanzas).',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: '<i class="ti ti-download"></i> Descargar Respaldo',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#64748b',
+    background: '#121217',
+    color: '#f8fafc',
+    customClass: { popup: 'xp-swal-bento' }
+  });
+
+  if (!confirmResult.isConfirmed) return;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader-2 ti-spin"></i> <span>Generando Respaldo...</span>';
+  }
+
+  Swal.fire({
+    title: 'Generando Copia de Seguridad',
+    html: '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:10px;">' +
+          '<div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;"></div>' +
+          '<p style="color:#cbd5e1; font-size:0.88rem; margin:0;">Volcando tablas y comprimiendo datos en tiempo real...</p>' +
+          '</div>',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    background: '#121217',
+    color: '#f8fafc',
+    customClass: { popup: 'xp-swal-bento' }
+  });
+
+  try {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') 
+      || document.querySelector('input[name="csrf_token"]')?.value 
+      || '';
+
+    const res = await fetch('<?= APP_URL ?>/entrenador/descargar-respaldo-db', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': csrfToken,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'csrf_token=' + encodeURIComponent(csrfToken)
+    });
+
+    if (!res.ok) {
+      let errMsg = 'Error (' + res.status + '): No se pudo procesar la solicitud en el servidor.';
+      if (res.status === 404) {
+        errMsg = 'Error 404 (No Encontrado): El servidor web no encontró la ruta. Si tienes Laragon abierto, ciérralo o detenlo e inicia Apache en XAMPP.';
+      } else {
+        try {
+          const errJson = await res.json();
+          if (errJson.msg) errMsg = errJson.msg;
+        } catch (_) {}
+      }
+      throw new Error(errMsg);
+    }
+
+    const blob = await res.blob();
+    let filename = 'xprod_fit_backup_' + new Date().toISOString().slice(0, 10) + '.sql.gz';
+    const disp = res.headers.get('Content-Disposition');
+    if (disp && disp.indexOf('filename=') !== -1) {
+      const match = disp.match(/filename="?([^";]+)"?/);
+      if (match && match[1]) filename = match[1].trim();
+    }
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    a.remove();
+
+    Swal.fire({
+      icon: 'success',
+      title: '¡Respaldo Descargado!',
+      text: 'El archivo ' + filename + ' se ha generado y descargado correctamente.',
+      confirmButtonColor: '#10b981',
+      background: '#121217',
+      color: '#f8fafc',
+      customClass: { popup: 'xp-swal-bento' }
+    });
+
+  } catch (err) {
+    console.error('Error descarga backup:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'No se pudo descargar',
+      text: err.message || 'Ocurrió un error inesperado al procesar la solicitud.',
+      confirmButtonColor: '#ef4444',
+      background: '#121217',
+      color: '#f8fafc',
+      customClass: { popup: 'xp-swal-bento' }
+    });
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-download"></i> <span>Descargar Copia de Seguridad</span>';
+    }
+  }
 }
 </script>
 <?php require __DIR__ . '/../layout/footer.php'; ?>

@@ -1045,6 +1045,38 @@ $grupoIconos = [
   display: block;
   margin-top: 2px;
 }
+.cal-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cal-btn-exportar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.cal-btn-exportar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.5);
+  color: #fff !important;
+}
+.cal-btn-exportar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
 .cal-btn-asignar {
   display: inline-flex;
   align-items: center;
@@ -2787,9 +2819,14 @@ $grupoIconos = [
               <span class="cal-card-subtitle">Asistencias, historial de series y planificación</span>
             </div>
           </div>
-          <a href="<?= APP_URL ?>/entrenador/crear-rutina?atleta_id=<?= $cliente['id'] ?>" class="cal-btn-asignar">
-            <i class="ti ti-plus"></i> Asignar Rutina
-          </a>
+          <div class="cal-card-actions">
+            <button type="button" class="cal-btn-exportar" onclick="exportarExcelAtleta(<?= (int)$cliente['id'] ?>, '<?= e(addslashes($cliente['nombre'])) ?>')" title="Exportar historial de entrenamiento a Excel">
+              <i class="ti ti-file-spreadsheet"></i> <span>Exportar Excel</span>
+            </button>
+            <a href="<?= APP_URL ?>/entrenador/crear-rutina?atleta_id=<?= $cliente['id'] ?>" class="cal-btn-asignar">
+              <i class="ti ti-plus"></i> <span>Asignar Rutina</span>
+            </a>
+          </div>
         </div>
 
         <!-- Navegación de mes (Cambio dinámico 0ms sin recarga de página) -->
@@ -6694,6 +6731,165 @@ function eliminarAtletaPerfil(uid, nombre) {
     }
   });
 }
+
+/* ── Exportar Datos de Atleta a Excel (.xlsx) ── */
+async function exportarExcelAtleta(clienteId, atletaNombre) {
+  const result = await Swal.fire({
+    title: '¿Exportar Información a Excel?',
+    html: `
+      <div style="text-align:center; font-size:0.88rem; color:#cbd5e1; margin-top:8px;">
+        <p style="margin-bottom:14px;">Se generará una exportación completa de <strong>${escapeHtml(atletaNombre)}</strong> en formato <strong>.xlsx</strong> nativo con 3 hojas organizadas:</p>
+        <div style="display:flex; flex-direction:column; gap:8px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px;">
+          <div style="display:flex; align-items:center; gap:8px; color:#e2e8f0; font-size:0.82rem;">
+            <i class="ti ti-barbell" style="color:#a855f7; font-size:1.1rem;"></i>
+            <span><strong>Hoja 1:</strong> Historial de Series (cargas, reps y RIR)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; color:#e2e8f0; font-size:0.82rem;">
+            <i class="ti ti-calendar" style="color:#06b6d4; font-size:1.1rem;"></i>
+            <span><strong>Hoja 2:</strong> Rutina Vigente Planificada</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; color:#e2e8f0; font-size:0.82rem;">
+            <i class="ti ti-scale" style="color:#10b981; font-size:1.1rem;"></i>
+            <span><strong>Hoja 3:</strong> Historial y Variaciones de Peso Corporal</span>
+          </div>
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="ti ti-download"></i> Descargar Excel (.xlsx)',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#64748b',
+    background: '#121217',
+    color: '#f8fafc',
+    customClass: { popup: 'xp-swal-bento' }
+  });
+
+  if (!result.isConfirmed) return;
+
+  Swal.fire({
+    title: 'Generando archivo Excel...',
+    html: '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:10px;">' +
+          '<div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;"></div>' +
+          '<p style="color:#cbd5e1; font-size:0.88rem; margin:0;">Construyendo libro de 3 hojas y aplicando estilos...</p>' +
+          '</div>',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    showConfirmButton: false,
+    background: '#121217',
+    color: '#f8fafc',
+    customClass: { popup: 'xp-swal-bento' }
+  });
+
+  try {
+    const url = '<?= APP_URL ?>/entrenador/exportar-atleta-excel?cliente_id=' + clienteId + '&tipo=completo';
+    const res = await fetch(url, { method: 'GET' });
+
+    if (!res.ok) {
+      let errMsg = 'Error (' + res.status + ') al exportar los datos.';
+      try {
+        const errJson = await res.json();
+        if (errJson.msg) errMsg = errJson.msg;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+
+    const blob = await res.blob();
+    let filename = 'entrenamiento_' + atletaNombre.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    const disp = res.headers.get('Content-Disposition');
+    if (disp && disp.indexOf('filename=') !== -1) {
+      const match = disp.match(/filename="?([^";]+)"?/);
+      if (match && match[1]) filename = match[1].trim();
+    }
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    a.remove();
+
+    Swal.fire({
+      icon: 'success',
+      title: '¡Excel Descargado!',
+      text: 'El archivo ' + filename + ' se generó y descargó exitosamente.',
+      confirmButtonColor: '#10b981',
+      background: '#121217',
+      color: '#f8fafc',
+      customClass: { popup: 'xp-swal-bento' }
+    });
+  } catch (err) {
+    console.error('Error exportando Excel:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'No se pudo exportar',
+      text: err.message || 'Error inesperado al conectar con el servidor.',
+      confirmButtonColor: '#ef4444',
+      background: '#121217',
+      color: '#f8fafc',
+      customClass: { popup: 'xp-swal-bento' }
+    });
+  }
+}
+
+    if (!res.ok) {
+      let errMsg = 'Error (' + res.status + ') al exportar los datos.';
+      try {
+        const errJson = await res.json();
+        if (errJson.msg) errMsg = errJson.msg;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+
+    const blob = await res.blob();
+    let filename = 'entrenamiento_' + atletaNombre.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+    const disp = res.headers.get('Content-Disposition');
+    if (disp && disp.indexOf('filename=') !== -1) {
+      const match = disp.match(/filename="?([^";]+)"?/);
+      if (match && match[1]) filename = match[1].trim();
+    }
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(downloadUrl);
+    a.remove();
+
+    Swal.fire({
+      icon: 'success',
+      title: '¡Excel Descargado!',
+      text: 'El archivo ' + filename + ' se generó y descargó exitosamente.',
+      confirmButtonColor: '#10b981',
+      background: '#121217',
+      color: '#f8fafc',
+      customClass: { popup: 'xp-swal-bento' }
+    });
+  } catch (err) {
+    console.error('Error exportando Excel:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'No se pudo exportar',
+      text: err.message || 'Error inesperado al conectar con el servidor.',
+      confirmButtonColor: '#ef4444',
+      background: '#121217',
+      color: '#f8fafc',
+      customClass: { popup: 'xp-swal-bento' }
+    });
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 
 </script>
 

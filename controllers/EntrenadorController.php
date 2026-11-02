@@ -70,6 +70,8 @@ match($action) {
     'api-actualizar-rutina-completa' => entApiActualizarRutinaCompleta(),
     'api-importar-historial-analizar'=> entApiImportarHistorialAnalizar(),
     'api-importar-historial-guardar' => entApiImportarHistorialGuardar(),
+    'descargar-respaldo-db'          => entDescargarRespaldoDb(),
+    'exportar-atleta-excel'          => entExportarAtletaExcel(),
     default             => entDashboard(),
 };
 
@@ -1838,6 +1840,18 @@ function entConfiguracion(): void {
     ksort($catalogoPorGrupo);
 
     $ajustesGlobales = getAjustesGlobales();
+
+    // Estadísticas para Bento Card de Respaldo de Base de Datos
+    try {
+        $dbName = (string)$db->query("SELECT DATABASE()")->fetchColumn();
+        $totalTablas = (int)$db->query("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()")->fetchColumn();
+        $totalSeries = (int)$db->query("SELECT COUNT(*) FROM sesion_series")->fetchColumn();
+    } catch (\Throwable $e) {
+        $dbName = 'xprod_fit';
+        $totalTablas = 0;
+        $totalSeries = 0;
+    }
+
     $pageTitle = 'Configuracion';
     require BASE_DIR . '/views/entrenador/configuracion.php';
 }
@@ -4329,6 +4343,7 @@ function entApiImportarHistorialGuardar(): void {
         $mapRutinasCreadas = [];
         $mapRutinasPorNombre = [];
         $mapEjCreados = [];
+        $rutinaActivaPreservada = false;
 
         if (!empty($fechasValidas)) {
             $maxFecha = max($fechasValidas);
@@ -4336,7 +4351,7 @@ function entApiImportarHistorialGuardar(): void {
             $limiteReciente = date('Y-m-d', strtotime('-6 days', strtotime($maxFecha)));
             $criterioCorte = min($lunesUltimaSemana, $limiteReciente);
 
-            // Filtrar las sesiones que componen el programa vigente más reciente
+            // Filtrar las sesiones que componen el programa vigente más reciente del archivo
             $sesionesProgramaActual = [];
             foreach ($sesiones as $s) {
                 $f = trim((string)($s['fecha'] ?? ''));
@@ -4350,7 +4365,36 @@ function entApiImportarHistorialGuardar(): void {
                 $sesionesProgramaActual = array_slice($sesiones, -min(5, count($sesiones)));
             }
 
-            if (!empty($sesionesProgramaActual)) {
+            // REGLA DE PROTECCIÓN DE RUTINA ACTIVA:
+            // Si el atleta ya tiene una rutina en progreso asignada en la web, solo se debe reemplazar
+            // si el archivo que se sube contiene una rutina con fecha estrictamente MÁS RECIENTE que la actual.
+            $stRutActivas = $db->prepare("
+                SELECT id, titulo, creado_en 
+                FROM rutinas 
+                WHERE cliente_id = ? AND estado = 'en_progreso'
+                ORDER BY creado_en DESC, id DESC
+            ");
+            $stRutActivas->execute([$clienteId]);
+            $rutinasActivasExistentes = $stRutActivas->fetchAll(PDO::FETCH_ASSOC);
+
+            $debeActivarNuevaRutina = true;
+            if (!empty($rutinasActivasExistentes)) {
+                $fechaCreacionActiva = date('Y-m-d', strtotime($rutinasActivasExistentes[0]['creado_en'] ?? 'now'));
+                
+                $stUltimaActividad = $db->prepare("SELECT MAX(fecha) FROM sesion_series WHERE cliente_id = ?");
+                $stUltimaActividad->execute([$clienteId]);
+                $ultimaFechaActividad = (string)($stUltimaActividad->fetchColumn() ?: '1970-01-01');
+
+                $fechaReferenciaSistema = max($fechaCreacionActiva, $ultimaFechaActividad);
+
+                // Si la fecha máxima del archivo es igual o anterior a la rutina actual en la web, no sobreescribir
+                if ($maxFecha <= $fechaReferenciaSistema) {
+                    $debeActivarNuevaRutina = false;
+                    $rutinaActivaPreservada = true;
+                }
+            }
+
+            if ($debeActivarNuevaRutina && !empty($sesionesProgramaActual)) {
                 // Archivar rutinas activas anteriores para evitar colisiones
                 $stArch = $db->prepare("UPDATE rutinas SET estado = 'archivada' WHERE cliente_id = ? AND estado = 'en_progreso'");
                 $stArch->execute([$clienteId]);
@@ -4640,10 +4684,15 @@ function entApiImportarHistorialGuardar(): void {
             ob_end_clean();
         }
 
-        jsonOut(true, "Cronología consolidada con éxito. Se registraron {$totalSesiones} sesiones ({$totalSeries} series) en el historial y calendario.", [
-            'total_sesiones' => $totalSesiones,
-            'total_series'   => $totalSeries,
-            'total_pesos'    => $totalPesos
+        $msgFinal = $rutinaActivaPreservada
+            ? "Cronología consolidada con éxito ({$totalSesiones} sesiones, {$totalSeries} series). Se preservó intacta la rutina activa que el atleta ya tenía asignada en la web."
+            : "Cronología consolidada con éxito. Se registraron {$totalSesiones} sesiones ({$totalSeries} series) en el historial y se activó el programa vigente ({$maxFecha}).";
+
+        jsonOut(true, $msgFinal, [
+            'total_sesiones'           => $totalSesiones,
+            'total_series'             => $totalSeries,
+            'total_pesos'              => $totalPesos,
+            'rutina_activa_preservada' => $rutinaActivaPreservada
         ]);
     } catch (\Throwable $e) {
         if ($db->inTransaction()) {
@@ -4655,4 +4704,251 @@ function entApiImportarHistorialGuardar(): void {
         error_log('[entApiImportarHistorialGuardar] Error: ' . $e->getMessage());
         jsonOut(false, 'Error al guardar la cronología: ' . $e->getMessage(), [], 500);
     }
+}
+
+/*─────────────────────────────────────────────────────────────
+  API / ACCIÓN: DESCARGAR COPIA DE SEGURIDAD (.SQL.GZ)
+  POST /entrenador/descargar-respaldo-db
+─────────────────────────────────────────────────────────────*/
+function entDescargarRespaldoDb(): void {
+    csrfCheck();
+
+    $rol = $_SESSION['rol'] ?? '';
+    if ($rol !== 'entrenador' && $rol !== 'admin') {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['ok' => false, 'msg' => 'Acceso denegado. Se requieren permisos de administrador.']);
+        exit;
+    }
+
+    try {
+        $db = getDB();
+        $filename = 'xprod_fit_backup_' . date('Y-m-d_His') . '.sql.gz';
+        BackupService::descargarRespaldo($db, $filename);
+    } catch (\Throwable $e) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'ok'  => false,
+            'msg' => 'Error al generar la copia de seguridad: ' . $e->getMessage()
+        ]);
+        exit;
+    }
+}
+
+/*─────────────────────────────────────────────────────────────
+  EXPORTACIÓN DE ATLETA A EXCEL NATIVO (.XLSX)
+  GET /entrenador/exportar-atleta-excel?cliente_id=X&tipo=Y
+─────────────────────────────────────────────────────────────*/
+function entExportarAtletaExcel(): void {
+    $rol = $_SESSION['rol'] ?? '';
+    if ($rol !== 'entrenador' && $rol !== 'admin') {
+        http_response_code(403);
+        exit('Acceso denegado. Se requieren permisos de entrenador.');
+    }
+
+    $db = getDB();
+    $entId = (int)($_SESSION['user_id'] ?? 0);
+    $clienteId = (int)($_GET['cliente_id'] ?? 0);
+    $tipo = trim((string)($_GET['tipo'] ?? 'completo'));
+
+    if ($clienteId <= 0) {
+        http_response_code(400);
+        exit('ID de atleta no válido');
+    }
+
+    // Verificar que el atleta existe y pertenece a este entrenador
+    $stAtl = $db->prepare("
+        SELECT c.id, c.peso_kg, c.altura_cm, c.objetivo, u.nombre, u.email
+        FROM clientes c
+        JOIN usuarios u ON c.usuario_id = u.id
+        WHERE c.id = ? AND (? IS NOT NULL)
+    ");
+    $stAtl->execute([$clienteId, $entId]);
+    $atleta = $stAtl->fetch(PDO::FETCH_ASSOC);
+
+    if (!$atleta) {
+        http_response_code(404);
+        exit('Atleta no encontrado');
+    }
+
+    $sheets = [];
+
+    // 1. Hoja de Historial de Series (Cronología)
+    if ($tipo === 'completo' || $tipo === 'series') {
+        $stSeries = $db->prepare("
+            SELECT 
+                ss.fecha,
+                COALESCE(ss.rutina_nombre, r.descripcion, 'Entrenamiento') AS sesion_nombre,
+                COALESCE(ss.ejercicio_nombre, e.nombre, 'Ejercicio') AS ejercicio,
+                ss.numero_serie,
+                ss.reps_realizadas,
+                ss.peso_usado,
+                COALESCE(ss.unidad_carga, 'kg') AS unidad_carga,
+                ss.tipo_serie,
+                COALESCE(e.rir, '-') AS rir,
+                COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
+            FROM sesion_series ss
+            LEFT JOIN rutinas r ON ss.rutina_id = r.id
+            LEFT JOIN ejercicios e ON ss.ejercicio_id = e.id
+            WHERE ss.cliente_id = ?
+            ORDER BY ss.fecha DESC, ss.id ASC
+        ");
+        $stSeries->execute([$clienteId]);
+        $seriesRows = $stSeries->fetchAll(PDO::FETCH_ASSOC);
+
+        $headersSeries = ['Fecha', 'Sesión / Día', 'Ejercicio', 'Serie #', 'Reps Realizadas', 'Carga (kg/lb)', 'Unidad', 'Tipo Serie', 'RIR', 'Notas'];
+        $formattedSeries = [];
+
+        foreach ($seriesRows as $s) {
+            $formattedSeries[] = [
+                $s['fecha'] ?? '',
+                $s['sesion_nombre'] ?? '',
+                $s['ejercicio'] ?? '',
+                (int)($s['numero_serie'] ?? 1),
+                (int)($s['reps_realizadas'] ?? 0),
+                (float)($s['peso_usado'] ?? 0),
+                $s['unidad_carga'] ?? 'kg',
+                $s['tipo_serie'] ?? 'efectiva',
+                $s['rir'] ?? '',
+                $s['notas'] ?? ''
+            ];
+        }
+
+        // Si no hay series en sesion_series, verificar en sesiones clásicas
+        if (empty($formattedSeries)) {
+            $stSesClasicas = $db->prepare("
+                SELECT s.fecha, e.nombre AS ejercicio, s.reps_realizadas, s.peso_usado, COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
+                FROM sesiones s
+                JOIN ejercicios e ON s.ejercicio_id = e.id
+                WHERE s.cliente_id = ? AND s.completado = 1
+                ORDER BY s.fecha DESC, s.id ASC
+            ");
+            $stSesClasicas->execute([$clienteId]);
+            $sesClasicas = $stSesClasicas->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($sesClasicas as $sc) {
+                $formattedSeries[] = [
+                    $sc['fecha'] ?? '',
+                    'Sesión Registrada',
+                    $sc['ejercicio'] ?? '',
+                    1,
+                    (int)($sc['reps_realizadas'] ?? 0),
+                    (float)($sc['peso_usado'] ?? 0),
+                    'kg',
+                    'efectiva',
+                    '-',
+                    $sc['notas'] ?? ''
+                ];
+            }
+        }
+
+        $sheets['Historial de Series'] = [
+            'headers' => $headersSeries,
+            'rows'    => $formattedSeries
+        ];
+    }
+
+    // 2. Hoja de Rutina Vigente / Asignada
+    if ($tipo === 'completo' || $tipo === 'rutina') {
+        $stRutina = $db->prepare("
+            SELECT 
+                r.descripcion AS rutina_nombre,
+                r.dias_semana,
+                e.nombre AS ejercicio,
+                COALESCE(e.grupo_muscular, 'General') AS grupo_muscular,
+                e.series,
+                e.repeticiones,
+                COALESCE(e.rir, '-') AS rir,
+                COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
+            FROM rutinas r
+            JOIN ejercicios e ON e.rutina_id = r.id
+            WHERE r.cliente_id = ? AND r.estado = 'activa'
+            ORDER BY r.id DESC, e.orden ASC
+        ");
+        $stRutina->execute([$clienteId]);
+        $rutinaRows = $stRutina->fetchAll(PDO::FETCH_ASSOC);
+
+        $headersRutina = ['Rutina', 'Días Asignados', 'Ejercicio', 'Grupo Muscular', 'Series Planificadas', 'Repeticiones', 'RIR', 'Notas Biomecánicas'];
+        $formattedRutina = [];
+
+        $diasMap = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+
+        foreach ($rutinaRows as $r) {
+            $diasTxt = '';
+            if (!empty($r['dias_semana'])) {
+                $dNums = array_filter(array_map('intval', explode(',', $r['dias_semana'])));
+                $dNames = array_map(fn($d) => $diasMap[$d] ?? (string)$d, $dNums);
+                $diasTxt = implode(', ', $dNames);
+            }
+
+            $formattedRutina[] = [
+                $r['rutina_nombre'] ?? 'Rutina Activa',
+                $diasTxt ?: 'Todos los días',
+                $r['ejercicio'] ?? '',
+                $r['grupo_muscular'] ?? 'General',
+                (int)($r['series'] ?? 0),
+                $r['repeticiones'] ?? '',
+                $r['rir'] ?? '',
+                $r['notas'] ?? ''
+            ];
+        }
+
+        $sheets['Rutina Planificada'] = [
+            'headers' => $headersRutina,
+            'rows'    => $formattedRutina
+        ];
+    }
+
+    // 3. Hoja de Historial de Peso Corporal
+    if ($tipo === 'completo' || $tipo === 'pesos') {
+        $stPeso = $db->prepare("
+            SELECT fecha, peso_kg, tipo
+            FROM peso_historial
+            WHERE cliente_id = ?
+            ORDER BY fecha ASC, id ASC
+        ");
+        $stPeso->execute([$clienteId]);
+        $pesosRows = $stPeso->fetchAll(PDO::FETCH_ASSOC);
+
+        $formattedPesos = [];
+        $pesoAnterior = null;
+
+        foreach ($pesosRows as $p) {
+            $pesoActual = (float)$p['peso_kg'];
+            $diffTxt = '-';
+            if ($pesoAnterior !== null) {
+                $diff = round($pesoActual - $pesoAnterior, 2);
+                $diffTxt = ($diff > 0 ? '+' : '') . $diff . ' kg';
+            }
+            $pesoAnterior = $pesoActual;
+
+            $formattedPesos[] = [
+                $p['fecha'] ?? '',
+                $pesoActual,
+                $diffTxt,
+                ucfirst($p['tipo'] ?? 'manual')
+            ];
+        }
+
+        // Si no hay historial en la tabla pero tiene peso en su perfil
+        if (empty($formattedPesos) && !empty($atleta['peso_kg'])) {
+            $formattedPesos[] = [
+                date('Y-m-d'),
+                (float)$atleta['peso_kg'],
+                '-',
+                'Perfil Inicial'
+            ];
+        }
+
+        $sheets['Historial de Pesos'] = [
+            'headers' => ['Fecha', 'Peso Corporal (kg)', 'Variación vs Anterior', 'Origen Registro'],
+            'rows'    => array_reverse($formattedPesos)
+        ];
+    }
+
+    $sanitizedNombre = preg_replace('/[^a-zA-Z0-9_\-]/', '_', strtolower($atleta['nombre']));
+    $filename = 'xprod_' . $sanitizedNombre . '_' . date('Y-m-d') . '.xlsx';
+
+    ExcelExportService::descargarXlsx($filename, $sheets);
 }

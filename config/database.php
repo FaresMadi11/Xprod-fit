@@ -43,7 +43,7 @@ function getDB(): PDO {
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => true, // Ahorra 1 round-trip de red por cada query hacia TiDB Cloud (50% menos latencia)
-                PDO::ATTR_PERSISTENT         => true, // Reutiliza el socket TLS entre clics (ahorra ~1.7s por módulo)
+                PDO::ATTR_PERSISTENT         => (php_sapi_name() !== 'cli'), // En CLI nunca usar persistente (evita bloqueos de socket)
                 PDO::ATTR_TIMEOUT            => 10,
                 $initCmd                     => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci" . $tzSql . ", sql_mode = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'",
                 $foundRows                   => true, // rowCount() funciona en UPDATE
