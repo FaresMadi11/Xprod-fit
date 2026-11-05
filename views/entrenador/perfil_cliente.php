@@ -561,6 +561,421 @@ $grupoIconos = [
   transition: opacity 0.4s ease;
 }
 
+/* ═════════════════════════════════════════════════════════════
+   ESTILOS SWIPE DUAL: PESO CORPORAL <---> MEDIDAS CORPORALES
+   ═════════════════════════════════════════════════════════════ */
+.xp-swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border-radius: 20px;
+  transition: height 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: height;
+}
+.xp-swipe-track {
+  display: flex;
+  align-items: flex-start;
+  width: 200%;
+  transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+.xp-swipe-slide {
+  width: 50%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  vertical-align: top;
+}
+.xp-card-slide-medidas {
+  padding: 18px 20px;
+}
+@media (max-width: 480px) {
+  .xp-card-slide-medidas {
+    padding: 14px 12px !important;
+  }
+}
+.xp-link-medidas-header {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.22s ease;
+  user-select: none;
+}
+.xp-link-medidas-header span {
+  color: #ffffff;
+  border-bottom: 1.5px dashed rgba(255, 255, 255, 0.45);
+  padding-bottom: 2px;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.xp-link-medidas-header:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateX(3px);
+}
+.xp-link-medidas-header:hover span {
+  border-bottom-color: #06b6d4;
+  color: #67e8f9;
+}
+.btn-xp-swipe-link {
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 9px;
+  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-xp-swipe-link:hover {
+  background: rgba(168, 85, 247, 0.22);
+  border-color: #a855f7;
+  color: #fff;
+  transform: translateX(2px);
+}
+.btn-xp-swipe-back {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-xp-swipe-back:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+/* Cabecera Discreta "Última Medición" (Sin cajas fosforescentes) */
+.xp-ultima-medicion-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 2px 10px 2px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.xp-ultima-medicion-bar .xp-meta-lbl {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.xp-ultima-medicion-bar .xp-meta-val {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.2px;
+}
+.btn-xp-quick-edit {
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-xp-quick-edit:hover {
+  background: rgba(168, 85, 247, 0.25);
+  color: #fff;
+  border-color: #a855f7;
+  transform: translateY(-1px);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
+}
+
+/* Controles de Edición Header (Reemplazan al botón Nueva Medición) */
+.xp-header-actions-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+#slideMedidas.mode-silueta-edit .xp-header-actions-wrap {
+  width: 100%;
+}
+.xp-header-edit-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  animation: fadeInHeaderControls 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes fadeInHeaderControls {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.xp-bento-date-input {
+  background: #181820;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 9px;
+  color: #fff;
+  padding: 0 8px;
+  height: 34px;
+  font-size: 0.8rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  flex: 1 1 auto;
+  min-width: 100px;
+  max-width: 100%;
+}
+.xp-bento-date-input:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+.btn-xp-hdr-cancelar,
+.btn-xp-hdr-guardar {
+  height: 34px;
+  padding: 0 11px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  box-sizing: border-box;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-xp-hdr-cancelar {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+.btn-xp-hdr-cancelar:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.btn-xp-hdr-guardar {
+  background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3);
+}
+.btn-xp-hdr-guardar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.5);
+}
+
+@media (max-width: 480px) {
+  #slideMedidas .card-bento {
+    padding: 14px 12px !important;
+  }
+  .xp-bento-date-input {
+    padding: 0 6px;
+    font-size: 0.74rem;
+    min-width: 90px;
+  }
+  .btn-xp-hdr-cancelar,
+  .btn-xp-hdr-guardar {
+    padding: 0 8px;
+    font-size: 0.74rem;
+    gap: 3px;
+  }
+}
+
+.btn-xp-nuevo-registro {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(6, 182, 212, 0.2) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: 9px;
+  padding: 0 12px;
+  height: 34px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+.btn-xp-nuevo-registro:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.4) 0%, rgba(6, 182, 212, 0.35) 100%);
+  border-color: #c084fc;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+  transform: translateY(-1px);
+}
+
+/* Silueta Stage & Elementos SVG */
+.silueta-stage {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+svg.silueta-interactive {
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  overflow: visible;
+}
+.xp-callout-g {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.xp-callout-g:hover {
+  transform: scale(1.05);
+}
+.xp-silueta-lbl {
+  font-size: 12.5px;
+  font-weight: 700;
+  fill: #cbd5e1;
+  letter-spacing: 0.3px;
+}
+.xp-silueta-val {
+  font-size: 17px;
+  font-weight: 800;
+  fill: #ffffff;
+  letter-spacing: -0.2px;
+}
+.cota-line {
+  stroke: #22d3ee;
+  stroke-width: 2;
+  stroke-dasharray: 4, 3;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.45));
+}
+.guide-line {
+  stroke: #c084fc;
+  stroke-width: 1.8;
+  stroke-dasharray: 4, 3;
+  fill: none;
+  opacity: 0.95;
+  filter: drop-shadow(0 0 3px rgba(168, 85, 247, 0.5));
+}
+.pulse-dot {
+  fill: #c084fc;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 5px rgba(192, 132, 252, 0.85));
+}
+
+/* Inputs numéricos dentro de SVG foreignObject e inline */
+.xp-fo-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+}
+.xp-fo-container.align-right {
+  align-items: flex-end;
+}
+.xp-fo-container.align-left {
+  align-items: flex-start;
+}
+.xp-fo-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+.xp-silueta-input {
+  width: 84px;
+  height: 28px;
+  background: rgba(18, 18, 23, 0.95);
+  border: 1.5px solid #a855f7;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.35);
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+.xp-silueta-input:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  background: #181822;
+}
+
+/* Conmutación entre Modo Lectura y Modo Edición Inline */
+#slideMedidas .fo-edit {
+  display: none !important;
+}
+#slideMedidas.mode-silueta-edit .fo-display {
+  display: none !important;
+}
+#slideMedidas.mode-silueta-edit .fo-edit {
+  display: block !important;
+}
+
+/* Historial Bento Inferior */
+.xp-historial-fechas-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 2px 8px 2px;
+  scrollbar-width: thin;
+}
+.xp-historial-fechas-list::-webkit-scrollbar {
+  height: 4px;
+}
+.xp-historial-fechas-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+.xp-hist-btn-item {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.xp-hist-btn-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.xp-hist-btn-item.active {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: #a855f7;
+  color: #c084fc;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+}
+
 /* Tabs Tren Superior / Inferior */
 .st-tren-tabs {
   display: flex; gap: 0; margin-bottom: 12px;
@@ -2615,68 +3030,328 @@ $grupoIconos = [
     <!-- -- Tab: Stats -- -->
     <div class="xpf-panel <?= $tabInicial === 'stats' ? 'active' : '' ?>" id="panel-stats">
 
-      <!-- = = = 1. BLOQUE: EVOLUCIÓN DE PESO CORPORAL = = = -->
-      <div class="card-bento mb-3" style="padding:18px 20px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-          <div style="font-size:0.95rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:8px;">
-            <i class="ti ti-scale" style="color:#fb923c;font-size:1.15rem;"></i> Peso Corporal
-          </div>
-        </div>
+      <!-- 1. BLOQUE DUAL: PESO CORPORAL Y MEDIDAS CORPORALES (SWIPE CONTAINER) -->
+      <div class="xp-swipe-wrapper mb-3" id="xpSwipeWrapper">
+        <div class="xp-swipe-track" id="xpSwipeTrack">
 
-        <?php if (!empty($pesoHistorial)): ?>
-        <div class="pw-chart-wrap">
-          <div class="pw-chart-meta">
-            <div class="pw-stat">
-              <div class="pw-stat-val"><?= number_format($pesoActual, 1, '.', '') ?> <span class="pw-stat-unit">kg</span></div>
-              <div class="pw-stat-lbl">Actual</div>
-            </div>
-            <div class="pw-stat">
-              <div class="pw-stat-val"><?= number_format($pesoInicio, 1, '.', '') ?> <span class="pw-stat-unit">kg</span></div>
-              <div class="pw-stat-lbl">Inicio</div>
-            </div>
-            <div class="pw-stat">
-              <div class="pw-stat-val pw-stat-delta <?= $deltaClass ?>"><?= $deltaStr ?></div>
-              <div class="pw-stat-lbl">Variación</div>
-            </div>
-          </div>
-
-          <!-- Gráfica Interactiva Trading Viewport -->
-          <div class="tc-wrap">
-            <div class="tc-topbar">
-              <div class="tc-hud" id="tcHudPeso">
-                <span class="tc-hud-badge"><?= number_format($pesoActual, 1, '.', '') ?> <small>kg</small></span>
-                <span class="tc-hud-date"><?= !empty($pesoUltimo['fecha']) ? date('d/m/Y', strtotime($pesoUltimo['fecha'])) : '' ?></span>
-                <span class="tc-hud-diff <?= $deltaClass ?>"><?= ($delta > 0 ? '+' : '') . number_format($delta, 1, '.', '') ?> kg</span>
+          <!-- SLIDE 1: EVOLUCIÓN DE PESO CORPORAL -->
+          <div class="xp-swipe-slide" id="slidePeso">
+            <div class="card-bento" style="padding:18px 20px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="font-size:0.95rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:8px;">
+                  <i class="ti ti-scale" style="color:#fb923c;font-size:1.15rem;"></i> Peso Corporal
+                </div>
+                <a href="javascript:void(0)" onclick="window.xpSlideTo(1)" class="xp-link-medidas-header" title="Toca para ver Medidas Corporales">
+                  <i class="ti ti-ruler-measure" style="color:#06b6d4;font-size:1.15rem;"></i>
+                  <span>Medidas Corporales</span>
+                  <i class="ti ti-arrow-right" style="color:#06b6d4;font-size:0.9rem;margin-left:-2px;"></i>
+                </a>
               </div>
-              <div class="tc-ranges">
-                <button type="button" class="tc-range-btn" data-range="1m">1M</button>
-                <button type="button" class="tc-range-btn" data-range="3m">3M</button>
-                <button type="button" class="tc-range-btn" data-range="6m">6M</button>
-                <button type="button" class="tc-range-btn" data-range="1y">1A</button>
-                <button type="button" class="tc-range-btn active" data-range="all">Todo</button>
-              </div>
-            </div>
 
-            <div class="tc-body">
-              <div class="tc-viewport" id="tcViewportPeso">
-                <div class="tc-track" id="tcTrackPeso">
-                  <canvas class="tc-canvas" id="tcCanvasPeso"></canvas>
+              <?php if (!empty($pesoHistorial)): ?>
+              <div class="pw-chart-wrap">
+                <div class="pw-chart-meta">
+                  <div class="pw-stat">
+                    <div class="pw-stat-val"><?= number_format($pesoActual, 1, '.', '') ?> <span class="pw-stat-unit">kg</span></div>
+                    <div class="pw-stat-lbl">Actual</div>
+                  </div>
+                  <div class="pw-stat">
+                    <div class="pw-stat-val"><?= number_format($pesoInicio, 1, '.', '') ?> <span class="pw-stat-unit">kg</span></div>
+                    <div class="pw-stat-lbl">Inicio</div>
+                  </div>
+                  <div class="pw-stat">
+                    <div class="pw-stat-val pw-stat-delta <?= $deltaClass ?>"><?= $deltaStr ?></div>
+                    <div class="pw-stat-lbl">Variación</div>
+                  </div>
+                </div>
+
+                <!-- Gráfica Interactiva Trading Viewport -->
+                <div class="tc-wrap">
+                  <div class="tc-topbar">
+                    <div class="tc-hud" id="tcHudPeso">
+                      <span class="tc-hud-badge"><?= number_format($pesoActual, 1, '.', '') ?> <small>kg</small></span>
+                      <span class="tc-hud-date"><?= !empty($pesoUltimo['fecha']) ? date('d/m/Y', strtotime($pesoUltimo['fecha'])) : '' ?></span>
+                      <span class="tc-hud-diff <?= $deltaClass ?>"><?= ($delta > 0 ? '+' : '') . number_format($delta, 1, '.', '') ?> kg</span>
+                    </div>
+                    <div class="tc-ranges">
+                      <button type="button" class="tc-range-btn" data-range="1m">1M</button>
+                      <button type="button" class="tc-range-btn" data-range="3m">3M</button>
+                      <button type="button" class="tc-range-btn" data-range="6m">6M</button>
+                      <button type="button" class="tc-range-btn" data-range="1y">1A</button>
+                      <button type="button" class="tc-range-btn active" data-range="all">Todo</button>
+                    </div>
+                  </div>
+
+                  <div class="tc-body">
+                    <div class="tc-viewport" id="tcViewportPeso">
+                      <div class="tc-track" id="tcTrackPeso">
+                        <canvas class="tc-canvas" id="tcCanvasPeso"></canvas>
+                      </div>
+                    </div>
+                    <div class="tc-y-axis" id="tcYAxisPeso"></div>
+                  </div>
+
+                  <div class="tc-hint" id="tcHintPeso">
+                    <i class="ti ti-arrows-left-right"></i> Desliza horizontalmente para ver el historial
+                  </div>
                 </div>
               </div>
-              <div class="tc-y-axis" id="tcYAxisPeso"></div>
-            </div>
-
-            <div class="tc-hint" id="tcHintPeso">
-              <i class="ti ti-arrows-left-right"></i> Desliza horizontalmente para ver el historial
+              <?php else: ?>
+              <div class="empty-state" style="padding:28px 16px;">
+                <i class="ti ti-scale" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.3;"></i>
+                <p style="font-size:0.85rem;margin:0;">No hay registros de peso aún para este atleta.</p>
+              </div>
+              <?php endif; ?>
             </div>
           </div>
+
+          <!-- SLIDE 2: MEDIDAS CORPORALES Y SILUETA INTERACTIVA -->
+          <div class="xp-swipe-slide" id="slideMedidas">
+            <div class="card-bento xp-card-slide-medidas">
+              
+              <!-- Header Medidas: Back, Title & Controls -->
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  <a href="javascript:void(0)" onclick="window.xpSlideTo(0)" class="xp-link-medidas-header" title="Toca para volver a Peso Corporal">
+                    <i class="ti ti-arrow-left" style="color:#fb923c;font-size:0.95rem;margin-right:-2px;"></i>
+                    <i class="ti ti-scale" style="color:#fb923c;font-size:1.15rem;"></i>
+                    <span>Peso Corporal</span>
+                  </a>
+                  <div style="font-size:0.95rem;font-weight:700;color:#e2e8f0;display:flex;align-items:center;gap:8px;">
+                    <i class="ti ti-ruler-measure" style="color:#06b6d4;font-size:1.2rem;"></i> Medidas Corporales
+                  </div>
+                </div>
+
+                <div class="xp-header-actions-wrap">
+                  <!-- Botón Nueva Medición -->
+                  <button type="button" class="btn-xp-nuevo-registro" id="btnNuevaMedicion" onclick="activarModoNuevaMedicion()" title="Registrar nuevas medidas">
+                    <i class="ti ti-plus"></i>
+                    <span>Nueva Medición</span>
+                  </button>
+
+                  <!-- Controles de Edición Header (Aparecen al tocar Nueva Medición o Editar) -->
+                  <div class="xp-header-edit-controls" id="xpHeaderEditControls" style="display:none;">
+                    <input type="date" id="xpInlineFecha" class="xp-bento-date-input" title="Seleccionar fecha de medición">
+                    <button type="button" class="btn-xp-hdr-cancelar" onclick="cancelarEdicionInline()" title="Cancelar">
+                      <i class="ti ti-x"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn-xp-hdr-guardar" onclick="guardarMedicionInline()" title="Guardar medición">
+                      <i class="ti ti-check"></i> Guardar
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Subtítulo Discreto: Última Medición con Botón Quick Edit -->
+              <div class="xp-ultima-medicion-bar" id="xpBarraUltimaMedicion">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="xp-meta-lbl"><i class="ti ti-calendar-event"></i> Última medición:</span>
+                  <span class="xp-meta-val" id="xpTextoUltimaMedicion">—</span>
+                </div>
+                <button type="button" class="btn-xp-quick-edit" id="btnQuickEditMedicion" onclick="activarModoEditarMedicionActual()" title="Editar medición de este día">
+                  <i class="ti ti-edit"></i>
+                </button>
+              </div>
+
+              <!-- SILUETA INTERACTIVA SVG ANATÓMICA REALISTA -->
+              <div class="silueta-stage">
+                <svg class="silueta-interactive" viewBox="0 0 500 520" xmlns="http://www.w3.org/2000/svg">
+                  <!-- 1. COTA DE ESTATURA / ALTURA (Izquierda protegida sin superposiciones) -->
+                  <g class="cota-estatura">
+                    <line x1="18" y1="42" x2="18" y2="478" class="cota-line" />
+                    <line x1="10" y1="42" x2="26" y2="42" stroke="#22d3ee" stroke-width="2.2" stroke-linecap="round" />
+                    <line x1="10" y1="478" x2="26" y2="478" stroke="#22d3ee" stroke-width="2.2" stroke-linecap="round" />
+                    <!-- Modo Lectura -->
+                    <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('altura_cm')" title="Click para editar">
+                      <text x="8" y="18" class="xp-silueta-lbl" style="fill:#22d3ee;font-size:12px;">ESTATURA</text>
+                      <text x="8" y="38" class="xp-silueta-val" id="valSvgAltura" style="font-size:18px;">—</text>
+                    </g>
+                    <!-- Modo Edición Inline -->
+                    <foreignObject x="6" y="8" width="84" height="52" class="fo-edit">
+                      <div class="xp-fo-container align-left">
+                        <span class="xp-fo-lbl" style="color:#22d3ee;">Estatura</span>
+                        <input type="number" step="0.1" class="xp-silueta-input" id="inp_altura_cm" placeholder="cm" style="width:80px;">
+                      </div>
+                    </foreignObject>
+                  </g>
+
+                  <!-- 2. SILUETA ANATÓMICA HUMANA FRONTAL (Centrada perfectamente en x=250) -->
+                  <?php
+                    $siluetaImgPath = BASE_DIR . '/assets/img/silueta_frontal.png';
+                    $siluetaImgSrc = file_exists($siluetaImgPath)
+                      ? 'data:image/png;base64,' . base64_encode(file_get_contents($siluetaImgPath))
+                      : url('assets/img/silueta_frontal.png');
+                  ?>
+                  <image href="<?= $siluetaImgSrc ?>" x="140" y="42" width="220" height="436" style="opacity:0.95;filter:drop-shadow(0 0 5px rgba(168,85,247,0.4));" />
+
+                  <!-- 3. CALLOUTS LATERALES CONECTADOS (Líneas visibles y nítidas, textos separados y legibles) -->
+                  
+                  <!-- [IZQUIERDA 1] Hombros (Separado de Pecho) -->
+                  <circle cx="184" cy="120" r="5" class="pulse-dot" />
+                  <path d="M 184 120 L 155 95 L 140 95" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('hombros')" title="Click para editar">
+                    <text x="135" y="88" class="xp-silueta-lbl" text-anchor="end">Hombros</text>
+                    <text x="135" y="108" class="xp-silueta-val" id="valSvgHombros" text-anchor="end">—</text>
+                  </g>
+                  <foreignObject x="40" y="68" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-right">
+                      <span class="xp-fo-lbl">Hombros</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_hombros" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [DERECHA 1] Pecho (Separado de Hombros) -->
+                  <circle cx="250" cy="144" r="5" class="pulse-dot" />
+                  <path d="M 250 144 L 335 130 L 365 130" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('pecho')" title="Click para editar">
+                    <text x="368" y="124" class="xp-silueta-lbl" text-anchor="start">Pecho</text>
+                    <text x="368" y="144" class="xp-silueta-val" id="valSvgPecho" text-anchor="start">—</text>
+                  </g>
+                  <foreignObject x="365" y="106" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-left">
+                      <span class="xp-fo-lbl">Pecho</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_pecho" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [IZQUIERDA 2] Bíceps Derecho -->
+                  <circle cx="174" cy="170" r="5" class="pulse-dot" />
+                  <path d="M 174 170 L 140 170" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('biceps_der')" title="Click para editar">
+                    <text x="135" y="162" class="xp-silueta-lbl" text-anchor="end">Bíceps Der</text>
+                    <text x="135" y="182" class="xp-silueta-val" id="valSvgBicepsDer" text-anchor="end">—</text>
+                  </g>
+                  <foreignObject x="40" y="144" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-right">
+                      <span class="xp-fo-lbl">Bíceps Der</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_biceps_der" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [DERECHA 2] Bíceps Izquierdo -->
+                  <circle cx="326" cy="170" r="5" class="pulse-dot" />
+                  <path d="M 326 170 L 365 170" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('biceps_izq')" title="Click para editar">
+                    <text x="368" y="162" class="xp-silueta-lbl" text-anchor="start">Bíceps Izq</text>
+                    <text x="368" y="182" class="xp-silueta-val" id="valSvgBicepsIzq" text-anchor="start">—</text>
+                  </g>
+                  <foreignObject x="365" y="144" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-left">
+                      <span class="xp-fo-lbl">Bíceps Izq</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_biceps_izq" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [IZQUIERDA 3] Abdomen -->
+                  <circle cx="250" cy="208" r="5" class="pulse-dot" />
+                  <path d="M 250 208 L 165 224 L 140 224" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('abdomen')" title="Click para editar">
+                    <text x="135" y="218" class="xp-silueta-lbl" text-anchor="end">Abdomen</text>
+                    <text x="135" y="238" class="xp-silueta-val" id="valSvgAbdomen" text-anchor="end">—</text>
+                  </g>
+                  <foreignObject x="40" y="200" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-right">
+                      <span class="xp-fo-lbl">Abdomen</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_abdomen" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [DERECHA 3] Glúteo / Cadera -->
+                  <circle cx="250" cy="262" r="5" class="pulse-dot" />
+                  <path d="M 250 262 L 335 262 L 365 262" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('gluteo')" title="Click para editar">
+                    <text x="368" y="256" class="xp-silueta-lbl" text-anchor="start">Glúteo / Cadera</text>
+                    <text x="368" y="276" class="xp-silueta-val" id="valSvgGluteo" text-anchor="start">—</text>
+                  </g>
+                  <foreignObject x="365" y="238" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-left">
+                      <span class="xp-fo-lbl">Glúteo / Cadera</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_gluteo" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [IZQUIERDA 4] Cuádriceps Derecho -->
+                  <circle cx="216" cy="310" r="5" class="pulse-dot" />
+                  <path d="M 216 310 L 165 310 L 140 310" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('cuadriceps_der')" title="Click para editar">
+                    <text x="135" y="304" class="xp-silueta-lbl" text-anchor="end">Cuádriceps Der</text>
+                    <text x="135" y="324" class="xp-silueta-val" id="valSvgCuadDer" text-anchor="end">—</text>
+                  </g>
+                  <foreignObject x="40" y="286" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-right">
+                      <span class="xp-fo-lbl">Cuádriceps Der</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_cuadriceps_der" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [DERECHA 4] Cuádriceps Izquierdo -->
+                  <circle cx="284" cy="310" r="5" class="pulse-dot" />
+                  <path d="M 284 310 L 335 310 L 365 310" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('cuadriceps_izq')" title="Click para editar">
+                    <text x="368" y="304" class="xp-silueta-lbl" text-anchor="start">Cuádriceps Izq</text>
+                    <text x="368" y="324" class="xp-silueta-val" id="valSvgCuadIzq" text-anchor="start">—</text>
+                  </g>
+                  <foreignObject x="365" y="286" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-left">
+                      <span class="xp-fo-lbl">Cuádriceps Izq</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_cuadriceps_izq" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [IZQUIERDA 5] Pantorrilla Derecha -->
+                  <circle cx="216" cy="396" r="5" class="pulse-dot" />
+                  <path d="M 216 396 L 165 396 L 140 396" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('pantorrilla_der')" title="Click para editar">
+                    <text x="135" y="390" class="xp-silueta-lbl" text-anchor="end">Pantorrilla Der</text>
+                    <text x="135" y="410" class="xp-silueta-val" id="valSvgPantDer" text-anchor="end">—</text>
+                  </g>
+                  <foreignObject x="40" y="372" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-right">
+                      <span class="xp-fo-lbl">Pantorrilla Der</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_pantorrilla_der" placeholder="cm">
+                    </div>
+                  </foreignObject>
+
+                  <!-- [DERECHA 5] Pantorrilla Izquierda -->
+                  <circle cx="284" cy="396" r="5" class="pulse-dot" />
+                  <path d="M 284 396 L 335 396 L 365 396" class="guide-line" />
+                  <g class="fo-display xp-callout-g" onclick="activarModoEditarMedicionActual('pantorrilla_izq')" title="Click para editar">
+                    <text x="368" y="390" class="xp-silueta-lbl" text-anchor="start">Pantorrilla Izq</text>
+                    <text x="368" y="410" class="xp-silueta-val" id="valSvgPantIzq" text-anchor="start">—</text>
+                  </g>
+                  <foreignObject x="365" y="372" width="95" height="52" class="fo-edit">
+                    <div class="xp-fo-container align-left">
+                      <span class="xp-fo-lbl">Pantorrilla Izq</span>
+                      <input type="number" step="0.1" class="xp-silueta-input" id="inp_pantorrilla_izq" placeholder="cm">
+                    </div>
+                  </foreignObject>
+                </svg>
+              </div>
+
+              <!-- ACCORDEÓN: HISTORIAL DE MEDICIONES -->
+              <div class="xp-historial-accordion-wrap">
+                <button type="button" class="btn-xp-nuevo-registro" onclick="xpToggleHistorialMedidas()" id="xpBtnToggleHistorial" style="width:100%;justify-content:space-between;background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.08);margin-top:14px;">
+                  <span style="display:flex;align-items:center;gap:6px;">
+                    <i class="ti ti-history" style="color:#a855f7;"></i> Historial de Mediciones (<span id="xpHistorialCount">0</span>)
+                  </span>
+                  <i class="ti ti-chevron-down" id="xpHistChevron" style="transition:transform 0.2s ease;"></i>
+                </button>
+
+                <div id="xpHistorialMedidasContainer" style="display:none;margin-top:10px;">
+                  <!-- Listado Horizontal de Fechas del Historial -->
+                  <div class="xp-historial-fechas-list" id="xpHistorialList">
+                    <!-- Renderizado dinámicamente -->
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+            </div>
+          </div>
+
         </div>
-        <?php else: ?>
-        <div class="empty-state" style="padding:28px 16px;">
-          <i class="ti ti-scale" style="font-size:2rem;display:block;margin-bottom:8px;opacity:0.3;"></i>
-          <p style="font-size:0.85rem;margin:0;">No hay registros de peso aún para este atleta.</p>
-        </div>
-        <?php endif; ?>
       </div>
 
       <!-- = = = 2. BLOQUE: PROGRESO POR GRUPO MUSCULAR & RÉCORDS = = = -->
@@ -5496,15 +6171,13 @@ if (document.readyState === 'complete') {
               });
             } else {
               const numS = Math.max(1, parseInt(e.series_total || (typeof e.series === 'number' ? e.series : null) || 3, 10));
-              let pesoDef = null;
-              if (e.descripcion) {
-                const m = e.descripcion.match(/(\d+(?:\.\d+)?)/);
-                if (m) pesoDef = parseFloat(m[1]);
-              }
+              const matches = e.descripcion ? e.descripcion.match(/(\d+(?:\.\d+)?)/g) : null;
+              const pesosArr = matches ? matches.map(v => parseFloat(v)) : [];
               for (let s = 1; s <= numS; s++) {
+                const pDef = pesosArr[s - 1] !== undefined ? pesosArr[s - 1] : (pesosArr.length > 0 ? pesosArr[pesosArr.length - 1] : null);
                 sets.push({
                   numero: s,
-                  peso: pesoDef,
+                  peso: pDef,
                   reps: e.repeticiones || '10',
                   rir: rirFallback,
                   unidad: e.unidad_carga || 'kg'
@@ -6402,7 +7075,13 @@ if (document.readyState === 'complete') {
           peso: e.peso,
           tipo_implemento: e.tipo_implemento || 'barra',
           unidad_carga: e.unidad_carga || 'kg',
-          orden: index + 1
+          orden: index + 1,
+          series_detalle: (Array.isArray(e.series_detalle) ? e.series_detalle : []).map((s, sIdx) => ({
+            numero_serie: s.numero || s.numero_serie || (sIdx + 1),
+            peso: (s.peso !== null && s.peso !== undefined && s.peso !== '' && !isNaN(parseFloat(s.peso))) ? parseFloat(s.peso) : null,
+            reps: (s.reps !== null && s.reps !== undefined && s.reps !== '') ? String(s.reps).trim() : (e.repeticiones || '10'),
+            rir: (s.rir !== null && s.rir !== undefined && s.rir !== '' && !isNaN(parseInt(s.rir, 10))) ? parseInt(s.rir, 10) : null
+          }))
         }))
       };
 
@@ -6741,16 +7420,16 @@ async function exportarExcelAtleta(clienteId, atletaNombre) {
         <p style="margin-bottom:14px;">Se generará una exportación completa de <strong>${escapeHtml(atletaNombre)}</strong> en formato <strong>.xlsx</strong> nativo con 3 hojas organizadas:</p>
         <div style="display:flex; flex-direction:column; gap:8px; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 16px;">
           <div style="display:flex; align-items:center; gap:8px; color:#e2e8f0; font-size:0.82rem;">
-            <i class="ti ti-barbell" style="color:#a855f7; font-size:1.1rem;"></i>
-            <span><strong>Hoja 1:</strong> Historial de Series (cargas, reps y RIR)</span>
+            <i class="ti ti-layout-grid" style="color:#a855f7; font-size:1.1rem;"></i>
+            <span><strong>Hoja 1: Macrociclo</strong> (Semanas, fechas, peso, rutinas y series editables)</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px; color:#e2e8f0; font-size:0.82rem;">
-            <i class="ti ti-calendar" style="color:#06b6d4; font-size:1.1rem;"></i>
-            <span><strong>Hoja 2:</strong> Rutina Vigente Planificada</span>
+            <i class="ti ti-scale" style="color:#06b6d4; font-size:1.1rem;"></i>
+            <span><strong>Hoja 2: Historial de Pesos</strong> (Cronología y evolución de peso corporal)</span>
           </div>
           <div style="display:flex; align-items:center; gap:8px; color:#e2e8f0; font-size:0.82rem;">
-            <i class="ti ti-scale" style="color:#10b981; font-size:1.1rem;"></i>
-            <span><strong>Hoja 3:</strong> Historial y Variaciones de Peso Corporal</span>
+            <i class="ti ti-table" style="color:#10b981; font-size:1.1rem;"></i>
+            <span><strong>Hoja 3: Base de Datos Plana</strong> (Filas detalladas para filtros y analítica)</span>
           </div>
         </div>
       </div>
@@ -6771,7 +7450,7 @@ async function exportarExcelAtleta(clienteId, atletaNombre) {
     title: 'Generando archivo Excel...',
     html: '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-top:10px;">' +
           '<div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;"></div>' +
-          '<p style="color:#cbd5e1; font-size:0.88rem; margin:0;">Construyendo libro de 3 hojas y aplicando estilos...</p>' +
+          '<p style="color:#cbd5e1; font-size:0.88rem; margin:0;">Construyendo Macrociclo semanal y aplicando diseño Bento UI...</p>' +
           '</div>',
     allowOutsideClick: false,
     allowEscapeKey: false,
@@ -6840,6 +7519,463 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MEDIDAS CORPORALES & SILUETA INTERACTIVA (BENTO UI)
+   ═══════════════════════════════════════════════════════════════ */
+window.XP_CLIENTE_ID       = <?= (int)($cliente['id'] ?? 0) ?>;
+window.XP_ALTURA_ATLETA    = <?= (float)($cliente['altura_cm'] ?? 0) ?>;
+window.XP_HISTORIAL_MEDIDAS = <?= json_encode($historialMedidas ?: [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+window.xpSelectedFecha     = null;
+window.xpCurrentSlideIndex = 0;
+
+/**
+ * Ajusta la altura del contenedor con animación fluida al slide activo
+ */
+window.xpUpdateSwipeHeight = function(slideIndex = window.xpCurrentSlideIndex) {
+  const wrapper = document.getElementById('xpSwipeWrapper');
+  const slidePeso = document.getElementById('slidePeso');
+  const slideMedidas = document.getElementById('slideMedidas');
+  if (!wrapper || !slidePeso || !slideMedidas) return;
+
+  const targetSlide = (slideIndex === 1) ? slideMedidas : slidePeso;
+  const card = targetSlide.querySelector('.card-bento') || targetSlide;
+  const h = card.offsetHeight || targetSlide.offsetHeight;
+  if (h > 0) {
+    wrapper.style.height = h + 'px';
+  }
+};
+function xpUpdateSwipeHeight(slideIndex) {
+  window.xpUpdateSwipeHeight(slideIndex);
+}
+
+/**
+ * Desliza suavemente entre la tarjeta de Peso Corporal y Medidas Corporales con transición sincronizada
+ */
+window.xpSlideTo = function(slideIndex) {
+  const track = document.getElementById('xpSwipeTrack');
+  if (!track) return;
+  window.xpCurrentSlideIndex = slideIndex;
+  if (slideIndex === 1) {
+    track.style.transform = 'translateX(-50%)';
+  } else {
+    track.style.transform = 'translateX(0%)';
+  }
+  xpUpdateSwipeHeight(slideIndex);
+};
+function xpSlideTo(slideIndex) {
+  window.xpSlideTo(slideIndex);
+}
+
+/**
+ * Alterna el colapso del acordeón de Historial de Mediciones (Req 1)
+ */
+function xpToggleHistorialMedidas() {
+  const container = document.getElementById('xpHistorialMedidasContainer');
+  const chevron = document.getElementById('xpHistChevron');
+  if (!container) return;
+  const isHidden = container.style.display === 'none';
+  container.style.display = isHidden ? 'block' : 'none';
+  if (chevron) {
+    chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+  if (window.xpCurrentSlideIndex === 1) {
+    setTimeout(() => xpUpdateSwipeHeight(1), 10);
+    setTimeout(() => xpUpdateSwipeHeight(1), 220);
+  }
+}
+
+/**
+ * Formatea fechas ISO 'YYYY-MM-DD' a formato visual 'DD/MM/YYYY'
+ */
+function xpFmtFecha(iso) {
+  if (!iso) return '';
+  const parts = iso.split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : iso;
+}
+
+/**
+ * Renderiza el historial de mediciones (Pills en el acordeón inferior y subtítulo superior)
+ */
+function renderHistorialPills() {
+  const listContainer = document.getElementById('xpHistorialList');
+  const txtUltima = document.getElementById('xpTextoUltimaMedicion');
+  const countEl = document.getElementById('xpHistorialCount');
+  const btnQuickEdit = document.getElementById('btnQuickEditMedicion');
+
+  const history = window.XP_HISTORIAL_MEDIDAS || [];
+  if (countEl) countEl.textContent = history.length;
+
+  if (history.length === 0) {
+    if (txtUltima) txtUltima.textContent = 'Sin registros previos';
+    if (listContainer) {
+      listContainer.innerHTML = '<span style="font-size:0.75rem;color:#64748b;font-style:italic;padding:4px 6px;">Sin mediciones previas. Toca "+ Nueva Medición" para registrar la primera.</span>';
+    }
+    if (btnQuickEdit) btnQuickEdit.style.display = 'none';
+    return;
+  }
+
+  if (btnQuickEdit) btnQuickEdit.style.display = 'inline-flex';
+
+  // Si no hay fecha seleccionada o la seleccionada ya no existe, tomar la más reciente (primera)
+  if (!window.xpSelectedFecha || !history.some(r => r.fecha === window.xpSelectedFecha)) {
+    window.xpSelectedFecha = history[0].fecha;
+  }
+
+  // Mostrar en el subtítulo la fecha activa seleccionada
+  if (txtUltima) {
+    txtUltima.textContent = xpFmtFecha(window.xpSelectedFecha);
+  }
+
+  // Renderizar los botones de fecha en el listado del acordeón
+  if (listContainer) {
+    listContainer.innerHTML = '';
+    history.forEach(rec => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      const isActive = rec.fecha === window.xpSelectedFecha;
+      btn.className = 'xp-hist-btn-item' + (isActive ? ' active' : '');
+      btn.innerHTML = `<i class="ti ti-calendar" style="font-size:0.9rem;"></i> <span>${xpFmtFecha(rec.fecha)}</span>`;
+      btn.onclick = () => seleccionarFechaHistorial(rec.fecha);
+      listContainer.appendChild(btn);
+    });
+  }
+}
+
+/**
+ * Selecciona una fecha del historial y sincroniza la vista
+ */
+function seleccionarFechaHistorial(fecha) {
+  window.xpSelectedFecha = fecha;
+  const items = document.querySelectorAll('#xpHistorialList .xp-hist-btn-item');
+  const activeFmt = xpFmtFecha(fecha);
+  items.forEach(btn => {
+    if (btn.textContent.includes(activeFmt)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  const txtUltima = document.getElementById('xpTextoUltimaMedicion');
+  if (txtUltima) {
+    txtUltima.textContent = activeFmt;
+  }
+
+  renderMedidasParaFecha(fecha);
+}
+
+/**
+ * Pinta los valores anatómicos en el SVG
+ */
+function renderMedidasParaFecha(fecha) {
+  const rec = (window.XP_HISTORIAL_MEDIDAS || []).find(r => r.fecha === fecha) || {};
+
+  const setTxtAndInput = (valId, inpId, val, suffix = ' cm') => {
+    const el = document.getElementById(valId);
+    const inp = document.getElementById(inpId);
+    const isValValid = val !== null && val !== undefined && val !== '' && !isNaN(val);
+    if (el) {
+      el.textContent = isValValid ? parseFloat(val).toFixed(1) + suffix : '—';
+    }
+    if (inp) {
+      inp.value = isValValid ? parseFloat(val).toFixed(1) : '';
+    }
+  };
+
+  // Altura
+  const alt = rec.altura_cm || window.XP_ALTURA_ATLETA;
+  setTxtAndInput('valSvgAltura', 'inp_altura_cm', alt, ' cm');
+
+  // Hombros (Separado)
+  setTxtAndInput('valSvgHombros', 'inp_hombros', rec.hombros ?? rec.hombros_cm);
+
+  // Pecho (Separado)
+  setTxtAndInput('valSvgPecho', 'inp_pecho', rec.pecho ?? rec.pecho_cm);
+
+  // Callouts de la Silueta
+  setTxtAndInput('valSvgBicepsDer', 'inp_biceps_der', rec.biceps_der ?? rec.biceps_der_cm);
+  setTxtAndInput('valSvgBicepsIzq', 'inp_biceps_izq', rec.biceps_izq ?? rec.biceps_izq_cm);
+  setTxtAndInput('valSvgAbdomen', 'inp_abdomen', rec.abdomen ?? rec.abdomen_cm);
+  setTxtAndInput('valSvgGluteo', 'inp_gluteo', rec.gluteo ?? rec.gluteo_cm);
+  setTxtAndInput('valSvgCuadDer', 'inp_cuadriceps_der', rec.cuadriceps_der ?? rec.cuadriceps_der_cm);
+  setTxtAndInput('valSvgCuadIzq', 'inp_cuadriceps_izq', rec.cuadriceps_izq ?? rec.cuadriceps_izq_cm);
+  setTxtAndInput('valSvgPantDer', 'inp_pantorrilla_der', rec.pantorrilla_der ?? rec.pantorrilla_der_cm);
+  setTxtAndInput('valSvgPantIzq', 'inp_pantorrilla_izq', rec.pantorrilla_izq ?? rec.pantorrilla_izq_cm);
+}
+
+/**
+ * Activa el modo de NUEVA medición inline (sin modales; las medidas anteriores se limpian)
+ */
+function activarModoNuevaMedicion() {
+  const slide = document.getElementById('slideMedidas');
+  const btnNueva = document.getElementById('btnNuevaMedicion');
+  const editControls = document.getElementById('xpHeaderEditControls');
+  const fechaInp = document.getElementById('xpInlineFecha');
+  if (!slide) return;
+
+  // 1. Mostrar controles de edición en la cabecera y ocultar botón 'Nueva Medición'
+  if (btnNueva) btnNueva.style.display = 'none';
+  if (editControls) editControls.style.display = 'flex';
+  slide.classList.add('mode-silueta-edit');
+
+  // 2. Establecer fecha de hoy con opción a seleccionar otra
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (fechaInp) fechaInp.value = hoy;
+
+  // 3. LIMPIAR TODOS LOS INPUTS (desaparecen las medidas ya registradas para colocar las nuevas de ese día)
+  const inputIds = [
+    'inp_pecho', 'inp_hombros', 'inp_biceps_der', 'inp_biceps_izq',
+    'inp_abdomen', 'inp_gluteo', 'inp_cuadriceps_der', 'inp_cuadriceps_izq',
+    'inp_pantorrilla_der', 'inp_pantorrilla_izq'
+  ];
+  inputIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // Altura base (opcional para no reescribir si ya existe)
+  const elAlt = document.getElementById('inp_altura_cm');
+  if (elAlt) elAlt.value = window.XP_ALTURA_ATLETA || '';
+
+  // Foco inicial
+  const firstInput = document.getElementById('inp_pecho') || fechaInp;
+  if (firstInput) firstInput.focus();
+  setTimeout(() => xpUpdateSwipeHeight(1), 50);
+}
+
+/**
+ * Activa el modo de EDICIÓN para la medición del día seleccionado
+ */
+function activarModoEditarMedicionActual(campoKeyFocus = null) {
+  const slide = document.getElementById('slideMedidas');
+  const btnNueva = document.getElementById('btnNuevaMedicion');
+  const editControls = document.getElementById('xpHeaderEditControls');
+  const fechaInp = document.getElementById('xpInlineFecha');
+  if (!slide) return;
+
+  const curr = (window.XP_HISTORIAL_MEDIDAS || []).find(r => r.fecha === window.xpSelectedFecha) || {};
+  const hoy = new Date().toISOString().slice(0, 10);
+
+  // 1. Mostrar controles de edición en la cabecera y ocultar botón 'Nueva Medición'
+  if (btnNueva) btnNueva.style.display = 'none';
+  if (editControls) editControls.style.display = 'flex';
+  slide.classList.add('mode-silueta-edit');
+
+  // 2. Pre-cargar fecha
+  if (fechaInp) fechaInp.value = curr.fecha || hoy;
+
+  // 3. Rellenar inputs con los valores del día
+  renderMedidasParaFecha(curr.fecha || window.xpSelectedFecha);
+
+  // 4. Si se especificó un campo a enfocar
+  if (campoKeyFocus) {
+    const targetInp = document.getElementById('inp_' + campoKeyFocus);
+    if (targetInp) targetInp.focus();
+  } else {
+    slide.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  setTimeout(() => xpUpdateSwipeHeight(1), 50);
+}
+
+/**
+ * Cancela la edición inline y retorna a modo lectura
+ */
+function cancelarEdicionInline() {
+  const slide = document.getElementById('slideMedidas');
+  const btnNueva = document.getElementById('btnNuevaMedicion');
+  const editControls = document.getElementById('xpHeaderEditControls');
+  if (slide) slide.classList.remove('mode-silueta-edit');
+  if (editControls) editControls.style.display = 'none';
+  if (btnNueva) btnNueva.style.display = 'inline-flex';
+
+  // Restaurar lectura
+  renderMedidasParaFecha(window.xpSelectedFecha);
+  setTimeout(() => xpUpdateSwipeHeight(1), 50);
+}
+
+/**
+ * Guarda los valores ingresados directamente en la silueta inline
+ */
+async function guardarMedicionInline() {
+  const fecha = document.getElementById('xpInlineFecha')?.value;
+  if (!fecha) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Fecha Requerida',
+      text: 'Por favor indica la fecha correspondiente a esta medición.',
+      confirmButtonColor: '#a855f7',
+      background: '#121217',
+      color: '#fff',
+      customClass: { popup: 'card-bento' }
+    });
+    return;
+  }
+
+  const payload = {
+    cliente_id: window.XP_CLIENTE_ID,
+    fecha: fecha,
+    altura_cm: document.getElementById('inp_altura_cm')?.value || '',
+    biceps_der: document.getElementById('inp_biceps_der')?.value || '',
+    biceps_izq: document.getElementById('inp_biceps_izq')?.value || '',
+    pecho: document.getElementById('inp_pecho')?.value || '',
+    hombros: document.getElementById('inp_hombros')?.value || '',
+    abdomen: document.getElementById('inp_abdomen')?.value || '',
+    gluteo: document.getElementById('inp_gluteo')?.value || '',
+    cuadriceps_der: document.getElementById('inp_cuadriceps_der')?.value || '',
+    cuadriceps_izq: document.getElementById('inp_cuadriceps_izq')?.value || '',
+    pantorrilla_der: document.getElementById('inp_pantorrilla_der')?.value || '',
+    pantorrilla_izq: document.getElementById('inp_pantorrilla_izq')?.value || '',
+    csrf_token: typeof CSRF !== 'undefined' ? CSRF : ''
+  };
+
+  // Validar que al menos un dato numérico haya sido ingresado
+  const keysToCheck = [
+    'altura_cm', 'biceps_der', 'biceps_izq', 'pecho', 'hombros', 'abdomen',
+    'gluteo', 'cuadriceps_der', 'cuadriceps_izq', 'pantorrilla_der', 'pantorrilla_izq'
+  ];
+  const hasValue = keysToCheck.some(k => payload[k] !== '' && !isNaN(payload[k]));
+
+  if (!hasValue) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Medidas vacías',
+      text: 'Por favor ingresa al menos una medida corporal para guardar el registro.',
+      confirmButtonColor: '#a855f7',
+      background: '#121217',
+      color: '#fff',
+      customClass: { popup: 'card-bento' }
+    });
+    return;
+  }
+
+  await enviarGuardarMedidas(payload);
+  cancelarEdicionInline();
+}
+
+/**
+ * Envia la mutación de medidas al backend con manejo de errores y actualización del DOM
+ */
+async function enviarGuardarMedidas(payload) {
+  try {
+    const res = await fetch(`${APP}/entrenador/api-guardar-cliente-medidas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': typeof CSRF !== 'undefined' ? CSRF : '',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if (!res.ok || !d || !d.ok) {
+      throw new Error(d?.msg || 'Error al guardar las medidas corporales.');
+    }
+
+    const saved = d.medidas;
+    if (saved && saved.fecha) {
+      const idx = window.XP_HISTORIAL_MEDIDAS.findIndex(r => r.fecha === saved.fecha);
+      if (idx >= 0) {
+        window.XP_HISTORIAL_MEDIDAS[idx] = saved;
+      } else {
+        window.XP_HISTORIAL_MEDIDAS.unshift(saved);
+        window.XP_HISTORIAL_MEDIDAS.sort((a,b) => b.fecha.localeCompare(a.fecha));
+      }
+      if (saved.altura_cm) {
+        window.XP_ALTURA_ATLETA = parseFloat(saved.altura_cm);
+      }
+      window.xpSelectedFecha = saved.fecha;
+    }
+
+    renderHistorialPills();
+    renderMedidasParaFecha(window.xpSelectedFecha);
+
+    Swal.fire({
+      icon: 'success',
+      title: '¡Medidas Actualizadas!',
+      text: 'Se registraron las medidas corporales con éxito.',
+      timer: 1800,
+      showConfirmButton: false,
+      background: '#121217',
+      color: '#fff',
+      customClass: { popup: 'card-bento' }
+    });
+  } catch (err) {
+    console.error('Error al guardar medidas:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'No se pudo guardar',
+      text: err.message || 'Error de conexión con el servidor.',
+      confirmButtonColor: '#ef4444',
+      background: '#121217',
+      color: '#fff',
+      customClass: { popup: 'card-bento' }
+    });
+  }
+}
+
+/**
+ * Inicialización al cargar el documento (Pills, Silueta y Gestos Touch de Swipe)
+ */
+document.addEventListener('DOMContentLoaded', function() {
+  // 1. Render inicial de historial y silueta
+  renderHistorialPills();
+  if (window.xpSelectedFecha) {
+    renderMedidasParaFecha(window.xpSelectedFecha);
+  }
+
+  // 2. Altura dinámica inicial con animación fluida
+  xpUpdateSwipeHeight(0);
+  requestAnimationFrame(() => xpUpdateSwipeHeight(0));
+  setTimeout(() => xpUpdateSwipeHeight(0), 100);
+  setTimeout(() => xpUpdateSwipeHeight(0), 400);
+
+  // ResizeObserver para mantener la altura sincronizada en cualquier cambio de viewport o contenido
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => {
+      xpUpdateSwipeHeight(window.xpCurrentSlideIndex || 0);
+    });
+    const slidePeso = document.getElementById('slidePeso');
+    const slideMedidas = document.getElementById('slideMedidas');
+    if (slidePeso) ro.observe(slidePeso);
+    if (slideMedidas) ro.observe(slideMedidas);
+  }
+
+  window.addEventListener('resize', () => {
+    xpUpdateSwipeHeight(window.xpCurrentSlideIndex || 0);
+  });
+
+  // 3. Soporte para gestos táctiles (Swipe suave en móvil/tablet)
+  const wrapper = document.getElementById('xpSwipeWrapper');
+  if (wrapper) {
+    let startX = 0;
+    let startY = 0;
+    const distThreshold = 45;
+
+    wrapper.addEventListener('touchstart', (e) => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        startX = e.changedTouches[0].screenX;
+        startY = e.changedTouches[0].screenY;
+      }
+    }, { passive: true });
+
+    wrapper.addEventListener('touchend', (e) => {
+      if (e.changedTouches && e.changedTouches[0]) {
+        const diffX = e.changedTouches[0].screenX - startX;
+        const diffY = e.changedTouches[0].screenY - startY;
+
+        // Si el desplazamiento horizontal supera el vertical y el umbral:
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > distThreshold) {
+          if (diffX < 0) {
+            xpSlideTo(1); // Deslizó hacia la izquierda -> ver Medidas
+          } else {
+            xpSlideTo(0); // Deslizó hacia la derecha -> volver a Peso
+          }
+        }
+      }
+    }, { passive: true });
+  }
+});
 
 
 </script>

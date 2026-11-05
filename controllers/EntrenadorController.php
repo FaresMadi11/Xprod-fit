@@ -72,6 +72,9 @@ match($action) {
     'api-importar-historial-guardar' => entApiImportarHistorialGuardar(),
     'descargar-respaldo-db'          => entDescargarRespaldoDb(),
     'exportar-atleta-excel'          => entExportarAtletaExcel(),
+    'api-cliente-medidas'            => entApiClienteMedidas(),
+    'api-guardar-cliente-medidas'    => entApiGuardarClienteMedidas(),
+    'api-cambiar-genero-cliente'     => entApiCambiarGeneroCliente(),
     default             => entDashboard(),
 };
 
@@ -366,7 +369,7 @@ function entPerfilCliente(): void {
     // Verificar que pertenece a este entrenador
     $stmt = $db->prepare(
         "SELECT u.id AS usuario_id, u.nombre, u.email, u.estado_cuenta, u.activo,
-                c.id AS cliente_id, c.peso_kg, c.altura_cm, c.objetivo, c.fecha_nac, c.dias_entrenamiento
+                c.id AS cliente_id, c.peso_kg, c.altura_cm, COALESCE(c.genero, 'masculino') AS genero, c.objetivo, c.fecha_nac, c.dias_entrenamiento
          FROM clientes c
          JOIN usuarios u ON c.usuario_id = u.id
          WHERE c.id = ? AND (? IS NOT NULL)"
@@ -510,6 +513,17 @@ function entPerfilCliente(): void {
     );
     $stEjFilter->execute([$clienteId]);
     $ejerciciosFiltro = $stEjFilter->fetchAll();
+
+    // Historial y medidas anatómicas y biomecánicas del atleta
+    $stMedidas = $db->prepare("
+        SELECT *
+        FROM cliente_medidas
+        WHERE cliente_id = ?
+        ORDER BY fecha DESC, id DESC
+    ");
+    $stMedidas->execute([$clienteId]);
+    $historialMedidas = $stMedidas->fetchAll(PDO::FETCH_ASSOC);
+    $medidasActuales = !empty($historialMedidas) ? $historialMedidas[0] : null;
 
     $pageTitle = 'Perfil del Atleta';
     require BASE_DIR . '/views/entrenador/perfil_cliente.php';
@@ -4019,6 +4033,34 @@ function entApiActualizarRutinaCompleta(): void {
         ");
         $stRutina->execute([$cardioActivo, $cardioTiempo, $cardioIndicaciones, $rutinaId]);
 
+        // Asegurar que la rutina tenga una plantilla vinculada para preservar las series individuales (SSOT)
+        $stRutInfo = $db->prepare("SELECT plantilla_id, titulo FROM rutinas WHERE id = ?");
+        $stRutInfo->execute([$rutinaId]);
+        $rutRow = $stRutInfo->fetch(PDO::FETCH_ASSOC);
+        $plantillaId = (int)($rutRow['plantilla_id'] ?? 0);
+
+        if ($plantillaId <= 0) {
+            $stInsPl = $db->prepare("INSERT INTO plantillas_rutinas (entrenador_id, titulo, cardio_activo, cardio_tiempo, cardio_indicaciones) VALUES (?, ?, ?, ?, ?)");
+            $stInsPl->execute([$entId, $rutRow['titulo'] ?: 'Entrenamiento', $cardioActivo, $cardioTiempo, $cardioIndicaciones]);
+            $plantillaId = (int)$db->lastInsertId();
+            $db->prepare("UPDATE rutinas SET plantilla_id = ? WHERE id = ?")->execute([$plantillaId, $rutinaId]);
+        } else {
+            $db->prepare("UPDATE plantillas_rutinas SET cardio_activo = ?, cardio_tiempo = ?, cardio_indicaciones = ? WHERE id = ?")->execute([$cardioActivo, $cardioTiempo, $cardioIndicaciones, $plantillaId]);
+        }
+
+        // Limpiar series y ejercicios anteriores de la plantilla vinculada para reconstruirlos fielmente
+        $db->prepare("DELETE FROM plantilla_series WHERE plantilla_ej_id IN (SELECT id FROM plantilla_ejercicios WHERE plantilla_id = ?)")->execute([$plantillaId]);
+        $db->prepare("DELETE FROM plantilla_ejercicios WHERE plantilla_id = ?")->execute([$plantillaId]);
+
+        $stInsPlEj = $db->prepare("
+            INSERT INTO plantilla_ejercicios (plantilla_id, nombre_override, orden, descanso_segundos, tipo_implemento, unidad_carga)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+        $stInsPlS = $db->prepare("
+            INSERT INTO plantilla_series (plantilla_ej_id, numero_serie, tipo_serie, kg_objetivo, reps_objetivo, rir)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ");
+
         // 2. Procesar ejercicios de la rutina
         $idsMantener = [];
         foreach ($ejercicios as $ej) {
@@ -4059,7 +4101,9 @@ function entApiActualizarRutinaCompleta(): void {
             $nombre = trim((string)($ej['nombre'] ?? ''));
             if ($nombre === '') continue;
 
-            $series = max(1, min(30, (int)($ej['series'] ?? 3)));
+            $seriesRaw = $ej['series_detalle'] ?? $ej['series'] ?? [];
+            if (!is_array($seriesRaw)) $seriesRaw = [];
+            $series = max(1, min(30, count($seriesRaw) > 0 ? count($seriesRaw) : (int)($ej['series'] ?? 3)));
             $reps   = trim((string)($ej['repeticiones'] ?? '10'));
             if ($reps === '') $reps = '10';
             
@@ -4073,8 +4117,49 @@ function entApiActualizarRutinaCompleta(): void {
                 $unidad = ($imp === 'sin_peso') ? 'ninguna' : 'kg';
             }
 
-            $pesoVal = isset($ej['peso']) && $ej['peso'] !== '' && $ej['peso'] !== null ? (float)$ej['peso'] : null;
-            $desc = !empty($ej['descripcion']) ? trim((string)$ej['descripcion']) : ($pesoVal !== null ? ($unidad === 'placas' ? "{$pesoVal} placas" : ($unidad === 'lbs' ? "{$pesoVal} lbs" : ($unidad === 'ninguna' ? 'Sin peso' : "{$pesoVal} kg"))) : '');
+            // Reconstruir plantilla_ejercicios y plantilla_series para este ejercicio
+            $descanso = isset($ej['descanso']) && is_numeric($ej['descanso']) ? (int)$ej['descanso'] : null;
+            $stInsPlEj->execute([$plantillaId, $nombre, $orden, $descanso, $imp, $unidad]);
+            $plEjId = (int)$db->lastInsertId();
+
+            $pesosValores = [];
+            if (!empty($seriesRaw)) {
+                foreach ($seriesRaw as $sIdx => $sData) {
+                    $sNum = (int)($sData['numero_serie'] ?? ($sData['numero'] ?? ($sIdx + 1)));
+                    $sKg  = isset($sData['peso']) && $sData['peso'] !== '' && $sData['peso'] !== null && is_numeric($sData['peso']) ? (float)$sData['peso'] : null;
+                    if ($imp === 'sin_peso') $sKg = null;
+                    $sRep = isset($sData['reps']) && is_numeric($sData['reps']) ? (int)$sData['reps'] : (int)$reps;
+                    $sRir = isset($sData['rir']) && $sData['rir'] !== '' && $sData['rir'] !== null && is_numeric($sData['rir']) ? max(0, min(5, (int)$sData['rir'])) : $rirVal;
+                    $stInsPlS->execute([$plEjId, $sNum, 'normal', $sKg, $sRep, $sRir]);
+                    if ($sKg !== null) {
+                        $pesosValores[] = $sKg;
+                    }
+                }
+            } else {
+                $pesoVal = isset($ej['peso']) && $ej['peso'] !== '' && $ej['peso'] !== null ? (float)$ej['peso'] : null;
+                if ($imp === 'sin_peso') $pesoVal = null;
+                for ($s = 1; $s <= $series; $s++) {
+                    $stInsPlS->execute([$plEjId, $s, 'normal', $pesoVal, (int)$reps, $rirVal]);
+                    if ($pesoVal !== null) {
+                        $pesosValores[] = $pesoVal;
+                    }
+                }
+            }
+
+            // Generar descripción fiel y precisa de las cargas de todas las series
+            if ($imp === 'sin_peso' || $unidad === 'ninguna') {
+                $desc = 'Sin peso';
+            } else if (!empty($pesosValores)) {
+                $unicos = array_unique($pesosValores);
+                $uniSuffix = ($unidad === 'placas') ? 'placas' : ($unidad === 'lbs' ? 'lbs' : 'kg');
+                if (count($unicos) === 1) {
+                    $desc = "{$pesosValores[0]} {$uniSuffix}";
+                } else {
+                    $desc = implode('-', $pesosValores) . " {$uniSuffix}";
+                }
+            } else {
+                $desc = !empty($ej['descripcion']) ? trim((string)$ej['descripcion']) : '';
+            }
 
             if ($eid > 0) {
                 $stUp->execute([$nombre, $series, $reps, $rirVal, $orden, $imp, $unidad, $desc, $eid, $rutinaId]);
@@ -4425,6 +4510,12 @@ function entApiImportarHistorialGuardar(): void {
                     $stInsActiva->execute([$clienteId, $entId, $rNom, $descRut, $dow]);
                     $newRutId = (int)$db->lastInsertId();
 
+                    // Vincular plantilla individual para persistencia estructurada de series (SSOT)
+                    $stInsPlImp = $db->prepare("INSERT INTO plantillas_rutinas (entrenador_id, titulo) VALUES (?, ?)");
+                    $stInsPlImp->execute([$entId, $rNom]);
+                    $newPlId = (int)$db->lastInsertId();
+                    $db->prepare("UPDATE rutinas SET plantilla_id = ? WHERE id = ?")->execute([$newPlId, $newRutId]);
+
                     $mapRutinasCreadas[$fProg] = $newRutId;
                     $mapRutinasPorNombre[$rNom] = $newRutId;
 
@@ -4469,6 +4560,19 @@ function entApiImportarHistorialGuardar(): void {
                         ]);
                         $newEjId = (int)$db->lastInsertId();
                         $mapEjCreados[$newRutId][$ejNom] = $newEjId;
+
+                        // Persistir series detalladas en plantilla_series
+                        $stInsPlEjImp = $db->prepare("INSERT INTO plantilla_ejercicios (plantilla_id, nombre_override, orden, tipo_implemento, unidad_carga) VALUES (?, ?, ?, ?, ?)");
+                        $stInsPlEjImp->execute([$newPlId, $ejNom, $oIdx + 1, $ejImp, $ejUni]);
+                        $newPlEjId = (int)$db->lastInsertId();
+
+                        $stInsPlSImp = $db->prepare("INSERT INTO plantilla_series (plantilla_ej_id, numero_serie, tipo_serie, kg_objetivo, reps_objetivo, rir) VALUES (?, ?, ?, ?, ?, ?)");
+                        foreach ($seriesListToUse as $sIdx => $sData) {
+                            $sKg = isset($sData['peso']) && is_numeric($sData['peso']) && (float)$sData['peso'] > 0 ? (float)$sData['peso'] : null;
+                            $sRep = isset($sData['reps']) && is_numeric($sData['reps']) ? (int)$sData['reps'] : (int)$repsStr;
+                            $sRir = isset($sData['rir']) && is_numeric($sData['rir']) ? (int)$sData['rir'] : 2;
+                            $stInsPlSImp->execute([$newPlEjId, $sIdx + 1, 'normal', $sKg, $sRep, $sRir]);
+                        }
 
                         // Auto-registro defensivo en el catálogo maestro para prevenir ejercicios huérfanos
                         asegurarEjercicioEnCatalogo($db, $ejNom, $ejGrp, $ejImp, $ejUni, $ejEqp);
@@ -4750,7 +4854,6 @@ function entExportarAtletaExcel(): void {
     $db = getDB();
     $entId = (int)($_SESSION['user_id'] ?? 0);
     $clienteId = (int)($_GET['cliente_id'] ?? 0);
-    $tipo = trim((string)($_GET['tipo'] ?? 'completo'));
 
     if ($clienteId <= 0) {
         http_response_code(400);
@@ -4772,183 +4875,568 @@ function entExportarAtletaExcel(): void {
         exit('Atleta no encontrado');
     }
 
-    $sheets = [];
+    // 1. Consultar historial de series
+    $stSeries = $db->prepare("
+        SELECT ss.fecha,
+               COALESCE(ss.rutina_nombre, r.descripcion, 'Entrenamiento') AS rutina_nombre,
+               COALESCE(ss.ejercicio_nombre, e.nombre, 'Ejercicio') AS ejercicio_nombre,
+               ss.numero_serie,
+               ss.reps_realizadas,
+               ss.peso_usado,
+               COALESCE(ss.unidad_carga, 'kg') AS unidad_carga,
+               ss.tipo_implemento,
+               ss.tipo_serie,
+               COALESCE(e.rir, 2) AS rir,
+               COALESCE(e.orden, 1) AS ejercicio_orden,
+               COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
+        FROM sesion_series ss
+        LEFT JOIN rutinas r ON ss.rutina_id = r.id
+        LEFT JOIN ejercicios e ON ss.ejercicio_id = e.id
+        WHERE ss.cliente_id = ?
+        ORDER BY ss.fecha ASC, ss.rutina_id ASC, COALESCE(e.orden, 1) ASC, ss.numero_serie ASC
+    ");
+    $stSeries->execute([$clienteId]);
+    $seriesRows = $stSeries->fetchAll(PDO::FETCH_ASSOC);
 
-    // 1. Hoja de Historial de Series (Cronología)
-    if ($tipo === 'completo' || $tipo === 'series') {
-        $stSeries = $db->prepare("
-            SELECT 
-                ss.fecha,
-                COALESCE(ss.rutina_nombre, r.descripcion, 'Entrenamiento') AS sesion_nombre,
-                COALESCE(ss.ejercicio_nombre, e.nombre, 'Ejercicio') AS ejercicio,
-                ss.numero_serie,
-                ss.reps_realizadas,
-                ss.peso_usado,
-                COALESCE(ss.unidad_carga, 'kg') AS unidad_carga,
-                ss.tipo_serie,
-                COALESCE(e.rir, '-') AS rir,
-                COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
-            FROM sesion_series ss
-            LEFT JOIN rutinas r ON ss.rutina_id = r.id
-            LEFT JOIN ejercicios e ON ss.ejercicio_id = e.id
-            WHERE ss.cliente_id = ?
-            ORDER BY ss.fecha DESC, ss.id ASC
+    // Fallback a sesiones clásicas si sesion_series está vacía
+    if (empty($seriesRows)) {
+        $stClasicas = $db->prepare("
+            SELECT s.fecha,
+                   'Sesión Registrada' AS rutina_nombre,
+                   e.nombre AS ejercicio_nombre,
+                   1 AS numero_serie,
+                   s.reps_realizadas,
+                   s.peso_usado,
+                   'kg' AS unidad_carga,
+                   'barra' AS tipo_implemento,
+                   'efectiva' AS tipo_serie,
+                   COALESCE(e.rir, 2) AS rir,
+                   COALESCE(e.orden, 1) AS ejercicio_orden,
+                   COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
+            FROM sesiones s
+            JOIN ejercicios e ON s.ejercicio_id = e.id
+            WHERE s.cliente_id = ? AND s.completado = 1
+            ORDER BY s.fecha ASC, s.id ASC
         ");
-        $stSeries->execute([$clienteId]);
-        $seriesRows = $stSeries->fetchAll(PDO::FETCH_ASSOC);
+        $stClasicas->execute([$clienteId]);
+        $seriesRows = $stClasicas->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-        $headersSeries = ['Fecha', 'Sesión / Día', 'Ejercicio', 'Serie #', 'Reps Realizadas', 'Carga (kg/lb)', 'Unidad', 'Tipo Serie', 'RIR', 'Notas'];
-        $formattedSeries = [];
+    // 2. Consultar historial de peso corporal
+    $stPesos = $db->prepare("SELECT fecha, peso_kg, tipo FROM peso_historial WHERE cliente_id = ? ORDER BY fecha ASC, id ASC");
+    $stPesos->execute([$clienteId]);
+    $pesosRows = $stPesos->fetchAll(PDO::FETCH_ASSOC);
 
-        foreach ($seriesRows as $s) {
-            $formattedSeries[] = [
-                $s['fecha'] ?? '',
-                $s['sesion_nombre'] ?? '',
-                $s['ejercicio'] ?? '',
-                (int)($s['numero_serie'] ?? 1),
-                (int)($s['reps_realizadas'] ?? 0),
-                (float)($s['peso_usado'] ?? 0),
-                $s['unidad_carga'] ?? 'kg',
-                $s['tipo_serie'] ?? 'efectiva',
-                $s['rir'] ?? '',
-                $s['notas'] ?? ''
+    $pesosPorFecha = [];
+    foreach ($pesosRows as $pw) {
+        $pesosPorFecha[$pw['fecha']] = (float)$pw['peso_kg'];
+    }
+
+    $diasMap = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+
+    // 3. Agrupar series en semanas lunes para la cuadrícula del Macrociclo
+    $semanas = [];
+    foreach ($seriesRows as $s) {
+        $fecha = $s['fecha'];
+        $dt = new DateTimeImmutable($fecha);
+        $dow = (int)$dt->format('N');
+        $monday = $dt->modify('-' . ($dow - 1) . ' days')->format('Y-m-d');
+
+        if (!isset($semanas[$monday])) {
+            $pesoSemana = null;
+            for ($d = 0; $d <= 6; $d++) {
+                $checkD = $dt->modify('-' . ($dow - 1) . ' days +' . $d . ' days')->format('Y-m-d');
+                if (isset($pesosPorFecha[$checkD])) {
+                    $pesoSemana = $pesosPorFecha[$checkD];
+                    break;
+                }
+            }
+            if ($pesoSemana === null && !empty($pesosPorFecha)) {
+                foreach ($pesosPorFecha as $pF => $pV) {
+                    if ($pF <= $monday) $pesoSemana = $pV;
+                }
+                if ($pesoSemana === null) $pesoSemana = reset($pesosPorFecha);
+            }
+
+            $semanas[$monday] = [
+                'fecha_lunes' => $monday,
+                'peso_corporal' => $pesoSemana,
+                'sesiones' => []
             ];
         }
 
-        // Si no hay series en sesion_series, verificar en sesiones clásicas
-        if (empty($formattedSeries)) {
-            $stSesClasicas = $db->prepare("
-                SELECT s.fecha, e.nombre AS ejercicio, s.reps_realizadas, s.peso_usado, COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
-                FROM sesiones s
-                JOIN ejercicios e ON s.ejercicio_id = e.id
-                WHERE s.cliente_id = ? AND s.completado = 1
-                ORDER BY s.fecha DESC, s.id ASC
-            ");
-            $stSesClasicas->execute([$clienteId]);
-            $sesClasicas = $stSesClasicas->fetchAll(PDO::FETCH_ASSOC);
+        $cleanRutina = trim(preg_replace('/^Rutina activa importada\s*\((.*?)\)$/i', '$1', $s['rutina_nombre']));
+        $sesKey = $fecha . '_' . $cleanRutina;
+        if (!isset($semanas[$monday]['sesiones'][$sesKey])) {
+            $semanas[$monday]['sesiones'][$sesKey] = [
+                'fecha' => $fecha,
+                'dia_nombre' => $diasMap[$dow] ?? 'Día',
+                'rutina_nombre' => $cleanRutina,
+                'ejercicios' => []
+            ];
+        }
 
-            foreach ($sesClasicas as $sc) {
-                $formattedSeries[] = [
-                    $sc['fecha'] ?? '',
-                    'Sesión Registrada',
-                    $sc['ejercicio'] ?? '',
-                    1,
-                    (int)($sc['reps_realizadas'] ?? 0),
-                    (float)($sc['peso_usado'] ?? 0),
-                    'kg',
-                    'efectiva',
-                    '-',
-                    $sc['notas'] ?? ''
+        $ejName = $s['ejercicio_nombre'];
+        if (!isset($semanas[$monday]['sesiones'][$sesKey]['ejercicios'][$ejName])) {
+            $semanas[$monday]['sesiones'][$sesKey]['ejercicios'][$ejName] = [
+                'nombre' => $ejName,
+                'tipo_implemento' => $s['tipo_implemento'],
+                'unidad_carga' => $s['unidad_carga'],
+                'rir' => $s['rir'],
+                'series' => []
+            ];
+        }
+
+        $semanas[$monday]['sesiones'][$sesKey]['ejercicios'][$ejName]['series'][] = [
+            'num' => (int)$s['numero_serie'],
+            'reps' => $s['reps_realizadas'],
+            'peso' => $s['peso_usado']
+        ];
+    }
+
+    // 4. Agregar la semana activa planificada al final para permitir anotación continua en Excel
+    $stRutinas = $db->prepare("
+        SELECT r.id, r.descripcion, r.dias_semana
+        FROM rutinas r
+        WHERE r.cliente_id = ? AND (r.estado = 'en_progreso' OR r.estado = 'activa')
+        ORDER BY r.id ASC
+    ");
+    $stRutinas->execute([$clienteId]);
+    $rutinasActivas = $stRutinas->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!empty($rutinasActivas)) {
+        $lastMonday = !empty($semanas) ? array_key_last($semanas) : date('Y-m-d');
+        $nextMondayDt = (new DateTimeImmutable($lastMonday))->modify('+7 days');
+        $nextMonday = $nextMondayDt->format('Y-m-d');
+
+        $semanaPlan = [
+            'fecha_lunes' => $nextMonday,
+            'peso_corporal' => !empty($atleta['peso_kg']) ? (float)$atleta['peso_kg'] : null,
+            'sesiones' => []
+        ];
+
+        foreach ($rutinasActivas as $ra) {
+            $cleanDesc = trim(preg_replace('/^Rutina activa importada\s*\((.*?)\)$/i', '$1', $ra['descripcion']));
+            $diasArr = array_filter(array_map('intval', explode(',', (string)$ra['dias_semana'])));
+            $diaNum = !empty($diasArr) ? reset($diasArr) : 1;
+            $diaNom = $diasMap[$diaNum] ?? 'Lunes';
+            $sesDate = $nextMondayDt->modify('+' . ($diaNum - 1) . ' days')->format('Y-m-d');
+
+            $stEj = $db->prepare("
+                SELECT e.nombre, e.series, e.repeticiones, e.rir, e.tipo_implemento, e.unidad_carga
+                FROM ejercicios e
+                WHERE e.rutina_id = ?
+                ORDER BY e.orden ASC
+            ");
+            $stEj->execute([$ra['id']]);
+            $ejList = $stEj->fetchAll(PDO::FETCH_ASSOC);
+
+            $sesKey = $sesDate . '_' . $cleanDesc;
+            $semanaPlan['sesiones'][$sesKey] = [
+                'fecha' => $sesDate,
+                'dia_nombre' => $diaNom,
+                'rutina_nombre' => $cleanDesc,
+                'ejercicios' => []
+            ];
+
+            foreach ($ejList as $ej) {
+                $eName = $ej['nombre'];
+                $semanaPlan['sesiones'][$sesKey]['ejercicios'][$eName] = [
+                    'nombre' => $eName,
+                    'tipo_implemento' => $ej['tipo_implemento'],
+                    'unidad_carga' => $ej['unidad_carga'],
+                    'rir' => $ej['rir'],
+                    'series_plan' => (int)($ej['series'] ?: 3),
+                    'reps_plan' => (string)($ej['repeticiones'] ?: '10'),
+                    'series' => []
                 ];
             }
         }
 
-        $sheets['Historial de Series'] = [
-            'headers' => $headersSeries,
-            'rows'    => $formattedSeries
-        ];
+        $semanas[$nextMonday] = $semanaPlan;
     }
 
-    // 2. Hoja de Rutina Vigente / Asignada
-    if ($tipo === 'completo' || $tipo === 'rutina') {
-        $stRutina = $db->prepare("
-            SELECT 
-                r.descripcion AS rutina_nombre,
-                r.dias_semana,
-                e.nombre AS ejercicio,
-                COALESCE(e.grupo_muscular, 'General') AS grupo_muscular,
-                e.series,
-                e.repeticiones,
-                COALESCE(e.rir, '-') AS rir,
-                COALESCE(e.nota_biomecanica, e.descripcion, '') AS notas
-            FROM rutinas r
-            JOIN ejercicios e ON e.rutina_id = r.id
-            WHERE r.cliente_id = ? AND r.estado = 'activa'
-            ORDER BY r.id DESC, e.orden ASC
-        ");
-        $stRutina->execute([$clienteId]);
-        $rutinaRows = $stRutina->fetchAll(PDO::FETCH_ASSOC);
+    // 5. Construir Hoja 1: Macrociclo (Cuadrícula Bento UI)
+    $gridRows = [];
+    $colWidths = [0 => 4];
 
-        $headersRutina = ['Rutina', 'Días Asignados', 'Ejercicio', 'Grupo Muscular', 'Series Planificadas', 'Repeticiones', 'RIR', 'Notas Biomecánicas'];
-        $formattedRutina = [];
+    for ($day = 0; $day < 7; $day++) {
+        $base = 1 + ($day * 14);
+        $colWidths[$base] = 34;      // Ejercicios
+        $colWidths[$base + 1] = 3;   // Spacer
+        $colWidths[$base + 2] = 8;   // Series
+        $colWidths[$base + 3] = 3;   // Spacer
+        $colWidths[$base + 4] = 14;  // Repeticiones
+        $colWidths[$base + 5] = 3;   // Spacer
+        $colWidths[$base + 6] = 16;  // Peso
+        $colWidths[$base + 7] = 3;   // Spacer
+        $colWidths[$base + 8] = 8;   // RIR
+        $colWidths[$base + 9] = 3;   // Spacer
+        $colWidths[$base + 10] = 12; // Descanso
+        $colWidths[$base + 11] = 3;  // Spacer
+        $colWidths[$base + 12] = 3;  // Spacer
+        $colWidths[$base + 13] = 3;  // Spacer
+    }
 
-        $diasMap = [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'];
+    $curRow = 1;
+    foreach ($semanas as $semKey => $semData) {
+        $rowSemana = $curRow;
+        $fechaLunesDt = new DateTimeImmutable($semData['fecha_lunes']);
+        $semanaTitle = 'Semana ' . $fechaLunesDt->format('d/m/Y');
+        $pesoTitle = 'Peso corporal: ' . ($semData['peso_corporal'] !== null ? $semData['peso_corporal'] . 'kg' : '-');
 
-        foreach ($rutinaRows as $r) {
-            $diasTxt = '';
-            if (!empty($r['dias_semana'])) {
-                $dNums = array_filter(array_map('intval', explode(',', $r['dias_semana'])));
-                $dNames = array_map(fn($d) => $diasMap[$d] ?? (string)$d, $dNums);
-                $diasTxt = implode(', ', $dNames);
+        // Fila 1: Semana y Peso corporal
+        $gridRows[$rowSemana] = [
+            'ht' => 24,
+            'cells' => [
+                1 => ['val' => $semanaTitle, 'style' => 3, 'type' => 's'],
+                4 => ['val' => $pesoTitle, 'style' => 4, 'type' => 's'],
+            ]
+        ];
+
+        // Fila 2: Cabeceras de Día / Rutina
+        $rowDias = $curRow + 1;
+        $gridRows[$rowDias] = ['ht' => 22, 'cells' => []];
+
+        // Fila 3: Subcabeceras
+        $rowSub = $curRow + 2;
+        $gridRows[$rowSub] = ['ht' => 20, 'cells' => []];
+
+        $sesiones = array_values($semData['sesiones']);
+        $maxEjerciciosEnSemana = 0;
+
+        foreach ($sesiones as $sIdx => $ses) {
+            $cStart = 1 + ($sIdx * 14);
+            $headerDia = $ses['rutina_nombre'] . ' (' . $ses['dia_nombre'] . ')';
+
+            $gridRows[$rowDias]['cells'][$cStart] = ['val' => $headerDia, 'style' => 5, 'type' => 's'];
+
+            $gridRows[$rowSub]['cells'][$cStart]      = ['val' => 'Ejercicios', 'style' => 6, 'type' => 's'];
+            $gridRows[$rowSub]['cells'][$cStart + 2]  = ['val' => 'Series', 'style' => 6, 'type' => 's'];
+            $gridRows[$rowSub]['cells'][$cStart + 4]  = ['val' => 'Repeticiones', 'style' => 6, 'type' => 's'];
+            $gridRows[$rowSub]['cells'][$cStart + 6]  = ['val' => 'Peso', 'style' => 6, 'type' => 's'];
+            $gridRows[$rowSub]['cells'][$cStart + 8]  = ['val' => 'RIR', 'style' => 6, 'type' => 's'];
+            $gridRows[$rowSub]['cells'][$cStart + 10] = ['val' => 'Descanso', 'style' => 6, 'type' => 's'];
+
+            $ejCount = count($ses['ejercicios']);
+            if ($ejCount > $maxEjerciciosEnSemana) {
+                $maxEjerciciosEnSemana = $ejCount;
+            }
+        }
+
+        // Filas de ejercicios
+        $startRowEj = $curRow + 3;
+        for ($ejIdx = 0; $ejIdx < $maxEjerciciosEnSemana; $ejIdx++) {
+            $rEj = $startRowEj + $ejIdx;
+            if (!isset($gridRows[$rEj])) {
+                $gridRows[$rEj] = ['ht' => 19, 'cells' => []];
             }
 
-            $formattedRutina[] = [
-                $r['rutina_nombre'] ?? 'Rutina Activa',
-                $diasTxt ?: 'Todos los días',
-                $r['ejercicio'] ?? '',
-                $r['grupo_muscular'] ?? 'General',
-                (int)($r['series'] ?? 0),
-                $r['repeticiones'] ?? '',
-                $r['rir'] ?? '',
-                $r['notas'] ?? ''
-            ];
-        }
+            foreach ($sesiones as $sIdx => $ses) {
+                $cStart = 1 + ($sIdx * 14);
+                $ejList = array_values($ses['ejercicios']);
+                if (isset($ejList[$ejIdx])) {
+                    $ej = $ejList[$ejIdx];
+                    $numSeries = !empty($ej['series']) ? count($ej['series']) : ($ej['series_plan'] ?? 3);
 
-        $sheets['Rutina Planificada'] = [
-            'headers' => $headersRutina,
-            'rows'    => $formattedRutina
-        ];
-    }
+                    // Reps
+                    if (!empty($ej['series'])) {
+                        $repsArr = array_map(fn($sr) => (string)$sr['reps'], $ej['series']);
+                        $repsUniq = array_unique($repsArr);
+                        $repsStr = (count($repsUniq) === 1) ? reset($repsUniq) : implode(', ', $repsArr);
+                    } else {
+                        $repsStr = $ej['reps_plan'] ?? '10';
+                    }
 
-    // 3. Hoja de Historial de Peso Corporal
-    if ($tipo === 'completo' || $tipo === 'pesos') {
-        $stPeso = $db->prepare("
-            SELECT fecha, peso_kg, tipo
-            FROM peso_historial
-            WHERE cliente_id = ?
-            ORDER BY fecha ASC, id ASC
-        ");
-        $stPeso->execute([$clienteId]);
-        $pesosRows = $stPeso->fetchAll(PDO::FETCH_ASSOC);
+                    // Carga / Peso
+                    $unidad = $ej['unidad_carga'] ?? 'kg';
+                    if ($unidad === 'ninguna' || ($ej['tipo_implemento'] ?? '') === 'sin_peso') {
+                        $pesoStr = 'Sin peso';
+                    } elseif (!empty($ej['series'])) {
+                        $pesosArr = array_map(fn($sr) => (float)$sr['peso'], $ej['series']);
+                        $pesosUniq = array_unique($pesosArr);
+                        if (count($pesosUniq) === 1) {
+                            $pesoStr = reset($pesosUniq) . $unidad;
+                        } else {
+                            $pesoStr = implode('-', $pesosArr) . $unidad;
+                        }
+                        if (($ej['tipo_implemento'] ?? '') === 'mancuerna') {
+                            $pesoStr .= ' c/u';
+                        }
+                    } else {
+                        $pesoStr = '';
+                    }
 
-        $formattedPesos = [];
-        $pesoAnterior = null;
+                    $rirStr = isset($ej['rir']) && $ej['rir'] !== '' ? (string)$ej['rir'] : '2';
+                    $descansoStr = '120s';
 
-        foreach ($pesosRows as $p) {
-            $pesoActual = (float)$p['peso_kg'];
-            $diffTxt = '-';
-            if ($pesoAnterior !== null) {
-                $diff = round($pesoActual - $pesoAnterior, 2);
-                $diffTxt = ($diff > 0 ? '+' : '') . $diff . ' kg';
+                    $gridRows[$rEj]['cells'][$cStart]      = ['val' => $ej['nombre'], 'style' => 7, 'type' => 's'];
+                    $gridRows[$rEj]['cells'][$cStart + 2]  = ['val' => $numSeries, 'style' => 8, 'type' => 'n'];
+                    $gridRows[$rEj]['cells'][$cStart + 4]  = ['val' => $repsStr, 'style' => 8, 'type' => 's'];
+                    $gridRows[$rEj]['cells'][$cStart + 6]  = ['val' => $pesoStr, 'style' => 8, 'type' => 's'];
+                    $gridRows[$rEj]['cells'][$cStart + 8]  = ['val' => $rirStr, 'style' => 8, 'type' => 's'];
+                    $gridRows[$rEj]['cells'][$cStart + 10] = ['val' => $descansoStr, 'style' => 8, 'type' => 's'];
+                }
             }
-            $pesoAnterior = $pesoActual;
-
-            $formattedPesos[] = [
-                $p['fecha'] ?? '',
-                $pesoActual,
-                $diffTxt,
-                ucfirst($p['tipo'] ?? 'manual')
-            ];
         }
 
-        // Si no hay historial en la tabla pero tiene peso en su perfil
-        if (empty($formattedPesos) && !empty($atleta['peso_kg'])) {
-            $formattedPesos[] = [
-                date('Y-m-d'),
-                (float)$atleta['peso_kg'],
-                '-',
-                'Perfil Inicial'
-            ];
-        }
+        $curRow = $startRowEj + max(1, $maxEjerciciosEnSemana) + 1;
+    }
 
-        $sheets['Historial de Pesos'] = [
-            'headers' => ['Fecha', 'Peso Corporal (kg)', 'Variación vs Anterior', 'Origen Registro'],
-            'rows'    => array_reverse($formattedPesos)
+    $sheets = [];
+
+    // Hoja 1: Macrociclo
+    $sheets['Macrociclo'] = [
+        'type'       => 'grid',
+        'grid'       => $gridRows,
+        'col_widths' => $colWidths
+    ];
+
+    // Hoja 2: Historial de Pesos
+    $formattedPesos = [];
+    $pesoAnterior = null;
+    foreach ($pesosRows as $p) {
+        $pesoActual = (float)$p['peso_kg'];
+        $diffTxt = '-';
+        if ($pesoAnterior !== null) {
+            $diff = round($pesoActual - $pesoAnterior, 2);
+            $diffTxt = ($diff > 0 ? '+' : '') . $diff . ' kg';
+        }
+        $pesoAnterior = $pesoActual;
+
+        $formattedPesos[] = [
+            $p['fecha'] ?? '',
+            $pesoActual,
+            $diffTxt,
+            ucfirst($p['tipo'] ?? 'manual')
         ];
     }
+    if (empty($formattedPesos) && !empty($atleta['peso_kg'])) {
+        $formattedPesos[] = [
+            date('Y-m-d'),
+            (float)$atleta['peso_kg'],
+            '-',
+            'Perfil Inicial'
+        ];
+    }
+    $sheets['Historial de Pesos'] = [
+        'headers' => ['Fecha', 'Peso Corporal (kg)', 'Variación vs Anterior', 'Origen Registro'],
+        'rows'    => array_reverse($formattedPesos)
+    ];
+
+    // Hoja 3: Base de Datos Plana
+    $headersSeries = ['Fecha', 'Sesión / Día', 'Ejercicio', 'Serie #', 'Reps Realizadas', 'Carga (kg/lb)', 'Unidad', 'Tipo Serie', 'RIR', 'Notas'];
+    $formattedSeries = [];
+    foreach ($seriesRows as $s) {
+        $formattedSeries[] = [
+            $s['fecha'] ?? '',
+            $s['rutina_nombre'] ?? '',
+            $s['ejercicio_nombre'] ?? '',
+            (int)($s['numero_serie'] ?? 1),
+            (int)($s['reps_realizadas'] ?? 0),
+            (float)($s['peso_usado'] ?? 0),
+            $s['unidad_carga'] ?? 'kg',
+            $s['tipo_serie'] ?? 'efectiva',
+            $s['rir'] ?? '',
+            $s['notas'] ?? ''
+        ];
+    }
+    $sheets['Base de Datos Plana'] = [
+        'headers' => $headersSeries,
+        'rows'    => array_reverse($formattedSeries)
+    ];
 
     $sanitizedNombre = preg_replace('/[^a-zA-Z0-9_\-]/', '_', strtolower($atleta['nombre']));
-    $filename = 'xprod_' . $sanitizedNombre . '_' . date('Y-m-d') . '.xlsx';
+    $filename = 'xprod_macrociclo_' . $sanitizedNombre . '_' . date('Y-m-d') . '.xlsx';
 
     ExcelExportService::descargarXlsx($filename, $sheets);
+}
+
+/*─────────────────────────────────────────────────────────────
+  API: MEDIDAS ANATÓMICAS Y BIOMECÁNICAS DEL ATLETA
+─────────────────────────────────────────────────────────────*/
+
+/**
+ * Obtiene el listado histórico de medidas corporales y datos del atleta
+ * GET /entrenador/api-cliente-medidas?cliente_id=X
+ */
+function entApiClienteMedidas(): void {
+    requireRole('entrenador');
+    $db = getDB();
+    $entId = (int)$_SESSION['user_id'];
+    $clienteId = (int)($_GET['cliente_id'] ?? 0);
+
+    if ($clienteId <= 0) {
+        jsonOut(false, 'ID de atleta no válido.', [], 400);
+    }
+
+    $stAtl = $db->prepare("
+        SELECT c.id, c.peso_kg, c.altura_cm, COALESCE(c.genero, 'masculino') AS genero, u.nombre
+        FROM clientes c
+        JOIN usuarios u ON c.usuario_id = u.id
+        WHERE c.id = ? AND (? IS NOT NULL)
+    ");
+    $stAtl->execute([$clienteId, $entId]);
+    $atleta = $stAtl->fetch(PDO::FETCH_ASSOC);
+
+    if (!$atleta) {
+        jsonOut(false, 'Atleta no encontrado.', [], 404);
+    }
+
+    $stM = $db->prepare("
+        SELECT *
+        FROM cliente_medidas
+        WHERE cliente_id = ?
+        ORDER BY fecha DESC, id DESC
+    ");
+    $stM->execute([$clienteId]);
+    $medidas = $stM->fetchAll(PDO::FETCH_ASSOC);
+
+    jsonOut(true, 'Medidas cargadas correctamente.', [
+        'atleta'  => $atleta,
+        'medidas' => $medidas
+    ]);
+}
+
+/**
+ * Guarda o actualiza un registro de medidas anatómicas para una fecha
+ * POST /entrenador/api-guardar-cliente-medidas
+ */
+function entApiGuardarClienteMedidas(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json; charset=utf-8');
+
+    $db = getDB();
+    $entId = (int)$_SESSION['user_id'];
+    $raw = file_get_contents('php://input');
+    $data = json_decode($raw, true) ?: $_POST;
+
+    $clienteId = (int)($data['cliente_id'] ?? 0);
+    $fecha = trim((string)($data['fecha'] ?? date('Y-m-d')));
+    $etiqueta = trim((string)($data['etiqueta'] ?? ''));
+
+    if ($clienteId <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+        jsonOut(false, 'Cliente o fecha inválidos.', [], 400);
+    }
+
+    $stChk = $db->prepare("SELECT id FROM clientes WHERE id = ? AND (? IS NOT NULL)");
+    $stChk->execute([$clienteId, $entId]);
+    if (!$stChk->fetch()) {
+        jsonOut(false, 'No autorizado.', [], 403);
+    }
+
+    $toNum = function($val) {
+        if ($val === null || $val === '') return null;
+        $clean = str_replace(',', '.', trim((string)$val));
+        return is_numeric($clean) ? round((float)$clean, 1) : null;
+    };
+
+    $bicepsDer   = $toNum($data['biceps_der'] ?? $data['biceps_der_cm'] ?? null);
+    $bicepsIzq   = $toNum($data['biceps_izq'] ?? $data['biceps_izq_cm'] ?? null);
+    $pecho       = $toNum($data['pecho'] ?? $data['pecho_cm'] ?? null);
+    $hombros     = $toNum($data['hombros'] ?? $data['hombros_cm'] ?? null);
+    $abdomen     = $toNum($data['abdomen'] ?? $data['abdomen_cm'] ?? null);
+    $gluteo      = $toNum($data['gluteo'] ?? $data['gluteo_cm'] ?? null);
+    $cuadDer     = $toNum($data['cuadriceps_der'] ?? $data['cuadriceps_der_cm'] ?? null);
+    $cuadIzq     = $toNum($data['cuadriceps_izq'] ?? $data['cuadriceps_izq_cm'] ?? null);
+    $pantDer     = $toNum($data['pantorrilla_der'] ?? $data['pantorrilla_der_cm'] ?? null);
+    $pantIzq     = $toNum($data['pantorrilla_izq'] ?? $data['pantorrilla_izq_cm'] ?? null);
+
+    $alturaCm    = $toNum($data['altura_cm'] ?? null);
+    $cuello      = $toNum($data['longitud_cuello'] ?? null);
+    $clavicula   = $toNum($data['anchura_clavicular'] ?? null);
+    $tronco      = $toNum($data['longitud_tronco'] ?? null);
+    $codoHombro  = $toNum($data['longitud_codo_hombro'] ?? null);
+    $munecaCodo  = $toNum($data['longitud_muneca_codo'] ?? null);
+    $alcance     = $toNum($data['longitud_alcance'] ?? null);
+    $rodillaCad  = $toNum($data['longitud_rodilla_cadera'] ?? null);
+    $tobilloRod  = $toNum($data['longitud_tobillo_rodilla'] ?? null);
+    $notas       = trim((string)($data['notas'] ?? ''));
+
+    try {
+        $stUpsert = $db->prepare("
+            INSERT INTO cliente_medidas
+            (cliente_id, fecha, etiqueta, biceps_der, biceps_izq, pecho, hombros, abdomen, gluteo,
+             cuadriceps_der, cuadriceps_izq, pantorrilla_der, pantorrilla_izq, altura_cm,
+             longitud_cuello, anchura_clavicular, longitud_tronco, longitud_codo_hombro,
+             longitud_muneca_codo, longitud_alcance, longitud_rodilla_cadera, longitud_tobillo_rodilla, notas)
+            VALUES
+            (?, ?, ?, ?, ?, ?, ?, ?, ?,
+             ?, ?, ?, ?, ?,
+             ?, ?, ?, ?,
+             ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+             etiqueta = VALUES(etiqueta),
+             biceps_der = VALUES(biceps_der),
+             biceps_izq = VALUES(biceps_izq),
+             pecho = VALUES(pecho),
+             hombros = VALUES(hombros),
+             abdomen = VALUES(abdomen),
+             gluteo = VALUES(gluteo),
+             cuadriceps_der = VALUES(cuadriceps_der),
+             cuadriceps_izq = VALUES(cuadriceps_izq),
+             pantorrilla_der = VALUES(pantorrilla_der),
+             pantorrilla_izq = VALUES(pantorrilla_izq),
+             altura_cm = VALUES(altura_cm),
+             longitud_cuello = VALUES(longitud_cuello),
+             anchura_clavicular = VALUES(anchura_clavicular),
+             longitud_tronco = VALUES(longitud_tronco),
+             longitud_codo_hombro = VALUES(longitud_codo_hombro),
+             longitud_muneca_codo = VALUES(longitud_muneca_codo),
+             longitud_alcance = VALUES(longitud_alcance),
+             longitud_rodilla_cadera = VALUES(longitud_rodilla_cadera),
+             longitud_tobillo_rodilla = VALUES(longitud_tobillo_rodilla),
+             notas = VALUES(notas)
+        ");
+        $stUpsert->execute([
+            $clienteId, $fecha, $etiqueta ?: null, $bicepsDer, $bicepsIzq, $pecho, $hombros, $abdomen, $gluteo,
+            $cuadDer, $cuadIzq, $pantDer, $pantIzq, $alturaCm,
+            $cuello, $clavicula, $tronco, $codoHombro,
+            $munecaCodo, $alcance, $rodillaCad, $tobilloRod, $notas ?: null
+        ]);
+
+        if ($alturaCm !== null && $alturaCm > 0) {
+            $db->prepare("UPDATE clientes SET altura_cm = ? WHERE id = ?")->execute([$alturaCm, $clienteId]);
+        }
+
+        jsonOut(true, 'Medidas corporales guardadas con éxito.', [
+            'fecha' => $fecha,
+            'cliente_id' => $clienteId
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[entApiGuardarClienteMedidas] Error: ' . $e->getMessage());
+        jsonOut(false, 'Error al guardar medidas: ' . $e->getMessage(), [], 500);
+    }
+}
+
+/**
+ * Cambia el género del atleta (masculino/femenino) para alternar silueta anatómica
+ * POST /entrenador/api-cambiar-genero-cliente
+ */
+function entApiCambiarGeneroCliente(): void {
+    requireRole('entrenador');
+    csrfCheck();
+    header('Content-Type: application/json; charset=utf-8');
+
+    $db = getDB();
+    $entId = (int)$_SESSION['user_id'];
+    $raw = file_get_contents('php://input');
+    $data = json_decode($raw, true) ?: $_POST;
+
+    $clienteId = (int)($data['cliente_id'] ?? 0);
+    $genero = strtolower(trim((string)($data['genero'] ?? 'masculino')));
+
+    if (!in_array($genero, ['masculino', 'femenino'], true)) {
+        jsonOut(false, 'Género inválido.', [], 400);
+    }
+
+    $stChk = $db->prepare("SELECT id FROM clientes WHERE id = ? AND (? IS NOT NULL)");
+    $stChk->execute([$clienteId, $entId]);
+    if (!$stChk->fetch()) {
+        jsonOut(false, 'No autorizado.', [], 403);
+    }
+
+    $db->prepare("UPDATE clientes SET genero = ? WHERE id = ?")->execute([$genero, $clienteId]);
+    jsonOut(true, 'Género actualizado correctamente.', ['genero' => $genero]);
 }

@@ -613,6 +613,9 @@ class DocumentParser {
                     $val = $vNode ? $vNode->nodeValue : '';
                     if ($type === 's' && isset($sharedStrings[(int)$val])) {
                         $val = $sharedStrings[(int)$val];
+                    } elseif ($type === 'inlineStr' || ($vNode === null && $val === '')) {
+                        $tNode = $xpath->query('.//x:t', $c)->item(0);
+                        if ($tNode) $val = $tNode->nodeValue;
                     }
                     $rowCells[$colIdx] = trim((string)$val);
                 }

@@ -849,20 +849,22 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
         $repsBase  = !empty($e['repeticiones']) ? (string)$e['repeticiones'] : '10';
         $rirBase   = $e['rir'] !== null ? (int)$e['rir'] : 2;
 
-        $pesoExtra = null;
-        if (!empty($e['descripcion']) && preg_match('/(\d+(?:\.\d+)?)\s*(?:kg|kilos|lbs)?/i', $e['descripcion'], $mP)) {
-            $pesoExtra = (float)$mP[1];
+        $pesosExtra = [];
+        if (!empty($e['descripcion']) && preg_match_all('/(\d+(?:\.\d+)?)/', $e['descripcion'], $allM)) {
+            $pesosExtra = array_map('floatval', $allM[1]);
         }
+        $pesoExtra = !empty($pesosExtra) ? $pesosExtra[0] : null;
 
         $seriesDetalle = [];
         $uniBase = (string)($e['unidad_carga'] ?: 'kg');
         if (!empty($seriesPorOrden[$orden])) {
-            foreach ($seriesPorOrden[$orden] as $ps) {
+            foreach ($seriesPorOrden[$orden] as $psIdx => $ps) {
+                $pFromDesc = isset($pesosExtra[$psIdx]) ? $pesosExtra[$psIdx] : $pesoExtra;
                 $seriesDetalle[] = [
                     'numero' => (int)$ps['numero_serie'],
                     'tipo'   => (string)($ps['tipo_serie'] ?: 'normal'),
                     'reps'   => !empty($ps['reps_objetivo']) ? (string)$ps['reps_objetivo'] : $repsBase,
-                    'peso'   => $ps['kg_objetivo'] !== null ? (float)$ps['kg_objetivo'] : $pesoExtra,
+                    'peso'   => $ps['kg_objetivo'] !== null ? (float)$ps['kg_objetivo'] : $pFromDesc,
                     'rir'    => $ps['rir'] !== null ? (int)$ps['rir'] : $rirBase,
                     'unidad' => $uniBase,
                 ];
@@ -871,11 +873,12 @@ function obtenerEjerciciosProgramados(PDO $db, int $rutinaId, ?int $clienteId = 
 
         if (empty($seriesDetalle)) {
             for ($s = 1; $s <= $numSeries; $s++) {
+                $sPeso = isset($pesosExtra[$s - 1]) ? $pesosExtra[$s - 1] : (!empty($pesosExtra) ? end($pesosExtra) : null);
                 $seriesDetalle[] = [
                     'numero' => $s,
                     'tipo'   => 'normal',
                     'reps'   => $repsBase,
-                    'peso'   => $pesoExtra,
+                    'peso'   => $sPeso,
                     'rir'    => $rirBase,
                     'unidad' => $uniBase,
                 ];
