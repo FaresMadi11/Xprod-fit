@@ -471,32 +471,32 @@
 .cdd-grupos-container {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
 }
 .cdd-group-block {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 .cdd-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 2px 2px;
+  padding: 2px 2px 1px;
   position: relative;
 }
 .cdd-group-title {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.72rem;
+  gap: 6px;
+  font-size: 0.68rem;
   font-weight: 800;
   color: var(--text-purple, #b388ff);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.7px;
 }
 .cdd-group-title i {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   color: var(--accent-primary, #8a2be2);
 }
 .cdd-group-pill {
@@ -570,17 +570,17 @@
 .cdd-ejercicios {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 /* ── Tarjeta Compacta de Ejercicio (Estilo Atleta Bento UI) ── */
 .cdd-ejercicio-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
-  padding: 10px 12px;
+  border-radius: 11px;
+  padding: 6px 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
   transition: background 0.2s, border-color 0.2s;
 }
 .cdd-ejercicio-card:hover {
@@ -591,24 +591,24 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 .cdd-ej-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   flex: 1;
 }
 .cdd-ej-num {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.06);
   display: grid;
   place-items: center;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: #9ca3af;
   flex-shrink: 0;
@@ -620,27 +620,27 @@
 .cdd-ej-name-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 .cdd-ej-nombre {
-  font-size: 0.88rem;
+  font-size: 0.83rem;
   font-weight: 700;
   color: #fff;
-  line-height: 1.25;
+  line-height: 1.18;
   word-break: break-word;
 }
 .cdd-btn-dots {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   background: transparent;
   border: none;
   color: #9ca3af;
   display: grid;
   place-items: center;
   cursor: pointer;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   flex-shrink: 0;
   transition: color 0.2s, background 0.2s;
 }
@@ -965,9 +965,9 @@
   color: #fff;
 }
 .cdd-ej-thumb-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   background: rgba(255, 255, 255, 0.04);
   border: 1.5px solid rgba(139, 92, 246, 0.35);
   overflow: hidden;
@@ -995,7 +995,7 @@
 }
 .cdd-ej-thumb-placeholder {
   color: #a78bfa;
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   display: grid;
   place-items: center;
   width: 100%;
@@ -1004,13 +1004,13 @@
 }
 .cdd-ej-thumb-zoom-icon {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
+  bottom: 1px;
+  right: 1px;
   background: rgba(0, 0, 0, 0.75);
   color: #fff;
-  border-radius: 4px;
-  font-size: 0.65rem;
-  padding: 1px 3px;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  padding: 1px 2px;
   line-height: 1;
   pointer-events: none;
 }
@@ -1616,11 +1616,12 @@
           <p>No hay atletas pendientes de verificación en esta fecha.</p>
         </div>
       <?php else: ?>
-        <h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Rutinas por Verificar</h4>
+        <h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Rutinas Completadas</h4>
         <?php foreach($atletasVerificar as $a):
           $bg = avatarColor($a['atleta_nombre'], $avatarPalette);
           $notasBadge = !empty($a['notas']) ? '&nbsp;&middot;&nbsp;<i class="ti ti-message-2" style="color:#fbbf24" title="Tiene notas"></i>' : '';
           $cid = (int)$a['cliente_id'];
+          $yaVerificada = ((int)($a['verificada'] ?? 0) === 1);
         ?>
         <div class="cd-item-wrapper" id="item-comp-<?= $cid ?>">
           <div class="cd-card glass-surface" role="button" tabindex="0"
@@ -1648,9 +1649,15 @@
             <div class="cd-action act-arrow" aria-hidden="true" style="margin-right:-4px;">
               <i class="ti ti-chevron-right cd-chevron"></i>
             </div>
-            <button type="button" class="cd-action act-check" onclick="verificarRapido(event, <?= (int)$a['id'] ?>, this)" aria-label="Verificar rápido" title="Marcar como verificada">
-              <i class="ti ti-check"></i>
-            </button>
+            <?php if ($yaVerificada): ?>
+              <div class="cd-action" style="width:auto;padding:0 10px;height:30px;border-radius:999px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:0.72rem;font-weight:700;gap:4px;" title="Completada (sin requerir verificación)">
+                <i class="ti ti-shield-check"></i> Lista
+              </div>
+            <?php else: ?>
+              <button type="button" class="cd-action act-check" onclick="verificarRapido(event, <?= (int)$a['id'] ?>, this)" aria-label="Verificar rápido" title="Marcar como verificada">
+                <i class="ti ti-check"></i>
+              </button>
+            <?php endif; ?>
           </div>
           <div class="cd-rutina-drawer" id="drawer-comp-<?= $cid ?>" aria-hidden="true"></div>
         </div>
@@ -1672,6 +1679,42 @@
         </div>
       <?php else: ?>
 
+        <!-- Solicitudes -->
+        <?php if(!empty($modificacionesPendientes)): ?>
+          <h4 style="margin:20px 0 14px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; display:flex; align-items:center; gap:8px;">
+            <i class="ti ti-adjustments-alt" style="color:#fbbf24;"></i> Solicitudes
+          </h4>
+          <?php foreach($modificacionesPendientes as $mod):
+            $cidSol = (int)$mod['cliente_id'];
+            $rutSol = (int)$mod['rutina_id'];
+          ?>
+          <div class="cd-item-wrapper" id="item-sol-<?= $cidSol ?>">
+            <div class="cd-card glass-surface" role="button" tabindex="0"
+                 onclick="abrirSolicitudRutinaAtleta(this, <?= $cidSol ?>, <?= $rutSol ?>)"
+                 onkeydown="if(event.key==='Enter'||event.key===' ')abrirSolicitudRutinaAtleta(this, <?= $cidSol ?>, <?= $rutSol ?>)"
+                 aria-expanded="false" aria-controls="drawer-sol-<?= $cidSol ?>"
+                 aria-label="Ver solicitud de modificación de <?= e($mod['atleta']) ?>" id="modificar">
+              <div class="cd-avatar ring-amber"
+                   style="background: rgba(251,191,36,0.1); color:#fbbf24;"
+                   aria-hidden="true">
+                <i class="ti ti-message-report" style="font-size:1.3rem"></i>
+              </div>
+              <div class="cd-card-info">
+                <div class="cd-card-name"><?= e($mod['atleta']) ?></div>
+                <?= renderDiasMiniBarPhp($mapaDiasAtletas[$mod['cliente_id']] ?? []) ?>
+                <div class="cd-card-sub" style="color:#f59e0b">
+                  Solicitó una modificación en su rutina (<?= $mod['tipo_modificacion'] === 'permanente' ? 'Permanente' : ($mod['tipo_modificacion'] === 'mixta' ? 'Mixta' : 'Solo por hoy') ?>)
+                </div>
+              </div>
+              <div class="cd-action act-eye" aria-label="Ver rutina con cambios">
+                <i class="ti ti-eye"></i>
+              </div>
+            </div>
+            <div class="cd-rutina-drawer" id="drawer-sol-<?= $cidSol ?>" aria-hidden="true"></div>
+          </div>
+          <?php endforeach; ?>
+        <?php endif; ?>
+
         <!-- Sin Asignar -->
         <?php if(!empty($atletasSinAsignar)): ?>
           <h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Atletas sin asignar</h4>
@@ -1692,32 +1735,6 @@
             </div>
             <div class="cd-action act-plus" aria-label="Asignar rutina">
               <i class="ti ti-plus"></i>
-            </div>
-          </a>
-          <?php endforeach; ?>
-        <?php endif; ?>
-
-        <!-- Modificaciones -->
-        <?php if(!empty($modificacionesPendientes)): ?>
-          <h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Modificaciones Pendientes</h4>
-          <?php foreach($modificacionesPendientes as $mod): ?>
-          <a href="<?= APP_URL ?>/entrenador/revisar-modificacion?id=<?= $mod['rutina_id'] ?>"
-             class="cd-card glass-surface" aria-label="Revisar modificación de <?= e($mod['atleta']) ?>" id="modificar">
-            <div class="cd-avatar ring-amber"
-                 style="background: rgba(251,191,36,0.1); color:#fbbf24;"
-                 aria-hidden="true">
-              <i class="ti ti-message-report" style="font-size:1.3rem"></i>
-            </div>
-            <div class="cd-card-info">
-              <div class="cd-card-name"><?= e($mod['atleta']) ?></div>
-              <?= renderDiasMiniBarPhp($mapaDiasAtletas[$mod['cliente_id']] ?? []) ?>
-              <div class="cd-card-sub" style="color:#f59e0b">
-                <?php $nSol = (int)($mod['total_solicitudes'] ?? 1); ?>
-                <?= $nSol > 1 ? $nSol . ' solicitudes · ' : '' ?>Mod. <?= $mod['tipo_modificacion'] === 'permanente' ? 'Permanente' : ($mod['tipo_modificacion'] === 'mixta' ? 'Mixta' : 'Temporal') ?>
-              </div>
-            </div>
-            <div class="cd-action act-eye" aria-label="Revisar modificación">
-              <i class="ti ti-eye"></i>
             </div>
           </a>
           <?php endforeach; ?>
@@ -1777,43 +1794,12 @@ async function verificarRapido(e, sesionId, btn) {
     const data = await res.json().catch(() => null);
 
     if (data && (data.success || data.ok)) {
-      const card = btn.closest('.cd-item-wrapper') || btn.closest('.cd-card');
-      card.style.transition = 'opacity 0.25s, transform 0.25s';
-      card.style.opacity    = '0';
-      card.style.transform  = 'translateX(16px)';
-
-      setTimeout(() => {
-        card.remove();
-
-        // Update counter & badge
-        const statEl = document.getElementById('statVerif');
-        const badge  = document.querySelector('#tabCompletadas .cd-badge');
-        let count = parseInt(statEl?.textContent || '0') - 1;
-        if (count < 0) count = 0;
-        if (statEl) statEl.textContent = count;
-        if (badge) {
-          if (count > 0) {
-            badge.textContent = count;
-          } else {
-            badge.remove();
-          }
-        }
-
-        // Si el panel quedó vacío -> mostrar empty state
-        const list = document.querySelector('#panelCompletadas .cd-glass');
-        if (list && !list.querySelector('.cd-item-wrapper') && !list.querySelector('.cd-card')) {
-          list.innerHTML = `
-            <div class="cd-empty is-ok">
-              <svg width="56" height="56" viewBox="0 0 56 56" fill="none" aria-hidden="true">
-                <path d="M28 6L10 13v13c0 11 8 21 18 24 10-3 18-13 18-24V13L28 6Z" stroke="#34d399" stroke-width="2" stroke-linejoin="round"/>
-                <path d="M20 28l5 5 11-11" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <h3>Sin rutinas por verificar</h3>
-              <p>No hay más atletas pendientes de verificación.</p>
-            </div>`;
-        }
-      }, 270);
-
+      const donePill = document.createElement('div');
+      donePill.className = 'cd-action';
+      donePill.style.cssText = 'width:auto;padding:0 10px;height:30px;border-radius:999px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:0.72rem;font-weight:700;gap:4px;';
+      donePill.title = 'Completada (sin requerir verificación)';
+      donePill.innerHTML = '<i class="ti ti-shield-check"></i> Lista';
+      btn.replaceWith(donePill);
     } else {
       const msg = data?.message || data?.msg || 'Error al verificar la sesión';
       if (typeof Swal !== 'undefined') {
@@ -1856,6 +1842,29 @@ async function verificarRapido(e, sesionId, btn) {
   if (['pendientes', 'completadas', 'alertas', 'verificar'].includes(h)) {
     setTab(h);
   }
+
+  // 1.b Si viene desde botón "Ver rutina" de una notificación de solicitud, abrir automáticamente la rutina con el diff
+  try {
+    const qsParams = new URLSearchParams(window.location.search);
+    const verSolId = parseInt(qsParams.get('ver_solicitud') || '0', 10);
+    const verCliId = parseInt(qsParams.get('cliente_id') || '0', 10);
+    if (verCliId > 0) {
+      setTimeout(() => {
+        const solWrapper = document.getElementById(`item-sol-${verCliId}`);
+        const solCard = solWrapper ? solWrapper.querySelector('.cd-card') : null;
+        if (solCard) {
+          abrirSolicitudRutinaAtleta(solCard, verCliId, verSolId);
+        } else {
+          const penWrapper = document.getElementById(`item-pen-${verCliId}`);
+          const penCard = penWrapper ? penWrapper.querySelector('.cd-card') : null;
+          if (penCard) {
+            setTab('pendientes');
+            toggleRutinaAtleta(penCard, verCliId, 'pendiente', verSolId);
+          }
+        }
+      }, 220);
+    }
+  } catch (e) {}
 
   // 2. Centrar día activo en el calendario semanal
   centrarDiaActivo();
@@ -1979,51 +1988,79 @@ function generarSkeletonRutinaDrawer() {
   `;
 }
 
+/* Cache en memoria de paneles por fecha y rutinas por atleta */
+const asistenciasFechaCache = new Map();
+let skPanelDelayTimer = null;
+
+function aplicarDatosPanelesAsistencias(data, appUrl) {
+  renderPanelPendientes(data.pendientes || [], appUrl);
+  renderPanelCompletadas(data.verificar || [], appUrl);
+  renderPanelAlertas(data.sinAsignar || [], data.modificaciones || [], appUrl);
+  actualizarBadges(
+    (data.pendientes || []).length,
+    (data.verificar || []).length,
+    (data.sinAsignar || []).length + (data.modificaciones || []).length
+  );
+}
+
 /**
  * Carga los datos por AJAX y actualiza los 3 paneles y contadores.
- * Soporta modo silencioso (sin skeleton) para tiempo real continuo.
+ * Si hay caché o responde rápido (<260ms), carga al instante sin mostrar el esqueleto.
  */
 async function cargarDatosPorFecha(fecha, silent = false) {
   const appUrl = '<?= APP_URL ?>';
   fechaGlobal = fecha;
 
   const paneles = ['panelPendientes', 'panelCompletadas', 'panelAlertas'];
-  if (!silent) {
+  if (skPanelDelayTimer) {
+    clearTimeout(skPanelDelayTimer);
+    skPanelDelayTimer = null;
+  }
+
+  const hasCachedDate = asistenciasFechaCache.has(fecha);
+  if (!silent && hasCachedDate) {
     prevPendientesJson = '';
     prevCompletadasJson = '';
     prevAlertasJson = '';
-    paneles.forEach(id => {
-      const glass = document.querySelector(`#${id} .cd-glass`);
-      if (glass) glass.innerHTML = generarSkeletonAsistenciasPanel();
-    });
+    aplicarDatosPanelesAsistencias(asistenciasFechaCache.get(fecha), appUrl);
+  } else if (!silent) {
+    skPanelDelayTimer = setTimeout(() => {
+      skPanelDelayTimer = null;
+      if (fechaGlobal !== fecha) return;
+      prevPendientesJson = '';
+      prevCompletadasJson = '';
+      prevAlertasJson = '';
+      paneles.forEach(id => {
+        const glass = document.querySelector(`#${id} .cd-glass`);
+        if (glass) glass.innerHTML = generarSkeletonAsistenciasPanel();
+      });
+    }, 260);
   }
 
   try {
     const res = await fetch(`${appUrl}/entrenador/asistencias-data?date=${fecha}`, {
       headers: { 'X-Requested-With': 'XMLHttpRequest' }
     });
+    if (skPanelDelayTimer) {
+      clearTimeout(skPanelDelayTimer);
+      skPanelDelayTimer = null;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.success) throw new Error(data.message || 'Error del servidor');
 
-    // 1. Panel Pendientes (En Progreso + No Han Empezado)
-    renderPanelPendientes(data.pendientes || [], appUrl);
-
-    // 2. Panel Completadas (Para Verificar)
-    renderPanelCompletadas(data.verificar || [], appUrl);
-
-    // 3. Panel Alertas (Sin Asignar + Modificaciones)
-    renderPanelAlertas(data.sinAsignar || [], data.modificaciones || [], appUrl);
-
-    // 4. Actualizar contadores y badges
-    actualizarBadges(
-      (data.pendientes || []).length,
-      (data.verificar || []).length,
-      (data.sinAsignar || []).length + (data.modificaciones || []).length
-    );
+    asistenciasFechaCache.set(fecha, data);
+    if (fechaGlobal === fecha) {
+      aplicarDatosPanelesAsistencias(data, appUrl);
+      prefetchRutinasDelDia(data, fecha);
+    }
 
   } catch (err) {
-    if (!silent) {
+    if (skPanelDelayTimer) {
+      clearTimeout(skPanelDelayTimer);
+      skPanelDelayTimer = null;
+    }
+    if (!silent && !hasCachedDate) {
       console.error('[cargarDatosPorFecha]', err);
       paneles.forEach(id => {
         const glass = document.querySelector(`#${id} .cd-glass`);
@@ -2081,8 +2118,44 @@ let prevPendientesJson = '';
 let prevCompletadasJson = '';
 let prevAlertasJson = '';
 
+/* Pre-carga silenciosa de las rutinas de los atletas del día para que abran en 0ms al tocarlas */
+function prefetchRutinasDelDia(data, fecha) {
+  if (!data || !navigator.onLine) return;
+  const lista = [...(data.pendientes || []), ...(data.verificar || [])].slice(0, 8);
+  setTimeout(async () => {
+    for (const item of lista) {
+      const cid = item.cliente_id || item.id;
+      if (!cid || fechaGlobal !== fecha) break;
+      const cacheKey = `${cid}_${fecha}_0`;
+      if (rutinaAtletaCache.has(cacheKey)) continue;
+      try {
+        const url = `<?= APP_URL ?>/entrenador/api-dia-detalle?cliente_id=${cid}&fecha=${encodeURIComponent(fecha)}`;
+        const r = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if (r.ok) {
+          const d = await r.json();
+          if (d && d.ok) {
+            d.cliente_id = cid;
+            rutinaAtletaCache.set(cacheKey, d);
+          }
+        }
+      } catch (_) {}
+    }
+  }, 180);
+}
+
+// Precalentar las rutinas de los atletas de hoy al iniciar la vista
+document.addEventListener('DOMContentLoaded', () => {
+  const initialIds = Array.from(document.querySelectorAll('#panelPendientes .cd-item-wrapper, #panelCompletadas .cd-item-wrapper'))
+    .map(el => (el.id || '').replace(/^item-(pen|ver)-/, ''))
+    .filter(Boolean)
+    .slice(0, 8);
+  if (initialIds.length > 0 && navigator.onLine) {
+    prefetchRutinasDelDia({ pendientes: initialIds.map(id => ({ cliente_id: id })) }, fechaGlobal);
+  }
+});
+
 /* Toggle accordion rutina atleta */
-async function toggleRutinaAtleta(cardEl, clienteId, modoTab) {
+async function toggleRutinaAtleta(cardEl, clienteId, modoTab, solicitudId = 0) {
   const wrapper = cardEl.closest('.cd-item-wrapper');
   if (!wrapper) return;
   const drawer = wrapper.querySelector('.cd-rutina-drawer');
@@ -2090,7 +2163,7 @@ async function toggleRutinaAtleta(cardEl, clienteId, modoTab) {
 
   const isOpen = wrapper.classList.contains('is-open');
 
-  if (isOpen) {
+  if (isOpen && !solicitudId) {
     wrapper.classList.remove('is-open');
     cardEl.setAttribute('aria-expanded', 'false');
     drawer.setAttribute('aria-hidden', 'true');
@@ -2101,31 +2174,120 @@ async function toggleRutinaAtleta(cardEl, clienteId, modoTab) {
   cardEl.setAttribute('aria-expanded', 'true');
   drawer.setAttribute('aria-hidden', 'false');
 
-  const cacheKey = `${clienteId}_${fechaGlobal}`;
-  if (rutinaAtletaCache.has(cacheKey)) {
+  const cacheKey = `${clienteId}_${fechaGlobal}_${solicitudId || 0}`;
+  const baseCacheKey = `${clienteId}_${fechaGlobal}_0`;
+  if (!solicitudId && rutinaAtletaCache.has(cacheKey)) {
     renderRutinaDrawer(drawer, rutinaAtletaCache.get(cacheKey), modoTab);
     return;
   }
 
-  drawer.innerHTML = generarSkeletonRutinaDrawer();
+  // Si solicita ver con solicitudId pero ya tenemos la rutina base en caché, pintarla al instante mientras llega el diff
+  let hasInstantRender = false;
+  if (solicitudId && rutinaAtletaCache.has(baseCacheKey)) {
+    renderRutinaDrawer(drawer, rutinaAtletaCache.get(baseCacheKey), modoTab);
+    hasInstantRender = true;
+  }
+
+  // Solo mostrar el esqueleto si realmente tarda más de 260ms en responder
+  let skDrawerTimer = null;
+  if (!hasInstantRender) {
+    skDrawerTimer = setTimeout(() => {
+      skDrawerTimer = null;
+      if (wrapper.classList.contains('is-open')) {
+        drawer.innerHTML = generarSkeletonRutinaDrawer();
+      }
+    }, 260);
+  }
 
   try {
-    const res = await fetch(`<?= APP_URL ?>/entrenador/api-dia-detalle?cliente_id=${clienteId}&fecha=${encodeURIComponent(fechaGlobal)}`, {
+    let url = `<?= APP_URL ?>/entrenador/api-dia-detalle?cliente_id=${clienteId}&fecha=${encodeURIComponent(fechaGlobal)}`;
+    if (solicitudId > 0) url += `&solicitud_id=${solicitudId}`;
+    const res = await fetch(url, {
       headers: { 'X-Requested-With': 'XMLHttpRequest' }
     });
+    if (skDrawerTimer) {
+      clearTimeout(skDrawerTimer);
+      skDrawerTimer = null;
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     data.cliente_id = clienteId;
     rutinaAtletaCache.set(cacheKey, data);
     renderRutinaDrawer(drawer, data, modoTab);
   } catch (err) {
+    if (skDrawerTimer) {
+      clearTimeout(skDrawerTimer);
+      skDrawerTimer = null;
+    }
     console.error('[toggleRutinaAtleta]', err);
-    drawer.innerHTML = `
-      <div class="cdd-error">
-        <i class="ti ti-alert-triangle"></i>
-        <span>No se pudo cargar la rutina. Toca para reintentar.</span>
-      </div>`;
+    if (!hasInstantRender) {
+      drawer.innerHTML = `
+        <div class="cdd-error">
+          <i class="ti ti-alert-triangle"></i>
+          <span>No se pudo cargar la rutina. Toca para reintentar.</span>
+        </div>`;
+    }
     rutinaAtletaCache.delete(cacheKey);
+  }
+}
+
+function abrirSolicitudRutinaAtleta(cardEl, clienteId, solicitudId) {
+  // Si el atleta está en la lista de rutinas de hoy (Pendientes), llevar directamente a su rutina y desplegarla con el mensaje del cambio
+  const penWrapper = document.getElementById(`item-pen-${clienteId}`);
+  if (penWrapper) {
+    const penCard = penWrapper.querySelector('.cd-card');
+    if (penCard) {
+      if (typeof setTab === 'function') setTab('pendientes');
+      penWrapper.classList.remove('is-open');
+      toggleRutinaAtleta(penCard, clienteId, 'pendiente', solicitudId);
+      setTimeout(() => {
+        penWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+      return;
+    }
+  }
+  // Si la rutina pertenece a otro día, desplegar la rutina directamente bajo la tarjeta de Solicitudes
+  toggleRutinaAtleta(cardEl, clienteId, 'solicitud', solicitudId);
+}
+
+async function resolverSolicitudRutinaInline(solicitudId, clienteId, accion, btnEl) {
+  if (btnEl) btnEl.disabled = true;
+  const endpoint = accion === 'aprobar' ? 'aprobar-modificacion' : 'rechazar-modificacion';
+  try {
+    const fd = new FormData();
+    fd.append('csrf_token', '<?= $csrf ?>');
+    fd.append('rutina_id', solicitudId);
+    const res = await fetch(`<?= APP_URL ?>/entrenador/${endpoint}`, {
+      method: 'POST',
+      body: fd
+    });
+    const data = await res.json();
+    if (data.ok) {
+      rutinaAtletaCache.clear();
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: accion === 'aprobar' ? 'Cambio aprobado' : 'Solicitud rechazada',
+          text: data.msg || '',
+          timer: 1600,
+          showConfirmButton: false,
+          background: '#111827',
+          color: '#fff'
+        });
+      }
+      if (typeof cargarDatosFecha === 'function') {
+        cargarDatosFecha(fechaGlobal, false);
+      } else {
+        setTimeout(() => window.location.reload(), 900);
+      }
+    } else {
+      if (btnEl) btnEl.disabled = false;
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: 'error', title: 'Error', text: data.msg || 'No se pudo procesar.', background: '#111827', color: '#fff' });
+      }
+    }
+  } catch (e) {
+    if (btnEl) btnEl.disabled = false;
   }
 }
 
@@ -2282,7 +2444,23 @@ async function toggleSerieCheckEntrenador(clienteId, ejercicioId, numSerie, tipo
       }
     }
 
-    if (typeof Swal !== 'undefined') {
+    if (data.rutina_completada) {
+      rutinaAtletaCache.delete(`${clienteId}_${fechaGlobal}_0`);
+      rutinaAtletaCache.delete(`${clienteId}_${fechaGlobal}`);
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Rutina completada por el entrenador',
+          showConfirmButton: false,
+          timer: 2000,
+          background: '#141724',
+          color: '#fff'
+        });
+      }
+      cargarDatosPorFecha(fechaGlobal, true);
+    } else if (typeof Swal !== 'undefined') {
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -2929,8 +3107,15 @@ function renderRutinaDrawer(drawer, data, modoTab) {
             <span class="cdd-ej-thumb-zoom-icon"><i class="ti ti-zoom-in"></i></span>
           </button>`;
 
+        const diffMsg = ej.cambio_solicitado ? `
+          <div class="cdd-ej-diff-msg" style="display:flex;align-items:center;gap:8px;padding:7px 12px;margin:8px 0 4px;border-radius:10px;background:rgba(245,158,11,0.14);border:1px solid rgba(251,191,36,0.38);color:#fde68a;font-size:0.76rem;font-weight:600;line-height:1.35;">
+            <i class="ti ti-exchange" style="color:#fbbf24;font-size:0.95rem;flex-shrink:0;"></i>
+            <span>${esc(ej.cambio_solicitado)}</span>
+          </div>` : '';
+
         ejHtml += `
-          <div class="cdd-ejercicio-card is-collapsed" id="cdd-ej-${ejId}">
+          ${diffMsg}
+          <div class="cdd-ejercicio-card is-collapsed" id="cdd-ej-${ejId}" style="${ej.cambio_solicitado ? 'border-color:rgba(251,191,36,0.42);' : ''}">
             <div class="cdd-ej-header" onclick="toggleEjercicioCard(this.closest('.cdd-ejercicio-card'))">
               <div class="cdd-ej-left">
                 ${thumbBtn}
@@ -2941,7 +3126,6 @@ function renderRutinaDrawer(drawer, data, modoTab) {
                 </div>
               </div>
               <div class="cdd-ej-right">
-                <span class="cdd-ej-summary-pill">${seriesCount} ${seriesCount === 1 ? 'serie' : 'series'}</span>
                 ${dotsBtn}
                 <i class="ti ti-chevron-down cdd-ej-chevron"></i>
               </div>
@@ -2959,7 +3143,29 @@ function renderRutinaDrawer(drawer, data, modoTab) {
     ejHtml += '</div>';
   }
 
-  drawer.innerHTML = `${incompletaHtml}${notasHtml}${ejHtml}`;
+  let solicitudBarHtml = '';
+  if (data.solicitud_pendiente && data.solicitud_pendiente.id) {
+    const solId = parseInt(data.solicitud_pendiente.id, 10);
+    const cidSol = parseInt(data.cliente_id || 0, 10);
+    const tipoTxt = data.solicitud_pendiente.tipo_modificacion === 'permanente' ? 'Permanente' : 'Solo por hoy';
+    solicitudBarHtml = `
+      <div class="cdd-sol-bar" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:11px 14px;margin-bottom:14px;border-radius:14px;background:linear-gradient(135deg,rgba(245,158,11,0.14),rgba(139,92,246,0.12));border:1px solid rgba(251,191,36,0.35);">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <i class="ti ti-adjustments-alt" style="color:#fbbf24;font-size:1.15rem;"></i>
+          <span style="font-size:0.8rem;color:#fef3c7;font-weight:700;">Solicitud de modificación (${tipoTxt})</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" onclick="resolverSolicitudRutinaInline(${solId}, ${cidSol}, 'aprobar', this)" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(52,211,153,0.45);background:rgba(16,185,129,0.2);color:#6ee7b7;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+            <i class="ti ti-check"></i> Aprobar
+          </button>
+          <button type="button" onclick="resolverSolicitudRutinaInline(${solId}, ${cidSol}, 'rechazar', this)" style="padding:5px 12px;border-radius:8px;border:1px solid rgba(248,113,113,0.4);background:rgba(239,68,68,0.16);color:#fca5a5;font-size:0.75rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+            <i class="ti ti-x"></i> Rechazar
+          </button>
+        </div>
+      </div>`;
+  }
+
+  drawer.innerHTML = `${solicitudBarHtml}${incompletaHtml}${notasHtml}${ejHtml}`;
 }
 
 /* Renderiza Panel 1: Pendientes (En Progreso + No Han Empezado) */
@@ -3106,12 +3312,22 @@ function renderPanelCompletadas(items, appUrl) {
   }
 
   let html = `
-    <h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Rutinas por Verificar</h4>
+    <h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Rutinas Completadas</h4>
   `;
   html += items.map(a => {
     const bg = avatarBg(a.atleta_nombre);
     const notasBadge = a.notas ? '&nbsp;&middot;&nbsp;<i class="ti ti-message-2" style="color:#fbbf24" title="Tiene notas"></i>' : '';
     const cid = parseInt(a.cliente_id);
+    const yaVerificada = parseInt(a.verificada || 0, 10) === 1;
+    const actionBtnHtml = yaVerificada
+      ? `<div class="cd-action" style="width:auto;padding:0 10px;height:30px;border-radius:999px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399;font-size:0.72rem;font-weight:700;gap:4px;" title="Completada (sin requerir verificación)">
+           <i class="ti ti-shield-check"></i> Lista
+         </div>`
+      : `<button type="button" class="cd-action act-check"
+                 onclick="verificarRapido(event, ${a.id}, this)"
+                 aria-label="Verificar rápido la rutina de ${esc(a.atleta_nombre)}" title="Marcar como verificada">
+           <i class="ti ti-check"></i>
+         </button>`;
     return `
       <div class="cd-item-wrapper" id="item-comp-${cid}">
         <div class="cd-card glass-surface" role="button" tabindex="0"
@@ -3133,11 +3349,7 @@ function renderPanelCompletadas(items, appUrl) {
           <div class="cd-action act-arrow" aria-hidden="true" style="margin-right:-4px;">
             <i class="ti ti-chevron-right cd-chevron"></i>
           </div>
-          <button type="button" class="cd-action act-check"
-                  onclick="verificarRapido(event, ${a.id}, this)"
-                  aria-label="Verificar rápido la rutina de ${esc(a.atleta_nombre)}" title="Marcar como verificada">
-            <i class="ti ti-check"></i>
-          </button>
+          ${actionBtnHtml}
         </div>
         <div class="cd-rutina-drawer" id="drawer-comp-${cid}" aria-hidden="true"></div>
       </div>`;
@@ -3188,6 +3400,36 @@ function renderPanelAlertas(sinAsignar, modificaciones, appUrl) {
 
   let html = '';
 
+  if (modificaciones.length > 0) {
+    html += '<h4 style="margin:20px 0 14px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; display:flex; align-items:center; gap:8px;"><i class="ti ti-adjustments-alt" style="color:#fbbf24;"></i> Solicitudes</h4>';
+    html += modificaciones.map(m => {
+      const tipo = m.tipo_modificacion === 'permanente' ? 'Permanente' : (m.tipo_modificacion === 'mixta' ? 'Mixta' : 'Solo por hoy');
+      const cidSol = parseInt(m.cliente_id || 0, 10);
+      const rutSol = parseInt(m.rutina_id || 0, 10);
+      return `
+        <div class="cd-item-wrapper" id="item-sol-${cidSol}">
+          <div class="cd-card glass-surface" role="button" tabindex="0"
+               onclick="abrirSolicitudRutinaAtleta(this, ${cidSol}, ${rutSol})"
+               onkeydown="if(event.key==='Enter'||event.key===' ')abrirSolicitudRutinaAtleta(this, ${cidSol}, ${rutSol})"
+               aria-expanded="false" aria-controls="drawer-sol-${cidSol}"
+               aria-label="Ver solicitud de modificación de ${esc(m.atleta)}" id="modificar">
+            <div class="cd-avatar ring-amber" style="background:rgba(251,191,36,.1);color:#fbbf24" aria-hidden="true">
+              <i class="ti ti-message-report" style="font-size:1.3rem"></i>
+            </div>
+            <div class="cd-card-info">
+              <div class="cd-card-name">${esc(m.atleta)}</div>
+              ${renderDiasMiniBar(m.dias_semana_estado)}
+              <div class="cd-card-sub" style="color:#f59e0b">
+                Solicitó una modificación en su rutina (${tipo})
+              </div>
+            </div>
+            <div class="cd-action act-eye" aria-label="Ver rutina con cambios"><i class="ti ti-eye"></i></div>
+          </div>
+          <div class="cd-rutina-drawer" id="drawer-sol-${cidSol}" aria-hidden="true"></div>
+        </div>`;
+    }).join('');
+  }
+
   if (sinAsignar.length > 0) {
     html += '<h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Atletas sin asignar</h4>';
     html += sinAsignar.map(a => `
@@ -3203,29 +3445,6 @@ function renderPanelAlertas(sinAsignar, modificaciones, appUrl) {
         </div>
         <div class="cd-action act-plus" aria-label="Asignar rutina"><i class="ti ti-plus"></i></div>
       </a>`).join('');
-  }
-
-  if (modificaciones.length > 0) {
-    html += '<h4 style="margin:24px 0 16px; color:var(--text); font-size:1.1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">Modificaciones Pendientes</h4>';
-    html += modificaciones.map(m => {
-      const nSol = parseInt(m.total_solicitudes || '1');
-      const tipo = m.tipo_modificacion === 'permanente' ? 'Permanente' : (m.tipo_modificacion === 'mixta' ? 'Mixta' : 'Temporal');
-      return `
-        <a href="${appUrl}/entrenador/revisar-modificacion?id=${m.rutina_id}" class="cd-card glass-surface"
-           aria-label="Revisar modificación de ${esc(m.atleta)}" id="modificar">
-          <div class="cd-avatar ring-amber" style="background:rgba(251,191,36,.1);color:#fbbf24" aria-hidden="true">
-            <i class="ti ti-message-report" style="font-size:1.3rem"></i>
-          </div>
-          <div class="cd-card-info">
-            <div class="cd-card-name">${esc(m.atleta)}</div>
-            ${renderDiasMiniBar(m.dias_semana_estado)}
-            <div class="cd-card-sub" style="color:#f59e0b">
-              ${nSol > 1 ? nSol + ' solicitudes &middot; ' : ''}Mod. ${tipo}
-            </div>
-          </div>
-          <div class="cd-action act-eye" aria-label="Revisar modificación"><i class="ti ti-eye"></i></div>
-        </a>`;
-    }).join('');
   }
 
   glass.innerHTML = html;

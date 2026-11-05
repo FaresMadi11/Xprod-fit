@@ -3409,7 +3409,6 @@ svg.silueta-interactive {
               </div>
             </div>
             <div class="pm-ex-select-right">
-              <span class="pm-ex-select-badge" id="pmExSelectBadge">0 series</span>
               <i class="ti ti-chevron-down pm-ex-select-arrow"></i>
             </div>
           </button>
@@ -4633,7 +4632,6 @@ function renderPickerList(ejercicios, activeName) {
           <div class="pm-picker-item-sub">${fechaFmt}</div>
         </div>
         <div class="pm-picker-item-right">
-          <span class="pm-picker-badge">${seriesCount} series</span>
           ${isAct ? '<i class="ti ti-check" style="color:#b388ff;font-size:1.15rem;"></i>' : ''}
         </div>
       </div>
@@ -4830,9 +4828,6 @@ async function seleccionarEjercicio(nombre, id) {
   // Actualizar el selector Bento principal
   const triggerName = document.getElementById('pmExSelectName');
   if (triggerName) triggerName.textContent = nombre;
-  const triggerBadge = document.getElementById('pmExSelectBadge');
-  const foundEj = (currentGrupoEjercicios || []).find(e => e.nombre === nombre);
-  if (triggerBadge) triggerBadge.textContent = (foundEj ? foundEj.total_series_registradas : 0) + ' series';
   const triggerMeta = document.getElementById('pmExSelectMeta');
   if (triggerMeta) triggerMeta.textContent = 'Toca para cambiar (' + (currentGrupoEjercicios ? currentGrupoEjercicios.length : 0) + ' en ' + ucFirst(currentGrupo) + ')';
 
@@ -5318,21 +5313,6 @@ if (document.readyState === 'complete') {
       badgeEl.classList.add('modo-planificacion');
     }
 
-    bodyEl.innerHTML = `
-    <div class="xp-skeleton-modal" style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
-        <div class="xp-sk-element xp-sk-avatar" style="width:38px; height:38px; flex-shrink:0;"></div>
-        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
-          <div class="xp-sk-element" style="width:65%; height:16px;"></div>
-          <div class="xp-sk-element" style="width:35%; height:11px; opacity:0.5;"></div>
-        </div>
-      </div>
-      <div class="xp-sk-element" style="height:70px; border-radius:14px; opacity:0.8;"></div>
-      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
-      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
-    </div>
-    `;
-
     backdrop.classList.add('open');
     modal.classList.add('open');
     backdrop.setAttribute('aria-hidden', 'false');
@@ -5351,15 +5331,37 @@ if (document.readyState === 'complete') {
       localDia = { ok: true, fecha: fecha, fecha_hoy: FECHA_HOY, modo: 'historial', estado: 'sin_actividad', rutina: null, resumen: null, ejercicios: [] };
     }
     let renderedLocalDia = false;
+    let skModalTimer = null;
     if (localDia && localDia.ok) {
       renderModalDia(fecha, localDia);
       renderedLocalDia = true;
+    } else {
+      skModalTimer = setTimeout(() => {
+        skModalTimer = null;
+        if (!renderedLocalDia) {
+          bodyEl.innerHTML = `
+          <div class="xp-skeleton-modal" style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:38px; height:38px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:65%; height:16px;"></div>
+                <div class="xp-sk-element" style="width:35%; height:11px; opacity:0.5;"></div>
+              </div>
+            </div>
+            <div class="xp-sk-element" style="height:70px; border-radius:14px; opacity:0.8;"></div>
+            <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
+            <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
+          </div>
+          `;
+        }
+      }, 260);
     }
     if (!navigator.onLine && renderedLocalDia) return;
 
     try {
       const url = `${APP_URL_STATS}/entrenador/api-dia-detalle?cliente_id=${CLIENTE_ID_STATS}&fecha=${encodeURIComponent(fecha)}`;
       const res = await fetch(url, { credentials: 'same-origin', signal: activeFetchAbort.signal });
+      if (skModalTimer) { clearTimeout(skModalTimer); skModalTimer = null; }
       const data = await res.json();
       if (data && data.ok) {
         if (snapEnt && snapEnt.dias_historial) snapEnt.dias_historial[fecha] = data;
@@ -5368,6 +5370,7 @@ if (document.readyState === 'complete') {
         renderModalDia(fecha, data);
       }
     } catch(err) {
+      if (skModalTimer) { clearTimeout(skModalTimer); skModalTimer = null; }
       if (err.name === 'AbortError') return;
       if (renderedLocalDia) return;
       bodyEl.innerHTML = `
@@ -6074,6 +6077,7 @@ if (document.readyState === 'complete') {
     `;
   }
 
+  let skInlineDiaTimer = null;
   async function cargarDetalleDiaInline(fecha) {
     fechaGlobalInline = fecha;
     const container = document.getElementById('calRutinaDiaInline');
@@ -6084,7 +6088,16 @@ if (document.readyState === 'complete') {
     if (!container || !contentEl) return;
 
     titleEl.textContent = formatoFechaLarga(fecha);
-    contentEl.innerHTML = generarSkeletonRutinaInline();
+    if (skInlineDiaTimer) {
+      clearTimeout(skInlineDiaTimer);
+      skInlineDiaTimer = null;
+    }
+    skInlineDiaTimer = setTimeout(() => {
+      skInlineDiaTimer = null;
+      if (fechaGlobalInline === fecha) {
+        contentEl.innerHTML = generarSkeletonRutinaInline();
+      }
+    }, 260);
 
     document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
     const celda = document.querySelector(`.cal-cell[data-fecha="${fecha}"]`);
@@ -6093,6 +6106,10 @@ if (document.readyState === 'complete') {
     try {
       const url = `${APP_URL_STATS}/entrenador/api-dia-detalle?cliente_id=${CLIENTE_ID_STATS}&fecha=${encodeURIComponent(fecha)}`;
       const res = await fetch(url, { credentials: 'same-origin' });
+      if (skInlineDiaTimer) {
+        clearTimeout(skInlineDiaTimer);
+        skInlineDiaTimer = null;
+      }
       const data = await res.json();
 
       if (!data || !data.ok) {

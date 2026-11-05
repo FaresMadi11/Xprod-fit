@@ -1251,24 +1251,31 @@ $grupoIconos = [
     // 1. Renderizado inmediato 0ms desde el snapshot local / localStorage (funciona 100% sin internet)
     const localData = resolverDetalleDiaLocal(fecha);
     let renderedLocal = false;
+    let skDiaTimer = null;
     if (localData && localData.ok) {
       renderModalDia(fecha, localData);
       renderedLocal = true;
     } else {
-      bodyEl.innerHTML = `
-    <div class="xp-skeleton-modal" style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
-        <div class="xp-sk-element xp-sk-avatar" style="width:38px; height:38px; flex-shrink:0;"></div>
-        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
-          <div class="xp-sk-element" style="width:65%; height:16px;"></div>
-          <div class="xp-sk-element" style="width:35%; height:11px; opacity:0.5;"></div>
-        </div>
-      </div>
-      <div class="xp-sk-element" style="height:70px; border-radius:14px; opacity:0.8;"></div>
-      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
-      <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
-    </div>
-    `;
+      // Solo mostrar esqueleto si realmente demora (>260ms)
+      skDiaTimer = setTimeout(() => {
+        skDiaTimer = null;
+        if (!renderedLocal) {
+          bodyEl.innerHTML = `
+          <div class="xp-skeleton-modal" style="display:flex; flex-direction:column; gap:12px; padding:12px 0;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+              <div class="xp-sk-element xp-sk-avatar" style="width:38px; height:38px; flex-shrink:0;"></div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div class="xp-sk-element" style="width:65%; height:16px;"></div>
+                <div class="xp-sk-element" style="width:35%; height:11px; opacity:0.5;"></div>
+              </div>
+            </div>
+            <div class="xp-sk-element" style="height:70px; border-radius:14px; opacity:0.8;"></div>
+            <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
+            <div class="xp-sk-element" style="height:55px; border-radius:12px;"></div>
+          </div>
+          `;
+        }
+      }, 260);
     }
 
     // Si estamos sin internet y ya pintamos los datos locales, terminar aquí en 0ms
@@ -1285,6 +1292,7 @@ $grupoIconos = [
     try {
       const url = `${APP_BASE}/cliente/api-dia-detalle?fecha=${encodeURIComponent(fecha)}`;
       const res = await fetch(url, { credentials: 'same-origin', signal: activeFetchAbort.signal });
+      if (skDiaTimer) { clearTimeout(skDiaTimer); skDiaTimer = null; }
       const data = await res.json();
       if (data && data.ok) {
         try {
@@ -1299,6 +1307,7 @@ $grupoIconos = [
         renderModalDia(fecha, data);
       }
     } catch(err) {
+      if (skDiaTimer) { clearTimeout(skDiaTimer); skDiaTimer = null; }
       if (err.name === 'AbortError') return;
       if (renderedLocal) return; // Mantener la vista offline ya renderizada
       const fallback = resolverDetalleDiaLocal(fecha);
@@ -1986,25 +1995,40 @@ async function abrirHistorialPeso() {
   editMode = false;
   document.getElementById('btnEditarPesos').classList.remove('active');
   document.getElementById('btnGuardarPesos').classList.remove('show');
-  body.innerHTML = `
-    <div style="display:flex; flex-direction:column; gap:10px; padding:12px 0;">
-      <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.7;"></div>
-      <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.6;"></div>
-      <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.5;"></div>
-    </div>
-  `;
+
+  let skPesoTimer = null;
+  if (pesoData && pesoData.length > 0) {
+    renderHistorialPeso();
+  } else {
+    skPesoTimer = setTimeout(() => {
+      skPesoTimer = null;
+      if (!pesoData || pesoData.length === 0) {
+        body.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:10px; padding:12px 0;">
+            <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.7;"></div>
+            <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.6;"></div>
+            <div class="xp-sk-element" style="height:44px; border-radius:10px; opacity:0.5;"></div>
+          </div>
+        `;
+      }
+    }, 260);
+  }
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
 
   try {
     const res  = await fetch(APP + '/cliente/api-peso-historial');
+    if (skPesoTimer) { clearTimeout(skPesoTimer); skPesoTimer = null; }
     const data = await res.json();
     if (data.ok) {
       pesoData = data.data.slice().reverse(); // más reciente primero
       renderHistorialPeso();
     }
   } catch(e) {
-    body.innerHTML = '<div class="dia-modal-empty"><i class="ti ti-wifi-off"></i><p>Error de conexión</p></div>';
+    if (skPesoTimer) { clearTimeout(skPesoTimer); skPesoTimer = null; }
+    if (!pesoData || pesoData.length === 0) {
+      body.innerHTML = '<div class="dia-modal-empty"><i class="ti ti-wifi-off"></i><p>Error de conexión</p></div>';
+    }
   }
 }
 
@@ -2491,10 +2515,9 @@ function renderBotonesGrupo(grupo, data, list, autoSelect = true) {
   data.ejercicios.forEach(ej => {
     const safeName = (ej.nombre || '').replace(/'/g, "\\'");
     const safeAttr = (ej.nombre || '').replace(/"/g, '&quot;');
-    const seriesBadge = ej.total_series_registradas ? `<span style="font-size:.62rem;opacity:.7;margin-left:5px;">(${ej.total_series_registradas}s)</span>` : '';
     const isAct = currentEjercicio === ej.nombre ? ' active' : '';
     html += `<button class="pm-ex-btn${isAct}" onclick="seleccionarEjercicio('${safeName}', ${ej.id || 0})"
-      data-ej="${safeAttr}">${ej.nombre} ${seriesBadge}</button>`;
+      data-ej="${safeAttr}">${ej.nombre}</button>`;
   });
   list.innerHTML = html;
 

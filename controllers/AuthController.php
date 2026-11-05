@@ -475,9 +475,18 @@ function authDoRegistro(): void {
             try {
                 $msg    = 'Nuevo atleta en espera: ' . $nombres . ' ' . $apellidos . ' solicita activación';
                 $enlace = APP_URL . '/entrenador/perfil-cliente?id=' . $clienteId;
-                $meta   = json_encode(['cliente_id' => $clienteId]);
-                $db->prepare("INSERT INTO notificaciones (cliente_id, entrenador_id, mensaje, tipo, enlace, metadatos) VALUES (?, ?, ?, 'registro', ?, ?)")
-                   ->execute([$clienteId, $entrenadorId, $msg, $enlace, $meta]);
+                registrarNotificacionSistema([
+                    'remitente_id'     => $usuarioId ?? null,
+                    'destinatario_id'  => $entrenadorId,
+                    'rol_destinatario' => 'entrenador',
+                    'tipo_evento'      => 'registro',
+                    'referencia_id'    => $clienteId,
+                    'cliente_id'       => $clienteId,
+                    'entrenador_id'    => $entrenadorId,
+                    'mensaje'          => $msg,
+                    'enlace'           => $enlace,
+                    'metadatos'        => ['cliente_id' => $clienteId]
+                ]);
             } catch (\Throwable $e) {
                 error_log('[authDoRegistro] Notificación no creada: ' . $e->getMessage());
             }

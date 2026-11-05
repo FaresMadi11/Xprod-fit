@@ -52,6 +52,7 @@ match($action) {
     'guardar-modificacion'    => cliGuardarModificacion(),
     'guardar-dias'            => cliGuardarDias(),
     'reordenar-ejercicios'    => cliReordenarEjercicios(),
+    'api-rutina-sync'         => cliApiRutinaSync(),
     default                   => cliDashboard(),
 };
 
@@ -228,10 +229,8 @@ function cliDashboard(): void {
     $ajustesGlobales = [];
     while($r = $stAj->fetch()) $ajustesGlobales[$r['clave']] = $r['valor'];
     
-    // Obtener notificaciones (payload ligero sin SELECT *)
-    $stNotif = $db->prepare("SELECT id, mensaje, tipo, enlace, leido, leida, fecha, created_at, metadatos FROM notificaciones WHERE cliente_id = ? ORDER BY fecha DESC LIMIT 20");
-    $stNotif->execute([$clienteId]);
-    $notificaciones = $stNotif->fetchAll();
+    // Obtener notificaciones aisladas exclusivamente para rol cliente
+    $notificaciones = obtenerNotificacionesUsuario((int)$_SESSION['user_id'], 'cliente', 20, true);
 
     
     require BASE_DIR . '/views/cliente/dashboard.php';
@@ -243,6 +242,104 @@ function cliDashboard(): void {
 function cliRutinaLista(): void {
     // Redirigimos directamente a la agenda semanal
     redirect('cliente/rutina-dia');
+}
+
+/*─────────────────────────────────────────────────────────────
+  API: SINCRONIZACIÓN AUTOMÁTICA EN RED DE RUTINA DEL ATLETA
+  GET /cliente/api-rutina-sync
+─────────────────────────────────────────────────────────────*/
+function cliApiRutinaSync(): void {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    try {
+        $db        = getDB();
+        $clienteId = (int)($_SESSION['cliente_id'] ?? 0);
+        $rutinaId  = (int)($_GET['rutina_id'] ?? 0);
+        $diaReq    = (int)($_GET['dia'] ?? (int)date('N'));
+
+        if ($rutinaId <= 0) {
+            $stAct = $db->prepare("
+                SELECT id FROM rutinas
+                WHERE cliente_id = ? AND estado = 'en_progreso'
+                  AND (es_modificacion IS NULL OR es_modificacion = 0 OR estado_modificacion = 'aprobada')
+                  AND FIND_IN_SET(?, REPLACE(COALESCE(dias_semana, ''), ' ', ''))
+                ORDER BY creado_en DESC, id DESC LIMIT 1
+            ");
+            $stAct->execute([$clienteId, $diaReq]);
+            $rutinaId = (int)($stAct->fetchColumn() ?: 0);
+        }
+
+        if ($rutinaId <= 0) {
+            echo json_encode(['ok' => true, 'hash' => 'none', 'rutina_id' => 0]);
+            exit;
+        }
+
+        $stRut = $db->prepare("
+            SELECT id, descripcion, dias_semana, estado, plantilla_id, cardio_activo, cardio_tiempo, cardio_indicaciones
+            FROM rutinas
+            WHERE id = ? AND cliente_id = ?
+            LIMIT 1
+        ");
+        $stRut->execute([$rutinaId, $clienteId]);
+        $rutRow = $stRut->fetch(PDO::FETCH_ASSOC);
+
+        // Si la rutina fue reemplazada (ej. entrenador aprobó modificación o reasignó rutina)
+        if ($rutRow && $rutRow['estado'] !== 'en_progreso') {
+            $stNew = $db->prepare("
+                SELECT id, descripcion, dias_semana, estado, plantilla_id, cardio_activo, cardio_tiempo, cardio_indicaciones
+                FROM rutinas
+                WHERE cliente_id = ? AND estado = 'en_progreso'
+                  AND (es_modificacion IS NULL OR es_modificacion = 0 OR estado_modificacion = 'aprobada')
+                  AND FIND_IN_SET(?, REPLACE(COALESCE(dias_semana, ''), ' ', ''))
+                ORDER BY creado_en DESC, id DESC LIMIT 1
+            ");
+            $stNew->execute([$clienteId, $diaReq]);
+            $newRow = $stNew->fetch(PDO::FETCH_ASSOC);
+            if ($newRow) {
+                $rutRow   = $newRow;
+                $rutinaId = (int)$newRow['id'];
+            }
+        }
+
+        $stEj = $db->prepare("
+            SELECT e.id, e.nombre, e.series, e.repeticiones, e.rir, e.nota_biomecanica,
+                   e.tipo_implemento, e.unidad_carga, e.orden,
+                   ce.descripcion AS cat_desc, ce.indicaciones AS cat_ind,
+                   ce.imagen_path, ce.imagen_demo_path, ce.video_url,
+                   ce.configuracion_maquina, ce.tipo_implemento AS cat_imp, ce.unidad_carga AS cat_uni
+            FROM ejercicios e
+            LEFT JOIN catalogo_ejercicios ce ON LOWER(TRIM(ce.nombre)) = LOWER(TRIM(e.nombre))
+            WHERE e.rutina_id = ?
+            ORDER BY e.orden ASC, e.id ASC
+        ");
+        $stEj->execute([$rutinaId]);
+        $ejsRows = $stEj->fetchAll(PDO::FETCH_ASSOC);
+
+        $psRows = [];
+        $plantillaId = (int)($rutRow['plantilla_id'] ?? 0);
+        if ($plantillaId > 0) {
+            $stPs = $db->prepare("
+                SELECT pe.orden, pe.nombre, pe.descanso_segundos,
+                       ps.numero_serie, ps.tipo_serie, ps.reps_objetivo, ps.peso_objetivo, ps.rir_objetivo
+                FROM plantilla_ejercicios pe
+                LEFT JOIN plantilla_series ps ON ps.plantilla_ejercicio_id = pe.id
+                WHERE pe.plantilla_id = ?
+                ORDER BY pe.orden ASC, ps.numero_serie ASC
+            ");
+            $stPs->execute([$plantillaId]);
+            $psRows = $stPs->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $hash = md5(json_encode([$rutRow, $ejsRows, $psRows], JSON_UNESCAPED_UNICODE));
+        echo json_encode([
+            'ok'        => true,
+            'hash'      => $hash,
+            'rutina_id' => $rutinaId
+        ]);
+    } catch (\Throwable $e) {
+        echo json_encode(['ok' => false, 'msg' => $e->getMessage()]);
+    }
+    exit;
 }
 
 /*âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
@@ -1117,6 +1214,13 @@ function cliSolicitarModificacionAtleta(): void {
         $desc = 'Modificación de rutina (' . ($tipoMod === 'permanente' ? 'Permanente' : 'Solo por hoy') . ')';
         $diasSemana = $padre['dias_semana'] ?? '';
 
+        // Archivar solicitudes pendientes previas de la misma rutina padre para evitar duplicados
+        $db->prepare("
+            UPDATE rutinas 
+            SET estado_modificacion = 'reemplazada', estado = 'archivada'
+            WHERE cliente_id = ? AND rutina_padre_id = ? AND es_modificacion = 1 AND estado_modificacion = 'pendiente'
+        ")->execute([$clienteId, $rutinaId]);
+
         $stIns = $db->prepare("
             INSERT INTO rutinas (cliente_id, descripcion, dias_semana, estado, es_modificacion, estado_modificacion, tipo_modificacion, rutina_padre_id, creado_en)
             VALUES (?, ?, ?, 'pendiente', 1, 'pendiente', ?, ?, NOW())
@@ -1143,7 +1247,7 @@ function cliSolicitarModificacionAtleta(): void {
             $stEj->execute([$nuevaRutinaId, $nom, $series, $reps, $rir, $nota, $imp, $uni, $orden++]);
         }
 
-        // Notificar al entrenador asignado
+        // Notificar al entrenador asignado con el formato exacto y botón Ver rutina
         $stCli = $db->prepare("SELECT c.entrenador_id, u.nombre AS atleta_nombre FROM clientes c JOIN usuarios u ON c.usuario_id = u.id WHERE c.id = ?");
         $stCli->execute([$clienteId]);
         $cliInfo = $stCli->fetch();
@@ -1151,7 +1255,6 @@ function cliSolicitarModificacionAtleta(): void {
         if ($cliInfo && !empty($cliInfo['entrenador_id'])) {
             $entId = (int)$cliInfo['entrenador_id'];
             $atletaNom = $cliInfo['atleta_nombre'] ?: 'Un atleta';
-            $tipoLabel = $tipoMod === 'permanente' ? 'Permanente' : 'Solo por hoy';
             registrarNotificacionSistema([
                 'remitente_id'     => $userId,
                 'destinatario_id'  => $entId,
@@ -1160,8 +1263,8 @@ function cliSolicitarModificacionAtleta(): void {
                 'referencia_id'    => $nuevaRutinaId,
                 'cliente_id'       => $clienteId,
                 'entrenador_id'    => $entId,
-                'mensaje'          => "{$atletaNom} solicitó modificar su rutina ({$tipoLabel}).",
-                'enlace'           => APP_URL . "/entrenador/revisar-modificacion?id={$nuevaRutinaId}",
+                'mensaje'          => "{$atletaNom} solicitó una modificación en su rutina",
+                'enlace'           => APP_URL . "/entrenador/asistencias?ver_solicitud={$nuevaRutinaId}&cliente_id={$clienteId}#alertas",
                 'metadatos'        => ['solicitud_id' => $nuevaRutinaId, 'cliente_id' => $clienteId]
             ]);
         }
@@ -1179,6 +1282,12 @@ function cliSolicitarModificacionAtleta(): void {
   GUARDAR MODIFICACIÓN DIRECTA (POST-INICIO / EN VIVO - AJAX)
 ─────────────────────────────────────────────────────────────*/
 function cliGuardarModificacionDirecta(): void {
+    // Unificar flujo: cualquier modificación del atleta genera solicitud con diff para el entrenador
+    $_POST['tipo_modificacion'] = $_POST['tipo_modificacion'] ?? 'temporal';
+    cliSolicitarModificacionAtleta();
+}
+
+function cliGuardarModificacionDirectaLegacy(): void {
     csrfCheck();
     $db            = getDB();
     $clienteId     = (int)$_SESSION['cliente_id'];
@@ -1819,7 +1928,7 @@ function cliNotificaciones(): void {
 function cliApiNotificaciones(): void {
     header('Content-Type: application/json; charset=utf-8');
     $userId = (int)$_SESSION['user_id'];
-    $notifs = obtenerNotificacionesUsuario($userId, 'cliente', 30);
+    $notifs = obtenerNotificacionesUsuario($userId, 'cliente', 30, true);
     $unread = contarNotificacionesNoLeidas($userId, 'cliente');
     echo json_encode([
         'ok'             => true,
@@ -1984,7 +2093,8 @@ function cliGuardarModificacion(): void {
 
         $notifTituloMsg = 'Cambio en rutina Â· ' . $atletaNombre;
         $notifDetalle   = $notifTituloMsg . ': ActualizÃ³ su solicitud de cambios para ' . $diasNombres . ' (hace instantes).';
-        $enlace = APP_URL . '/entrenador/revisar-modificacion?id=' . $solicitudId;
+        $notifDetalle = "{$atletaNombre} solicitó una modificación en su rutina";
+        $enlace = APP_URL . '/entrenador/asistencias?ver_solicitud=' . $solicitudId . '&cliente_id=' . $clienteId . '#alertas';
         $meta   = json_encode([
             'rutina_id' => $solicitudId, 
             'tipo'      => 'rutina', 

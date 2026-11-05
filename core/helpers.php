@@ -366,10 +366,13 @@ function registrarNotificacionSistema(array $params): int|bool {
 
 /**
  * Obtiene las notificaciones ordenadas de más reciente a más antigua para el usuario actual.
+ * Garantiza aislamiento estricto por rol_destinatario (atleta solo ve atleta, entrenador solo entrenador).
  */
-function obtenerNotificacionesUsuario(int $userId, string $rol, int $limit = 25): array {
+function obtenerNotificacionesUsuario(int $userId, string $rol, int $limit = 25, bool $soloNoLeidas = false): array {
     $db = getDB();
     purgarNotificacionesAntiguas($db);
+
+    $unreadCond = $soloNoLeidas ? " AND (n.leido = 0 AND n.leida = 0) " : "";
 
     if ($rol === 'entrenador') {
         $st = $db->prepare("
@@ -377,8 +380,14 @@ function obtenerNotificacionesUsuario(int $userId, string $rol, int $limit = 25)
             FROM notificaciones n
             LEFT JOIN clientes c ON n.cliente_id = c.id
             LEFT JOIN usuarios u ON (u.id = n.remitente_id OR u.id = c.usuario_id)
-            WHERE (n.destinatario_id = ? OR (n.destinatario_id IS NULL AND n.entrenador_id = ?))
-            ORDER BY COALESCE(n.created_at, n.fecha) DESC
+            WHERE n.rol_destinatario = 'entrenador'
+              AND (n.destinatario_id = ? OR (n.destinatario_id IS NULL AND n.entrenador_id = ?))
+              AND n.mensaje NOT LIKE '¡Tu cuenta ha sido activada%'
+              AND n.mensaje NOT LIKE 'Tu entrenador%'
+              AND COALESCE(n.tipo, '') NOT IN ('rutina_asignada', 'cambios_aprobados', 'modificacion_rechazada', 'medidas_actualizadas', 'pago_aprobado')
+              AND COALESCE(n.tipo_evento, '') NOT IN ('rutina_asignada', 'cambios_aprobados', 'modificacion_rechazada', 'medidas_actualizadas', 'pago_aprobado')
+              {$unreadCond}
+            ORDER BY COALESCE(n.created_at, n.fecha) DESC, n.id DESC
             LIMIT ?
         ");
         $st->bindValue(1, $userId, PDO::PARAM_INT);
@@ -387,14 +396,21 @@ function obtenerNotificacionesUsuario(int $userId, string $rol, int $limit = 25)
         $st->execute();
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
     } else {
-        // Rol cliente: buscar por usuario_id o cliente_id
+        // Rol cliente: buscar estrictamente notificaciones dirigidas a rol cliente
         $clienteId = (int)($_SESSION['cliente_id'] ?? 0);
         $st = $db->prepare("
             SELECT n.*, u.nombre AS remitente_nombre, u.avatar_url AS remitente_avatar
             FROM notificaciones n
             LEFT JOIN usuarios u ON (u.id = n.remitente_id OR u.id = n.entrenador_id)
-            WHERE (n.destinatario_id = ? OR (n.destinatario_id IS NULL AND n.cliente_id = ?))
-            ORDER BY COALESCE(n.created_at, n.fecha) DESC
+            WHERE n.rol_destinatario = 'cliente'
+              AND (n.destinatario_id = ? OR (n.destinatario_id IS NULL AND n.cliente_id = ?))
+              AND n.mensaje NOT LIKE 'Nuevo atleta%'
+              AND n.mensaje NOT LIKE '%solicitó una modificación%'
+              AND n.mensaje NOT LIKE '%reportó un pago%'
+              AND COALESCE(n.tipo, '') NOT IN ('registro', 'solicitud_atleta', 'solicitud_modificacion', 'modificacion_directa', 'pago_reportado', 'rutina_completada')
+              AND COALESCE(n.tipo_evento, '') NOT IN ('registro', 'solicitud_atleta', 'solicitud_modificacion', 'modificacion_directa', 'pago_reportado', 'rutina_completada')
+              {$unreadCond}
+            ORDER BY COALESCE(n.created_at, n.fecha) DESC, n.id DESC
             LIMIT ?
         ");
         $st->bindValue(1, $userId, PDO::PARAM_INT);
@@ -404,8 +420,28 @@ function obtenerNotificacionesUsuario(int $userId, string $rol, int $limit = 25)
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    $hoyYmd  = date('Y-m-d');
+    $ayerYmd = date('Y-m-d', strtotime('-1 day'));
+    $semYmd  = date('Y-m-d', strtotime('-7 days'));
+
     foreach ($rows as &$r) {
-        $r['tiempo_relativo'] = formatoTiempoRelativo($r['created_at'] ?? $r['fecha'] ?? '');
+        $rawDate = $r['created_at'] ?? $r['fecha'] ?? '';
+        $ts      = $rawDate ? strtotime($rawDate) : time();
+        $ymd     = date('Y-m-d', $ts);
+
+        $r['tiempo_relativo']  = formatoTiempoRelativo($rawDate);
+        $r['fecha_formateada'] = date('d/m/Y', $ts);
+        $r['hora_formateada']  = date('h:i A', $ts);
+        if ($ymd === $hoyYmd) {
+            $r['grupo_fecha'] = 'Hoy';
+        } elseif ($ymd === $ayerYmd) {
+            $r['grupo_fecha'] = 'Ayer';
+        } elseif ($ymd >= $semYmd) {
+            $r['grupo_fecha'] = 'Esta semana';
+        } else {
+            $r['grupo_fecha'] = 'Anteriores';
+        }
+
         $r['icono'] = iconoPorTipoEvento($r['tipo_evento'] ?? $r['tipo'] ?? '', $r['mensaje'] ?? '');
         $r['leido'] = (int)($r['leido'] ?? $r['leida'] ?? 0);
     }
@@ -415,24 +451,36 @@ function obtenerNotificacionesUsuario(int $userId, string $rol, int $limit = 25)
 }
 
 /**
- * Cuenta las notificaciones pendientes de lectura para el usuario en sesión.
+ * Cuenta las notificaciones pendientes de lectura para el usuario en sesión (aislado por rol).
  */
 function contarNotificacionesNoLeidas(int $userId, string $rol): int {
     $db = getDB();
+    purgarNotificacionesAntiguas($db);
     if ($rol === 'entrenador') {
         $st = $db->prepare("
-            SELECT COUNT(*) FROM notificaciones
-            WHERE (destinatario_id = ? OR (destinatario_id IS NULL AND entrenador_id = ?))
-              AND (leido = 0 AND leida = 0)
+            SELECT COUNT(*) FROM notificaciones n
+            WHERE n.rol_destinatario = 'entrenador'
+              AND (n.destinatario_id = ? OR (n.destinatario_id IS NULL AND n.entrenador_id = ?))
+              AND n.mensaje NOT LIKE '¡Tu cuenta ha sido activada%'
+              AND n.mensaje NOT LIKE 'Tu entrenador%'
+              AND COALESCE(n.tipo, '') NOT IN ('rutina_asignada', 'cambios_aprobados', 'modificacion_rechazada', 'medidas_actualizadas', 'pago_aprobado')
+              AND COALESCE(n.tipo_evento, '') NOT IN ('rutina_asignada', 'cambios_aprobados', 'modificacion_rechazada', 'medidas_actualizadas', 'pago_aprobado')
+              AND (n.leido = 0 AND n.leida = 0)
         ");
         $st->execute([$userId, $userId]);
         return (int)$st->fetchColumn();
     } else {
         $clienteId = (int)($_SESSION['cliente_id'] ?? 0);
         $st = $db->prepare("
-            SELECT COUNT(*) FROM notificaciones
-            WHERE (destinatario_id = ? OR (destinatario_id IS NULL AND cliente_id = ?))
-              AND (leido = 0 AND leida = 0)
+            SELECT COUNT(*) FROM notificaciones n
+            WHERE n.rol_destinatario = 'cliente'
+              AND (n.destinatario_id = ? OR (n.destinatario_id IS NULL AND n.cliente_id = ?))
+              AND n.mensaje NOT LIKE 'Nuevo atleta%'
+              AND n.mensaje NOT LIKE '%solicitó una modificación%'
+              AND n.mensaje NOT LIKE '%reportó un pago%'
+              AND COALESCE(n.tipo, '') NOT IN ('registro', 'solicitud_atleta', 'solicitud_modificacion', 'modificacion_directa', 'pago_reportado', 'rutina_completada')
+              AND COALESCE(n.tipo_evento, '') NOT IN ('registro', 'solicitud_atleta', 'solicitud_modificacion', 'modificacion_directa', 'pago_reportado', 'rutina_completada')
+              AND (n.leido = 0 AND n.leida = 0)
         ");
         $st->execute([$userId, $clienteId]);
         return (int)$st->fetchColumn();
@@ -440,22 +488,33 @@ function contarNotificacionesNoLeidas(int $userId, string $rol): int {
 }
 
 /**
- * Marca una notificación individual como leída garantizando ownership.
+ * Marca una notificación individual como leída garantizando ownership y aislamiento por rol.
  */
 function marcarNotificacionLeida(int $notifId, int $userId): bool {
     $db = getDB();
+    $rol = $_SESSION['rol'] ?? 'cliente';
     $clienteId = (int)($_SESSION['cliente_id'] ?? 0);
-    $st = $db->prepare("
-        UPDATE notificaciones 
-        SET leido = 1, leida = 1 
-        WHERE id = ? 
-          AND (destinatario_id = ? OR entrenador_id = ? OR cliente_id = ?)
-    ");
-    return $st->execute([$notifId, $userId, $userId, $clienteId]);
+    if ($rol === 'entrenador') {
+        $st = $db->prepare("
+            UPDATE notificaciones 
+            SET leido = 1, leida = 1 
+            WHERE id = ? AND rol_destinatario = 'entrenador'
+              AND (destinatario_id = ? OR entrenador_id = ?)
+        ");
+        return $st->execute([$notifId, $userId, $userId]);
+    } else {
+        $st = $db->prepare("
+            UPDATE notificaciones 
+            SET leido = 1, leida = 1 
+            WHERE id = ? AND rol_destinatario = 'cliente'
+              AND (destinatario_id = ? OR cliente_id = ?)
+        ");
+        return $st->execute([$notifId, $userId, $clienteId]);
+    }
 }
 
 /**
- * Marca todas las notificaciones del usuario como leídas de forma idempotente.
+ * Marca todas las notificaciones del usuario como leídas de forma idempotente y aislada por rol.
  */
 function marcarTodasNotificacionesLeidas(int $userId, string $rol): bool {
     $db = getDB();
@@ -463,7 +522,8 @@ function marcarTodasNotificacionesLeidas(int $userId, string $rol): bool {
         $st = $db->prepare("
             UPDATE notificaciones 
             SET leido = 1, leida = 1 
-            WHERE (destinatario_id = ? OR (destinatario_id IS NULL AND entrenador_id = ?))
+            WHERE rol_destinatario = 'entrenador'
+              AND (destinatario_id = ? OR (destinatario_id IS NULL AND entrenador_id = ?))
         ");
         return $st->execute([$userId, $userId]);
     } else {
@@ -471,14 +531,15 @@ function marcarTodasNotificacionesLeidas(int $userId, string $rol): bool {
         $st = $db->prepare("
             UPDATE notificaciones 
             SET leido = 1, leida = 1 
-            WHERE (destinatario_id = ? OR (destinatario_id IS NULL AND cliente_id = ?))
+            WHERE rol_destinatario = 'cliente'
+              AND (destinatario_id = ? OR (destinatario_id IS NULL AND cliente_id = ?))
         ");
         return $st->execute([$userId, $clienteId]);
     }
 }
 
 /**
- * Higiene y persistencia: Purga notificaciones leídas con más de 30 días.
+ * Higiene y persistencia: Normaliza rol_destinatario en registros antiguos y purga leídas > 30 días.
  */
 function purgarNotificacionesAntiguas(PDO $db): void {
     // Ejecución silenciosa y ligera
@@ -487,6 +548,41 @@ function purgarNotificacionesAntiguas(PDO $db): void {
     $purgadoEnEsteCiclo = true;
 
     try {
+        // 1. Reclasificar notificaciones de atleta que quedaron con rol_destinatario = 'entrenador' por DEFAULT de columna
+        $db->exec("
+            UPDATE notificaciones n
+            LEFT JOIN clientes c ON n.cliente_id = c.id
+            SET n.rol_destinatario = 'cliente',
+                n.destinatario_id = COALESCE(c.usuario_id, n.destinatario_id)
+            WHERE (
+                n.mensaje LIKE '¡Tu cuenta ha sido activada%'
+                OR n.mensaje LIKE 'Tu entrenador%'
+                OR n.mensaje LIKE '%ha sido aprobada%'
+                OR n.mensaje LIKE '%fue rechazada%'
+                OR n.mensaje LIKE '%actualizó tus medidas%'
+                OR n.tipo IN ('rutina_asignada', 'cambios_aprobados', 'modificacion_rechazada', 'medidas_actualizadas', 'pago_aprobado')
+                OR n.tipo_evento IN ('rutina_asignada', 'cambios_aprobados', 'modificacion_rechazada', 'medidas_actualizadas', 'pago_aprobado')
+            ) AND (n.rol_destinatario IS NULL OR n.rol_destinatario != 'cliente')
+        ");
+
+        // 2. Normalizar registros históricos sin rol_destinatario para evitar cruce entre atleta y entrenador
+        $db->exec("
+            UPDATE notificaciones
+            SET rol_destinatario = CASE
+                WHEN tipo IN ('registro', 'solicitud_atleta', 'solicitud_modificacion', 'modificacion_directa', 'pago_reportado', 'rutina_completada')
+                  OR tipo_evento IN ('registro', 'solicitud_atleta', 'solicitud_modificacion', 'modificacion_directa', 'pago_reportado', 'rutina_completada')
+                  OR mensaje LIKE 'Nuevo atleta%'
+                  OR mensaje LIKE '%solicitó%'
+                  OR mensaje LIKE '%modificó%'
+                  OR mensaje LIKE '%completó%'
+                  OR mensaje LIKE '%reportó un pago%'
+                THEN 'entrenador'
+                ELSE 'cliente'
+            END
+            WHERE rol_destinatario IS NULL OR rol_destinatario = ''
+        ");
+
+        // 2. Purgar leídas con más de 30 días
         $db->exec("
             DELETE FROM notificaciones 
             WHERE (leido = 1 OR leida = 1) 

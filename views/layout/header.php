@@ -35,6 +35,23 @@ try {
   <meta name="apple-mobile-web-app-title" content="Xprod Fit">
   <meta name="mobile-web-app-capable" content="yes">
 
+  <!-- ── Speculation Rules API (Prefetch instantáneo al pasar cursor o tocar pestañas) ── -->
+  <script type="speculationrules">
+  {
+    "prefetch": [{
+      "where": {
+        "and": [
+          { "href_matches": "/*" },
+          { "not": { "href_matches": "/*logout*" } },
+          { "not": { "href_matches": "/*do-*" } },
+          { "not": { "href_matches": "/*api-*" } }
+        ]
+      },
+      "eagerness": "moderate"
+    }]
+  }
+  </script>
+
   <?php $icoVer = @filemtime(__DIR__ . '/../../assets/img/icon-192.png') ?: time(); ?>
   <!-- ── PWA Manifest & App Icons ── -->
   <link rel="manifest" href="<?= APP_URL ?>/manifest.webmanifest?v=<?= $icoVer ?>">
@@ -105,7 +122,8 @@ try {
 </head>
 <body>
 <?php if ($rolUser): 
-  $unreadNav = contarNotificacionesNoLeidas((int)$_SESSION['user_id'], $rolUser);
+  $initialNotifsNav = obtenerNotificacionesUsuario((int)$_SESSION['user_id'], $rolUser, 15, true);
+  $unreadNav = count($initialNotifsNav);
 ?>
 <nav class="xp-nav" id="mainNav">
   <div class="xp-nav-brand">
@@ -169,7 +187,7 @@ try {
     </button>
   </div>
   <div class="notif-dd-body" id="xpNotifListBody">
-        <div class="xp-skeleton-wrap" style="padding:14px; display:flex; flex-direction:column; gap:10px;">
+    <div class="xp-skeleton-wrap" style="padding:14px; display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; align-items:center; gap:10px; padding:10px; background:rgba(255,255,255,0.03); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
         <div class="xp-sk-element xp-sk-avatar" style="width:36px; height:36px; flex-shrink:0;"></div>
         <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
@@ -204,8 +222,9 @@ try {
   // ══════════════════════════════════════════════════════════════════
   const USER_ROLE = '<?= $rolUser ?>';
   let xpActiveTrigger = null;
-  let xpNotifsCache   = [];
+  let xpNotifsCache   = <?= json_encode($initialNotifsNav, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
   let xpUnreadCount   = <?= (int)$unreadNav ?>;
+  let xpNotifsLoaded  = true;
 
   function toggleXpNotifDropdown(triggerEl, ev) {
     if (ev) {
@@ -230,8 +249,13 @@ try {
     dd.classList.add('active');
     dd.setAttribute('aria-hidden', 'false');
 
-    // Cargar y pintar
-    xpFetchNotificaciones(false);
+    // Pintar al instante desde caché SSR (0ms sin esqueleto) y revalidar en segundo plano
+    if (xpNotifsLoaded) {
+      xpRenderNotifList(xpNotifsCache);
+      xpFetchNotificaciones(true);
+    } else {
+      xpFetchNotificaciones(false);
+    }
   }
 
   function closeXpNotifDropdown() {
@@ -309,9 +333,17 @@ try {
       const isUnread = (n.leido === 0 || n.leida === 0);
       const icon = n.icono || 'ti-bell';
       const time = n.tiempo_relativo || '';
+      const fechaHora = (n.fecha_formateada && n.hora_formateada) ? ` · ${n.fecha_formateada} ${n.hora_formateada}` : '';
       const enlace = n.enlace && n.enlace !== '#' ? n.enlace : '';
-      const isSolicitud = (n.tipo_evento === 'solicitud_atleta' || n.tipo === 'registro');
-      const isRutina = (n.tipo_evento === 'edicion_rutina' || n.tipo === 'rutina');
+      const tipoEv = String(n.tipo_evento || n.tipo || '').toLowerCase();
+      const isSolicitudReg = (tipoEv === 'solicitud_atleta' || tipoEv === 'registro');
+      const isRutinaMod = (
+        tipoEv === 'solicitud_modificacion' ||
+        tipoEv === 'modificacion_directa' ||
+        tipoEv === 'edicion_rutina' ||
+        tipoEv === 'rutina' ||
+        String(n.mensaje || '').toLowerCase().includes('rutina')
+      );
 
       html += `
         <div class="notif-item ${isUnread ? 'unread' : ''}" 
@@ -325,18 +357,18 @@ try {
             <p class="n-msg">${xpEscapeHtml(n.mensaje)}</p>
             <div class="n-time">
               <i class="ti ti-clock" style="font-size:0.75rem;"></i>
-              <span>${time}</span>
+              <span>${time}${fechaHora}</span>
             </div>
-            ${isUnread && isSolicitud ? `
+            ${isSolicitudReg && enlace ? `
               <div style="margin-top:6px;">
                 <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; color:#c084fc; background:rgba(138,43,226,0.14); border:1px solid rgba(138,43,226,0.28); padding:2px 8px; border-radius:6px; font-weight:600;">
                   Revisar atleta <i class="ti ti-arrow-right" style="font-size:0.7rem;"></i>
                 </span>
               </div>` : ''}
-            ${isUnread && isRutina ? `
+            ${isRutinaMod && enlace ? `
               <div style="margin-top:6px;">
-                <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; color:#f59e0b; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.28); padding:2px 8px; border-radius:6px; font-weight:600;">
-                  Revisar cambios <i class="ti ti-arrow-right" style="font-size:0.7rem;"></i>
+                <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.73rem; color:#fff; background:linear-gradient(135deg, #8b5cf6, #6d28d9); border:1px solid rgba(167,139,250,0.4); padding:3px 10px; border-radius:7px; font-weight:700; box-shadow:0 2px 8px rgba(139,92,246,0.28);">
+                  <i class="ti ti-barbell" style="font-size:0.76rem;"></i> Ver rutina <i class="ti ti-arrow-right" style="font-size:0.7rem;"></i>
                 </span>
               </div>` : ''}
           </div>
@@ -356,13 +388,17 @@ try {
   async function xpClickNotifItem(id, enlace, ev) {
     if (ev) ev.stopPropagation();
 
-    // Actualización optimista inmediata en UI
+    // Retirar de la vista rápida al marcarse como leída
+    xpNotifsCache = (xpNotifsCache || []).filter(n => Number(n.id) !== Number(id));
     const itemEl = document.querySelector(`.notif-item[data-id="${id}"]`);
-    if (itemEl && itemEl.classList.contains('unread')) {
-      itemEl.classList.remove('unread');
-      const dot = itemEl.querySelector('.n-dot');
-      if (dot) dot.remove();
+    if (itemEl) {
       xpUpdateBadges(xpUnreadCount - 1);
+      if (!enlace || enlace === '#') {
+        itemEl.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+        itemEl.style.opacity = '0';
+        itemEl.style.transform = 'translateX(12px)';
+        setTimeout(() => xpRenderNotifList(xpNotifsCache), 200);
+      }
     }
 
     try {
@@ -383,14 +419,14 @@ try {
     }
   }
 
-  // 2. Marcar todo como leído (idempotente)
+  // 2. Marcar todo como leído (idempotente y limpia la vista rápida al instante)
   async function xpMarcarTodoLeido(ev) {
     if (ev) ev.stopPropagation();
     
-    // Feedback visual optimista instantáneo
-    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
-    document.querySelectorAll('.notif-item .n-dot').forEach(el => el.remove());
+    // Limpiar inmediatamente las notificaciones de la vista rápida
+    xpNotifsCache = [];
     xpUpdateBadges(0);
+    xpRenderNotifList([]);
 
     try {
       const res = await fetch(APP + '/' + USER_ROLE + '/api-leer-notificaciones', {

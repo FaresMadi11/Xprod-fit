@@ -3125,6 +3125,7 @@ async function actualizarVistaRutinaSinRecarga(targetUrl, pushState = true) {
   }
 
   isUpdatingViewAjax = true;
+  window.lastRutinaSyncHash = null;
   container.classList.add('is-loading-ajax');
 
   try {
@@ -3462,8 +3463,8 @@ async function ejecutarAccionCambiosRutina() {
     document.getElementById('btnBottomModAction')
   ].filter(Boolean);
 
-  // CASO A: Pre-inicio -> Solicitar Modificación (con selector Solo por hoy / Permanente)
-  if (!window.sesionIniciada) {
+  // Solicitar Modificación al entrenador (con selector Solo por hoy / Permanente)
+  if (true) {
     const { value: formaEdicion } = await Swal.fire({
       title: '¿Forma de edición?',
       html: `
@@ -4066,6 +4067,82 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 // Cerrar con Escape
 document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMedia(); });
+
+/* ══════════════════════════════════════════════════════════════════
+   LIVE SYNC AUTOMÁTICO EN RED (ENTRENADOR -> ATLETA EN TIEMPO REAL)
+   ══════════════════════════════════════════════════════════════════ */
+window.lastRutinaSyncHash = null;
+let isSyncingRutinaLive = false;
+
+async function verificarCambiosRutinaEnRed() {
+  if (isSyncingRutinaLive || isUpdatingViewAjax) return;
+  if (!navigator.onLine || document.hidden) return;
+  if (window.modoEdicionActivo || window.hayCambiosPendientes) return;
+
+  // No interrumpir si el atleta está escribiendo o tiene un modal abierto
+  const activeTag = document.activeElement ? document.activeElement.tagName : '';
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(activeTag)) return;
+  if (document.querySelector('.wd-media-modal.open, .cli-modal-backdrop.open, .swal2-container')) return;
+
+  isSyncingRutinaLive = true;
+  try {
+    const qs = new URLSearchParams(window.location.search);
+    const diaParam = qs.get('dia') || '';
+    const rutId = window.RUTINA_ID || 0;
+    const syncUrl = `${APP}/cliente/api-rutina-sync?rutina_id=${encodeURIComponent(rutId)}&dia=${encodeURIComponent(diaParam)}&_t=${Date.now()}`;
+
+    const res = await fetch(syncUrl, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data || !data.ok || !data.hash) return;
+
+    if (window.lastRutinaSyncHash === null) {
+      window.lastRutinaSyncHash = data.hash;
+      return;
+    }
+
+    if (data.hash !== window.lastRutinaSyncHash) {
+      window.lastRutinaSyncHash = data.hash;
+      const openCardIds = Array.from(document.querySelectorAll('.wd-ex-card.active')).map(el => el.id).filter(Boolean);
+      await actualizarVistaRutinaSinRecarga(window.location.href, false);
+      window.lastRutinaSyncHash = data.hash;
+
+      if (openCardIds.length > 0) {
+        document.querySelectorAll('.wd-ex-card.active').forEach(el => el.classList.remove('active'));
+        openCardIds.forEach(id => {
+          const cardEl = document.getElementById(id);
+          if (cardEl) cardEl.classList.add('active');
+        });
+      }
+
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'Rutina actualizada en tiempo real',
+          showConfirmButton: false,
+          timer: 2400,
+          background: '#141724',
+          color: '#fff'
+        });
+      }
+    }
+  } catch (e) {
+    // Silencioso en caso de micro-cortes de red
+  } finally {
+    isSyncingRutinaLive = false;
+  }
+}
+
+setInterval(verificarCambiosRutinaEnRed, 5000);
+window.addEventListener('online', () => setTimeout(verificarCambiosRutinaEnRed, 600));
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && navigator.onLine) setTimeout(verificarCambiosRutinaEnRed, 400);
+});
+setTimeout(verificarCambiosRutinaEnRed, 1500);
 </script>
 
 <!-- ── Modal Reproductor de Media (siempre presente en el DOM) ── -->

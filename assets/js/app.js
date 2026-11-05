@@ -25,12 +25,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, { passive: true });
 
+  // Prefetch inteligente al tocar o pasar el cursor sobre enlaces de navegación para carga instantánea
+  const prefetchedUrls = new Set();
+  function prefetchUrlInstant(url) {
+    if (!url || !navigator.onLine) return;
+    const clean = url.split('#')[0];
+    if (!clean || clean === window.location.href.split('#')[0] || prefetchedUrls.has(clean)) return;
+    const low = clean.toLowerCase();
+    if (low.includes('logout') || low.includes('do-') || low.includes('eliminar') || low.includes('borrar')) return;
+    prefetchedUrls.add(clean);
+    try {
+      const pf = document.createElement('link');
+      pf.rel = 'prefetch';
+      pf.href = clean;
+      pf.as = 'document';
+      document.head.appendChild(pf);
+    } catch (_) {}
+  }
+
   // Navegación confiable en barra de módulos: el estado .active solo cambia cuando realmente navega (nunca se queda seleccionado en falso)
   document.querySelectorAll('.xp-nav-links a').forEach(link => {
     let touchStartedHere = false;
 
+    link.addEventListener('pointerenter', () => {
+      if (link.href) prefetchUrlInstant(link.href);
+    }, { passive: true });
+
     link.addEventListener('pointerdown', () => {
       touchStartedHere = true;
+      if (link.href) prefetchUrlInstant(link.href);
       link.classList.add('xp-nav-pressing');
       setTimeout(() => link.classList.remove('xp-nav-pressing'), 180);
     }, { passive: true });
@@ -92,13 +115,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   let xpSkTimer = null;
+  let xpSkShowDelayTimer = null;
+
+  function clearPendingSkeletonTimers() {
+    if (xpSkShowDelayTimer) {
+      clearTimeout(xpSkShowDelayTimer);
+      xpSkShowDelayTimer = null;
+    }
+    if (xpSkTimer) {
+      clearTimeout(xpSkTimer);
+      xpSkTimer = null;
+    }
+  }
+
   function scheduleSkeletonRemoval() {
     if (xpSkTimer) clearTimeout(xpSkTimer);
     xpSkTimer = setTimeout(() => {
       const ov = document.getElementById('xpPageSkeletonOverlay');
       if (ov) ov.remove();
       document.body.removeAttribute('data-navigating-to');
-    }, 2800);
+    }, 3200);
   }
 
   function obtenerModuloDestino(url) {
@@ -550,25 +586,46 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  function mostrarSkeletonTransicion(targetUrl) {
+  function mostrarSkeletonTransicion(targetUrl, immediate = false) {
     if (document.getElementById('xpPageSkeletonOverlay')) return;
-    const overlay = document.createElement('div');
-    overlay.id = 'xpPageSkeletonOverlay';
-    overlay.className = 'xp-page-skeleton-overlay';
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.innerHTML = generarHtmlSkeletonModulo(targetUrl || window.location.href);
-    document.body.appendChild(overlay);
-    scheduleSkeletonRemoval();
+    if (xpSkShowDelayTimer) clearTimeout(xpSkShowDelayTimer);
+
+    const injectOverlay = () => {
+      xpSkShowDelayTimer = null;
+      if (document.getElementById('xpPageSkeletonOverlay')) return;
+      const overlay = document.createElement('div');
+      overlay.id = 'xpPageSkeletonOverlay';
+      overlay.className = 'xp-page-skeleton-overlay';
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.innerHTML = generarHtmlSkeletonModulo(targetUrl || window.location.href);
+      document.body.appendChild(overlay);
+      scheduleSkeletonRemoval();
+    };
+
+    // Solo mostrar el esqueleto si la carga realmente demora (> 320ms); si carga al instante, entra directo sin parpadeo
+    if (immediate) {
+      injectOverlay();
+    } else {
+      xpSkShowDelayTimer = setTimeout(injectOverlay, 320);
+    }
   }
 
   window.xpMostrarSkeleton = mostrarSkeletonTransicion;
   window.xpHideSkeleton = function() {
+    clearPendingSkeletonTimers();
     const ov = document.getElementById('xpPageSkeletonOverlay');
     if (ov) ov.remove();
     document.body.removeAttribute('data-navigating-to');
   };
 
+  window.addEventListener('pagehide', () => {
+    clearPendingSkeletonTimers();
+    const ov = document.getElementById('xpPageSkeletonOverlay');
+    if (ov) ov.remove();
+  });
+
   window.addEventListener('pageshow', () => {
+    clearPendingSkeletonTimers();
     const ov = document.getElementById('xpPageSkeletonOverlay');
     if (ov) ov.remove();
     document.body.removeAttribute('data-navigating-to');

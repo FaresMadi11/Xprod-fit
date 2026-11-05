@@ -172,15 +172,9 @@ function entDashboard(): void {
     }
 
 
-    // Notificaciones (payload ligero sin SELECT *)
-    $stNotif = $db->prepare("SELECT id, mensaje, tipo, enlace, leido, leida, fecha, created_at, metadatos FROM notificaciones WHERE entrenador_id = ? ORDER BY fecha DESC LIMIT 10");
-    $stNotif->execute([$entId]);
-    $notificaciones = $stNotif->fetchAll();
-
-
-    $stUnread = $db->prepare("SELECT COUNT(*) FROM notificaciones WHERE entrenador_id = ? AND leida = 0");
-    $stUnread->execute([$entId]);
-    $unreadNotifs = (int)$stUnread->fetchColumn();
+    // Notificaciones aisladas por rol
+    $notificaciones = obtenerNotificacionesUsuario((int)$entId, 'entrenador', 10, true);
+    $unreadNotifs   = contarNotificacionesNoLeidas((int)$entId, 'entrenador');
 
     $pageTitle = 'Dashboard';
     require BASE_DIR . '/views/entrenador/dashboard.php';
@@ -1148,19 +1142,20 @@ function entActualizarMedidas(): void {
 function entTerminarSesion(): void {
     csrfCheck();
     $db    = getDB();
-    $sesId = (int)($_POST['sesion_id'] ?? 0);
-    $notas = trim($_POST['notas'] ?? '');
+    $in    = array_merge($_POST, getJsonPayload());
+    $sesId = (int)($in['sesion_id'] ?? 0);
+    $notas = trim((string)($in['notas'] ?? ''));
 
     if (!$sesId) jsonOut(false, 'ID inválido.');
 
     $upd = $db->prepare(
-        "UPDATE sesiones_asistencia SET estado='completada', fin_en=NOW(), notas=?
+        "UPDATE sesiones_asistencia SET estado='completada', verificada=1, fin_en=NOW(), notas=?
          WHERE id = ? AND (? IS NOT NULL)"
     );
     $upd->execute([$notas, $sesId, $_SESSION['user_id']]);
 
-    // Marcar rutina en progreso → completada si ya todas sus sesiones finalizaron
-    jsonOut(true, 'Sesión finalizada.');
+    // Marcar rutina en progreso → completada si fue registrada por el entrenador
+    jsonOut(true, 'Sesión completada y registrada por el entrenador.', ['verificada' => 1]);
 }
 
 /*─────────────────────────────────────────────────────────────
@@ -1181,9 +1176,9 @@ function entAsistencias(): void {
     $timestamp = strtotime($fechaSeleccionada);
     $hoy = date('N', $timestamp); // 1=Lun ... 7=Dom
 
-    // ── Panel 1: Verificar (Completadas en la fecha seleccionada)
+    // ── Panel 1: Completadas en la fecha seleccionada (incluye verificadas por entrenador y pendientes de verificar)
     $stVerificar = $db->prepare(
-        "SELECT sa.id, sa.fin_en, sa.notas, sa.verificada, sa.estado, u.nombre AS atleta_nombre, c.id AS cliente_id, r.descripcion AS rutina_desc
+        "SELECT sa.id, sa.fin_en, sa.notas, COALESCE(sa.verificada, 0) AS verificada, sa.estado, u.nombre AS atleta_nombre, c.id AS cliente_id, r.descripcion AS rutina_desc
          FROM sesiones_asistencia sa
          JOIN clientes c ON sa.cliente_id = c.id
          JOIN usuarios u ON c.usuario_id = u.id
@@ -1191,8 +1186,7 @@ function entAsistencias(): void {
          WHERE (? IS NOT NULL) 
            AND (sa.estado = 'completada' OR sa.estado = 'incompleta')
            AND DATE(COALESCE(sa.fin_en, sa.inicio_en)) = ?
-           AND (sa.verificada = 0 OR sa.verificada IS NULL)
-         ORDER BY COALESCE(sa.fin_en, sa.inicio_en) DESC"
+         ORDER BY COALESCE(sa.verificada, 0) ASC, COALESCE(sa.fin_en, sa.inicio_en) DESC"
     );
     $stVerificar->execute([$entId, $fechaSeleccionada]);
     $atletasVerificar = $stVerificar->fetchAll();
@@ -1400,9 +1394,9 @@ function entAsistenciasData(): void {
     }
     $hoy = date('N', strtotime($fechaSeleccionada));
 
-    // ── Verificar ──
+    // ── Completadas (incluye registradas por entrenador con verificada=1 y por verificar con verificada=0) ──
     $stV = $db->prepare(
-        "SELECT sa.id, sa.fin_en, sa.notas, sa.verificada, sa.estado,
+        "SELECT sa.id, sa.fin_en, sa.notas, COALESCE(sa.verificada, 0) AS verificada, sa.estado,
                 u.nombre AS atleta_nombre, c.id AS cliente_id,
                 r.descripcion AS rutina_desc
          FROM sesiones_asistencia sa
@@ -1412,8 +1406,7 @@ function entAsistenciasData(): void {
          WHERE (? IS NOT NULL) 
            AND (sa.estado = 'completada' OR sa.estado = 'incompleta')
            AND DATE(COALESCE(sa.fin_en, sa.inicio_en)) = ?
-           AND (sa.verificada = 0 OR sa.verificada IS NULL)
-         ORDER BY COALESCE(sa.fin_en, sa.inicio_en) DESC"
+         ORDER BY COALESCE(sa.verificada, 0) ASC, COALESCE(sa.fin_en, sa.inicio_en) DESC"
     );
     $stV->execute([$entId, $fechaSeleccionada]);
     $verificar = $stV->fetchAll();
@@ -2210,7 +2203,7 @@ function entAprobarModificacion(): void {
         if (empty($rutinas) || ($entId === null)) jsonOut(false, 'No hay solicitudes pendientes para verificar.');
 
         $db->beginTransaction();
-        $upMod   = $db->prepare("UPDATE rutinas SET estado_modificacion = 'aprobada', estado = 'pendiente', revisada = 1 WHERE id = ?");
+        $upMod   = $db->prepare("UPDATE rutinas SET estado_modificacion = 'aprobada', estado = 'en_progreso', revisada = 1 WHERE id = ?");
         $upPadre = $db->prepare("UPDATE rutinas SET estado = 'completada', dias_semana = '' WHERE id = ?");
 
         foreach ($rutinas as $rut) {
@@ -2541,7 +2534,7 @@ function registrarNotificacion($clienteId, $entrenadorId, $mensaje, ?string $enl
 function entApiNotificaciones(): void {
     header('Content-Type: application/json; charset=utf-8');
     $entId  = (int)$_SESSION['user_id'];
-    $notifs = obtenerNotificacionesUsuario($entId, 'entrenador', 30);
+    $notifs = obtenerNotificacionesUsuario($entId, 'entrenador', 30, true);
     $unread = contarNotificacionesNoLeidas($entId, 'entrenador');
     echo json_encode([
         'ok'             => true,
@@ -2828,10 +2821,11 @@ function entApiCatalogoEditar(): void {
     if (!$id || !$nombre) jsonOut(false, 'Faltan datos obligatorios.');
     
     // Check if exists
-    $chk = $db->prepare("SELECT id, imagen_path, imagen_demo_path, configuracion_maquina FROM catalogo_ejercicios WHERE id = ?");
+    $chk = $db->prepare("SELECT id, nombre, imagen_path, imagen_demo_path, configuracion_maquina FROM catalogo_ejercicios WHERE id = ?");
     $chk->execute([$id]);
     $ej = $chk->fetch();
     if (!$ej) jsonOut(false, 'El ejercicio no existe.');
+    $nombreAnterior = trim((string)($ej['nombre'] ?? ''));
     
     $mediaPortadaPath = $ej['imagen_path'];
     $mediaDemoPath = $ej['imagen_demo_path'];
@@ -2882,7 +2876,29 @@ function entApiCatalogoEditar(): void {
          WHERE id = ?"
     );
     if ($stmt->execute([$nombre, $grupo, $catId, $desc, $indicaciones, $cfgMaquinaJson, $mediaPortadaPath, $mediaDemoPath, $videoUrl, $tipoImp, $unidadCarga, $id])) {
-        jsonOut(true, 'Ejercicio actualizado.');
+        // Propagar automáticamente los cambios de edición del ejercicio a las rutinas activas de los atletas y plantillas
+        if ($nombreAnterior !== '') {
+            try {
+                $db->prepare("
+                    UPDATE ejercicios e
+                    JOIN rutinas r ON r.id = e.rutina_id
+                    SET e.nombre = ?, e.grupo_muscular = ?, e.tipo_implemento = ?, e.unidad_carga = ?,
+                        e.nota_biomecanica = CASE WHEN ? != '' THEN ? ELSE e.nota_biomecanica END
+                    WHERE LOWER(TRIM(e.nombre)) = LOWER(TRIM(?))
+                      AND r.estado IN ('en_progreso', 'pendiente')
+                ")->execute([$nombre, $grupo, $tipoImp, $unidadCarga, $indicaciones, $indicaciones, $nombreAnterior]);
+
+                $db->prepare("
+                    UPDATE plantilla_ejercicios
+                    SET nombre = ?, tipo_implemento = ?, unidad_carga = ?,
+                        nota_biomecanica = CASE WHEN ? != '' THEN ? ELSE nota_biomecanica END
+                    WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?))
+                ")->execute([$nombre, $tipoImp, $unidadCarga, $indicaciones, $indicaciones, $nombreAnterior]);
+            } catch (\Throwable $eProp) {
+                error_log('[entApiCatalogoEditar] Propagación a rutinas: ' . $eProp->getMessage());
+            }
+        }
+        jsonOut(true, 'Ejercicio actualizado y sincronizado con las rutinas.');
     } else {
         jsonOut(false, 'Error al actualizar el ejercicio.');
     }
@@ -2983,8 +2999,15 @@ function entApiAprobarAtleta(): void {
         try {
             $msgAtleta = '¡Tu cuenta ha sido activada por tu entrenador! Ya tienes acceso completo al sistema.';
             $enlaceAtleta = APP_URL . '/cliente/dashboard';
-            $db->prepare("INSERT INTO notificaciones (cliente_id, entrenador_id, mensaje, tipo, enlace) VALUES (?, ?, ?, 'sistema', ?)")
-               ->execute([$targetClienteId, $entId, $msgAtleta, $enlaceAtleta]);
+            registrarNotificacionSistema([
+                'remitente_id'     => (int)$entId,
+                'rol_destinatario' => 'cliente',
+                'tipo_evento'      => 'sistema',
+                'cliente_id'       => $targetClienteId,
+                'entrenador_id'    => (int)$entId,
+                'mensaje'          => $msgAtleta,
+                'enlace'           => $enlaceAtleta
+            ]);
         } catch (\Throwable $e) {
             error_log('[entApiAprobarAtleta] Notificación al atleta: ' . $e->getMessage());
         }
@@ -3078,7 +3101,125 @@ function entApiDiaDetalle(): void {
     }
 
     try {
+        $solicitudIdReq = (int)($_GET['solicitud_id'] ?? 0);
         $resultado = obtenerDetalleDia($db, $clienteId, $fecha, 'entrenador');
+
+        // Verificar si el atleta tiene una solicitud de modificación pendiente para enriquecer la rutina con el diff exacto
+        $sqlSol = "SELECT id, rutina_padre_id, tipo_modificacion, descripcion, creado_en 
+                   FROM rutinas 
+                   WHERE cliente_id = ? AND es_modificacion = 1 AND estado_modificacion = 'pendiente'";
+        $paramsSol = [$clienteId];
+        if ($solicitudIdReq > 0) {
+            $sqlSol .= " AND id = ?";
+            $paramsSol[] = $solicitudIdReq;
+        }
+        $sqlSol .= " ORDER BY id DESC LIMIT 1";
+
+        $stSol = $db->prepare($sqlSol);
+        $stSol->execute($paramsSol);
+        $solRow = $stSol->fetch(PDO::FETCH_ASSOC);
+
+        if ($solRow) {
+            $solId   = (int)$solRow['id'];
+            $padreId = (int)($solRow['rutina_padre_id'] ?? 0);
+            $ejsNuevos = obtenerEjerciciosProgramados($db, $solId, $clienteId, $fecha);
+            $ejsViejos = ($padreId > 0)
+                ? obtenerEjerciciosProgramados($db, $padreId, $clienteId, $fecha)
+                : ($resultado['ejercicios'] ?? []);
+
+            if (empty($resultado['ejercicios']) && !empty($ejsViejos)) {
+                $resultado['ejercicios'] = $ejsViejos;
+                $resultado['estado']     = 'pendiente';
+                $resultado['rutina']     = [
+                    'id'     => $padreId ?: $solId,
+                    'nombre' => $solRow['descripcion'] ?: 'Rutina con solicitud de cambio'
+                ];
+            }
+
+            // Construir lista de ejercicios con mensaje diff únicamente en lo que el atleta decidió cambiar
+            $maxCount = max(count($ejsViejos), count($ejsNuevos));
+            $ejsConDiff = [];
+            for ($i = 0; $i < $maxCount; $i++) {
+                $old = $ejsViejos[$i] ?? null;
+                $new = $ejsNuevos[$i] ?? null;
+
+                if ($old && $new) {
+                    $item = $new;
+                    if (!empty($old['id'])) {
+                        $item['id'] = $old['id'];
+                    }
+                    $nomOld = trim((string)($old['nombre'] ?? ''));
+                    $nomNew = trim((string)($new['nombre'] ?? ''));
+
+                    if (mb_strtolower($nomOld) !== mb_strtolower($nomNew)) {
+                        $partes = ["Antes: \"{$nomOld}\" → Quiere cambiarlo a: \"{$nomNew}\""];
+                        $sOld = (int)($old['series_total'] ?? $old['series'] ?? 0);
+                        $sNew = (int)($new['series_total'] ?? $new['series'] ?? 0);
+                        if ($sOld !== $sNew) {
+                            $partes[] = "Series: {$sOld} → {$sNew}";
+                        }
+                        $rOld = trim((string)($old['repeticiones'] ?? ''));
+                        $rNew = trim((string)($new['repeticiones'] ?? ''));
+                        if ($rOld !== $rNew) {
+                            $partes[] = "Reps: {$rOld} → {$rNew}";
+                        }
+                        $item['cambio_solicitado'] = implode(' · ', $partes);
+                    } else {
+                        $cambios = [];
+                        $sOld = (int)($old['series_total'] ?? $old['series'] ?? 0);
+                        $sNew = (int)($new['series_total'] ?? $new['series'] ?? 0);
+                        if ($sOld !== $sNew) {
+                            $cambios[] = "Series: antes {$sOld} → quiere {$sNew}";
+                        }
+                        $rOld = trim((string)($old['repeticiones'] ?? ''));
+                        $rNew = trim((string)($new['repeticiones'] ?? ''));
+                        if ($rOld !== $rNew) {
+                            $cambios[] = "Reps: antes {$rOld} → quiere {$rNew}";
+                        }
+                        $rirOld = trim((string)($old['rir'] ?? ''));
+                        $rirNew = trim((string)($new['rir'] ?? ''));
+                        if ($rirOld !== $rirNew) {
+                            $cambios[] = "RIR: antes " . ($rirOld !== '' ? $rirOld : 'ninguno') . " → quiere " . ($rirNew !== '' ? $rirNew : 'ninguno');
+                        }
+                        $impOld = strtolower(trim((string)($old['tipo_implemento'] ?? '')));
+                        $impNew = strtolower(trim((string)($new['tipo_implemento'] ?? '')));
+                        if ($impOld !== '' && $impNew !== '' && $impOld !== $impNew) {
+                            $cambios[] = "Implemento: antes {$impOld} → quiere {$impNew}";
+                        }
+                        $uniOld = strtolower(trim((string)($old['unidad_carga'] ?? '')));
+                        $uniNew = strtolower(trim((string)($new['unidad_carga'] ?? '')));
+                        if ($uniOld !== '' && $uniNew !== '' && $uniOld !== $uniNew) {
+                            $cambios[] = "Unidad: antes {$uniOld} → quiere {$uniNew}";
+                        }
+                        if (!empty($cambios)) {
+                            $item['cambio_solicitado'] = implode(' · ', $cambios);
+                        }
+                    }
+                    $ejsConDiff[] = $item;
+                } elseif ($new && !$old) {
+                    $item = $new;
+                    $sNew = (int)($new['series_total'] ?? $new['series'] ?? 3);
+                    $rNew = trim((string)($new['repeticiones'] ?? '10'));
+                    $item['cambio_solicitado'] = "Nuevo ejercicio: antes no estaba → quiere agregar \"{$new['nombre']}\" ({$sNew} series × {$rNew} reps)";
+                    $ejsConDiff[] = $item;
+                } elseif ($old && !$new) {
+                    $item = $old;
+                    $item['cambio_solicitado'] = "Quitar ejercicio: antes tenía \"{$old['nombre']}\" → solicita eliminarlo";
+                    $ejsConDiff[] = $item;
+                }
+            }
+
+            if (!empty($ejsConDiff)) {
+                $resultado['ejercicios'] = $ejsConDiff;
+            }
+            $resultado['solicitud_pendiente'] = [
+                'id'                => $solId,
+                'rutina_padre_id'   => $padreId,
+                'tipo_modificacion' => $solRow['tipo_modificacion'] ?? 'temporal',
+                'creado_en'         => $solRow['creado_en'] ?? ''
+            ];
+        }
+
         $status = $resultado['status'] ?? ($resultado['ok'] ? 200 : 400);
         http_response_code($status);
         echo json_encode(
@@ -3729,15 +3870,16 @@ function entApiGuardarSerieAtleta(): void {
     header('Content-Type: application/json; charset=utf-8');
     try {
         $db          = getDB();
+        $in          = array_merge($_POST, getJsonPayload());
         $entId       = (int)($_SESSION['user_id'] ?? 0);
-        $clienteId   = (int)($_POST['cliente_id'] ?? 0);
-        $ejercicioId = (int)($_POST['ejercicio_id'] ?? 0);
-        $numSerie    = (int)($_POST['numero_serie']  ?? 0);
-        $rawReps     = trim((string)($_POST['reps'] ?? ''));
-        $rawPeso     = trim((string)($_POST['peso'] ?? ''));
-        $rawUnidad   = strtolower(trim((string)($_POST['unidad_carga'] ?? '')));
-        $rawTipoImp  = strtolower(trim((string)($_POST['tipo_implemento'] ?? '')));
-        $tipoSerie   = strtolower(trim((string)($_POST['tipo_serie'] ?? 'normal')));
+        $clienteId   = (int)($in['cliente_id'] ?? 0);
+        $ejercicioId = (int)($in['ejercicio_id'] ?? 0);
+        $numSerie    = (int)($in['numero_serie']  ?? 0);
+        $rawReps     = trim((string)($in['reps'] ?? ''));
+        $rawPeso     = trim((string)($in['peso'] ?? ''));
+        $rawUnidad   = strtolower(trim((string)($in['unidad_carga'] ?? '')));
+        $rawTipoImp  = strtolower(trim((string)($in['tipo_implemento'] ?? '')));
+        $tipoSerie   = strtolower(trim((string)($in['tipo_serie'] ?? 'normal')));
         if (!in_array($tipoSerie, ['normal', 'calentamiento', 'fallo', 'drop'], true)) {
             $tipoSerie = 'normal';
         }
@@ -3750,7 +3892,7 @@ function entApiGuardarSerieAtleta(): void {
             jsonOut(false, 'Atleta no encontrado o sin permisos.');
         }
 
-        $fechaEntrenamiento = trim((string)($_POST['fecha'] ?? date('Y-m-d')));
+        $fechaEntrenamiento = trim((string)($in['fecha'] ?? date('Y-m-d')));
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaEntrenamiento)) {
             $fechaEntrenamiento = date('Y-m-d');
         }
@@ -3760,8 +3902,19 @@ function entApiGuardarSerieAtleta(): void {
             jsonOut(false, 'El número de serie no puede superar el límite de 12.');
         }
 
-        $accion = strtolower(trim((string)($_POST['accion'] ?? 'guardar')));
-        if ($accion === 'desmarcar') {
+        // Obtener configuración del ejercicio
+        $stEjInfo = $db->prepare("SELECT nombre, rutina_id, tipo_implemento, unidad_carga FROM ejercicios WHERE id = ?");
+        $stEjInfo->execute([$ejercicioId]);
+        $ejInfo = $stEjInfo->fetch();
+        if (!$ejInfo) {
+            http_response_code(404);
+            jsonOut(false, 'Ejercicio no encontrado.');
+        }
+        $rutinaId = (int)$ejInfo['rutina_id'];
+
+        $accion = strtolower(trim((string)($in['accion'] ?? 'guardar')));
+        $esDesmarcar = ($accion === 'desmarcar') || (isset($in['completado']) && (int)$in['completado'] === 0);
+        if ($esDesmarcar) {
             $db->beginTransaction();
             $db->prepare("DELETE FROM sesion_series WHERE ejercicio_id = ? AND cliente_id = ? AND fecha = ? AND numero_serie = ?")
                ->execute([$ejercicioId, $clienteId, $fechaEntrenamiento, $numSerie]);
@@ -3778,18 +3931,22 @@ function entApiGuardarSerieAtleta(): void {
                    ->execute([$ejercicioId, $clienteId, $fechaEntrenamiento, $ejercicioId, $clienteId, $fechaEntrenamiento, $ejercicioId, $clienteId, $fechaEntrenamiento]);
             }
 
-            $db->commit();
-            jsonOut(true, 'Serie desmarcada correctamente.', ['desmarcado' => true]);
-            return;
-        }
+            // Verificar si aún quedan series en toda la rutina para esa fecha
+            $stTotalRut = $db->prepare("SELECT COUNT(*) FROM sesion_series ss JOIN ejercicios e ON ss.ejercicio_id = e.id WHERE ss.cliente_id = ? AND e.rutina_id = ? AND ss.fecha = ? AND ss.completado = 1");
+            $stTotalRut->execute([$clienteId, $rutinaId, $fechaEntrenamiento]);
+            $quedanRutina = (int)$stTotalRut->fetchColumn();
 
-        // Obtener configuración del ejercicio
-        $stEjInfo = $db->prepare("SELECT nombre, rutina_id, tipo_implemento, unidad_carga FROM ejercicios WHERE id = ?");
-        $stEjInfo->execute([$ejercicioId]);
-        $ejInfo = $stEjInfo->fetch();
-        if (!$ejInfo) {
-            http_response_code(404);
-            jsonOut(false, 'Ejercicio no encontrado.');
+            if ($quedanRutina === 0) {
+                $db->prepare("DELETE FROM sesiones_asistencia WHERE cliente_id = ? AND rutina_id = ? AND (DATE(inicio_en) = ? OR DATE(fin_en) = ?)")
+                   ->execute([$clienteId, $rutinaId, $fechaEntrenamiento, $fechaEntrenamiento]);
+            } else {
+                $db->prepare("UPDATE sesiones_asistencia SET estado = 'iniciada', fin_en = NULL WHERE cliente_id = ? AND rutina_id = ? AND (DATE(inicio_en) = ? OR DATE(fin_en) = ?)")
+                   ->execute([$clienteId, $rutinaId, $fechaEntrenamiento, $fechaEntrenamiento]);
+            }
+
+            $db->commit();
+            jsonOut(true, 'Serie desmarcada correctamente.', ['desmarcado' => true, 'rutina_completada' => false]);
+            return;
         }
 
         $tipoImplemento = in_array($rawTipoImp, ['mancuerna', 'barra', 'polea_maquina', 'sin_peso'], true)
@@ -3878,24 +4035,46 @@ function entApiGuardarSerieAtleta(): void {
         ");
         $stSesion->execute([$ejercicioId, $clienteId, $reps, $pesoUsado, $fechaEntrenamiento]);
 
-        // 3. Garantizar que existe sesión activa en sesiones_asistencia si es de hoy
-        if ($fechaEntrenamiento === date('Y-m-d')) {
-            $stAsisChk = $db->prepare("SELECT id, estado FROM sesiones_asistencia WHERE cliente_id = ? AND rutina_id = ? AND DATE(inicio_en) = ? LIMIT 1");
-            $stAsisChk->execute([$clienteId, (int)$ejInfo['rutina_id'], $fechaEntrenamiento]);
-            $asisRow = $stAsisChk->fetch(PDO::FETCH_ASSOC);
-            if (!$asisRow) {
-                $db->prepare("INSERT INTO sesiones_asistencia (rutina_id, cliente_id, entrenador_id, inicio_en, estado) VALUES (?, ?, ?, NOW(), 'iniciada')")
-                   ->execute([(int)$ejInfo['rutina_id'], $clienteId, $entId]);
+        // 3. Evaluar progreso total de la rutina en esta fecha: si el entrenador completa todas las series, pasa directo a completada + verificada=1
+        $stPlan = $db->prepare("SELECT COALESCE(SUM(GREATEST(1, COALESCE(series, 1))), 0) FROM ejercicios WHERE rutina_id = ?");
+        $stPlan->execute([$rutinaId]);
+        $seriesPlanificadas = (int)$stPlan->fetchColumn();
+
+        $stComp = $db->prepare("SELECT COUNT(*) FROM sesion_series ss JOIN ejercicios e ON ss.ejercicio_id = e.id WHERE ss.cliente_id = ? AND e.rutina_id = ? AND ss.fecha = ? AND ss.completado = 1");
+        $stComp->execute([$clienteId, $rutinaId, $fechaEntrenamiento]);
+        $seriesCompletadas = (int)$stComp->fetchColumn();
+
+        $rutinaCompletadaPorEntrenador = ($seriesPlanificadas > 0 && $seriesCompletadas >= $seriesPlanificadas);
+        $nuevoEstadoSesion = $rutinaCompletadaPorEntrenador ? 'completada' : 'iniciada';
+
+        $stAsisChk = $db->prepare("SELECT id, estado FROM sesiones_asistencia WHERE cliente_id = ? AND rutina_id = ? AND (DATE(inicio_en) = ? OR DATE(fin_en) = ?) LIMIT 1");
+        $stAsisChk->execute([$clienteId, $rutinaId, $fechaEntrenamiento, $fechaEntrenamiento]);
+        $asisRow = $stAsisChk->fetch(PDO::FETCH_ASSOC);
+
+        if (!$asisRow) {
+            $fechaTs = ($fechaEntrenamiento === date('Y-m-d')) ? date('Y-m-d H:i:s') : ($fechaEntrenamiento . ' 12:00:00');
+            $finTs   = $rutinaCompletadaPorEntrenador ? $fechaTs : null;
+            $db->prepare("INSERT INTO sesiones_asistencia (rutina_id, cliente_id, entrenador_id, inicio_en, fin_en, estado, verificada) VALUES (?, ?, ?, ?, ?, ?, 1)")
+               ->execute([$rutinaId, $clienteId, $entId, $fechaTs, $finTs, $nuevoEstadoSesion]);
+        } else {
+            if ($rutinaCompletadaPorEntrenador) {
+                $db->prepare("UPDATE sesiones_asistencia SET estado = 'completada', fin_en = COALESCE(fin_en, NOW()), verificada = 1, entrenador_id = ? WHERE id = ?")
+                   ->execute([$entId, (int)$asisRow['id']]);
+            } else {
+                $db->prepare("UPDATE sesiones_asistencia SET verificada = 1, entrenador_id = ? WHERE id = ?")
+                   ->execute([$entId, (int)$asisRow['id']]);
             }
         }
 
         $db->commit();
-        jsonOut(true, 'Serie registrada correctamente.', [
-            'completado'   => true,
-            'ejercicio_id' => $ejercicioId,
-            'numero_serie' => $numSerie,
-            'reps'          => $reps,
-            'peso'          => $pesoUsado
+        jsonOut(true, $rutinaCompletadaPorEntrenador ? 'Rutina completada por el entrenador.' : 'Serie registrada correctamente.', [
+            'completado'        => true,
+            'rutina_completada' => $rutinaCompletadaPorEntrenador,
+            'verificada'        => 1,
+            'ejercicio_id'      => $ejercicioId,
+            'numero_serie'      => $numSerie,
+            'reps'              => $reps,
+            'peso'              => $pesoUsado
         ]);
     } catch (\Throwable $e) {
         if (isset($db) && $db->inTransaction()) {

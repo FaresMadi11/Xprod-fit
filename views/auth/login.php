@@ -1,9 +1,31 @@
-<!DOCTYPE html>
-<html lang="es">
+<?php
+$temaGlobalLogin = 'classic';
+try {
+    if (function_exists('getDB')) {
+        $dbLogin = getDB();
+        $stTemaLogin = $dbLogin->query("SELECT valor FROM ajustes_globales WHERE clave = 'tema_sistema' LIMIT 1");
+        $valTema = $stTemaLogin ? (string)$stTemaLogin->fetchColumn() : '';
+        if (in_array($valTema, ['classic', 'obsidian', 'royal-plum', 'deep-ocean', 'nordic-frost', 'dark', 'light'], true)) {
+            $temaGlobalLogin = $valTema;
+        }
+    }
+} catch (\Throwable $e) {}
+$mapaMetaColorLogin = [
+    'classic'      => '#02040a',
+    'dark'         => '#02040a',
+    'obsidian'     => '#131118',
+    'royal-plum'   => '#190019',
+    'deep-ocean'   => '#06141b',
+    'nordic-frost' => '#121d1e',
+    'light'        => '#121024',
+];
+$metaColorLogin = $mapaMetaColorLogin[$temaGlobalLogin] ?? '#02040a';
+?><!DOCTYPE html>
+<html lang="es" data-theme="<?= e($temaGlobalLogin) ?>" id="loginHtmlRoot">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Acceso – Xprod Fit</title>
-<meta name="theme-color" content="#02040a">
+<meta name="theme-color" id="loginThemeColorMeta" content="<?= e($metaColorLogin) ?>">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Xprod Fit">
@@ -18,6 +40,30 @@
 <link rel="stylesheet" href="<?= APP_URL ?>/assets/vendor/tabler-icons/tabler-icons.min.css">
 <script>
 (function() {
+  var dbTheme = <?= json_encode($temaGlobalLogin) ?>;
+  var savedTheme = dbTheme;
+  try {
+    var lsTheme = localStorage.getItem('xp_theme');
+    if (lsTheme && ['classic','obsidian','royal-plum','deep-ocean','nordic-frost','dark','light'].indexOf(lsTheme) !== -1) {
+      savedTheme = lsTheme;
+    }
+  } catch (_) {}
+  window.XP_LOGIN_THEME = savedTheme;
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  var metaMap = {
+    'classic': '#02040a',
+    'dark': '#02040a',
+    'obsidian': '#131118',
+    'royal-plum': '#190019',
+    'deep-ocean': '#06141b',
+    'nordic-frost': '#121d1e',
+    'light': '#121024'
+  };
+  var metaEl = document.getElementById('loginThemeColorMeta');
+  if (metaEl && metaMap[savedTheme]) {
+    metaEl.setAttribute('content', metaMap[savedTheme]);
+  }
+
   var appBase = <?= json_encode(APP_URL) ?>;
   var qs = window.location.search || '';
   if (qs.indexOf('logged_out=1') !== -1 || qs.indexOf('standby=1') !== -1) {
@@ -72,6 +118,57 @@ function togglePassVisibility(btn, ev) {
 window.togglePassVisibility = togglePassVisibility;
 </script>
 <style>
+:root,
+html[data-theme="classic"],
+html[data-theme="dark"] {
+  --login-bg: #02040a;
+  --login-overlay: rgba(2, 4, 10, 0.30);
+  --login-orb1: rgba(138, 43, 226, 0.16);
+  --login-orb2: rgba(56, 100, 240, 0.12);
+  --login-accent: #8a2be2;
+  --login-accent-glow: rgba(138, 43, 226, 0.28);
+}
+html[data-theme="obsidian"] {
+  --login-bg: #120e1c;
+  --login-overlay: rgba(18, 14, 28, 0.28);
+  --login-orb1: rgba(170, 162, 179, 0.28);
+  --login-orb2: rgba(124, 92, 191, 0.24);
+  --login-accent: #AAA2B3;
+  --login-accent-glow: rgba(170, 162, 179, 0.28);
+}
+html[data-theme="royal-plum"] {
+  --login-bg: #1c0521;
+  --login-overlay: rgba(28, 5, 33, 0.28);
+  --login-orb1: rgba(223, 182, 178, 0.26);
+  --login-orb2: rgba(168, 72, 132, 0.32);
+  --login-accent: #DFB6B2;
+  --login-accent-glow: rgba(223, 182, 178, 0.28);
+}
+html[data-theme="deep-ocean"] {
+  --login-bg: #051824;
+  --login-overlay: rgba(5, 24, 36, 0.28);
+  --login-orb1: rgba(56, 189, 248, 0.26);
+  --login-orb2: rgba(37, 99, 235, 0.22);
+  --login-accent: #9BA8AB;
+  --login-accent-glow: rgba(155, 168, 171, 0.28);
+}
+html[data-theme="nordic-frost"] {
+  --login-bg: #0d1f22;
+  --login-overlay: rgba(13, 31, 34, 0.28);
+  --login-orb1: rgba(176, 215, 216, 0.30);
+  --login-orb2: rgba(94, 234, 212, 0.22);
+  --login-accent: #B0D7D8;
+  --login-accent-glow: rgba(176, 215, 216, 0.30);
+}
+html[data-theme="light"] {
+  --login-bg: #151130;
+  --login-overlay: rgba(21, 17, 48, 0.28);
+  --login-orb1: rgba(139, 92, 246, 0.30);
+  --login-orb2: rgba(99, 102, 241, 0.24);
+  --login-accent: #A78BFA;
+  --login-accent-glow: rgba(167, 139, 250, 0.30);
+}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 button, a, input, select, .goal-chip, .subnivel-card, .wheel-item {
   touch-action: manipulation;
@@ -82,7 +179,8 @@ html, body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background: #02040a;
+  background: var(--login-bg, #02040a);
+  transition: background-color 0.35s ease;
 }
 body {
   font-family: 'Inter', sans-serif;
@@ -117,14 +215,14 @@ body {
   background: radial-gradient(
     ellipse 95% 90% at 50% 50%,
     transparent 60%,
-    #02040a 100%
+    var(--login-bg, #02040a) 100%
   );
 }
 
 /* ── Background orbs (Radial Gradient Zero-GPU-Blur) ── */
 .bg-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:1;}
-.orb1{width:520px;height:520px;background:radial-gradient(circle, rgba(138,43,226,0.14) 0%, rgba(138,43,226,0) 70%);top:-150px;left:-150px;}
-.orb2{width:440px;height:440px;background:radial-gradient(circle, rgba(56,100,240,0.11) 0%, rgba(56,100,240,0) 70%);bottom:-120px;right:-120px;}
+.orb1{width:520px;height:520px;background:radial-gradient(circle, var(--login-orb1, rgba(138,43,226,0.14)) 0%, transparent 70%);top:-150px;left:-150px;}
+.orb2{width:440px;height:440px;background:radial-gradient(circle, var(--login-orb2, rgba(56,100,240,0.11)) 0%, transparent 70%);bottom:-120px;right:-120px;}
 
 /* ── Modal / Auth Box (Estable ante apertura de teclado móvil) ── */
 main#mainContent{
@@ -137,7 +235,7 @@ main#mainContent{
   align-items: flex-start;
   justify-content: center;
   padding: 24px 16px;
-  background: rgba(2, 4, 10, 0.30);
+  background: var(--login-overlay, rgba(2, 4, 10, 0.30));
   /* Scroll interno fluido cuando el wizard de registro o recuperación desborda la pantalla */
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1213,12 +1311,35 @@ select:-webkit-autofill:active {
     });
   }
 
+  const LOGIN_THEME_COLORS = {
+    'classic':      { bg: '#02040a', glow: 'rgba(138, 43, 226, 0.12)', particle: '#ffffff', showMahoraga: true },
+    'dark':         { bg: '#02040a', glow: 'rgba(138, 43, 226, 0.12)', particle: '#ffffff', showMahoraga: true },
+    'obsidian':     { bg: '#120e1c', glow: 'rgba(148, 128, 185, 0.22)', particle: '#e2dde7', showMahoraga: false },
+    'royal-plum':   { bg: '#1c0521', glow: 'rgba(195, 92, 148, 0.24)', particle: '#fbe4d8', showMahoraga: false },
+    'deep-ocean':   { bg: '#051824', glow: 'rgba(56, 189, 248, 0.20)', particle: '#ccd0cf', showMahoraga: false },
+    'nordic-frost': { bg: '#0d1f22', glow: 'rgba(135, 206, 210, 0.22)', particle: '#b0d7d8', showMahoraga: false },
+    'light':        { bg: '#151130', glow: 'rgba(139, 92, 246, 0.24)', particle: '#e9d5ff', showMahoraga: false }
+  };
+
+  function getActiveLoginThemeColors() {
+    const t = document.documentElement.getAttribute('data-theme') || window.XP_LOGIN_THEME || 'classic';
+    return LOGIN_THEME_COLORS[t] || LOGIN_THEME_COLORS['classic'];
+  }
+
   function drawFrame() {
-    ctx.fillStyle = '#02040a';
+    const tc = getActiveLoginThemeColors();
+    ctx.fillStyle = tc.bg;
     ctx.fillRect(0, 0, w, h);
 
-    if (wheelParticles.length > 0 || headParticles.length > 0 || chestParticles.length > 0 || lowerParticles.length > 0) {
-      ctx.fillStyle = '#ffffff';
+    if (!tc.showMahoraga) {
+      // Fondo oscuro con tonalidad atmosférica de la paleta seleccionada (sin Mahoraga)
+      const grad = ctx.createRadialGradient(w * 0.5, h * 0.38, 20, w * 0.5, h * 0.45, Math.max(w, h) * 0.72);
+      grad.addColorStop(0, tc.glow);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+    } else if (wheelParticles.length > 0 || headParticles.length > 0 || chestParticles.length > 0 || lowerParticles.length > 0) {
+      ctx.fillStyle = tc.particle;
 
       // 1. Rueda flotando (halo superior independiente)
       const wheelDy = Math.sin(time * 1.2) * 12 * scale;
@@ -1259,6 +1380,7 @@ select:-webkit-autofill:active {
     }
 
     // Partículas ambientales de fondo ultra-ligeras
+    ctx.fillStyle = tc.particle;
     for (let i = 0, len = ambientParticles.length; i < len; i++) {
       const ap = ambientParticles[i];
       ap.y -= ap.speed;
